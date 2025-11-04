@@ -11,9 +11,11 @@ interface KanbanBoardProps {
   items: any[];
   onStatusChange: (itemId: string, newStatus: string) => void;
   renderCard: (item: any) => ReactNode;
+  onCardClick?: (item: any) => void;
+  getCardColor?: (item: any) => string;
 }
 
-export function KanbanBoard({ columns, items, onStatusChange, renderCard }: KanbanBoardProps) {
+export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCardClick, getCardColor }: KanbanBoardProps) {
   const getItemsByStatus = (status: string) => {
     return items.filter((item) => item.status === status);
   };
@@ -55,7 +57,8 @@ export function KanbanBoard({ columns, items, onStatusChange, renderCard }: Kanb
                 key={item.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, item.id)}
-                className="cursor-move hover:shadow-md transition-shadow"
+                onClick={() => onCardClick?.(item)}
+                className={`cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] ${getCardColor ? getCardColor(item) : ""}`}
               >
                 <CardContent className="p-4">
                   {renderCard(item)}

@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Badge } from "@/components/ui/badge";
+import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 
 const taskColumns = [
   { id: "todo", title: "To Do" },
@@ -12,13 +14,14 @@ const taskColumns = [
 
 export default function Projects() {
   const queryClient = useQueryClient();
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["tasks"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("*, projects(title), profiles(full_name)")
+        .select("*, projects(title, clients(name)), profiles(full_name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -52,6 +55,19 @@ export default function Projects() {
     }
   };
 
+  const getCardColor = (task: any) => {
+    switch (task.priority) {
+      case "high":
+        return "border-l-4 border-l-priority-high bg-gradient-to-r from-priority-high/5 to-transparent";
+      case "medium":
+        return "border-l-4 border-l-priority-medium bg-gradient-to-r from-priority-medium/5 to-transparent";
+      case "low":
+        return "border-l-4 border-l-priority-low bg-gradient-to-r from-priority-low/5 to-transparent";
+      default:
+        return "";
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -66,6 +82,8 @@ export default function Projects() {
             columns={taskColumns}
             items={tasks || []}
             onStatusChange={handleStatusChange}
+            onCardClick={(task) => setSelectedTaskId(task.id)}
+            getCardColor={getCardColor}
             renderCard={(task) => (
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -77,6 +95,11 @@ export default function Projects() {
                 {task.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {task.description}
+                  </p>
+                )}
+                {task.projects?.clients && (
+                  <p className="text-xs font-medium text-primary">
+                    {task.projects.clients.name}
                   </p>
                 )}
                 {task.projects && (
@@ -99,6 +122,12 @@ export default function Projects() {
           />
         )}
       </div>
+
+      <TaskDetailDialog
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+      />
     </AppLayout>
   );
 }

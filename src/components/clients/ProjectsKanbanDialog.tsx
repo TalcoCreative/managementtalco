@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { CreateProjectDialog } from "./CreateProjectDialog";
+import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 
 interface ProjectsKanbanDialogProps {
   clientId: string;
@@ -22,6 +23,7 @@ const projectColumns = [
 
 export function ProjectsKanbanDialog({ clientId, open, onOpenChange }: ProjectsKanbanDialogProps) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: client } = useQuery({
@@ -84,6 +86,19 @@ export function ProjectsKanbanDialog({ clientId, open, onOpenChange }: ProjectsK
 
   const canManageProjects = userRole === "super_admin" || userRole === "hr";
 
+  const getCardColor = (project: any) => {
+    switch (project.status) {
+      case "completed":
+        return "border-l-4 border-l-status-completed bg-gradient-to-r from-status-completed/5 to-transparent";
+      case "in_progress":
+        return "border-l-4 border-l-status-in-progress bg-gradient-to-r from-status-in-progress/5 to-transparent";
+      case "on_hold":
+        return "border-l-4 border-l-status-on-hold bg-gradient-to-r from-status-on-hold/5 to-transparent";
+      default:
+        return "border-l-4 border-l-status-pending bg-gradient-to-r from-status-pending/5 to-transparent";
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,6 +124,8 @@ export function ProjectsKanbanDialog({ clientId, open, onOpenChange }: ProjectsK
               columns={projectColumns}
               items={projects || []}
               onStatusChange={handleStatusChange}
+              onCardClick={(project) => setSelectedProjectId(project.id)}
+              getCardColor={getCardColor}
               renderCard={(project) => (
                 <div className="space-y-2">
                   <h4 className="font-medium">{project.title}</h4>
@@ -138,6 +155,12 @@ export function ProjectsKanbanDialog({ clientId, open, onOpenChange }: ProjectsK
         clientId={clientId}
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <ProjectDetailDialog
+        projectId={selectedProjectId}
+        open={!!selectedProjectId}
+        onOpenChange={(open) => !open && setSelectedProjectId(null)}
       />
     </>
   );

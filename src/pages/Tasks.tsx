@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ const taskColumns = [
 export default function Tasks() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: projects } = useQuery({
@@ -43,7 +45,7 @@ export default function Tasks() {
     queryFn: async () => {
       let query = supabase
         .from("tasks")
-        .select("*, projects(title), profiles(full_name)")
+        .select("*, projects(title, clients(name)), profiles(full_name)")
         .order("created_at", { ascending: false });
 
       if (selectedProject !== "all") {
@@ -100,6 +102,19 @@ export default function Tasks() {
     }
   };
 
+  const getCardColor = (task: any) => {
+    switch (task.priority) {
+      case "high":
+        return "border-l-4 border-l-priority-high bg-gradient-to-r from-priority-high/5 to-transparent";
+      case "medium":
+        return "border-l-4 border-l-priority-medium bg-gradient-to-r from-priority-medium/5 to-transparent";
+      case "low":
+        return "border-l-4 border-l-priority-low bg-gradient-to-r from-priority-low/5 to-transparent";
+      default:
+        return "";
+    }
+  };
+
   const canCreateTasks = userRole === "super_admin" || userRole === "hr";
 
   return (
@@ -139,6 +154,8 @@ export default function Tasks() {
             columns={taskColumns}
             items={tasks || []}
             onStatusChange={handleStatusChange}
+            onCardClick={(task) => setSelectedTaskId(task.id)}
+            getCardColor={getCardColor}
             renderCard={(task) => (
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -150,6 +167,11 @@ export default function Tasks() {
                 {task.description && (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {task.description}
+                  </p>
+                )}
+                {task.projects?.clients && (
+                  <p className="text-xs font-medium text-primary">
+                    {task.projects.clients.name}
                   </p>
                 )}
                 {task.projects && (
@@ -174,6 +196,12 @@ export default function Tasks() {
       </div>
 
       <CreateTaskDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      
+      <TaskDetailDialog
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+      />
     </AppLayout>
   );
 }
