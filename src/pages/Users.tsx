@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
+import { EditUserRoleDialog } from "@/components/users/EditUserRoleDialog";
 
 export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; role?: string } | null>(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["all-users"],
@@ -102,14 +105,32 @@ export default function Users() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {user.user_roles?.map((ur: any, index: number) => (
-                      <Badge key={index} className={getRoleColor(ur.role)}>
-                        {ur.role.replace("_", " ")}
-                      </Badge>
-                    ))}
-                    {(!user.user_roles || user.user_roles.length === 0) && (
-                      <Badge variant="secondary">No role assigned</Badge>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap gap-2">
+                      {user.user_roles?.map((ur: any, index: number) => (
+                        <Badge key={index} className={getRoleColor(ur.role)}>
+                          {ur.role.replace("_", " ")}
+                        </Badge>
+                      ))}
+                      {(!user.user_roles || user.user_roles.length === 0) && (
+                        <Badge variant="secondary">No role assigned</Badge>
+                      )}
+                    </div>
+                    {isSuperAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setSelectedUser({
+                            id: user.id,
+                            name: user.full_name,
+                            role: user.user_roles?.[0]?.role,
+                          });
+                          setEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
                 </CardContent>
@@ -127,6 +148,15 @@ export default function Users() {
       </div>
 
       <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      {selectedUser && (
+        <EditUserRoleDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          userId={selectedUser.id}
+          userName={selectedUser.name}
+          currentRole={selectedUser.role}
+        />
+      )}
     </AppLayout>
   );
 }
