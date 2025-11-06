@@ -12,13 +12,14 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultProjectId?: string;
 }
 
-export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, defaultProjectId }: CreateTaskDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
-  const [projectId, setProjectId] = useState("");
+  const [projectId, setProjectId] = useState(defaultProjectId || "");
   const [assignedTo, setAssignedTo] = useState("");
   const [deadline, setDeadline] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +69,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
       toast.success("Task created successfully!");
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project-tasks", projectId] });
       onOpenChange(false);
       resetForm();
     } catch (error: any) {
