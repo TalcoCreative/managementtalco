@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, User, Plus } from "lucide-react";
+import { Calendar, Building2, User, Plus, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
@@ -118,6 +120,30 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
     }
   };
 
+  const taskStats = useMemo(() => {
+    if (!tasks) return { total: 0, byStatus: {} as Record<string, number>, assignedUsers: new Set(), completionRate: 0 };
+    
+    const byStatus: Record<string, number> = {};
+    const assignedUsers = new Set<string>();
+    
+    tasks.forEach((task: any) => {
+      byStatus[task.status] = (byStatus[task.status] || 0) + 1;
+      if (task.profiles?.full_name) {
+        assignedUsers.add(task.profiles.full_name);
+      }
+    });
+
+    const doneCount = byStatus.done || 0;
+    const completionRate = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0;
+
+    return {
+      total: tasks.length,
+      byStatus,
+      assignedUsers,
+      completionRate: Math.round(completionRate)
+    };
+  }, [tasks]);
+
   const getCardColor = (task: any) => {
     switch (task.priority) {
       case "high":
@@ -142,6 +168,18 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
       default:
         return "bg-status-pending";
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      todo: "To Do",
+      in_progress: "In Progress",
+      writing: "Writing",
+      editing: "Editing",
+      posting: "Posting",
+      done: "Done"
+    };
+    return labels[status] || status;
   };
 
   const canManageTasks = userRole === "super_admin" || userRole === "hr";
@@ -197,6 +235,76 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
                 )}
               </div>
             </div>
+
+            {/* Dashboard Stats */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{taskStats.total}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Completion</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{taskStats.completionRate}%</div>
+                  <Progress value={taskStats.completionRate} className="mt-2" />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {(taskStats.byStatus.in_progress || 0) + 
+                     (taskStats.byStatus.writing || 0) + 
+                     (taskStats.byStatus.editing || 0) + 
+                     (taskStats.byStatus.posting || 0)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{taskStats.assignedUsers.size}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Task Status Breakdown */}
+            {taskStats.total > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Task Status Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    {Object.entries(taskStats.byStatus).map(([status, count]) => (
+                      <div key={status} className="text-center">
+                        <div className="text-2xl font-bold text-primary">{count}</div>
+                        <div className="text-xs text-muted-foreground capitalize">
+                          {getStatusLabel(status)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Tasks Kanban */}
             <div>
