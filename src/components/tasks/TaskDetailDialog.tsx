@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, X, File, ExternalLink } from "lucide-react";
+import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
 
 interface TaskDetailDialogProps {
@@ -21,8 +21,11 @@ interface TaskDetailDialogProps {
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const { data: task } = useQuery({
@@ -101,20 +104,23 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !taskId) return;
-    
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !taskId) return;
 
-    setUploading(true);
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File size must be less than 20MB");
+      return;
+    }
+
+    setUploadingFile(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${session.session.user.id}/${Date.now()}.${fileExt}`;
-
+      
       const { error: uploadError } = await supabase.storage
         .from('task-attachments')
         .upload(fileName, file);
@@ -125,51 +131,49 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         .from('task-attachments')
         .getPublicUrl(fileName);
 
-      const { error: dbError } = await supabase
-        .from('task_attachments')
-        .insert({
-          task_id: taskId,
-          uploaded_by: session.session.user.id,
-          file_url: publicUrl,
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-        });
+      const { error: dbError } = await supabase.from('task_attachments').insert({
+        task_id: taskId,
+        uploaded_by: session.session.user.id,
+        file_url: publicUrl,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+      });
 
       if (dbError) throw dbError;
 
       toast.success("File uploaded!");
       queryClient.invalidateQueries({ queryKey: ["task-attachments", taskId] });
+      if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error: any) {
       toast.error(error.message || "Failed to upload file");
     } finally {
-      setUploading(false);
-      e.target.value = '';
+      setUploadingFile(false);
     }
   };
 
   const handleAddLink = async () => {
-    if (!linkUrl.trim() || !taskId) return;
-    
+    if (!linkUrl.trim() || !linkName.trim() || !taskId) return;
+
     setLoading(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from('task_attachments')
-        .insert({
-          task_id: taskId,
-          uploaded_by: session.session.user.id,
-          file_url: linkUrl,
-          file_name: linkUrl,
-          file_type: 'link',
-        });
+      const { error } = await supabase.from('task_attachments').insert({
+        task_id: taskId,
+        uploaded_by: session.session.user.id,
+        file_url: linkUrl,
+        file_name: linkName,
+        file_type: 'link',
+      });
 
       if (error) throw error;
 
       toast.success("Link added!");
       setLinkUrl("");
+      setLinkName("");
+      setShowLinkInput(false);
       queryClient.invalidateQueries({ queryKey: ["task-attachments", taskId] });
     } catch (error: any) {
       toast.error(error.message || "Failed to add link");
@@ -181,15 +185,15 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const handleDeleteAttachment = async (attachmentId: string, fileUrl: string) => {
     try {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error("Not authenticated");
+      if (!session.session) return;
 
       // Delete from storage if it's a file (not a link)
-      if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
-        const fileName = fileUrl.split('/').pop();
-        if (fileName) {
+      if (fileUrl && fileUrl.includes('task-attachments')) {
+        const pathParts = fileUrl.split('task-attachments/')[1];
+        if (pathParts) {
           await supabase.storage
             .from('task-attachments')
-            .remove([fileName]);
+            .remove([pathParts]);
         }
       }
 
@@ -274,97 +278,122 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
             {/* Attachments Section */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Paperclip className="h-4 w-4" />
-                <h3 className="font-semibold">Attachments ({attachments?.length || 0})</h3>
-              </div>
-
-              {/* Add Attachment */}
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    disabled={uploading}
-                    onClick={() => document.getElementById('file-upload')?.click()}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {uploading ? "Uploading..." : "Upload File"}
-                  </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="h-4 w-4" />
+                  <h3 className="font-semibold">Attachments ({attachments?.length || 0})</h3>
                 </div>
-
                 <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a link (https://...)"
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
-                    type="url"
-                  />
-                  <Button 
-                    onClick={handleAddLink}
-                    disabled={loading || !linkUrl.trim()}
+                  <Button
+                    variant="outline"
                     size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFile}
                   >
-                    <LinkIcon className="h-4 w-4" />
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploadingFile ? "Uploading..." : "Upload"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowLinkInput(!showLinkInput)}
+                  >
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    Link
                   </Button>
                 </div>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+                accept="*/*"
+              />
+
+              {/* Add Link Form */}
+              {showLinkInput && (
+                <div className="rounded-lg border bg-card p-4 space-y-3">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Link URL (e.g., https://example.com)"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Link name"
+                      value={linkName}
+                      onChange={(e) => setLinkName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm"
+                      onClick={handleAddLink}
+                      disabled={loading || !linkUrl.trim() || !linkName.trim()}
+                    >
+                      Add Link
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowLinkInput(false);
+                        setLinkUrl("");
+                        setLinkName("");
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Attachments List */}
               <div className="space-y-2">
                 {attachments?.map((attachment) => (
                   <div
                     key={attachment.id}
-                    className="rounded-lg border bg-card p-3 flex items-center justify-between gap-3"
+                    className="rounded-lg border bg-card p-3 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {attachment.file_type === 'link' ? (
-                        <LinkIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                        <LinkIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       ) : (
-                        <File className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                        <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <a
-                          href={attachment.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium hover:underline truncate block"
-                        >
-                          {attachment.file_name}
-                        </a>
+                        <p className="font-medium text-sm truncate">{attachment.file_name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span>{attachment.profiles?.full_name}</span>
                           <span>•</span>
-                          <span>{format(new Date(attachment.created_at), "PP")}</span>
+                          <span>{format(new Date(attachment.created_at), "PPp")}</span>
                           {attachment.file_size && (
                             <>
                               <span>•</span>
-                              <span>{(attachment.file_size / 1024).toFixed(1)} KB</span>
+                              <span>{(attachment.file_size / 1024 / 1024).toFixed(2)} MB</span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(attachment.file_url, '_blank')}
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
+                    <div className="flex gap-2 flex-shrink-0">
+                      {attachment.file_url && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(attachment.file_url, '_blank')}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteAttachment(attachment.id, attachment.file_url)}
                       >
-                        <X className="h-3 w-3" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
