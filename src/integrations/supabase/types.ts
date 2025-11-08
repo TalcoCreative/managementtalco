@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          clock_in: string | null
+          clock_out: string | null
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          clock_in?: string | null
+          clock_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           company: string | null
@@ -215,6 +245,83 @@ export type Database = {
           },
         ]
       }
+      shooting_crew: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+          shooting_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: string
+          shooting_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          shooting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shooting_crew_shooting_id_fkey"
+            columns: ["shooting_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shooting_schedules: {
+        Row: {
+          approved_by: string | null
+          created_at: string | null
+          director: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          requested_by: string
+          runner: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string | null
+          director?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          requested_by: string
+          runner?: string | null
+          scheduled_date: string
+          scheduled_time: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string | null
+          director?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          requested_by?: string
+          runner?: string | null
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       task_attachments: {
         Row: {
           created_at: string | null
@@ -258,6 +365,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          assigned_at: string | null
           assigned_to: string | null
           created_at: string | null
           created_by: string
@@ -266,10 +374,12 @@ export type Database = {
           id: string
           priority: string | null
           project_id: string
+          requested_at: string | null
           status: string | null
           title: string
         }
         Insert: {
+          assigned_at?: string | null
           assigned_to?: string | null
           created_at?: string | null
           created_by: string
@@ -278,10 +388,12 @@ export type Database = {
           id?: string
           priority?: string | null
           project_id: string
+          requested_at?: string | null
           status?: string | null
           title: string
         }
         Update: {
+          assigned_at?: string | null
           assigned_to?: string | null
           created_at?: string | null
           created_by?: string
@@ -290,6 +402,7 @@ export type Database = {
           id?: string
           priority?: string | null
           project_id?: string
+          requested_at?: string | null
           status?: string | null
           title?: string
         }
