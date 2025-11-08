@@ -361,13 +361,6 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
         </DialogContent>
       </Dialog>
 
-      {projectId && (
-        <CreateTaskDialog
-          open={createTaskDialogOpen}
-          onOpenChange={setCreateTaskDialogOpen}
-          defaultProjectId={projectId}
-        />
-      )}
 
       <TaskDetailDialog
         taskId={selectedTaskId}

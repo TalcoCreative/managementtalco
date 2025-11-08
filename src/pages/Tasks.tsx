@@ -321,7 +321,7 @@ export default function Tasks() {
         )}
       </div>
 
-      <CreateTaskDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <CreateTaskDialog projects={projects || []} users={users || []} />
       
       <TaskDetailDialog
         taskId={selectedTaskId}

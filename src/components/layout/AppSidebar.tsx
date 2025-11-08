@@ -4,9 +4,17 @@ import {
   CheckSquare, 
   Calendar, 
   BarChart3,
-  Building2
+  Building2,
+  ClipboardCheck,
+  Video,
+  Home,
+  LogOut
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Sidebar,
   SidebarContent,
@@ -16,24 +24,56 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
 
 const navItems = [
+  { title: "Dashboard", url: "/", icon: Home },
   { title: "Clients", url: "/clients", icon: Building2 },
   { title: "Projects", url: "/projects", icon: Briefcase },
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Schedule", url: "/schedule", icon: Calendar },
+  { title: "Shooting", url: "/shooting", icon: Video },
   { title: "Users", url: "/users", icon: Users },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
+const hrItems = [
+  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
-  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.session.user.id)
+        .single();
+      if (error) throw error;
+      return data?.role;
+    },
+  });
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logged out successfully");
+      navigate("/auth");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
 
   const isCollapsed = state === "collapsed";
-  const isActive = (path: string) => location.pathname === path;
 
   return (
     <Sidebar collapsible="icon">
@@ -68,7 +108,43 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {(userRole === 'hr' || userRole === 'super_admin') && (
+          <SidebarGroup>
+            <SidebarGroupLabel>HR</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {hrItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) => 
+                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={handleLogout} className="w-full">
+              <LogOut className="h-5 w-5" />
+              {!isCollapsed && <span>Logout</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
