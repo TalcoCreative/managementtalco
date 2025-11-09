@@ -22,6 +22,9 @@ export type Database = {
           date: string
           id: string
           notes: string | null
+          photo_clock_in: string | null
+          photo_clock_out: string | null
+          tasks_completed: string[] | null
           user_id: string
         }
         Insert: {
@@ -31,6 +34,9 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          photo_clock_in?: string | null
+          photo_clock_out?: string | null
+          tasks_completed?: string[] | null
           user_id: string
         }
         Update: {
@@ -40,6 +46,9 @@ export type Database = {
           date?: string
           id?: string
           notes?: string | null
+          photo_clock_in?: string | null
+          photo_clock_out?: string | null
+          tasks_completed?: string[] | null
           user_id?: string
         }
         Relationships: []
@@ -321,6 +330,41 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      task_activities: {
+        Row: {
+          activity_type: string
+          created_at: string | null
+          id: string
+          task_id: string | null
+          task_title: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string | null
+          id?: string
+          task_id?: string | null
+          task_title?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string | null
+          id?: string
+          task_id?: string | null
+          task_title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_attachments: {
         Row: {

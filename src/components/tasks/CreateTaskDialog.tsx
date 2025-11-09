@@ -65,6 +65,14 @@ export function CreateTaskDialog({ projects, users }: CreateTaskDialogProps) {
 
       if (error) throw error;
 
+      // Log task creation as activity
+      await supabase.from("task_activities").insert({
+        user_id: session.session.user.id,
+        activity_type: 'created',
+        task_id: null,
+        task_title: formData.title.trim(),
+      });
+
       toast.success("Task created successfully!");
       setOpen(false);
       setFormData({
