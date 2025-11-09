@@ -35,7 +35,7 @@ const navItems = [
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Shooting", url: "/shooting", icon: Video },
-  { title: "Users", url: "/users", icon: Users },
+  { title: "Team", url: "/users", icon: Users },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
