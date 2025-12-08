@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { ReactNode } from "react";
+import { ReactNode, useRef } from "react";
 
 interface Column {
   id: string;
@@ -16,11 +16,20 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCardClick, getCardColor }: KanbanBoardProps) {
+  const isDragging = useRef(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+
   const getItemsByStatus = (status: string) => {
     return items.filter((item) => item.status === status);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    isDragging.current = false;
+  };
+
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    isDragging.current = true;
     e.dataTransfer.setData("itemId", itemId);
   };
 
@@ -32,6 +41,18 @@ export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCard
     e.preventDefault();
     const itemId = e.dataTransfer.getData("itemId");
     onStatusChange(itemId, newStatus);
+    isDragging.current = false;
+  };
+
+  const handleDragEnd = () => {
+    isDragging.current = false;
+  };
+
+  const handleCardClick = (e: React.MouseEvent, item: any) => {
+    // Only trigger click if not dragging
+    if (!isDragging.current) {
+      onCardClick?.(item);
+    }
   };
 
   return (
@@ -56,8 +77,10 @@ export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCard
               <Card
                 key={item.id}
                 draggable
+                onMouseDown={handleMouseDown}
                 onDragStart={(e) => handleDragStart(e, item.id)}
-                onClick={() => onCardClick?.(item)}
+                onDragEnd={handleDragEnd}
+                onClick={(e) => handleCardClick(e, item)}
                 className={`cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] ${getCardColor ? getCardColor(item) : ""}`}
               >
                 <CardContent className="p-4">
