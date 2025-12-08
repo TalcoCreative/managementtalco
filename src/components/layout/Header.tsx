@@ -1,18 +1,30 @@
+import { useEffect } from "react";
 import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export function Header() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+      return session.session.user;
+    },
+  });
 
   const { data: tasks } = useQuery({
     queryKey: ["active-tasks"],
@@ -32,6 +44,46 @@ export function Header() {
       return data || [];
     },
   });
+
+  // Realtime subscription for new tasks
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase
+      .channel('task-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'tasks',
+        },
+        (payload) => {
+          const newTask = payload.new as any;
+          
+          // Notify if the task is assigned to the current user
+          if (newTask.assigned_to === currentUser.id) {
+            toast.info(`New task assigned to you: ${newTask.title}`, {
+              duration: 5000,
+            });
+          } else {
+            // Notify all users about new task
+            toast.info(`New task created: ${newTask.title}`, {
+              duration: 3000,
+            });
+          }
+          
+          // Refresh task queries
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, queryClient]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
