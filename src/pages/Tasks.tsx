@@ -68,7 +68,7 @@ export default function Tasks() {
     queryFn: async () => {
       let query = supabase
         .from("tasks")
-        .select("*, projects(title, clients(name)), profiles(full_name)")
+        .select("*, projects(title, clients(name)), profiles:profiles!fk_tasks_assigned_to_profiles(full_name)")
         .order("created_at", { ascending: false });
 
       if (selectedProject !== "all") {
