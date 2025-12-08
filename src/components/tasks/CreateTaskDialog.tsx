@@ -21,10 +21,15 @@ const taskSchema = z.object({
 interface CreateTaskDialogProps {
   projects: any[];
   users: any[];
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function CreateTaskDialog({ projects, users }: CreateTaskDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpenChange }: CreateTaskDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -97,12 +102,14 @@ export function CreateTaskDialog({ projects, users }: CreateTaskDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Task
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
