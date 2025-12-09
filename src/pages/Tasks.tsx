@@ -26,6 +26,8 @@ import {
 const taskColumns = [
   { id: "todo", title: "To Do" },
   { id: "in_progress", title: "In Progress" },
+  { id: "revise", title: "Revise" },
+  { id: "on_hold", title: "On Hold" },
   { id: "done", title: "Done" },
 ];
 
