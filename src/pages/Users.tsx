@@ -54,6 +54,8 @@ export default function Users() {
   });
 
   const isSuperAdmin = userRole === "super_admin";
+  const isHR = userRole === "hr";
+  const canManageUsers = isSuperAdmin || isHR;
 
   const getRoleColor = (role: string) => {
     switch (role) {
