@@ -154,7 +154,8 @@ export default function Tasks() {
     }
   };
 
-  const canCreateTasks = userRole === "super_admin" || userRole === "hr";
+  // All authenticated users can create tasks
+  const canCreateTasks = !!userRole;
 
   const clearFilters = () => {
     setSelectedProject("all");
