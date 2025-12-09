@@ -118,7 +118,7 @@ export default function Users() {
                         <Badge variant="secondary">No role assigned</Badge>
                       )}
                     </div>
-                    {isSuperAdmin && (
+                    {canManageUsers && (
                       <Button
                         variant="ghost"
                         size="icon"
