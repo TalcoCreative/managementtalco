@@ -2,14 +2,12 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, User, Plus, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
+import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
 import { format } from "date-fns";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 
 interface ProjectDetailDialogProps {
@@ -19,7 +17,6 @@ interface ProjectDetailDialogProps {
 }
 
 export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDetailDialogProps) {
-  const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -48,7 +45,7 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
       if (!projectId) return [];
       const { data, error } = await supabase
         .from("tasks")
-        .select("*, profiles(full_name)")
+        .select("*, profiles:profiles!fk_tasks_assigned_to_profiles(full_name)")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -57,21 +54,6 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
     enabled: !!projectId,
   });
 
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return null;
-
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.session.user.id)
-        .single();
-
-      return data?.role;
-    },
-  });
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
     const { error } = await supabase
@@ -88,21 +70,12 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
   };
 
   const getTaskColumns = () => {
-    const isSocmedOrDigital = project?.type?.toLowerCase().includes("socmed") || 
-                              project?.type?.toLowerCase().includes("digital");
-    
-    if (isSocmedOrDigital) {
-      return [
-        { id: "writing", title: "Writing" },
-        { id: "editing", title: "Editing" },
-        { id: "posting", title: "Posting" },
-        { id: "done", title: "Done" },
-      ];
-    }
-    
+    // Project detail hanya menampilkan status untuk review
     return [
       { id: "todo", title: "To Do" },
       { id: "in_progress", title: "In Progress" },
+      { id: "revise", title: "Revise" },
+      { id: "on_hold", title: "On Hold" },
       { id: "done", title: "Done" },
     ];
   };
@@ -174,15 +147,14 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
     const labels: Record<string, string> = {
       todo: "To Do",
       in_progress: "In Progress",
-      writing: "Writing",
-      editing: "Editing",
-      posting: "Posting",
+      revise: "Revise",
+      on_hold: "On Hold",
       done: "Done"
     };
     return labels[status] || status;
   };
 
-  const canManageTasks = userRole === "super_admin" || userRole === "hr";
+  
 
   if (!project) return null;
 
@@ -306,16 +278,13 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
               </Card>
             )}
 
-            {/* Tasks Kanban */}
+            {/* Tasks Overview (Read Only) */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-lg">Tasks</h3>
-                {canManageTasks && (
-                  <Button onClick={() => setCreateTaskDialogOpen(true)} size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Task
-                  </Button>
-                )}
+                <h3 className="font-semibold text-lg">Tasks Overview</h3>
+                <p className="text-sm text-muted-foreground">
+                  Kelola task di halaman Tasks
+                </p>
               </div>
 
               {tasks && tasks.length > 0 ? (
