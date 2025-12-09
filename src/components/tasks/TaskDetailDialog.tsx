@@ -37,11 +37,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         .select(`
           *,
           projects(title, clients(name)),
-          profiles(full_name),
-          created_by_profile:profiles!tasks_created_by_fkey(full_name)
+          profiles:profiles!fk_tasks_assigned_to_profiles(full_name),
+          created_by_profile:profiles!fk_tasks_created_by_profiles(full_name)
         `)
         .eq("id", taskId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -54,7 +54,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       if (!taskId) return [];
       const { data, error } = await supabase
         .from("comments")
-        .select("*, profiles(full_name)")
+        .select("*, profiles:profiles!fk_comments_author_profiles(full_name)")
         .eq("task_id", taskId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -69,7 +69,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       if (!taskId) return [];
       const { data, error } = await supabase
         .from("task_attachments")
-        .select("*, profiles(full_name)")
+        .select("*, profiles:profiles!fk_task_attachments_uploader_profiles(full_name)")
         .eq("task_id", taskId)
         .order("created_at", { ascending: false });
       if (error) throw error;
