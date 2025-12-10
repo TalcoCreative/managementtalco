@@ -24,11 +24,11 @@ import {
 } from "@/components/ui/popover";
 
 const taskColumns = [
-  { id: "todo", title: "To Do" },
+  { id: "pending", title: "Pending" },
   { id: "in_progress", title: "In Progress" },
-  { id: "revise", title: "Revise" },
+  { id: "completed", title: "Completed" },
   { id: "on_hold", title: "On Hold" },
-  { id: "done", title: "Done" },
+  { id: "revise", title: "Revise" },
 ];
 
 export default function Tasks() {
@@ -46,7 +46,7 @@ export default function Tasks() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("id, title")
+        .select("id, title, clients(name)")
         .order("title");
       if (error) throw error;
       return data;

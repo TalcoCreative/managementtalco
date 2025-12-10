@@ -64,7 +64,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         assigned_to: formData.assigned_to || null,
         deadline: formData.deadline || null,
         created_by: session.session.user.id,
-        status: "todo",
+        status: "pending",
         requested_at: new Date().toISOString(),
       });
 
@@ -150,7 +150,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                 <SelectContent>
                   {projects?.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
-                      {project.title}
+                      {project.title} {project.clients && `(${project.clients.name})`}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateClientDialog } from "@/components/clients/CreateClientDialog";
-import { ProjectsKanbanDialog } from "@/components/clients/ProjectsKanbanDialog";
+import { ClientDashboardDialog } from "@/components/clients/ClientDashboardDialog";
 
 export default function Clients() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -114,7 +114,7 @@ export default function Clients() {
       <CreateClientDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
       
       {selectedClient && (
-        <ProjectsKanbanDialog
+        <ClientDashboardDialog
           clientId={selectedClient}
           open={!!selectedClient}
           onOpenChange={(open) => !open && setSelectedClient(null)}
