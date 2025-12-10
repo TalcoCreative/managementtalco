@@ -70,13 +70,12 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
   };
 
   const getTaskColumns = () => {
-    // Project detail hanya menampilkan status untuk review
     return [
-      { id: "todo", title: "To Do" },
+      { id: "pending", title: "Pending" },
       { id: "in_progress", title: "In Progress" },
-      { id: "revise", title: "Revise" },
+      { id: "completed", title: "Completed" },
       { id: "on_hold", title: "On Hold" },
-      { id: "done", title: "Done" },
+      { id: "revise", title: "Revise" },
     ];
   };
 
@@ -106,8 +105,8 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
       }
     });
 
-    const doneCount = byStatus.done || 0;
-    const completionRate = tasks.length > 0 ? (doneCount / tasks.length) * 100 : 0;
+    const completedCount = byStatus.completed || 0;
+    const completionRate = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
     return {
       total: tasks.length,
@@ -145,11 +144,11 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      todo: "To Do",
+      pending: "Pending",
       in_progress: "In Progress",
-      revise: "Revise",
+      completed: "Completed",
       on_hold: "On Hold",
-      done: "Done"
+      revise: "Revise"
     };
     return labels[status] || status;
   };
@@ -238,10 +237,7 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {(taskStats.byStatus.in_progress || 0) + 
-                     (taskStats.byStatus.writing || 0) + 
-                     (taskStats.byStatus.editing || 0) + 
-                     (taskStats.byStatus.posting || 0)}
+                    {taskStats.byStatus.in_progress || 0}
                   </div>
                 </CardContent>
               </Card>
