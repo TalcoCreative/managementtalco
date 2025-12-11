@@ -209,12 +209,11 @@ export default function Tasks() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="todo">To Do</SelectItem>
-                        <SelectItem value="in_progress">In Progress</SelectItem>
-                        <SelectItem value="writing">Writing</SelectItem>
-                        <SelectItem value="editing">Editing</SelectItem>
-                        <SelectItem value="posting">Posting</SelectItem>
-                        <SelectItem value="done">Done</SelectItem>
+                        {taskColumns.map((col) => (
+                          <SelectItem key={col.id} value={col.id}>
+                            {col.title}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -318,6 +317,23 @@ export default function Tasks() {
                     Assigned: {task.profiles.full_name}
                   </p>
                 )}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    value={task.status}
+                    onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {taskColumns.map((col) => (
+                        <SelectItem key={col.id} value={col.id}>
+                          {col.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
           />
