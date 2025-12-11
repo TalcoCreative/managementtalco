@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -5,10 +6,62 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, UserCheck, Briefcase, TrendingUp } from "lucide-react";
-import { format, differenceInHours, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine } from "lucide-react";
+import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
+
+const statusLabels: Record<string, string> = {
+  pending: "Pending",
+  in_progress: "In Progress",
+  completed: "Completed",
+  on_hold: "On Hold",
+  revise: "Revise",
+  todo: "To Do",
+  done: "Done",
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "completed":
+    case "done":
+      return "bg-green-500";
+    case "in_progress":
+      return "bg-blue-500";
+    case "pending":
+    case "todo":
+      return "bg-yellow-500";
+    case "on_hold":
+      return "bg-gray-500";
+    case "revise":
+      return "bg-red-500";
+    default:
+      return "bg-muted";
+  }
+};
 
 export default function HRDashboard() {
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+
+  // Fetch all profiles
+  const { data: profiles } = useQuery({
+    queryKey: ["hr-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch all users with their attendance
   const { data: attendance } = useQuery({
     queryKey: ["hr-attendance"],
@@ -23,29 +76,77 @@ export default function HRDashboard() {
     },
   });
 
-  // Fetch all tasks with user info
+  // Fetch all tasks within date range
   const { data: tasks } = useQuery({
-    queryKey: ["hr-tasks"],
+    queryKey: ["hr-tasks", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
         .select(`
           *,
-          profiles!tasks_assigned_to_fkey(full_name),
-          projects(title)
+          assigned_profile:profiles!fk_tasks_assigned_to_profiles(full_name),
+          created_by_profile:profiles!fk_tasks_created_by_profiles(full_name),
+          projects(title, clients(name))
         `)
+        .gte("created_at", `${startDate}T00:00:00`)
+        .lte("created_at", `${endDate}T23:59:59`)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
   });
 
+  // Fetch tasks for selected user detail view
+  const { data: userTasks } = useQuery({
+    queryKey: ["hr-user-tasks", selectedUser?.id, startDate, endDate],
+    queryFn: async () => {
+      if (!selectedUser?.id) return { assignedToUser: [], createdByUser: [] };
+
+      const [assignedRes, createdRes] = await Promise.all([
+        supabase
+          .from("tasks")
+          .select(`*, projects(title, clients(name)), created_by_profile:profiles!fk_tasks_created_by_profiles(full_name)`)
+          .eq("assigned_to", selectedUser.id)
+          .gte("created_at", `${startDate}T00:00:00`)
+          .lte("created_at", `${endDate}T23:59:59`)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("tasks")
+          .select(`*, projects(title, clients(name)), assigned_profile:profiles!fk_tasks_assigned_to_profiles(full_name)`)
+          .eq("created_by", selectedUser.id)
+          .gte("created_at", `${startDate}T00:00:00`)
+          .lte("created_at", `${endDate}T23:59:59`)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      return {
+        assignedToUser: assignedRes.data || [],
+        createdByUser: createdRes.data || [],
+      };
+    },
+    enabled: !!selectedUser?.id,
+  });
+
+  // Calculate per-user task statistics
+  const userTaskStats = profiles?.map(profile => {
+    const tasksCreated = tasks?.filter(t => t.created_by === profile.id) || [];
+    const tasksAssigned = tasks?.filter(t => t.assigned_to === profile.id) || [];
+    
+    return {
+      ...profile,
+      tasksCreatedCount: tasksCreated.length,
+      tasksAssignedCount: tasksAssigned.length,
+      completedCount: tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length,
+      inProgressCount: tasksAssigned.filter(t => t.status === 'in_progress').length,
+    };
+  }) || [];
+
   // Calculate statistics
   const stats = {
-    totalUsers: new Set(attendance?.map(a => a.user_id)).size || 0,
+    totalUsers: profiles?.length || 0,
     todayAttendance: attendance?.filter(a => a.date === format(new Date(), 'yyyy-MM-dd')).length || 0,
-    activeTasks: tasks?.filter(t => t.status !== 'done').length || 0,
-    completedTasks: tasks?.filter(t => t.status === 'done').length || 0,
+    activeTasks: tasks?.filter(t => t.status !== 'done' && t.status !== 'completed').length || 0,
+    completedTasks: tasks?.filter(t => t.status === 'done' || t.status === 'completed').length || 0,
   };
 
   const calculateWorkHours = (clockIn: string | null, clockOut: string | null) => {
@@ -56,6 +157,11 @@ export default function HRDashboard() {
     return `${hours}h`;
   };
 
+  const openUserDetail = (user: any) => {
+    setSelectedUser(user);
+    setDetailDialogOpen(true);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -63,6 +169,56 @@ export default function HRDashboard() {
           <h1 className="text-3xl font-bold">HR Dashboard</h1>
           <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
         </div>
+
+        {/* Date Range Filter */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Filter Period
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4 items-end">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStartDate(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+                    setEndDate(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+                  }}
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStartDate(format(new Date(), 'yyyy-MM-dd'));
+                    setEndDate(format(new Date(), 'yyyy-MM-dd'));
+                  }}
+                >
+                  Today
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
@@ -88,7 +244,7 @@ export default function HRDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Active Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">Active Tasks (Period)</CardTitle>
               <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -98,7 +254,7 @@ export default function HRDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">Completed (Period)</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -107,107 +263,275 @@ export default function HRDashboard() {
           </Card>
         </div>
 
-        {/* Attendance Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Attendance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Clock In</TableHead>
-                    <TableHead>Clock Out</TableHead>
-                    <TableHead>Work Hours</TableHead>
-                    <TableHead>Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendance?.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">
-                        {record.profiles?.full_name}
-                      </TableCell>
-                      <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
-                      <TableCell>
-                        {record.clock_in ? format(new Date(record.clock_in), 'HH:mm') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {record.clock_out ? format(new Date(record.clock_out), 'HH:mm') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {calculateWorkHours(record.clock_in, record.clock_out)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {record.notes || '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Task Overview per Person</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+            <TabsTrigger value="all-tasks">All Tasks</TabsTrigger>
+          </TabsList>
 
-        {/* Task Overview by User */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Task Overview by Employee</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Task</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Requested</TableHead>
-                    <TableHead>Deadline</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tasks?.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell className="font-medium">{task.title}</TableCell>
-                      <TableCell>{task.profiles?.full_name || 'Unassigned'}</TableCell>
-                      <TableCell>{task.projects?.title}</TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          task.status === 'done' ? 'default' :
-                          task.status === 'in_progress' ? 'secondary' : 'outline'
-                        }>
-                          {task.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          task.priority === 'high' ? 'destructive' :
-                          task.priority === 'medium' ? 'default' : 'outline'
-                        }>
-                          {task.priority}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {task.requested_at ? format(new Date(task.requested_at), 'PPp') : '-'}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {task.deadline ? format(new Date(task.deadline), 'PPP') : '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+          {/* Task Overview per Person */}
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>Task Statistics per Employee ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead className="text-center">Tasks Created</TableHead>
+                        <TableHead className="text-center">Tasks Assigned</TableHead>
+                        <TableHead className="text-center">In Progress</TableHead>
+                        <TableHead className="text-center">Completed</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userTaskStats.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.full_name}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-primary/10">
+                              <ArrowUpFromLine className="h-3 w-3 mr-1" />
+                              {user.tasksCreatedCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-secondary/50">
+                              <ArrowDownToLine className="h-3 w-3 mr-1" />
+                              {user.tasksAssignedCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-blue-500">{user.inProgressCount}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-green-500">{user.completedCount}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openUserDetail(user)}
+                            >
+                              Detail
+                              <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Attendance</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Clock In</TableHead>
+                        <TableHead>Clock Out</TableHead>
+                        <TableHead>Work Hours</TableHead>
+                        <TableHead>Notes</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attendance?.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell className="font-medium">
+                            {record.profiles?.full_name}
+                          </TableCell>
+                          <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
+                          <TableCell>
+                            {record.clock_in ? format(new Date(record.clock_in), 'HH:mm') : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.clock_out ? format(new Date(record.clock_out), 'HH:mm') : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {calculateWorkHours(record.clock_in, record.clock_out)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {record.notes || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* All Tasks Tab */}
+          <TabsContent value="all-tasks">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Tasks in Period</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Task</TableHead>
+                        <TableHead>Created By</TableHead>
+                        <TableHead>Assigned To</TableHead>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Priority</TableHead>
+                        <TableHead>Requested</TableHead>
+                        <TableHead>Deadline</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tasks?.map((task) => (
+                        <TableRow key={task.id}>
+                          <TableCell className="font-medium">{task.title}</TableCell>
+                          <TableCell>{task.created_by_profile?.full_name || '-'}</TableCell>
+                          <TableCell>{task.assigned_profile?.full_name || 'Unassigned'}</TableCell>
+                          <TableCell>
+                            <span className="text-xs text-muted-foreground">{task.projects?.clients?.name}</span>
+                            <br />
+                            {task.projects?.title}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(task.status)}>
+                              {statusLabels[task.status] || task.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              task.priority === 'high' ? 'destructive' :
+                              task.priority === 'medium' ? 'default' : 'outline'
+                            }>
+                              {task.priority}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {task.requested_at ? format(new Date(task.requested_at), 'dd MMM yyyy') : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {task.deadline ? format(new Date(task.deadline), 'dd MMM yyyy') : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* User Detail Dialog */}
+        <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Task Detail: {selectedUser?.full_name}
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+
+            <Tabs defaultValue="assigned-to" className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="assigned-to">
+                  <ArrowDownToLine className="h-4 w-4 mr-2" />
+                  Tasks Assigned to {selectedUser?.full_name} ({userTasks?.assignedToUser.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="created-by">
+                  <ArrowUpFromLine className="h-4 w-4 mr-2" />
+                  Tasks Created by {selectedUser?.full_name} ({userTasks?.createdByUser.length || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="assigned-to" className="mt-4">
+                <ScrollArea className="h-[400px]">
+                  {userTasks?.assignedToUser.length ? (
+                    <div className="space-y-3">
+                      {userTasks.assignedToUser.map((task: any) => (
+                        <div key={task.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium">{task.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {task.projects?.clients?.name} - {task.projects?.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                From: {task.created_by_profile?.full_name || "Unknown"}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(task.status)}>
+                              {statusLabels[task.status] || task.status}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>Requested: {task.requested_at ? format(new Date(task.requested_at), 'dd MMM yyyy') : '-'}</span>
+                            <span>Deadline: {task.deadline ? format(new Date(task.deadline), 'dd MMM yyyy') : '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">No tasks assigned to this user in this period</p>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="created-by" className="mt-4">
+                <ScrollArea className="h-[400px]">
+                  {userTasks?.createdByUser.length ? (
+                    <div className="space-y-3">
+                      {userTasks.createdByUser.map((task: any) => (
+                        <div key={task.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="font-medium">{task.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {task.projects?.clients?.name} - {task.projects?.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Assigned to: {task.assigned_profile?.full_name || "Unassigned"}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(task.status)}>
+                              {statusLabels[task.status] || task.status}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>Requested: {task.requested_at ? format(new Date(task.requested_at), 'dd MMM yyyy') : '-'}</span>
+                            <span>Deadline: {task.deadline ? format(new Date(task.deadline), 'dd MMM yyyy') : '-'}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">No tasks created by this user in this period</p>
+                  )}
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
