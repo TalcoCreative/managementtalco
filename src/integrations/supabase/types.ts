@@ -145,21 +145,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          avatar_url: string | null
+          contract_end: string | null
+          contract_start: string | null
           created_at: string | null
+          email: string | null
           full_name: string
           id: string
+          ktp_number: string | null
+          phone: string | null
+          salary: number | null
           user_id: string
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
           created_at?: string | null
+          email?: string | null
           full_name: string
           id: string
+          ktp_number?: string | null
+          phone?: string | null
+          salary?: number | null
           user_id: string
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string
           id?: string
+          ktp_number?: string | null
+          phone?: string | null
+          salary?: number | null
           user_id?: string
         }
         Relationships: []

@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, User, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { EditUserRoleDialog } from "@/components/users/EditUserRoleDialog";
+import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
 
 export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; role?: string } | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["all-users"],
@@ -62,12 +65,31 @@ export default function Users() {
       case "super_admin":
         return "bg-primary";
       case "hr":
-        return "bg-status-progress";
+        return "bg-blue-500";
       case "socmed_admin":
-        return "bg-status-pending";
+        return "bg-yellow-500";
+      case "graphic_designer":
+        return "bg-purple-500";
+      case "copywriter":
+        return "bg-green-500";
+      case "video_editor":
+        return "bg-red-500";
       default:
         return "bg-muted";
     }
+  };
+
+  const handleCardClick = (user: any) => {
+    if (canManageUsers) {
+      setSelectedUser(user);
+      setDetailDialogOpen(true);
+    }
+  };
+
+  const handleEditRole = (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    setSelectedUser(user);
+    setEditDialogOpen(true);
   };
 
   return (
@@ -94,15 +116,22 @@ export default function Users() {
         ) : users && users.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {users.map((user) => (
-              <Card key={user.id} className="hover:shadow-lg transition-shadow">
+              <Card 
+                key={user.id} 
+                className={`hover:shadow-lg transition-all ${canManageUsers ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                onClick={() => handleCardClick(user)}
+              >
                 <CardHeader>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-gradient-primary p-2">
-                      <User className="h-5 w-5 text-primary-foreground" />
-                    </div>
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                        {user.full_name?.charAt(0) || "?"}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1">
                       <CardTitle className="text-lg">{user.full_name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{user.user_id}</p>
+                      <p className="text-sm text-muted-foreground">{user.email || user.user_id}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -111,7 +140,7 @@ export default function Users() {
                     <div className="flex flex-wrap gap-2">
                       {user.user_roles?.map((ur: any, index: number) => (
                         <Badge key={index} className={getRoleColor(ur.role)}>
-                          {ur.role.replace("_", " ")}
+                          {ur.role.replace(/_/g, " ")}
                         </Badge>
                       ))}
                       {(!user.user_roles || user.user_roles.length === 0) && (
@@ -122,19 +151,15 @@ export default function Users() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          setSelectedUser({
-                            id: user.id,
-                            name: user.full_name,
-                            role: user.user_roles?.[0]?.role,
-                          });
-                          setEditDialogOpen(true);
-                        }}
+                        onClick={(e) => handleEditRole(e, user)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
+                  {user.phone && (
+                    <p className="text-xs text-muted-foreground mt-2">{user.phone}</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -150,14 +175,23 @@ export default function Users() {
       </div>
 
       <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      
       {selectedUser && (
-        <EditUserRoleDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          userId={selectedUser.id}
-          userName={selectedUser.name}
-          currentRole={selectedUser.role}
-        />
+        <>
+          <EditUserRoleDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            userId={selectedUser.id}
+            userName={selectedUser.full_name}
+            currentRole={selectedUser.user_roles?.[0]?.role}
+          />
+          <EmployeeDetailDialog
+            open={detailDialogOpen}
+            onOpenChange={setDetailDialogOpen}
+            employee={selectedUser}
+            canEdit={canManageUsers}
+          />
+        </>
       )}
     </AppLayout>
   );
