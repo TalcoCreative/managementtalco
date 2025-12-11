@@ -467,6 +467,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          link: string | null
           priority: string | null
           project_id: string
           requested_at: string | null
@@ -481,6 +482,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          link?: string | null
           priority?: string | null
           project_id: string
           requested_at?: string | null
@@ -495,6 +497,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          link?: string | null
           priority?: string | null
           project_id?: string
           requested_at?: string | null
