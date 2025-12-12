@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { z } from "zod";
 
 const shootingSchema = z.object({
@@ -20,6 +20,12 @@ const shootingSchema = z.object({
   location: z.string().trim().max(500).optional(),
   notes: z.string().trim().max(1000).optional(),
 });
+
+interface Freelancer {
+  name: string;
+  cost: number;
+  role: string;
+}
 
 export function CreateShootingDialog() {
   const [open, setOpen] = useState(false);
@@ -35,9 +41,10 @@ export function CreateShootingDialog() {
   });
   const [selectedCampers, setSelectedCampers] = useState<string[]>([]);
   const [selectedAdditional, setSelectedAdditional] = useState<string[]>([]);
+  const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
+  const [newFreelancer, setNewFreelancer] = useState<Freelancer>({ name: "", cost: 0, role: "camper" });
   const queryClient = useQueryClient();
 
-  // Fetch users for crew selection
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
@@ -50,6 +57,19 @@ export function CreateShootingDialog() {
     },
   });
 
+  const addFreelancer = () => {
+    if (!newFreelancer.name.trim()) {
+      toast.error("Freelancer name is required");
+      return;
+    }
+    setFreelancers([...freelancers, { ...newFreelancer, name: newFreelancer.name.trim() }]);
+    setNewFreelancer({ name: "", cost: 0, role: "camper" });
+  };
+
+  const removeFreelancer = (index: number) => {
+    setFreelancers(freelancers.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -60,7 +80,6 @@ export function CreateShootingDialog() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Create shooting schedule
       const { data: shooting, error: shootingError } = await supabase
         .from("shooting_schedules")
         .insert({
@@ -79,12 +98,13 @@ export function CreateShootingDialog() {
 
       if (shootingError) throw shootingError;
 
-      // Add campers
+      // Add user campers
       if (selectedCampers.length > 0) {
         const camperRecords = selectedCampers.map(userId => ({
           shooting_id: shooting.id,
           user_id: userId,
           role: 'camper',
+          is_freelance: false,
         }));
         
         const { error: campersError } = await supabase
@@ -94,12 +114,13 @@ export function CreateShootingDialog() {
         if (campersError) throw campersError;
       }
 
-      // Add additional crew
+      // Add user additional crew
       if (selectedAdditional.length > 0) {
         const additionalRecords = selectedAdditional.map(userId => ({
           shooting_id: shooting.id,
           user_id: userId,
           role: 'additional',
+          is_freelance: false,
         }));
         
         const { error: additionalError } = await supabase
@@ -107,6 +128,42 @@ export function CreateShootingDialog() {
           .insert(additionalRecords);
         
         if (additionalError) throw additionalError;
+      }
+
+      // Add freelancers
+      if (freelancers.length > 0) {
+        const freelancerRecords = freelancers.map(f => ({
+          shooting_id: shooting.id,
+          user_id: null,
+          role: f.role,
+          is_freelance: true,
+          freelance_name: f.name,
+          freelance_cost: f.cost,
+        }));
+        
+        const { error: freelancerError } = await supabase
+          .from("shooting_crew")
+          .insert(freelancerRecords);
+        
+        if (freelancerError) throw freelancerError;
+      }
+
+      // Create notifications for all selected users
+      const notifyUsers = new Set([
+        ...selectedCampers,
+        ...selectedAdditional,
+        formData.director,
+        formData.runner,
+      ].filter(Boolean));
+
+      if (notifyUsers.size > 0) {
+        const notifications = Array.from(notifyUsers).map(userId => ({
+          shooting_id: shooting.id,
+          user_id: userId,
+          status: 'pending',
+        }));
+
+        await supabase.from("shooting_notifications").insert(notifications);
       }
 
       toast.success("Shooting schedule requested successfully!");
@@ -122,8 +179,10 @@ export function CreateShootingDialog() {
       });
       setSelectedCampers([]);
       setSelectedAdditional([]);
+      setFreelancers([]);
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-crew"] });
+      queryClient.invalidateQueries({ queryKey: ["shooting-notifications"] });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -280,6 +339,57 @@ export function CreateShootingDialog() {
                       </label>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Freelancers Section */}
+              <div className="space-y-2">
+                <Label>Freelancers (Optional)</Label>
+                <div className="border rounded-md p-4 space-y-3">
+                  {freelancers.length > 0 && (
+                    <div className="space-y-2">
+                      {freelancers.map((f, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <span className="flex-1 text-sm">{f.name}</span>
+                          <span className="text-sm text-muted-foreground capitalize">{f.role}</span>
+                          <span className="text-sm font-medium">Rp {f.cost.toLocaleString()}</span>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeFreelancer(index)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2">
+                    <Input
+                      placeholder="Name"
+                      value={newFreelancer.name}
+                      onChange={(e) => setNewFreelancer({ ...newFreelancer, name: e.target.value })}
+                      className="col-span-2"
+                    />
+                    <Select
+                      value={newFreelancer.role}
+                      onValueChange={(value) => setNewFreelancer({ ...newFreelancer, role: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="camper">Camper</SelectItem>
+                        <SelectItem value="additional">Additional</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="Cost"
+                      value={newFreelancer.cost || ""}
+                      onChange={(e) => setNewFreelancer({ ...newFreelancer, cost: Number(e.target.value) })}
+                    />
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addFreelancer}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Freelancer
+                  </Button>
                 </div>
               </div>
 
