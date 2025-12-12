@@ -296,24 +296,33 @@ export type Database = {
       shooting_crew: {
         Row: {
           created_at: string | null
+          freelance_cost: number | null
+          freelance_name: string | null
           id: string
+          is_freelance: boolean | null
           role: string
           shooting_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
+          freelance_cost?: number | null
+          freelance_name?: string | null
           id?: string
+          is_freelance?: boolean | null
           role: string
           shooting_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
+          freelance_cost?: number | null
+          freelance_name?: string | null
           id?: string
+          is_freelance?: boolean | null
           role?: string
           shooting_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -325,6 +334,41 @@ export type Database = {
           },
           {
             foreignKeyName: "shooting_crew_shooting_id_fkey"
+            columns: ["shooting_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shooting_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          responded_at: string | null
+          shooting_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          shooting_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          responded_at?: string | null
+          shooting_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shooting_notifications_shooting_id_fkey"
             columns: ["shooting_id"]
             isOneToOne: false
             referencedRelation: "shooting_schedules"

@@ -5,16 +5,18 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, MapPin, Users, Check, X } from "lucide-react";
-import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar } from "@/components/ui/calendar";
+import { Plus, MapPin, Users, Check, X, DollarSign } from "lucide-react";
+import { format, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { CreateShootingDialog } from "@/components/shooting/CreateShootingDialog";
+import { cn } from "@/lib/utils";
 
 export default function ShootingSchedule() {
-  const [selectedShooting, setSelectedShooting] = useState<any>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const queryClient = useQueryClient();
 
-  // Fetch user role
   const { data: userRole } = useQuery({
     queryKey: ["user-role"],
     queryFn: async () => {
@@ -31,7 +33,6 @@ export default function ShootingSchedule() {
     },
   });
 
-  // Fetch shooting schedules
   const { data: shootings } = useQuery({
     queryKey: ["shooting-schedules"],
     queryFn: async () => {
@@ -39,9 +40,9 @@ export default function ShootingSchedule() {
         .from("shooting_schedules")
         .select(`
           *,
-          requested_by_profile:profiles!shooting_schedules_requested_by_fkey(full_name),
-          runner_profile:profiles!shooting_schedules_runner_fkey(full_name),
-          director_profile:profiles!shooting_schedules_director_fkey(full_name)
+          requested_by_profile:profiles!fk_shooting_requested_by_profiles(full_name),
+          runner_profile:profiles!fk_shooting_runner_profiles(full_name),
+          director_profile:profiles!fk_shooting_director_profiles(full_name)
         `)
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
@@ -49,7 +50,6 @@ export default function ShootingSchedule() {
     },
   });
 
-  // Fetch crew for each shooting
   const { data: allCrew } = useQuery({
     queryKey: ["shooting-crew"],
     queryFn: async () => {
@@ -111,6 +111,141 @@ export default function ShootingSchedule() {
     return allCrew?.filter(c => c.shooting_id === shootingId) || [];
   };
 
+  // Get dates that have shootings for calendar highlighting
+  const shootingDates = shootings?.map(s => new Date(s.scheduled_date)) || [];
+  
+  // Filter shootings for selected date
+  const selectedDateShootings = selectedDate 
+    ? shootings?.filter(s => isSameDay(new Date(s.scheduled_date), selectedDate))
+    : [];
+
+  const renderShootingCard = (shooting: any) => {
+    const crew = getCrew(shooting.id);
+    const campers = crew.filter(c => c.role === 'camper' && !c.is_freelance);
+    const additional = crew.filter(c => c.role === 'additional' && !c.is_freelance);
+    const freelancers = crew.filter(c => c.is_freelance);
+    const totalFreelanceCost = freelancers.reduce((sum, f) => sum + (f.freelance_cost || 0), 0);
+
+    return (
+      <Card key={shooting.id}>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>{shooting.title}</CardTitle>
+              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                <span>{format(new Date(shooting.scheduled_date), 'PPP')} at {shooting.scheduled_time}</span>
+                {shooting.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {shooting.location}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Badge className={getStatusColor(shooting.status)}>
+              {shooting.status}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Requested by: </span>
+                <span className="font-medium">{shooting.requested_by_profile?.full_name}</span>
+              </div>
+              {shooting.director_profile && (
+                <div>
+                  <span className="text-muted-foreground">Director: </span>
+                  <span className="font-medium">{shooting.director_profile.full_name}</span>
+                </div>
+              )}
+              {shooting.runner_profile && (
+                <div>
+                  <span className="text-muted-foreground">Runner: </span>
+                  <span className="font-medium">{shooting.runner_profile.full_name}</span>
+                </div>
+              )}
+            </div>
+
+            {campers.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Campers:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {campers.map(c => (
+                    <Badge key={c.id} variant="outline">{c.profiles?.full_name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {additional.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Additional Crew:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {additional.map(c => (
+                    <Badge key={c.id} variant="outline">{c.profiles?.full_name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {freelancers.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Freelancers:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {freelancers.map(f => (
+                    <Badge key={f.id} variant="secondary">
+                      {f.freelance_name} ({f.role}) - Rp {(f.freelance_cost || 0).toLocaleString()}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-sm font-medium mt-2">
+                  Total Freelance Cost: Rp {totalFreelanceCost.toLocaleString()}
+                </p>
+              </div>
+            )}
+
+            {shooting.notes && (
+              <p className="text-sm text-muted-foreground">{shooting.notes}</p>
+            )}
+
+            {canApprove && shooting.status === 'pending' && (
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleApprove(shooting.id)}
+                  className="gap-1"
+                >
+                  <Check className="h-4 w-4" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleReject(shooting.id)}
+                  className="gap-1"
+                >
+                  <X className="h-4 w-4" />
+                  Reject
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -122,116 +257,58 @@ export default function ShootingSchedule() {
           <CreateShootingDialog />
         </div>
 
-        <div className="grid gap-4">
-          {shootings?.map((shooting) => {
-            const crew = getCrew(shooting.id);
-            const campers = crew.filter(c => c.role === 'camper');
-            const additional = crew.filter(c => c.role === 'additional');
+        <Tabs defaultValue="calendar" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+            <TabsTrigger value="list">List View</TabsTrigger>
+          </TabsList>
 
-            return (
-              <Card key={shooting.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle>{shooting.title}</CardTitle>
-                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(shooting.scheduled_date), 'PPP')} at {shooting.scheduled_time}
-                        </div>
-                        {shooting.location && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {shooting.location}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Badge className={getStatusColor(shooting.status)}>
-                      {shooting.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Requested by: </span>
-                        <span className="font-medium">{shooting.requested_by_profile?.full_name}</span>
-                      </div>
-                      {shooting.director_profile && (
-                        <div>
-                          <span className="text-muted-foreground">Director: </span>
-                          <span className="font-medium">{shooting.director_profile.full_name}</span>
-                        </div>
-                      )}
-                      {shooting.runner_profile && (
-                        <div>
-                          <span className="text-muted-foreground">Runner: </span>
-                          <span className="font-medium">{shooting.runner_profile.full_name}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {campers.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Campers:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {campers.map(c => (
-                            <Badge key={c.id} variant="outline">{c.profiles?.full_name}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {additional.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Additional Crew:</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {additional.map(c => (
-                            <Badge key={c.id} variant="outline">{c.profiles?.full_name}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {shooting.notes && (
-                      <p className="text-sm text-muted-foreground">{shooting.notes}</p>
-                    )}
-
-                    {canApprove && shooting.status === 'pending' && (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(shooting.id)}
-                          className="gap-1"
-                        >
-                          <Check className="h-4 w-4" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleReject(shooting.id)}
-                          className="gap-1"
-                        >
-                          <X className="h-4 w-4" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+          <TabsContent value="calendar" className="space-y-4">
+            <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
+              <Card>
+                <CardContent className="p-4">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    className="pointer-events-auto"
+                    modifiers={{
+                      hasShooting: shootingDates,
+                    }}
+                    modifiersStyles={{
+                      hasShooting: {
+                        backgroundColor: "hsl(var(--primary))",
+                        color: "hsl(var(--primary-foreground))",
+                        borderRadius: "50%",
+                      },
+                    }}
+                  />
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold">
+                  {selectedDate ? format(selectedDate, 'PPP') : 'Select a date'}
+                </h2>
+                {selectedDateShootings && selectedDateShootings.length > 0 ? (
+                  <div className="space-y-4">
+                    {selectedDateShootings.map(renderShootingCard)}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="py-8 text-center text-muted-foreground">
+                      No shootings scheduled for this date
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="list" className="space-y-4">
+            {shootings?.map(renderShootingCard)}
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

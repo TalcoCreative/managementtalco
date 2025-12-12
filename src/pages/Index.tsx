@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClockInOut } from "@/components/attendance/ClockInOut";
+import { ShootingNotifications } from "@/components/shooting/ShootingNotifications";
 import { Badge } from "@/components/ui/badge";
 import { Users, Briefcase, FolderKanban, Calendar, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
@@ -118,6 +119,8 @@ export default function Index() {
         </div>
 
         <ClockInOut />
+
+        <ShootingNotifications />
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
