@@ -106,8 +106,8 @@ export function AppSidebar() {
       <SidebarContent>
         <div className="px-4 py-6">
           {!isCollapsed && (
-            <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              ProjectHub
+            <h1 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Talco Management System
             </h1>
           )}
         </div>
