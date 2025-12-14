@@ -210,7 +210,7 @@ export function FinancePayroll() {
         .insert({
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
-          sub_type: "sdm",
+          sub_type: "payroll",
           sub_category: "gaji_upah",
           amount: payroll.amount,
           source: "payroll",
