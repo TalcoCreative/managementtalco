@@ -27,10 +27,9 @@ const REIMBURSEMENT_CATEGORIES = [
 
 const REQUEST_CATEGORIES = [
   { value: "training", label: "Pelatihan / Training" },
-  { value: "certification", label: "Sertifikasi" },
   { value: "equipment", label: "Equipment / Peralatan" },
   { value: "software", label: "Software / Tools" },
-  { value: "travel", label: "Perjalanan Dinas" },
+  { value: "transport", label: "Transport / Perjalanan" },
   { value: "event", label: "Event / Seminar" },
   { value: "other", label: "Lainnya" },
 ];
