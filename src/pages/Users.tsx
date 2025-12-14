@@ -4,18 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User, Edit, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Plus, User, Edit, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { AddUserRoleDialog } from "@/components/users/AddUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
+import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 import { format } from "date-fns";
 
 export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -159,6 +161,12 @@ export default function Users() {
     setRoleDialogOpen(true);
   };
 
+  const handleDeleteUser = (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -225,14 +233,25 @@ export default function Users() {
                         )}
                       </div>
                       {canManageUsers && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleEditRole(e, user)}
-                          title="Manage Roles"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleEditRole(e, user)}
+                            title="Manage Roles"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDeleteUser(e, user)}
+                            title="Delete User"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                     {user.phone && (
@@ -269,6 +288,12 @@ export default function Users() {
             onOpenChange={setDetailDialogOpen}
             employee={selectedUser}
             canEdit={canManageUsers}
+          />
+          <DeleteUserDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            userId={selectedUser.id}
+            userName={selectedUser.full_name}
           />
         </>
       )}
