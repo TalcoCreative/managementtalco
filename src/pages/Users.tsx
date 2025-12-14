@@ -107,6 +107,18 @@ export default function Users() {
         return "bg-green-500";
       case "video_editor":
         return "bg-red-500";
+      case "finance":
+        return "bg-emerald-500";
+      case "accounting":
+        return "bg-cyan-500";
+      case "marketing":
+        return "bg-orange-500";
+      case "photographer":
+        return "bg-pink-500";
+      case "director":
+        return "bg-indigo-500";
+      case "project_manager":
+        return "bg-teal-500";
       default:
         return "bg-muted";
     }
