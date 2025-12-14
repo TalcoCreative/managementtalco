@@ -8,11 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Search, BookOpen, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { 
+  FINANCE_CATEGORIES, 
+  getMainCategoryLabel, 
+  getSubCategoryLabel,
+  getAllSubCategories 
+} from "@/lib/finance-categories";
 
 export function FinanceLedger() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [subTypeFilter, setSubTypeFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
 
   const { data: ledgerEntries, isLoading } = useQuery({
     queryKey: ["finance-ledger"],
@@ -34,9 +41,10 @@ export function FinanceLedger() {
       entry.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = typeFilter === "all" || entry.type === typeFilter;
-    const matchesSubType = subTypeFilter === "all" || entry.sub_type === subTypeFilter;
+    const matchesCategory = categoryFilter === "all" || entry.sub_type === categoryFilter;
+    const matchesSubCategory = subCategoryFilter === "all" || entry.sub_category === subCategoryFilter;
 
-    return matchesSearch && matchesType && matchesSubType;
+    return matchesSearch && matchesType && matchesCategory && matchesSubCategory;
   });
 
   const formatCurrency = (value: number) => {
@@ -51,17 +59,6 @@ export function FinanceLedger() {
     return type === "income" ? "bg-green-500" : "bg-destructive";
   };
 
-  const getSubTypeLabel = (subType: string) => {
-    const labels: Record<string, string> = {
-      payroll: "Payroll",
-      reimburse: "Reimburse",
-      operational: "Operational",
-      project: "Project",
-      other: "Other"
-    };
-    return labels[subType] || subType;
-  };
-
   const getSourceLabel = (source: string) => {
     const labels: Record<string, string> = {
       payroll: "Payroll",
@@ -73,6 +70,8 @@ export function FinanceLedger() {
     return labels[source] || source;
   };
 
+  const allSubCategories = getAllSubCategories();
+
   return (
     <Card>
       <CardHeader>
@@ -83,18 +82,18 @@ export function FinanceLedger() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="relative col-span-2 md:col-span-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by notes, project, or client..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger>
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -103,17 +102,29 @@ export function FinanceLedger() {
               <SelectItem value="expense">Expense</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={subTypeFilter} onValueChange={setSubTypeFilter}>
-            <SelectTrigger className="w-[150px]">
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setSubCategoryFilter("all"); }}>
+            <SelectTrigger>
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="payroll">Payroll</SelectItem>
-              <SelectItem value="reimburse">Reimburse</SelectItem>
-              <SelectItem value="operational">Operational</SelectItem>
-              <SelectItem value="project">Project</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              {FINANCE_CATEGORIES.map(cat => (
+                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={subCategoryFilter} onValueChange={setSubCategoryFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sub-Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sub-Categories</SelectItem>
+              {(categoryFilter === "all" 
+                ? allSubCategories 
+                : FINANCE_CATEGORIES.find(c => c.value === categoryFilter)?.subCategories || []
+              ).map(sub => (
+                <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -154,7 +165,14 @@ export function FinanceLedger() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getSubTypeLabel(entry.sub_type)}</Badge>
+                      <div className="space-y-1">
+                        <Badge variant="outline">{getMainCategoryLabel(entry.sub_type)}</Badge>
+                        {entry.sub_category && (
+                          <div className="text-xs text-muted-foreground">
+                            {getSubCategoryLabel(entry.sub_type, entry.sub_category)}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
