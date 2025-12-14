@@ -8,13 +8,13 @@ import { Plus, User, Edit, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
-import { EditUserRoleDialog } from "@/components/users/EditUserRoleDialog";
+import { AddUserRoleDialog } from "@/components/users/AddUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
 import { format } from "date-fns";
 
 export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
@@ -51,6 +51,22 @@ export default function Users() {
         .from("attendance")
         .select("user_id, clock_in, clock_out")
         .eq("date", today);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch approved leaves for today
+  const { data: todayLeaves } = useQuery({
+    queryKey: ["today-leaves", today],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select("user_id, leave_type")
+        .eq("status", "approved")
+        .lte("start_date", today)
+        .gte("end_date", today);
       
       if (error) throw error;
       return data || [];
@@ -97,6 +113,14 @@ export default function Users() {
   };
 
   const getAttendanceStatus = (userId: string) => {
+    // Check for approved leave first
+    const leave = todayLeaves?.find(l => l.user_id === userId);
+    if (leave) {
+      const leaveLabel = leave.leave_type === 'sakit' ? 'Sakit' : 
+                        leave.leave_type === 'cuti' ? 'Cuti' : 'Izin';
+      return { status: "on_leave", label: leaveLabel, icon: XCircle, color: "text-blue-500" };
+    }
+
     const attendance = todayAttendance?.find(a => a.user_id === userId);
     if (!attendance) {
       return { status: "not_clocked", label: "Belum Absen", icon: XCircle, color: "text-muted-foreground" };
@@ -120,7 +144,7 @@ export default function Users() {
   const handleEditRole = (e: React.MouseEvent, user: any) => {
     e.stopPropagation();
     setSelectedUser(user);
-    setEditDialogOpen(true);
+    setRoleDialogOpen(true);
   };
 
   return (
@@ -193,7 +217,7 @@ export default function Users() {
                           variant="ghost"
                           size="icon"
                           onClick={(e) => handleEditRole(e, user)}
-                          title="Edit Role"
+                          title="Manage Roles"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -221,12 +245,12 @@ export default function Users() {
       
       {selectedUser && (
         <>
-          <EditUserRoleDialog
-            open={editDialogOpen}
-            onOpenChange={setEditDialogOpen}
+          <AddUserRoleDialog
+            open={roleDialogOpen}
+            onOpenChange={setRoleDialogOpen}
             userId={selectedUser.id}
             userName={selectedUser.full_name}
-            currentRole={selectedUser.user_roles?.[0]?.role}
+            currentRoles={selectedUser.user_roles?.map((ur: any) => ur.role) || []}
           />
           <EmployeeDetailDialog
             open={detailDialogOpen}

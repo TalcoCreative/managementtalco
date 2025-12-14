@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Clock, LogIn, LogOut, Camera, CheckCircle2 } from "lucide-react";
+import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff } from "lucide-react";
 import { format } from "date-fns";
 
 export function ClockInOut() {
@@ -20,6 +20,29 @@ export function ClockInOut() {
   const streamRef = useRef<MediaStream | null>(null);
   const queryClient = useQueryClient();
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  // Check if user has approved leave today
+  const { data: approvedLeave } = useQuery({
+    queryKey: ["approved-leave-today"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select("*")
+        .eq("user_id", session.session.user.id)
+        .eq("status", "approved")
+        .lte("start_date", today)
+        .gte("end_date", today)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
   // Get today's attendance record
   const { data: todayAttendance, isLoading } = useQuery({
     queryKey: ["today-attendance"],
@@ -27,7 +50,6 @@ export function ClockInOut() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return null;
 
-      const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from("attendance")
         .select("*")
@@ -47,7 +69,6 @@ export function ClockInOut() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return [];
 
-      const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from("tasks")
         .select("*, projects(title)")
@@ -67,7 +88,6 @@ export function ClockInOut() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return [];
 
-      const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from("tasks")
         .select("*, projects(title)")
@@ -138,7 +158,6 @@ export function ClockInOut() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const today = format(new Date(), 'yyyy-MM-dd');
       const now = new Date().toISOString();
 
       const { error } = await supabase.from("attendance").insert({
@@ -205,6 +224,34 @@ export function ClockInOut() {
   };
 
   const isClockedIn = todayAttendance?.clock_in && !todayAttendance?.clock_out;
+  const hasApprovedLeave = !!approvedLeave;
+
+  // If user has approved leave today, show leave notice
+  if (hasApprovedLeave) {
+    const leaveTypeLabel = approvedLeave.leave_type === 'sakit' ? 'Sakit' : 
+                          approvedLeave.leave_type === 'cuti' ? 'Cuti' : 'Izin';
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarOff className="h-5 w-5" />
+            Today's Attendance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
+            <CalendarOff className="h-12 w-12 text-blue-500" />
+            <div>
+              <p className="font-medium text-lg">You're on {leaveTypeLabel} today</p>
+              <p className="text-sm text-muted-foreground">
+                Your leave has been approved. No need to clock in.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
