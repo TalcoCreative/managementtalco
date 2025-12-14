@@ -62,6 +62,8 @@ export function LeaveApprovalDialog({ open, onOpenChange, request }: LeaveApprov
       queryClient.invalidateQueries({ queryKey: ["pending-leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["all-leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["approved-leave-today"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-pending-leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-all-leave-requests"] });
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || "Failed to approve request");
@@ -97,6 +99,8 @@ export function LeaveApprovalDialog({ open, onOpenChange, request }: LeaveApprov
       queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["pending-leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["all-leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-pending-leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-all-leave-requests"] });
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || "Failed to reject request");

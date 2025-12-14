@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2 } from "lucide-react";
+import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -49,6 +51,9 @@ export default function HRDashboard() {
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
+  const [selectedLeaveRequest, setSelectedLeaveRequest] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   // Fetch all profiles
   const { data: profiles } = useQuery({
@@ -118,6 +123,40 @@ export default function HRDashboard() {
     },
   });
 
+  // Fetch pending leave requests
+  const { data: pendingLeaveRequests } = useQuery({
+    queryKey: ["hr-pending-leave-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select(`
+          *,
+          profiles:user_id (full_name, avatar_url)
+        `)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch all leave requests
+  const { data: allLeaveRequests } = useQuery({
+    queryKey: ["hr-all-leave-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select(`
+          *,
+          profiles:user_id (full_name, avatar_url),
+          approver:approved_by (full_name)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+  });
   // Fetch tasks for selected user detail view
   const { data: userTasks } = useQuery({
     queryKey: ["hr-user-tasks", selectedUser?.id, startDate, endDate],
@@ -184,6 +223,34 @@ export default function HRDashboard() {
     setDetailDialogOpen(true);
   };
 
+  const handleLeaveApprovalClick = (request: any) => {
+    setSelectedLeaveRequest(request);
+    setApprovalDialogOpen(true);
+  };
+
+  const getLeaveTypeBadge = (type: string) => {
+    switch (type) {
+      case "sakit":
+        return <Badge className="bg-red-500">Sakit</Badge>;
+      case "cuti":
+        return <Badge className="bg-blue-500">Cuti</Badge>;
+      case "izin":
+        return <Badge className="bg-yellow-500">Izin</Badge>;
+      default:
+        return <Badge variant="secondary">{type}</Badge>;
+    }
+  };
+
+  const getLeaveStatusBadge = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" /> Approved</Badge>;
+      case "rejected":
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Rejected</Badge>;
+      default:
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" /> Pending</Badge>;
+    }
+  };
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -288,13 +355,112 @@ export default function HRDashboard() {
         {/* Deletion Notifications */}
         <DeletionNotifications />
 
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs defaultValue="leave-approval" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="leave-approval" className="relative">
+              <CalendarOff className="h-4 w-4 mr-2" />
+              Leave Approval
+              {pendingLeaveRequests && pendingLeaveRequests.length > 0 && (
+                <span className="ml-2 bg-destructive text-destructive-foreground text-xs rounded-full px-2">
+                  {pendingLeaveRequests.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="overview">Task Overview per Person</TabsTrigger>
             <TabsTrigger value="shootings">Shooting Schedules</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="all-tasks">All Tasks</TabsTrigger>
           </TabsList>
+
+          {/* Leave Approval Tab */}
+          <TabsContent value="leave-approval" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarOff className="h-5 w-5" />
+                  Pending Leave Requests ({pendingLeaveRequests?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingLeaveRequests && pendingLeaveRequests.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {pendingLeaveRequests.map((request: any) => (
+                      <Card key={request.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="pt-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-2 flex-1">
+                              <p className="font-medium">{request.profiles?.full_name}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {getLeaveTypeBadge(request.leave_type)}
+                                {getLeaveStatusBadge(request.status)}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>
+                                  {format(new Date(request.start_date), "dd MMM yyyy", { locale: idLocale })}
+                                  {request.start_date !== request.end_date && (
+                                    <> - {format(new Date(request.end_date), "dd MMM yyyy", { locale: idLocale })}</>
+                                  )}
+                                </span>
+                              </div>
+                              {request.reason && (
+                                <p className="text-sm text-muted-foreground">{request.reason}</p>
+                              )}
+                            </div>
+                            <Button size="sm" onClick={() => handleLeaveApprovalClick(request)}>
+                              Review
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+                    <p className="text-muted-foreground">No pending leave requests</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Leave History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Dates</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Processed By</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allLeaveRequests?.map((request: any) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">{request.profiles?.full_name}</TableCell>
+                          <TableCell>{getLeaveTypeBadge(request.leave_type)}</TableCell>
+                          <TableCell>
+                            {format(new Date(request.start_date), "dd MMM yyyy", { locale: idLocale })}
+                            {request.start_date !== request.end_date && (
+                              <> - {format(new Date(request.end_date), "dd MMM yyyy", { locale: idLocale })}</>
+                            )}
+                          </TableCell>
+                          <TableCell>{getLeaveStatusBadge(request.status)}</TableCell>
+                          <TableCell>{request.approver?.full_name || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Task Overview per Person */}
           <TabsContent value="overview">
@@ -623,6 +789,14 @@ export default function HRDashboard() {
             </Tabs>
           </DialogContent>
         </Dialog>
+
+        {selectedLeaveRequest && (
+          <LeaveApprovalDialog
+            open={approvalDialogOpen}
+            onOpenChange={setApprovalDialogOpen}
+            request={selectedLeaveRequest}
+          />
+        )}
       </div>
     </AppLayout>
   );
