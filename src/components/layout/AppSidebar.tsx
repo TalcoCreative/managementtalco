@@ -12,7 +12,8 @@ import {
   CalendarOff,
   Wallet,
   Receipt,
-  UserPlus
+  UserPlus,
+  TrendingUp
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -47,10 +48,12 @@ const navItems = [
 const hrItems = [
   { title: "Team", url: "/users", icon: Users },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 const financeItems = [
   { title: "Finance", url: "/finance", icon: Wallet },
+  { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 
 const salesItems = [
