@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink } from "lucide-react";
+import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save } from "lucide-react";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -28,8 +35,33 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editAssignedTo, setEditAssignedTo] = useState<string>("");
+  const [editDeadline, setEditDeadline] = useState<string>("");
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      return session.session?.user?.id || null;
+    },
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ["users-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, status")
+        .or("status.is.null,status.eq.active")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: task } = useQuery({
     queryKey: ["task-detail", taskId],
@@ -50,6 +82,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     },
     enabled: !!taskId,
   });
+
+  // Reset edit state when task changes
+  useEffect(() => {
+    if (task) {
+      setEditAssignedTo(task.assigned_to || "");
+      setEditDeadline(task.deadline || "");
+      setIsEditing(false);
+    }
+  }, [task]);
+
+  const isCreator = currentUser && task?.created_by === currentUser;
 
   const { data: comments } = useQuery({
     queryKey: ["task-comments", taskId],
@@ -80,6 +123,34 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     },
     enabled: !!taskId,
   });
+
+  const handleSaveEdit = async () => {
+    if (!taskId) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          assigned_to: editAssignedTo || null,
+          deadline: editDeadline || null,
+          assigned_at: editAssignedTo ? new Date().toISOString() : null,
+        })
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      toast.success("Task berhasil diupdate");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal update task");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDelete = async (reason: string) => {
     if (!taskId || !task) return;
@@ -295,14 +366,50 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   </Badge>
                 </div>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Hapus
-              </Button>
+              <div className="flex gap-2">
+                {isCreator && !isEditing && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
+                {isEditing && (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSaveEdit}
+                      disabled={saving}
+                    >
+                      <Save className="h-4 w-4 mr-1" />
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditAssignedTo(task.assigned_to || "");
+                        setEditDeadline(task.deadline || "");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Hapus
+                </Button>
+              </div>
             </div>
           </DialogHeader>
 
@@ -346,25 +453,47 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   </div>
                 )}
                 
-                {task.profiles && (
-                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Assigned To</p>
-                      <p className="font-medium">{task.profiles.full_name}</p>
-                    </div>
+                <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Assigned To</p>
+                    {isEditing ? (
+                      <Select value={editAssignedTo} onValueChange={setEditAssignedTo}>
+                        <SelectTrigger className="h-8 mt-1">
+                          <SelectValue placeholder="Select user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users?.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.full_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <p className="font-medium">{task.profiles?.full_name || "-"}</p>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {task.deadline && (
-                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Deadline</p>
-                      <p className="font-medium">{format(new Date(task.deadline), "PPP")}</p>
-                    </div>
+                <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Deadline</p>
+                    {isEditing ? (
+                      <Input
+                        type="date"
+                        value={editDeadline}
+                        onChange={(e) => setEditDeadline(e.target.value)}
+                        className="h-8 mt-1"
+                      />
+                    ) : (
+                      <p className="font-medium">
+                        {task.deadline ? format(new Date(task.deadline), "PPP") : "-"}
+                      </p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {task.projects && (
                   <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
