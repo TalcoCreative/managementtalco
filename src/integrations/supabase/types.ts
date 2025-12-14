@@ -200,6 +200,7 @@ export type Database = {
           receipt_url: string | null
           recurring_id: string | null
           status: string
+          sub_category: string | null
         }
         Insert: {
           amount: number
@@ -216,6 +217,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_id?: string | null
           status?: string
+          sub_category?: string | null
         }
         Update: {
           amount?: number
@@ -232,6 +234,7 @@ export type Database = {
           receipt_url?: string | null
           recurring_id?: string | null
           status?: string
+          sub_category?: string | null
         }
         Relationships: [
           {
@@ -405,6 +408,7 @@ export type Database = {
           notes: string | null
           project_id: string | null
           source: string
+          sub_category: string | null
           sub_type: string
           type: string
         }
@@ -418,6 +422,7 @@ export type Database = {
           notes?: string | null
           project_id?: string | null
           source: string
+          sub_category?: string | null
           sub_type: string
           type: string
         }
@@ -431,6 +436,7 @@ export type Database = {
           notes?: string | null
           project_id?: string | null
           source?: string
+          sub_category?: string | null
           sub_type?: string
           type?: string
         }

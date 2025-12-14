@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from "date-fns";
 import { Plus, Receipt, CheckCircle, XCircle, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { REIMBURSE_CATEGORY_MAPPING } from "@/lib/finance-categories";
 
 interface Props {
   canApprove: boolean;
@@ -154,13 +155,18 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Create ledger entry
+      // Map request_from to category structure
+      const categoryMapping = REIMBURSE_CATEGORY_MAPPING[reimburse.request_from] || 
+        { category: "sdm_hr", subCategory: "reimburse_karyawan" };
+
+      // Create ledger entry with proper category mapping
       const { data: ledgerEntry, error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
-          sub_type: "reimburse",
+          sub_type: categoryMapping.category,
+          sub_category: categoryMapping.subCategory,
           project_id: reimburse.project_id,
           client_id: reimburse.client_id,
           amount: reimburse.amount,
@@ -267,7 +273,10 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
               </div>
               <div className="space-y-2">
                 <Label>Project (Optional)</Label>
-                <Select value={formData.project_id || "none"} onValueChange={(v) => setFormData({ ...formData, project_id: v === "none" ? "" : v })}>
+                <Select 
+                  value={formData.project_id || "none"} 
+                  onValueChange={(v) => setFormData({ ...formData, project_id: v === "none" ? "" : v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
@@ -281,7 +290,10 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
               </div>
               <div className="space-y-2">
                 <Label>Client (Optional)</Label>
-                <Select value={formData.client_id || "none"} onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}>
+                <Select 
+                  value={formData.client_id || "none"} 
+                  onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>

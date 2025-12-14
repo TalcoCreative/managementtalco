@@ -13,11 +13,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { format } from "date-fns";
 import { Plus, ArrowDownCircle, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { 
+  FINANCE_CATEGORIES, 
+  getMainCategoryLabel, 
+  getSubCategoryLabel,
+  getSubCategories 
+} from "@/lib/finance-categories";
 
 export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    category: "operational",
+    category: "operasional",
+    sub_category: "transport",
     project_id: "",
     client_id: "",
     amount: "",
@@ -56,6 +63,15 @@ export function FinanceExpenses() {
     },
   });
 
+  const handleCategoryChange = (category: string) => {
+    const subCategories = getSubCategories(category);
+    setFormData({ 
+      ...formData, 
+      category, 
+      sub_category: subCategories[0]?.value || "" 
+    });
+  };
+
   const handleSubmit = async () => {
     if (!formData.amount || !formData.description) {
       toast.error("Please fill in all required fields");
@@ -68,6 +84,7 @@ export function FinanceExpenses() {
 
       const { error } = await supabase.from("expenses").insert({
         category: formData.category,
+        sub_category: formData.sub_category,
         project_id: formData.project_id || null,
         client_id: formData.client_id || null,
         amount: parseFloat(formData.amount),
@@ -79,7 +96,14 @@ export function FinanceExpenses() {
 
       toast.success("Expense created successfully");
       setDialogOpen(false);
-      setFormData({ category: "operational", project_id: "", client_id: "", amount: "", description: "" });
+      setFormData({ 
+        category: "operasional", 
+        sub_category: "transport",
+        project_id: "", 
+        client_id: "", 
+        amount: "", 
+        description: "" 
+      });
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to create expense");
@@ -98,6 +122,7 @@ export function FinanceExpenses() {
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
           sub_type: expense.category,
+          sub_category: expense.sub_category,
           project_id: expense.project_id,
           client_id: expense.client_id,
           amount: expense.amount,
@@ -138,16 +163,7 @@ export function FinanceExpenses() {
     }).format(value);
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      payroll: "Payroll",
-      reimburse: "Reimburse",
-      operational: "Operational",
-      project: "Project",
-      other: "Other"
-    };
-    return labels[category] || category;
-  };
+  const subCategories = getSubCategories(formData.category);
 
   return (
     <Card>
@@ -163,23 +179,45 @@ export function FinanceExpenses() {
               Add Expense
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Expense</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="operational">Operational</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Main Category *</Label>
+                  <Select value={formData.category} onValueChange={handleCategoryChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FINANCE_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Sub-Category *</Label>
+                  <Select 
+                    value={formData.sub_category} 
+                    onValueChange={(v) => setFormData({ ...formData, sub_category: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subCategories.map((sub) => (
+                        <SelectItem key={sub.value} value={sub.value}>
+                          {sub.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Amount (IDR) *</Label>
@@ -200,7 +238,10 @@ export function FinanceExpenses() {
               </div>
               <div className="space-y-2">
                 <Label>Project (Optional)</Label>
-                <Select value={formData.project_id || "none"} onValueChange={(v) => setFormData({ ...formData, project_id: v === "none" ? "" : v })}>
+                <Select 
+                  value={formData.project_id || "none"} 
+                  onValueChange={(v) => setFormData({ ...formData, project_id: v === "none" ? "" : v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select project" />
                   </SelectTrigger>
@@ -214,7 +255,10 @@ export function FinanceExpenses() {
               </div>
               <div className="space-y-2">
                 <Label>Client (Optional)</Label>
-                <Select value={formData.client_id || "none"} onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}>
+                <Select 
+                  value={formData.client_id || "none"} 
+                  onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select client" />
                   </SelectTrigger>
@@ -253,7 +297,14 @@ export function FinanceExpenses() {
                   <TableRow key={expense.id}>
                     <TableCell>{format(new Date(expense.created_at), "dd MMM yyyy")}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getCategoryLabel(expense.category)}</Badge>
+                      <div className="space-y-1">
+                        <Badge variant="outline">{getMainCategoryLabel(expense.category)}</Badge>
+                        {expense.sub_category && (
+                          <div className="text-xs text-muted-foreground">
+                            {getSubCategoryLabel(expense.category, expense.sub_category)}
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
                     <TableCell>
