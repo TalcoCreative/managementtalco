@@ -49,6 +49,10 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
     contract_start: "",
     contract_end: "",
     salary: "",
+    gaji_pokok: "",
+    tj_transport: "",
+    tj_internet: "",
+    tj_kpi: "",
     avatar_url: "",
     phone: "",
     email: "",
@@ -68,6 +72,10 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         contract_start: employee.contract_start || "",
         contract_end: employee.contract_end || "",
         salary: employee.salary?.toString() || "",
+        gaji_pokok: employee.gaji_pokok?.toString() || "",
+        tj_transport: employee.tj_transport?.toString() || "",
+        tj_internet: employee.tj_internet?.toString() || "",
+        tj_kpi: employee.tj_kpi?.toString() || "",
         avatar_url: employee.avatar_url || "",
         phone: employee.phone || "",
         email: employee.email || employee.user_id || "",
@@ -148,6 +156,10 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           contract_start: formData.contract_start || null,
           contract_end: formData.contract_end || null,
           salary: formData.salary ? parseFloat(formData.salary) : null,
+          gaji_pokok: formData.gaji_pokok ? parseFloat(formData.gaji_pokok) : 0,
+          tj_transport: formData.tj_transport ? parseFloat(formData.tj_transport) : 0,
+          tj_internet: formData.tj_internet ? parseFloat(formData.tj_internet) : 0,
+          tj_kpi: formData.tj_kpi ? parseFloat(formData.tj_kpi) : 0,
           avatar_url: formData.avatar_url || null,
           phone: formData.phone || null,
           email: formData.email || null,
@@ -514,19 +526,79 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
                   </p>
                 )}
               </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" /> Gaji Pokok
+                </Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    value={formData.gaji_pokok}
+                    onChange={(e) => setFormData({ ...formData, gaji_pokok: e.target.value })}
+                    placeholder="Gaji Pokok"
+                  />
+                ) : (
+                  <p className="font-medium">{formatCurrency(employee.gaji_pokok)}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" /> Tj. Transport
+                </Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    value={formData.tj_transport}
+                    onChange={(e) => setFormData({ ...formData, tj_transport: e.target.value })}
+                    placeholder="Tunjangan Transport"
+                  />
+                ) : (
+                  <p className="font-medium">{formatCurrency(employee.tj_transport)}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" /> Tj. Internet
+                </Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    value={formData.tj_internet}
+                    onChange={(e) => setFormData({ ...formData, tj_internet: e.target.value })}
+                    placeholder="Tunjangan Internet"
+                  />
+                ) : (
+                  <p className="font-medium">{formatCurrency(employee.tj_internet)}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <DollarSign className="h-4 w-4" /> Tj. KPI
+                </Label>
+                {isEditing ? (
+                  <Input
+                    type="number"
+                    value={formData.tj_kpi}
+                    onChange={(e) => setFormData({ ...formData, tj_kpi: e.target.value })}
+                    placeholder="Tunjangan KPI"
+                  />
+                ) : (
+                  <p className="font-medium">{formatCurrency(employee.tj_kpi)}</p>
+                )}
+              </div>
               <div className="space-y-2 md:col-span-2">
                 <Label className="flex items-center gap-2 text-muted-foreground">
-                  <DollarSign className="h-4 w-4" /> Salary
+                  <DollarSign className="h-4 w-4" /> Total Salary
                 </Label>
                 {isEditing ? (
                   <Input
                     type="number"
                     value={formData.salary}
                     onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                    placeholder="Monthly salary"
+                    placeholder="Total gaji per bulan"
                   />
                 ) : (
-                  <p className="font-medium text-lg">{formatCurrency(employee.salary)}</p>
+                  <p className="font-medium text-lg text-primary">{formatCurrency(employee.salary)}</p>
                 )}
               </div>
             </div>
