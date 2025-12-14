@@ -673,6 +673,153 @@ export type Database = {
           },
         ]
       }
+      prospect_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          prospect_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          prospect_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          prospect_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_comments_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospect_status_history: {
+        Row: {
+          changed_by: string
+          created_at: string
+          id: string
+          new_status: string
+          old_status: string
+          prospect_id: string
+        }
+        Insert: {
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_status: string
+          old_status: string
+          prospect_id: string
+        }
+        Update: {
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          old_status?: string
+          prospect_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_status_history_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospects: {
+        Row: {
+          company: string | null
+          contact_name: string
+          created_at: string
+          created_by: string
+          email: string | null
+          id: string
+          location: string | null
+          needs: string | null
+          phone: string | null
+          pic_id: string | null
+          product_service: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          contact_name: string
+          created_at?: string
+          created_by: string
+          email?: string | null
+          id?: string
+          location?: string | null
+          needs?: string | null
+          phone?: string | null
+          pic_id?: string | null
+          product_service?: string | null
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          contact_name?: string
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          id?: string
+          location?: string | null
+          needs?: string | null
+          phone?: string | null
+          pic_id?: string | null
+          product_service?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospects_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_pic_id_fkey"
+            columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_budget: {
         Row: {
           amount: number
