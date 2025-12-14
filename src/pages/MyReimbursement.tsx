@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Receipt, Plus, Clock, CheckCircle, XCircle, Wallet, TrendingUp } from "lucide-react";
+import { Receipt, Plus, Clock, CheckCircle, XCircle, Wallet, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
 
-const REQUEST_FROM_OPTIONS = [
+const REIMBURSEMENT_CATEGORIES = [
   { value: "event", label: "Event" },
   { value: "meeting", label: "Meeting" },
   { value: "production", label: "Production" },
@@ -24,9 +25,22 @@ const REQUEST_FROM_OPTIONS = [
   { value: "other", label: "Lainnya" },
 ];
 
+const REQUEST_CATEGORIES = [
+  { value: "training", label: "Pelatihan / Training" },
+  { value: "certification", label: "Sertifikasi" },
+  { value: "equipment", label: "Equipment / Peralatan" },
+  { value: "software", label: "Software / Tools" },
+  { value: "travel", label: "Perjalanan Dinas" },
+  { value: "event", label: "Event / Seminar" },
+  { value: "other", label: "Lainnya" },
+];
+
 export default function MyReimbursement() {
+  const [activeTab, setActiveTab] = useState("reimbursement");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<"reimbursement" | "request">("reimbursement");
   const [formData, setFormData] = useState({
+    title: "",
     request_from: "operational",
     amount: "",
     notes: "",
@@ -86,30 +100,57 @@ export default function MyReimbursement() {
     },
   });
 
+  // Filter by type
+  const reimbursements = myReimbursements?.filter(r => (r as any).request_type !== "request") || [];
+  const requests = myReimbursements?.filter(r => (r as any).request_type === "request") || [];
+
   // Calculate monthly stats
   const currentMonthStart = startOfMonth(new Date());
   const currentMonthEnd = endOfMonth(new Date());
   
-  const monthlyStats = myReimbursements?.reduce((acc, r) => {
-    const createdAt = new Date(r.created_at);
-    if (createdAt >= currentMonthStart && createdAt <= currentMonthEnd) {
-      acc.total += Number(r.amount);
-      acc.count += 1;
-      if (r.status === "paid") {
-        acc.paid += Number(r.amount);
-        acc.paidCount += 1;
-      } else if (r.status === "approved") {
-        acc.approved += Number(r.amount);
-      } else if (r.status === "pending") {
-        acc.pending += Number(r.amount);
+  const calculateStats = (items: any[]) => {
+    return items.reduce((acc, r) => {
+      const createdAt = new Date(r.created_at);
+      if (createdAt >= currentMonthStart && createdAt <= currentMonthEnd) {
+        acc.total += Number(r.amount);
+        acc.count += 1;
+        if (r.status === "paid") {
+          acc.paid += Number(r.amount);
+          acc.paidCount += 1;
+        } else if (r.status === "approved") {
+          acc.approved += Number(r.amount);
+        } else if (r.status === "pending") {
+          acc.pending += Number(r.amount);
+        }
       }
-    }
-    return acc;
-  }, { total: 0, count: 0, paid: 0, paidCount: 0, approved: 0, pending: 0 }) || { total: 0, count: 0, paid: 0, paidCount: 0, approved: 0, pending: 0 };
+      return acc;
+    }, { total: 0, count: 0, paid: 0, paidCount: 0, approved: 0, pending: 0 });
+  };
+
+  const reimbursementStats = calculateStats(reimbursements);
+  const requestStats = calculateStats(requests);
+
+  const openDialog = (type: "reimbursement" | "request") => {
+    setDialogType(type);
+    setFormData({
+      title: "",
+      request_from: type === "reimbursement" ? "operational" : "training",
+      amount: "",
+      notes: "",
+      project_id: "",
+      client_id: "",
+    });
+    setDialogOpen(true);
+  };
 
   const handleSubmit = async () => {
     if (!formData.amount || !formData.request_from) {
       toast.error("Mohon isi jumlah dan kategori");
+      return;
+    }
+
+    if (dialogType === "request" && !formData.title) {
+      toast.error("Mohon isi judul request");
       return;
     }
 
@@ -119,6 +160,8 @@ export default function MyReimbursement() {
 
       const { error } = await supabase.from("reimbursements").insert({
         user_id: session.session.user.id,
+        request_type: dialogType,
+        title: formData.title || null,
         request_from: formData.request_from,
         amount: parseFloat(formData.amount),
         notes: formData.notes || null,
@@ -129,18 +172,15 @@ export default function MyReimbursement() {
 
       if (error) throw error;
 
-      toast.success("Request reimbursement berhasil diajukan");
+      toast.success(dialogType === "reimbursement" 
+        ? "Reimbursement berhasil diajukan" 
+        : "Request berhasil diajukan"
+      );
       setDialogOpen(false);
-      setFormData({
-        request_from: "operational",
-        amount: "",
-        notes: "",
-        project_id: "",
-        client_id: "",
-      });
       queryClient.invalidateQueries({ queryKey: ["my-reimbursements"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-reimbursements"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal mengajukan reimbursement");
+      toast.error(error.message || "Gagal mengajukan");
     }
   };
 
@@ -167,58 +207,229 @@ export default function MyReimbursement() {
     }
   };
 
-  const getRequestFromLabel = (value: string) => {
-    return REQUEST_FROM_OPTIONS.find(o => o.value === value)?.label || value;
+  const getCategoryLabel = (value: string, type: string) => {
+    const categories = type === "request" ? REQUEST_CATEGORIES : REIMBURSEMENT_CATEGORIES;
+    return categories.find(o => o.value === value)?.label || value;
   };
+
+  const renderStatsCards = (stats: any, type: string) => (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Total Bulan Ini
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">{formatCurrency(stats.total)}</p>
+          <p className="text-xs text-muted-foreground">{stats.count} {type}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-yellow-600 flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Pending
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold text-yellow-600">{formatCurrency(stats.pending)}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-blue-600 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Approved
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold text-blue-600">{formatCurrency(stats.approved)}</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            {type === "request" ? "Disetujui & Dibayar" : "Sudah Dibayar"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.paid)}</p>
+          <p className="text-xs text-muted-foreground">{stats.paidCount} selesai</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderTable = (items: any[], type: string) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          {type === "request" ? <FileText className="h-5 w-5" /> : <Receipt className="h-5 w-5" />}
+          {type === "request" ? "Daftar Request Saya" : "Daftar Reimbursement Saya"}
+        </CardTitle>
+        <Button onClick={() => openDialog(type as "reimbursement" | "request")}>
+          <Plus className="h-4 w-4 mr-2" />
+          {type === "request" ? "Ajukan Request" : "Ajukan Reimbursement"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        ) : items.length > 0 ? (
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tanggal</TableHead>
+                  {type === "request" && <TableHead>Judul</TableHead>}
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Project/Client</TableHead>
+                  <TableHead className="text-right">Jumlah</TableHead>
+                  <TableHead>Keterangan</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="whitespace-nowrap">
+                      {format(new Date(r.created_at), "dd MMM yyyy", { locale: idLocale })}
+                    </TableCell>
+                    {type === "request" && (
+                      <TableCell className="font-medium">
+                        {(r as any).title || "-"}
+                      </TableCell>
+                    )}
+                    <TableCell>
+                      <Badge variant="outline">{getCategoryLabel(r.request_from, type)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {r.projects?.title && <div>{r.projects.title}</div>}
+                        {r.clients?.name && (
+                          <div className="text-muted-foreground">{r.clients.name}</div>
+                        )}
+                        {!r.projects?.title && !r.clients?.name && "-"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(r.amount)}
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {r.notes || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {getStatusBadge(r.status)}
+                        {r.status === "rejected" && r.rejection_reason && (
+                          <p className="text-xs text-destructive">{r.rejection_reason}</p>
+                        )}
+                        {r.status === "paid" && r.paid_at && (
+                          <p className="text-xs text-muted-foreground">
+                            Dibayar: {format(new Date(r.paid_at), "dd MMM yyyy")}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            {type === "request" ? <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" /> : <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />}
+            <p>Belum ada {type === "request" ? "request" : "reimbursement"}</p>
+            <p className="text-sm mt-2">Klik tombol di atas untuk membuat yang baru</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">My Reimbursement</h1>
-            <p className="text-muted-foreground">Ajukan dan pantau status reimbursement Anda</p>
-          </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Ajukan Reimbursement
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Ajukan Reimbursement Baru</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
+        <div>
+          <h1 className="text-3xl font-bold">My Reimbursement & Request</h1>
+          <p className="text-muted-foreground">Ajukan reimbursement atau request budget untuk kebutuhan Anda</p>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="reimbursement" className="flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              Reimbursement
+            </TabsTrigger>
+            <TabsTrigger value="request" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Request Budget
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="reimbursement" className="space-y-6">
+            {renderStatsCards(reimbursementStats, "reimbursement")}
+            {renderTable(reimbursements, "reimbursement")}
+          </TabsContent>
+
+          <TabsContent value="request" className="space-y-6">
+            {renderStatsCards(requestStats, "request")}
+            {renderTable(requests, "request")}
+          </TabsContent>
+        </Tabs>
+
+        {/* Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {dialogType === "reimbursement" ? "Ajukan Reimbursement" : "Ajukan Request Budget"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {dialogType === "request" && (
                 <div className="space-y-2">
-                  <Label>Kategori *</Label>
-                  <Select 
-                    value={formData.request_from} 
-                    onValueChange={(v) => setFormData({ ...formData, request_from: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {REQUEST_FROM_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Jumlah (IDR) *</Label>
+                  <Label>Judul Request *</Label>
                   <Input
-                    type="number"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder="Masukkan jumlah"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Contoh: Pelatihan Digital Marketing"
                   />
                 </div>
+              )}
+              <div className="space-y-2">
+                <Label>Kategori *</Label>
+                <Select 
+                  value={formData.request_from} 
+                  onValueChange={(v) => setFormData({ ...formData, request_from: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(dialogType === "request" ? REQUEST_CATEGORIES : REIMBURSEMENT_CATEGORIES).map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Jumlah (IDR) *</Label>
+                <Input
+                  type="number"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  placeholder="Masukkan jumlah"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Project (opsional)</Label>
                   <Select 
@@ -255,152 +466,29 @@ export default function MyReimbursement() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Keterangan</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Jelaskan keperluan reimbursement"
-                  />
-                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button onClick={handleSubmit}>
-                  Ajukan
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Monthly Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Total Bulan Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{formatCurrency(monthlyStats.total)}</p>
-              <p className="text-xs text-muted-foreground">{monthlyStats.count} request</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-yellow-600 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Pending
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-yellow-600">{formatCurrency(monthlyStats.pending)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-600 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Approved
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-blue-600">{formatCurrency(monthlyStats.approved)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                Sudah Dibayar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(monthlyStats.paid)}</p>
-              <p className="text-xs text-muted-foreground">{monthlyStats.paidCount} dibayar</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Reimbursement List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
-              Daftar Reimbursement Saya
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading...</div>
-            ) : myReimbursements && myReimbursements.length > 0 ? (
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Tanggal</TableHead>
-                      <TableHead>Kategori</TableHead>
-                      <TableHead>Project/Client</TableHead>
-                      <TableHead className="text-right">Jumlah</TableHead>
-                      <TableHead>Keterangan</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {myReimbursements.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="whitespace-nowrap">
-                          {format(new Date(r.created_at), "dd MMM yyyy", { locale: idLocale })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{getRequestFromLabel(r.request_from)}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {r.projects?.title && <div>{r.projects.title}</div>}
-                            {r.clients?.name && (
-                              <div className="text-muted-foreground">{r.clients.name}</div>
-                            )}
-                            {!r.projects?.title && !r.clients?.name && "-"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(r.amount)}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          {r.notes || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {getStatusBadge(r.status)}
-                            {r.status === "rejected" && r.rejection_reason && (
-                              <p className="text-xs text-destructive">{r.rejection_reason}</p>
-                            )}
-                            {r.status === "paid" && r.paid_at && (
-                              <p className="text-xs text-muted-foreground">
-                                Dibayar: {format(new Date(r.paid_at), "dd MMM yyyy")}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="space-y-2">
+                <Label>Keterangan</Label>
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder={dialogType === "request" 
+                    ? "Jelaskan keperluan dan manfaat request ini" 
+                    : "Jelaskan keperluan reimbursement"
+                  }
+                />
               </div>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Belum ada reimbursement</p>
-                <p className="text-sm mt-2">Klik "Ajukan Reimbursement" untuk membuat request baru</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Batal
+              </Button>
+              <Button onClick={handleSubmit}>
+                Ajukan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
