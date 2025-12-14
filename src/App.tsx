@@ -17,6 +17,7 @@ import ShootingSchedule from "./pages/ShootingSchedule";
 import Leave from "./pages/Leave";
 import Finance from "./pages/Finance";
 import MyReimbursement from "./pages/MyReimbursement";
+import Prospects from "./pages/Prospects";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/my-reimbursement" element={<ProtectedRoute><MyReimbursement /></ProtectedRoute>} />
+          <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
