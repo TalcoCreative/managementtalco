@@ -9,10 +9,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark } from "lucide-react";
+import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark, Shield } from "lucide-react";
 import { format } from "date-fns";
+
+const allRoles = [
+  { value: "super_admin", label: "Super Admin" },
+  { value: "hr", label: "HR" },
+  { value: "graphic_designer", label: "Graphic Designer" },
+  { value: "socmed_admin", label: "Social Media Admin" },
+  { value: "copywriter", label: "Copywriter" },
+  { value: "video_editor", label: "Video Editor" },
+  { value: "finance", label: "Finance" },
+  { value: "accounting", label: "Accounting" },
+  { value: "marketing", label: "Marketing" },
+  { value: "photographer", label: "Photographer" },
+  { value: "director", label: "Director" },
+  { value: "project_manager", label: "Project Manager" },
+];
 
 interface EmployeeDetailDialogProps {
   open: boolean;
@@ -24,6 +40,8 @@ interface EmployeeDetailDialogProps {
 export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: EmployeeDetailDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [currentRoles, setCurrentRoles] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     full_name: "",
     address: "",
@@ -58,8 +76,65 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         bank_account_name: employee.bank_account_name || "",
         status: employee.status || "active",
       });
+      setCurrentRoles(employee.user_roles?.map((ur: any) => ur.role) || []);
     }
   }, [employee]);
+
+  const availableRoles = allRoles.filter(role => !currentRoles.includes(role.value));
+
+  const handleAddRole = async () => {
+    if (!selectedRole) {
+      toast.error("Please select a role");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("user_roles")
+        .insert([{
+          user_id: employee.id,
+          role: selectedRole as any,
+        }]);
+
+      if (error) throw error;
+
+      toast.success("Role added successfully");
+      setCurrentRoles([...currentRoles, selectedRole]);
+      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      setSelectedRole("");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveRole = async (roleToRemove: string) => {
+    if (currentRoles.length <= 1) {
+      toast.error("User must have at least one role");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", employee.id)
+        .eq("role", roleToRemove as any);
+
+      if (error) throw error;
+
+      toast.success("Role removed successfully");
+      setCurrentRoles(currentRoles.filter(r => r !== roleToRemove));
+      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
@@ -187,9 +262,9 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
                   <h2 className="text-2xl font-bold">{employee.full_name}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex flex-wrap gap-2">
-                      {employee.user_roles?.map((ur: any, index: number) => (
-                        <Badge key={index} className={getRoleColor(ur.role)}>
-                          {ur.role.replace(/_/g, " ")}
+                      {currentRoles.map((role: string, index: number) => (
+                        <Badge key={index} className={getRoleColor(role)}>
+                          {role.replace(/_/g, " ")}
                         </Badge>
                       ))}
                     </div>
@@ -226,6 +301,51 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           )}
 
           <Separator />
+
+          {/* Role Management */}
+          <div>
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Shield className="h-4 w-4" /> Manage Roles
+            </h3>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {currentRoles.map((role: string) => (
+                  <Badge key={role} className={`${getRoleColor(role)} flex items-center gap-1`}>
+                    {role.replace(/_/g, " ")}
+                    {canEdit && (
+                      <button
+                        onClick={() => handleRemoveRole(role)}
+                        disabled={loading || currentRoles.length <= 1}
+                        className="hover:bg-white/20 rounded-full p-0.5 disabled:opacity-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+              
+              {canEdit && availableRoles.length > 0 && (
+                <div className="flex gap-2">
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a role to add" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleAddRole} disabled={loading || !selectedRole} size="sm">
+                    Add
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Contact Information */}
           <div>
