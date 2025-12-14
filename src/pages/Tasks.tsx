@@ -55,11 +55,12 @@ export default function Tasks() {
   });
 
   const { data: users } = useQuery({
-    queryKey: ["users"],
+    queryKey: ["users-active"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, status")
+        .or("status.is.null,status.eq.active")
         .order("full_name");
       if (error) throw error;
       return data;
