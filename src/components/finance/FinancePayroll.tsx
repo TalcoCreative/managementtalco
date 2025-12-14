@@ -8,13 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, startOfMonth, addMonths } from "date-fns";
-import { Users, RefreshCw, CheckCircle, Trash2 } from "lucide-react";
+import { id as idLocale } from "date-fns/locale";
+import { Users, RefreshCw, CheckCircle, Trash2, FileDown, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { generatePayrollPDF } from "@/lib/payroll-pdf";
+import { CompanySettingsDialog } from "./CompanySettingsDialog";
 
 export function FinancePayroll() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [payrollToDelete, setPayrollToDelete] = useState<any>(null);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { data: payrollList, isLoading } = useQuery({
@@ -23,10 +28,41 @@ export function FinancePayroll() {
       const monthDate = startOfMonth(new Date(selectedMonth + "-01"));
       const { data, error } = await supabase
         .from("payroll")
-        .select("*, profiles(full_name, salary, contract_start, contract_end)")
+        .select("*, profiles(full_name, salary, gaji_pokok, tj_transport, tj_internet, tj_kpi, contract_start, contract_end)")
         .gte("month", format(monthDate, "yyyy-MM-dd"))
         .lt("month", format(addMonths(monthDate, 1), "yyyy-MM-dd"))
         .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch company settings for PDF
+  const { data: companySettings } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_settings")
+        .select("*");
+      
+      if (error) throw error;
+      
+      const settingsMap: Record<string, string | null> = {};
+      data?.forEach(s => {
+        settingsMap[s.setting_key] = s.setting_value;
+      });
+      return settingsMap;
+    },
+  });
+
+  // Fetch user roles for PDF
+  const { data: userRoles } = useQuery({
+    queryKey: ["all-user-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
       
       if (error) throw error;
       return data || [];
@@ -175,6 +211,50 @@ export function FinancePayroll() {
     }
   };
 
+  const getEmployeeRole = (userId: string): string => {
+    const roles = userRoles?.filter(r => r.user_id === userId).map(r => r.role) || [];
+    if (roles.length === 0) return "-";
+    // Return the first role formatted nicely
+    return roles[0].replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+  };
+
+  const handleDownloadPDF = async (payroll: any) => {
+    if (payroll.status !== "paid") {
+      toast.error("PDF hanya bisa di-download untuk payroll dengan status PAID");
+      return;
+    }
+
+    setGeneratingPDF(payroll.id);
+    try {
+      const profile = payroll.profiles;
+      
+      await generatePayrollPDF(
+        {
+          employeeName: profile?.full_name || "-",
+          jabatan: getEmployeeRole(payroll.employee_id),
+          periode: format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale }),
+          gajiPokok: Number(profile?.gaji_pokok) || 0,
+          tjTransport: Number(profile?.tj_transport) || 0,
+          tjInternet: Number(profile?.tj_internet) || 0,
+          tjKpi: Number(profile?.tj_kpi) || 0,
+          totalGaji: Number(payroll.amount),
+          payDate: payroll.pay_date || format(new Date(), "yyyy-MM-dd"),
+        },
+        {
+          logoUrl: companySettings?.company_logo,
+          signatureUrl: companySettings?.hr_signature,
+          hrName: companySettings?.hr_name || "HR Manager",
+        }
+      );
+
+      toast.success("PDF berhasil di-download");
+    } catch (error: any) {
+      toast.error(error.message || "Gagal generate PDF");
+    } finally {
+      setGeneratingPDF(null);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -202,7 +282,11 @@ export function FinancePayroll() {
           <Users className="h-5 w-5" />
           Payroll
         </CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setSettingsDialogOpen(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Pengaturan
+          </Button>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px]">
               <SelectValue />
@@ -267,6 +351,17 @@ export function FinancePayroll() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        {payroll.status === "paid" && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDownloadPDF(payroll)}
+                            disabled={generatingPDF === payroll.id}
+                          >
+                            <FileDown className="h-4 w-4 mr-1" />
+                            {generatingPDF === payroll.id ? "..." : "PDF"}
+                          </Button>
+                        )}
                         {payroll.status === "planned" && (
                           <Button size="sm" variant="outline" onClick={() => handleMarkPaid(payroll)}>
                             <CheckCircle className="h-4 w-4 mr-1" />
@@ -320,6 +415,11 @@ export function FinancePayroll() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CompanySettingsDialog 
+        open={settingsDialogOpen} 
+        onOpenChange={setSettingsDialogOpen} 
+      />
     </Card>
   );
 }
