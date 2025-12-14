@@ -184,6 +184,159 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          is_recurring: boolean | null
+          ledger_entry_id: string | null
+          paid_at: string | null
+          project_id: string | null
+          receipt_url: string | null
+          recurring_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          is_recurring?: boolean | null
+          ledger_entry_id?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          receipt_url?: string | null
+          recurring_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean | null
+          ledger_entry_id?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          receipt_url?: string | null
+          recurring_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      income: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          ledger_entry_id: string | null
+          notes: string | null
+          project_id: string | null
+          received_at: string | null
+          recurring_id: string | null
+          source: string
+          status: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          ledger_entry_id?: string | null
+          notes?: string | null
+          project_id?: string | null
+          received_at?: string | null
+          recurring_id?: string | null
+          source: string
+          status?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          ledger_entry_id?: string | null
+          notes?: string | null
+          project_id?: string | null
+          received_at?: string | null
+          recurring_id?: string | null
+          source?: string
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "income_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_budget"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -237,6 +390,117 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_entries: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          notes: string | null
+          project_id: string | null
+          source: string
+          sub_type: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          date?: string
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          source: string
+          sub_type: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          source?: string
+          sub_type?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          ledger_entry_id: string | null
+          month: string
+          paid_at: string | null
+          pay_date: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          ledger_entry_id?: string | null
+          month: string
+          paid_at?: string | null
+          pay_date?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          ledger_entry_id?: string | null
+          month?: string
+          paid_at?: string | null
+          pay_date?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -342,6 +606,148 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_budget: {
+        Row: {
+          amount: number
+          client_id: string | null
+          created_at: string
+          created_by: string
+          custom_days: number | null
+          due_day: number | null
+          end_date: string | null
+          id: string
+          name: string
+          period: string
+          project_id: string | null
+          start_date: string
+          status: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          custom_days?: number | null
+          due_day?: number | null
+          end_date?: string | null
+          id?: string
+          name: string
+          period: string
+          project_id?: string | null
+          start_date: string
+          status?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          custom_days?: number | null
+          due_day?: number | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          period?: string
+          project_id?: string | null
+          start_date?: string
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_budget_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_budget_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reimbursements: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          ledger_entry_id: string | null
+          notes: string | null
+          paid_at: string | null
+          project_id: string | null
+          receipt_url: string | null
+          rejection_reason: string | null
+          request_from: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          ledger_entry_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          request_from: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          ledger_entry_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          receipt_url?: string | null
+          rejection_reason?: string | null
+          request_from?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursements_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
