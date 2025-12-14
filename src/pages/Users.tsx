@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 import { format } from "date-fns";
 
 export default function Users() {
+  const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
@@ -94,6 +96,13 @@ export default function Users() {
   const isSuperAdmin = userRole === "super_admin";
   const isHR = userRole === "hr";
   const canManageUsers = isSuperAdmin || isHR;
+
+  // Redirect non-HR/super_admin users
+  useEffect(() => {
+    if (userRole && !canManageUsers) {
+      navigate("/");
+    }
+  }, [userRole, canManageUsers, navigate]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
