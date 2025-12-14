@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark } from "lucide-react";
@@ -36,6 +37,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
     emergency_contact: "",
     bank_account_number: "",
     bank_account_name: "",
+    status: "active",
   });
   const queryClient = useQueryClient();
 
@@ -54,6 +56,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         emergency_contact: employee.emergency_contact || "",
         bank_account_number: employee.bank_account_number || "",
         bank_account_name: employee.bank_account_name || "",
+        status: employee.status || "active",
       });
     }
   }, [employee]);
@@ -76,6 +79,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           emergency_contact: formData.emergency_contact || null,
           bank_account_number: formData.bank_account_number || null,
           bank_account_name: formData.bank_account_name || null,
+          status: formData.status,
         })
         .eq("id", employee.id);
 
@@ -181,12 +185,17 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
               ) : (
                 <>
                   <h2 className="text-2xl font-bold">{employee.full_name}</h2>
-                  <div className="flex gap-2 mt-1">
-                    {employee.user_roles?.map((ur: any, index: number) => (
-                      <Badge key={index} className={getRoleColor(ur.role)}>
-                        {ur.role.replace(/_/g, " ")}
-                      </Badge>
-                    ))}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap gap-2">
+                      {employee.user_roles?.map((ur: any, index: number) => (
+                        <Badge key={index} className={getRoleColor(ur.role)}>
+                          {ur.role.replace(/_/g, " ")}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Badge variant={formData.status === 'active' ? 'default' : 'secondary'}>
+                      {formData.status === 'active' ? 'Active' : 'Non-Active'}
+                    </Badge>
                   </div>
                 </>
               )}
@@ -194,13 +203,25 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           </div>
 
           {isEditing && (
-            <div className="space-y-2">
-              <Label>Avatar URL</Label>
-              <Input
-                placeholder="https://example.com/photo.jpg"
-                value={formData.avatar_url}
-                onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Avatar URL</Label>
+                <Input
+                  placeholder="https://example.com/photo.jpg"
+                  value={formData.avatar_url}
+                  onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Status Karyawan</Label>
+                  <p className="text-sm text-muted-foreground">Aktifkan atau nonaktifkan karyawan</p>
+                </div>
+                <Switch
+                  checked={formData.status === 'active'}
+                  onCheckedChange={(checked) => setFormData({ ...formData, status: checked ? 'active' : 'non_active' })}
+                />
+              </div>
             </div>
           )}
 

@@ -10,12 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { Plus, ArrowUpCircle, CheckCircle } from "lucide-react";
+import { Plus, ArrowUpCircle, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinanceIncome() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [incomeToDelete, setIncomeToDelete] = useState<any>(null);
   const [formData, setFormData] = useState({
     source: "",
     client_id: "",
@@ -139,6 +142,26 @@ export function FinanceIncome() {
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark income as received");
+    }
+  };
+
+  const handleDeleteIncome = async () => {
+    if (!incomeToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("income")
+        .delete()
+        .eq("id", incomeToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Income deleted successfully");
+      setDeleteDialogOpen(false);
+      setIncomeToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-income"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete income");
     }
   };
 
@@ -312,12 +335,25 @@ export function FinanceIncome() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {income.status === "expected" && (
-                        <Button size="sm" variant="outline" onClick={() => handleMarkReceived(income)}>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Received
+                      <div className="flex gap-1">
+                        {income.status === "expected" && (
+                          <Button size="sm" variant="outline" onClick={() => handleMarkReceived(income)}>
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Received
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setIncomeToDelete(income);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -331,6 +367,27 @@ export function FinanceIncome() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Income</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus income "{incomeToDelete?.source}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteIncome}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
