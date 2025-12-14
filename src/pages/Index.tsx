@@ -4,8 +4,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClockInOut } from "@/components/attendance/ClockInOut";
 import { ShootingNotifications } from "@/components/shooting/ShootingNotifications";
+import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { Badge } from "@/components/ui/badge";
-import { Users, Briefcase, FolderKanban, Calendar, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -44,6 +45,24 @@ export default function Index() {
       return data.session;
     },
   });
+
+  const { data: userRole } = useQuery({
+    queryKey: ["user-role"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.session.user.id)
+        .single();
+      
+      return data?.role;
+    },
+  });
+
+  const isHR = userRole === "hr" || userRole === "super_admin";
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -121,6 +140,8 @@ export default function Index() {
         <ClockInOut />
 
         <ShootingNotifications />
+
+        {isHR && <DeletionNotifications />}
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
