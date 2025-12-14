@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, startOfMonth, addMonths } from "date-fns";
-import { Users, RefreshCw, CheckCircle } from "lucide-react";
+import { Users, RefreshCw, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinancePayroll() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [payrollToDelete, setPayrollToDelete] = useState<any>(null);
   const queryClient = useQueryClient();
 
   const { data: payrollList, isLoading } = useQuery({
@@ -36,8 +39,9 @@ export function FinancePayroll() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, salary, contract_start, contract_end")
-        .not("salary", "is", null);
+        .select("id, full_name, salary, contract_start, contract_end, status")
+        .not("salary", "is", null)
+        .or("status.is.null,status.eq.active");
       
       if (error) throw error;
       return data || [];
@@ -50,7 +54,6 @@ export function FinancePayroll() {
       if (!session.session) throw new Error("Not authenticated");
 
       const monthDate = startOfMonth(new Date(selectedMonth + "-01"));
-      const today = new Date();
 
       // Filter employees with active contracts
       const activeEmployees = employees?.filter(emp => {
@@ -102,7 +105,8 @@ export function FinancePayroll() {
         .insert({
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
-          sub_type: "payroll",
+          sub_type: "sdm",
+          sub_category: "gaji_upah",
           amount: payroll.amount,
           source: "payroll",
           notes: `Payroll for ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy")}`,
@@ -112,6 +116,22 @@ export function FinancePayroll() {
         .single();
 
       if (ledgerError) throw ledgerError;
+
+      // Create expense entry for payroll
+      const { error: expenseError } = await supabase
+        .from("expenses")
+        .insert({
+          category: "sdm",
+          sub_category: "gaji_upah",
+          amount: payroll.amount,
+          description: `Gaji ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy")}`,
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          ledger_entry_id: ledgerEntry.id,
+          created_by: session.session.user.id,
+        });
+
+      if (expenseError) throw expenseError;
 
       // Update payroll status
       const { error: updateError } = await supabase
@@ -126,11 +146,32 @@ export function FinancePayroll() {
 
       if (updateError) throw updateError;
 
-      toast.success("Payroll marked as paid and added to ledger");
+      toast.success("Payroll marked as paid and added to expenses & ledger");
       queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark payroll as paid");
+    }
+  };
+
+  const handleDeletePayroll = async () => {
+    if (!payrollToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("payroll")
+        .delete()
+        .eq("id", payrollToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Payroll deleted successfully");
+      setDeleteDialogOpen(false);
+      setPayrollToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete payroll");
     }
   };
 
@@ -225,12 +266,25 @@ export function FinancePayroll() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {payroll.status === "planned" && (
-                        <Button size="sm" variant="outline" onClick={() => handleMarkPaid(payroll)}>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Mark Paid
+                      <div className="flex gap-1">
+                        {payroll.status === "planned" && (
+                          <Button size="sm" variant="outline" onClick={() => handleMarkPaid(payroll)}>
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mark Paid
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setPayrollToDelete(payroll);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -245,6 +299,27 @@ export function FinancePayroll() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Payroll</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus payroll untuk "{payrollToDelete?.profiles?.full_name}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePayroll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
