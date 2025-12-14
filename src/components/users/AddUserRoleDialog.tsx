@@ -29,6 +29,12 @@ const allRoles = [
   { value: "socmed_admin", label: "Social Media Admin" },
   { value: "copywriter", label: "Copywriter" },
   { value: "video_editor", label: "Video Editor" },
+  { value: "finance", label: "Finance" },
+  { value: "accounting", label: "Accounting" },
+  { value: "marketing", label: "Marketing" },
+  { value: "photographer", label: "Photographer" },
+  { value: "director", label: "Director" },
+  { value: "project_manager", label: "Project Manager" },
 ];
 
 export function AddUserRoleDialog({
@@ -111,6 +117,18 @@ export function AddUserRoleDialog({
         return "bg-green-500";
       case "video_editor":
         return "bg-red-500";
+      case "finance":
+        return "bg-emerald-500";
+      case "accounting":
+        return "bg-cyan-500";
+      case "marketing":
+        return "bg-orange-500";
+      case "photographer":
+        return "bg-pink-500";
+      case "director":
+        return "bg-indigo-500";
+      case "project_manager":
+        return "bg-teal-500";
       default:
         return "bg-muted";
     }

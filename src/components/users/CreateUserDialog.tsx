@@ -20,6 +20,12 @@ const roles = [
   { value: "socmed_admin", label: "Social Media Admin" },
   { value: "copywriter", label: "Copywriter" },
   { value: "video_editor", label: "Video Editor" },
+  { value: "finance", label: "Finance" },
+  { value: "accounting", label: "Accounting" },
+  { value: "marketing", label: "Marketing" },
+  { value: "photographer", label: "Photographer" },
+  { value: "director", label: "Director" },
+  { value: "project_manager", label: "Project Manager" },
 ];
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
