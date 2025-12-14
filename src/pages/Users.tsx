@@ -4,18 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User, Edit } from "lucide-react";
+import { Plus, User, Edit, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { EditUserRoleDialog } from "@/components/users/EditUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
+import { format } from "date-fns";
 
 export default function Users() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const today = format(new Date(), "yyyy-MM-dd");
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["all-users"],
@@ -37,6 +40,20 @@ export default function Users() {
         ...profile,
         user_roles: roles?.filter(r => r.user_id === profile.id) || []
       }));
+    },
+  });
+
+  // Fetch today's attendance for all users
+  const { data: todayAttendance } = useQuery({
+    queryKey: ["today-attendance", today],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("user_id, clock_in, clock_out")
+        .eq("date", today);
+      
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -79,6 +96,20 @@ export default function Users() {
     }
   };
 
+  const getAttendanceStatus = (userId: string) => {
+    const attendance = todayAttendance?.find(a => a.user_id === userId);
+    if (!attendance) {
+      return { status: "not_clocked", label: "Belum Absen", icon: XCircle, color: "text-muted-foreground" };
+    }
+    if (attendance.clock_in && attendance.clock_out) {
+      return { status: "complete", label: "Sudah Pulang", icon: CheckCircle, color: "text-green-500" };
+    }
+    if (attendance.clock_in) {
+      return { status: "clocked_in", label: "Hadir", icon: Clock, color: "text-blue-500" };
+    }
+    return { status: "not_clocked", label: "Belum Absen", icon: XCircle, color: "text-muted-foreground" };
+  };
+
   const handleCardClick = (user: any) => {
     if (canManageUsers) {
       setSelectedUser(user);
@@ -115,54 +146,66 @@ export default function Users() {
           </div>
         ) : users && users.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {users.map((user) => (
-              <Card 
-                key={user.id} 
-                className={`hover:shadow-lg transition-all ${canManageUsers ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
-                onClick={() => handleCardClick(user)}
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                        {user.full_name?.charAt(0) || "?"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{user.full_name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{user.email || user.user_id}</p>
+            {users.map((user) => {
+              const attendanceInfo = getAttendanceStatus(user.id);
+              const AttendanceIcon = attendanceInfo.icon;
+
+              return (
+                <Card 
+                  key={user.id} 
+                  className={`hover:shadow-lg transition-all ${canManageUsers ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  onClick={() => handleCardClick(user)}
+                >
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                          {user.full_name?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{user.full_name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{user.email || user.user_id}</p>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-wrap gap-2">
-                      {user.user_roles?.map((ur: any, index: number) => (
-                        <Badge key={index} className={getRoleColor(ur.role)}>
-                          {ur.role.replace(/_/g, " ")}
-                        </Badge>
-                      ))}
-                      {(!user.user_roles || user.user_roles.length === 0) && (
-                        <Badge variant="secondary">No role assigned</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Attendance Status */}
+                    <div className={`flex items-center gap-2 ${attendanceInfo.color}`}>
+                      <AttendanceIcon className="h-4 w-4" />
+                      <span className="text-sm font-medium">{attendanceInfo.label}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-2">
+                        {user.user_roles?.map((ur: any, index: number) => (
+                          <Badge key={index} className={getRoleColor(ur.role)}>
+                            {ur.role.replace(/_/g, " ")}
+                          </Badge>
+                        ))}
+                        {(!user.user_roles || user.user_roles.length === 0) && (
+                          <Badge variant="secondary">No role assigned</Badge>
+                        )}
+                      </div>
+                      {canManageUsers && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleEditRole(e, user)}
+                          title="Edit Role"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
-                    {canManageUsers && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleEditRole(e, user)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                    {user.phone && (
+                      <p className="text-xs text-muted-foreground">{user.phone}</p>
                     )}
-                  </div>
-                  {user.phone && (
-                    <p className="text-xs text-muted-foreground mt-2">{user.phone}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card>
