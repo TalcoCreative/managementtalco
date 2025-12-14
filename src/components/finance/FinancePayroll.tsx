@@ -226,7 +226,7 @@ export function FinancePayroll() {
       const { error: expenseError } = await supabase
         .from("expenses")
         .insert({
-          category: "sdm",
+          category: "payroll",
           sub_category: "gaji_upah",
           amount: payroll.amount,
           description: `Gaji ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale })}`,
