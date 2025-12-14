@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { Plus, ArrowDownCircle, CheckCircle } from "lucide-react";
+import { Plus, ArrowDownCircle, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
@@ -22,6 +23,8 @@ import {
 
 export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
   const [formData, setFormData] = useState({
     category: "operasional",
     sub_category: "transport",
@@ -152,6 +155,26 @@ export function FinanceExpenses() {
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark expense as paid");
+    }
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!expenseToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .delete()
+        .eq("id", expenseToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Expense deleted successfully");
+      setDeleteDialogOpen(false);
+      setExpenseToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete expense");
     }
   };
 
@@ -325,12 +348,25 @@ export function FinanceExpenses() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {expense.status === "pending" && (
-                        <Button size="sm" variant="outline" onClick={() => handleMarkPaid(expense)}>
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Mark Paid
+                      <div className="flex gap-1">
+                        {expense.status === "pending" && (
+                          <Button size="sm" variant="outline" onClick={() => handleMarkPaid(expense)}>
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mark Paid
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setExpenseToDelete(expense);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -344,6 +380,27 @@ export function FinanceExpenses() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus expense "{expenseToDelete?.description}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteExpense}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -149,10 +149,8 @@ export default function Users() {
   };
 
   const handleCardClick = (user: any) => {
-    if (canManageUsers) {
-      setSelectedUser(user);
-      setDetailDialogOpen(true);
-    }
+    setSelectedUser(user);
+    setDetailDialogOpen(true);
   };
 
   const handleEditRole = (e: React.MouseEvent, user: any) => {
@@ -197,7 +195,7 @@ export default function Users() {
               return (
                 <Card 
                   key={user.id} 
-                  className={`hover:shadow-lg transition-all ${canManageUsers ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+                  className={`hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02] ${user.status === 'non_active' ? 'opacity-60' : ''}`}
                   onClick={() => handleCardClick(user)}
                 >
                   <CardHeader>
@@ -209,7 +207,12 @@ export default function Users() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{user.full_name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{user.full_name}</CardTitle>
+                          {user.status === 'non_active' && (
+                            <Badge variant="secondary" className="text-xs">Non-Active</Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">{user.email || user.user_id}</p>
                       </div>
                     </div>
