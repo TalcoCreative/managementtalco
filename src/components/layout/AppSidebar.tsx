@@ -9,7 +9,8 @@ import {
   Video,
   Home,
   LogOut,
-  CalendarOff
+  CalendarOff,
+  Wallet
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -45,25 +46,34 @@ const hrItems = [
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
 ];
 
+const financeItems = [
+  { title: "Finance", url: "/finance", icon: Wallet },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
 
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
+  const { data: userRoles } = useQuery({
+    queryKey: ["user-roles"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return null;
+      if (!session.session) return [];
 
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.session.user.id)
-        .single();
+        .eq("user_id", session.session.user.id);
       if (error) throw error;
-      return data?.role;
+      return data?.map(r => r.role) || [];
     },
   });
+
+  const isHRorAdmin = userRoles?.includes('hr') || userRoles?.includes('super_admin');
+  const canAccessFinance = userRoles?.includes('super_admin') || 
+                           userRoles?.includes('finance') || 
+                           userRoles?.includes('accounting') || 
+                           userRoles?.includes('hr');
 
   const handleLogout = async () => {
     try {
@@ -111,12 +121,37 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {(userRole === 'hr' || userRole === 'super_admin') && (
+        {isHRorAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>HR</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {hrItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) => 
+                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {canAccessFinance && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Finance</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {financeItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
