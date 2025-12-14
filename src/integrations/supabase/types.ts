@@ -143,6 +143,39 @@ export type Database = {
           },
         ]
       }
+      deletion_logs: {
+        Row: {
+          created_at: string
+          deleted_by: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          id: string
+          reason: string
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_by: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          id?: string
+          reason: string
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_by?: string
+          entity_id?: string
+          entity_name?: string
+          entity_type?: string
+          id?: string
+          reason?: string
+          viewed_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null

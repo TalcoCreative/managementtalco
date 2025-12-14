@@ -9,8 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X } from "lucide-react";
+import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -25,6 +26,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [linkUrl, setLinkUrl] = useState("");
   const [linkName, setLinkName] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -77,6 +80,40 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     },
     enabled: !!taskId,
   });
+
+  const handleDelete = async (reason: string) => {
+    if (!taskId || !task) return;
+    
+    setDeleting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Log the deletion
+      await supabase.from("deletion_logs").insert({
+        entity_type: "task",
+        entity_id: taskId,
+        entity_name: task.title,
+        deleted_by: session.session.user.id,
+        reason,
+      });
+
+      // Delete the task
+      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+      if (error) throw error;
+
+      toast.success("Task dihapus");
+      setDeleteDialogOpen(false);
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus task");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSubmitComment = async () => {
     if (!comment.trim() || !taskId) return;
@@ -224,232 +261,323 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-500";
+      case "in_progress":
+        return "bg-blue-500";
+      case "on_hold":
+        return "bg-yellow-500";
+      case "revise":
+        return "bg-orange-500";
+      default:
+        return "bg-muted";
+    }
+  };
+
   if (!task) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex items-start justify-between gap-4">
-            <DialogTitle className="text-2xl">{task.title}</DialogTitle>
-            <Badge className={getPriorityColor(task.priority)}>
-              {task.priority}
-            </Badge>
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl">{task.title}</DialogTitle>
+                <div className="flex items-center gap-2">
+                  <Badge className={getPriorityColor(task.priority)}>
+                    {task.priority}
+                  </Badge>
+                  <Badge className={getStatusColor(task.status)}>
+                    {task.status?.replace("_", " ")}
+                  </Badge>
+                </div>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Hapus
+              </Button>
+            </div>
+          </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6">
-            {/* Task Info */}
-            <div className="space-y-3">
-              {task.description && (
-                <p className="text-muted-foreground">{task.description}</p>
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-6">
+              {/* Task Link */}
+              {task.link && (
+                <div className="rounded-lg border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">Reference Link</span>
+                  </div>
+                  <a 
+                    href={task.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline break-all"
+                  >
+                    {task.link}
+                  </a>
+                </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              {/* Task Description */}
+              {task.description && (
+                <div className="rounded-lg border bg-card p-4">
+                  <h3 className="font-semibold mb-2">Deskripsi / Brief</h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                </div>
+              )}
+
+              {/* Task Info */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {task.projects?.clients && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span>{task.projects.clients.name}</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Client</p>
+                      <p className="font-medium">{task.projects.clients.name}</p>
+                    </div>
                   </div>
                 )}
                 
                 {task.profiles && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{task.profiles.full_name}</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Assigned To</p>
+                      <p className="font-medium">{task.profiles.full_name}</p>
+                    </div>
                   </div>
                 )}
 
                 {task.deadline && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{format(new Date(task.deadline), "PPP")}</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Deadline</p>
+                      <p className="font-medium">{format(new Date(task.deadline), "PPP")}</p>
+                    </div>
                   </div>
                 )}
 
                 {task.projects && (
-                  <div className="col-span-2 text-xs text-muted-foreground">
-                    Project: {task.projects.title}
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Project</p>
+                      <p className="font-medium">{task.projects.title}</p>
+                    </div>
+                  </div>
+                )}
+
+                {task.created_by_profile && (
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Created By</p>
+                      <p className="font-medium">{task.created_by_profile.full_name}</p>
+                    </div>
+                  </div>
+                )}
+
+                {task.created_at && (
+                  <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Created At</p>
+                      <p className="font-medium">{format(new Date(task.created_at), "PPP")}</p>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Attachments Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="h-4 w-4" />
-                  <h3 className="font-semibold">Attachments ({attachments?.length || 0})</h3>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingFile}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploadingFile ? "Uploading..." : "Upload"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowLinkInput(!showLinkInput)}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-2" />
-                    Link
-                  </Button>
-                </div>
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={handleFileUpload}
-                accept="*/*"
-              />
-
-              {/* Add Link Form */}
-              {showLinkInput && (
-                <div className="rounded-lg border bg-card p-4 space-y-3">
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="Link URL (e.g., https://example.com)"
-                      value={linkUrl}
-                      onChange={(e) => setLinkUrl(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Link name"
-                      value={linkName}
-                      onChange={(e) => setLinkName(e.target.value)}
-                    />
+              {/* Attachments Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    <h3 className="font-semibold">Attachments ({attachments?.length || 0})</h3>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm"
-                      onClick={handleAddLink}
-                      disabled={loading || !linkUrl.trim() || !linkName.trim()}
-                    >
-                      Add Link
-                    </Button>
-                    <Button 
-                      size="sm"
+                    <Button
                       variant="outline"
-                      onClick={() => {
-                        setShowLinkInput(false);
-                        setLinkUrl("");
-                        setLinkName("");
-                      }}
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
                     >
-                      <X className="h-4 w-4" />
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploadingFile ? "Uploading..." : "Upload"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowLinkInput(!showLinkInput)}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      Link
                     </Button>
                   </div>
                 </div>
-              )}
 
-              {/* Attachments List */}
-              <div className="space-y-2">
-                {attachments?.map((attachment) => (
-                  <div
-                    key={attachment.id}
-                    className="rounded-lg border bg-card p-3 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {attachment.file_type === 'link' ? (
-                        <LinkIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      ) : (
-                        <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{attachment.file_name}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{attachment.profiles?.full_name}</span>
-                          <span>•</span>
-                          <span>{format(new Date(attachment.created_at), "PPp")}</span>
-                          {attachment.file_size && (
-                            <>
-                              <span>•</span>
-                              <span>{(attachment.file_size / 1024 / 1024).toFixed(2)} MB</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  accept="*/*"
+                />
+
+                {/* Add Link Form */}
+                {showLinkInput && (
+                  <div className="rounded-lg border bg-card p-4 space-y-3">
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Link URL (e.g., https://example.com)"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Link name"
+                        value={linkName}
+                        onChange={(e) => setLinkName(e.target.value)}
+                      />
                     </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      {attachment.file_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(attachment.file_url, '_blank')}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
+                    <div className="flex gap-2">
+                      <Button 
                         size="sm"
-                        onClick={() => handleDeleteAttachment(attachment.id, attachment.file_url)}
+                        onClick={handleAddLink}
+                        disabled={loading || !linkUrl.trim() || !linkName.trim()}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        Add Link
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setShowLinkInput(false);
+                          setLinkUrl("");
+                          setLinkName("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                )}
 
-            <Separator />
-
-            {/* Comments Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                <h3 className="font-semibold">Comments ({comments?.length || 0})</h3>
-              </div>
-
-              {/* Add Comment */}
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                />
-                <Button 
-                  onClick={handleSubmitComment} 
-                  disabled={loading || !comment.trim()}
-                  size="sm"
-                >
-                  {loading ? "Posting..." : "Post Comment"}
-                </Button>
-              </div>
-
-              {/* Comments List */}
-              <div className="space-y-3">
-                {comments?.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="rounded-lg border bg-card p-4 space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">
-                        {comment.profiles?.full_name || "Unknown User"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(comment.created_at), "PPp")}
-                      </span>
+                {/* Attachments List */}
+                <div className="space-y-2">
+                  {attachments?.map((attachment) => (
+                    <div
+                      key={attachment.id}
+                      className="rounded-lg border bg-card p-3 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {attachment.file_type === 'link' ? (
+                          <LinkIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        ) : (
+                          <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{attachment.file_name}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{attachment.profiles?.full_name}</span>
+                            <span>•</span>
+                            <span>{format(new Date(attachment.created_at), "PPp")}</span>
+                            {attachment.file_size && (
+                              <>
+                                <span>•</span>
+                                <span>{(attachment.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {attachment.file_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(attachment.file_url, '_blank')}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteAttachment(attachment.id, attachment.file_url)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-sm">{comment.content}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Comments Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  <h3 className="font-semibold">Comments ({comments?.length || 0})</h3>
+                </div>
+
+                {/* Add Comment */}
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Add a comment..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={3}
+                  />
+                  <Button 
+                    onClick={handleSubmitComment} 
+                    disabled={loading || !comment.trim()}
+                    size="sm"
+                  >
+                    {loading ? "Posting..." : "Post Comment"}
+                  </Button>
+                </div>
+
+                {/* Comments List */}
+                <div className="space-y-3">
+                  {comments?.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="rounded-lg border bg-card p-4 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm">
+                          {comment.profiles?.full_name || "Unknown User"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(comment.created_at), "PPp")}
+                        </span>
+                      </div>
+                      <p className="text-sm">{comment.content}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Hapus Task"
+        description={`Apakah Anda yakin ingin menghapus task "${task.title}"? Tindakan ini tidak dapat dibatalkan.`}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+    </>
   );
 }

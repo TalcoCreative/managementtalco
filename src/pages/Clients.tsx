@@ -1,17 +1,22 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateClientDialog } from "@/components/clients/CreateClientDialog";
 import { ClientDashboardDialog } from "@/components/clients/ClientDashboardDialog";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { toast } from "sonner";
 
 export default function Clients() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [deleteClient, setDeleteClient] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useQuery({
     queryKey: ["clients"],
@@ -43,6 +48,37 @@ export default function Clients() {
 
   const canManageClients = userRole === "super_admin" || userRole === "hr";
 
+  const handleDelete = async (reason: string) => {
+    if (!deleteClient) return;
+    
+    setDeleting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Log the deletion
+      await supabase.from("deletion_logs").insert({
+        entity_type: "client",
+        entity_id: deleteClient.id,
+        entity_name: deleteClient.name,
+        deleted_by: session.session.user.id,
+        reason,
+      });
+
+      // Delete the client
+      const { error } = await supabase.from("clients").delete().eq("id", deleteClient.id);
+      if (error) throw error;
+
+      toast.success("Client dihapus");
+      setDeleteClient(null);
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus client");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -69,9 +105,22 @@ export default function Clients() {
             {clients.map((client) => (
               <Card
                 key={client.id}
-                className="cursor-pointer transition-all hover:shadow-lg hover:scale-105"
+                className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 relative group"
                 onClick={() => setSelectedClient(client.id)}
               >
+                {canManageClients && (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteClient({ id: client.id, name: client.name });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -120,6 +169,15 @@ export default function Clients() {
           onOpenChange={(open) => !open && setSelectedClient(null)}
         />
       )}
+
+      <DeleteConfirmDialog
+        open={!!deleteClient}
+        onOpenChange={(open) => !open && setDeleteClient(null)}
+        title="Hapus Client"
+        description={`Apakah Anda yakin ingin menghapus client "${deleteClient?.name}"? Semua project dan task terkait mungkin akan terpengaruh.`}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </AppLayout>
   );
 }

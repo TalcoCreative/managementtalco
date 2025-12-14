@@ -5,11 +5,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Archive } from "lucide-react";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -26,7 +28,6 @@ import {
 const taskColumns = [
   { id: "pending", title: "Pending" },
   { id: "in_progress", title: "In Progress" },
-  { id: "completed", title: "Completed" },
   { id: "on_hold", title: "On Hold" },
   { id: "revise", title: "Revise" },
 ];
@@ -65,12 +66,13 @@ export default function Tasks() {
     },
   });
 
-  const { data: tasks, isLoading } = useQuery({
-    queryKey: ["tasks", selectedProject, selectedStatus, selectedUser, startDate, endDate],
+  const { data: activeTasks, isLoading } = useQuery({
+    queryKey: ["active-tasks", selectedProject, selectedStatus, selectedUser, startDate, endDate],
     queryFn: async () => {
       let query = supabase
         .from("tasks")
         .select("*, projects(title, clients(name)), profiles:profiles!fk_tasks_assigned_to_profiles(full_name)")
+        .neq("status", "completed")
         .order("created_at", { ascending: false });
 
       if (selectedProject !== "all") {
@@ -94,6 +96,19 @@ export default function Tasks() {
       }
 
       const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: completedTasks, isLoading: loadingCompleted } = useQuery({
+    queryKey: ["completed-tasks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*, projects(title, clients(name)), profiles:profiles!fk_tasks_assigned_to_profiles(full_name)")
+        .eq("status", "completed")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -126,8 +141,8 @@ export default function Tasks() {
       return;
     }
 
-    queryClient.invalidateQueries({ queryKey: ["tasks"] });
     queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -273,71 +288,144 @@ export default function Tasks() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading tasks...</p>
-          </div>
-        ) : (
-          <KanbanBoard
-            columns={taskColumns}
-            items={tasks || []}
-            onStatusChange={handleStatusChange}
-            onCardClick={(task) => setSelectedTaskId(task.id)}
-            getCardColor={getCardColor}
-            renderCard={(task) => (
-              <div className="space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h4 className="font-medium flex-1">{task.title}</h4>
-                  <Badge className={getPriorityColor(task.priority)}>
-                    {task.priority}
-                  </Badge>
-                </div>
-                {task.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {task.description}
-                  </p>
+        <Tabs defaultValue="active" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="active">Active Tasks</TabsTrigger>
+            <TabsTrigger value="completed" className="flex items-center gap-2">
+              <Archive className="h-4 w-4" />
+              Completed Tasks
+              {completedTasks && completedTasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{completedTasks.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading tasks...</p>
+              </div>
+            ) : (
+              <KanbanBoard
+                columns={taskColumns}
+                items={activeTasks || []}
+                onStatusChange={handleStatusChange}
+                onCardClick={(task) => setSelectedTaskId(task.id)}
+                getCardColor={getCardColor}
+                renderCard={(task) => (
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-medium flex-1 line-clamp-2">{task.title}</h4>
+                      <Badge className={getPriorityColor(task.priority)}>
+                        {task.priority}
+                      </Badge>
+                    </div>
+                    {task.projects?.clients && (
+                      <p className="text-xs font-medium text-primary">
+                        {task.projects.clients.name}
+                      </p>
+                    )}
+                    {task.projects && (
+                      <p className="text-xs text-muted-foreground">
+                        Project: {task.projects.title}
+                      </p>
+                    )}
+                    {task.deadline && (
+                      <p className="text-xs text-muted-foreground">
+                        Due: {new Date(task.deadline).toLocaleDateString()}
+                      </p>
+                    )}
+                    {task.profiles && (
+                      <p className="text-xs text-muted-foreground">
+                        Assigned: {task.profiles.full_name}
+                      </p>
+                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={task.status}
+                        onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                      >
+                        <SelectTrigger className="h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[...taskColumns, { id: "completed", title: "Completed" }].map((col) => (
+                            <SelectItem key={col.id} value={col.id}>
+                              {col.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 )}
-                {task.projects?.clients && (
-                  <p className="text-xs font-medium text-primary">
-                    {task.projects.clients.name}
-                  </p>
-                )}
-                {task.projects && (
-                  <p className="text-xs text-muted-foreground">
-                    Project: {task.projects.title}
-                  </p>
-                )}
-                {task.deadline && (
-                  <p className="text-xs text-muted-foreground">
-                    Due: {new Date(task.deadline).toLocaleDateString()}
-                  </p>
-                )}
-                {task.profiles && (
-                  <p className="text-xs text-muted-foreground">
-                    Assigned: {task.profiles.full_name}
-                  </p>
-                )}
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Select
-                    value={task.status}
-                    onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="completed">
+            {loadingCompleted ? (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">Loading completed tasks...</p>
+              </div>
+            ) : completedTasks && completedTasks.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {completedTasks.map((task: any) => (
+                  <Card 
+                    key={task.id} 
+                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => setSelectedTaskId(task.id)}
                   >
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {taskColumns.map((col) => (
-                        <SelectItem key={col.id} value={col.id}>
-                          {col.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium flex-1 line-clamp-2">{task.title}</h4>
+                        <Badge className={getPriorityColor(task.priority)}>
+                          {task.priority}
+                        </Badge>
+                      </div>
+                      {task.projects?.clients && (
+                        <p className="text-xs font-medium text-primary">
+                          {task.projects.clients.name}
+                        </p>
+                      )}
+                      {task.projects && (
+                        <p className="text-xs text-muted-foreground">
+                          Project: {task.projects.title}
+                        </p>
+                      )}
+                      {task.profiles && (
+                        <p className="text-xs text-muted-foreground">
+                          Assigned: {task.profiles.full_name}
+                        </p>
+                      )}
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={task.status}
+                          onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                        >
+                          <SelectTrigger className="h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[...taskColumns, { id: "completed", title: "Completed" }].map((col) => (
+                              <SelectItem key={col.id} value={col.id}>
+                                {col.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                No completed tasks yet
               </div>
             )}
-          />
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       <CreateTaskDialog 
