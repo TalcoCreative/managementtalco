@@ -8,7 +8,8 @@ import {
   ClipboardCheck,
   Video,
   Home,
-  LogOut
+  LogOut,
+  CalendarOff
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +36,7 @@ const navItems = [
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Shooting", url: "/shooting", icon: Video },
+  { title: "Leave", url: "/leave", icon: CalendarOff },
   { title: "Team", url: "/users", icon: Users },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];

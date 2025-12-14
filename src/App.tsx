@@ -13,6 +13,7 @@ import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import HRDashboard from "./pages/HRDashboard";
 import ShootingSchedule from "./pages/ShootingSchedule";
+import Leave from "./pages/Leave";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/reports" element={<Reports />} />
           <Route path="/hr-dashboard" element={<HRDashboard />} />
           <Route path="/shooting" element={<ShootingSchedule />} />
+          <Route path="/leave" element={<Leave />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
