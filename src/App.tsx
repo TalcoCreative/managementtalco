@@ -15,6 +15,7 @@ import Reports from "./pages/Reports";
 import HRDashboard from "./pages/HRDashboard";
 import ShootingSchedule from "./pages/ShootingSchedule";
 import Leave from "./pages/Leave";
+import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/hr-dashboard" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
           <Route path="/shooting" element={<ProtectedRoute><ShootingSchedule /></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
+          <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
