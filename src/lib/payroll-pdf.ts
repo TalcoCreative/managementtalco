@@ -66,147 +66,206 @@ export const generatePayrollPDF = async (
 ): Promise<void> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 20;
+  const margin = 15;
+  let yPos = 15;
 
-  // Load logo if available
+  // === KOP SURAT / LETTERHEAD ===
+  
+  // Load and place logo if available
   if (settings.logoUrl) {
     try {
       const logoData = await loadImage(settings.logoUrl);
-      doc.addImage(logoData, "PNG", 15, 10, 30, 30);
+      doc.addImage(logoData, "PNG", margin, yPos, 35, 35);
     } catch (error) {
       console.log("Failed to load logo:", error);
     }
   }
 
-  // Header
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("HR Management – Payroll Sheets", pageWidth / 2, yPos, { align: "center" });
-  yPos += 8;
+  // Company Name - positioned to the right of logo
+  const textStartX = settings.logoUrl ? margin + 42 : margin;
   
-  doc.setFontSize(12);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(41, 128, 185); // Blue color
+  doc.text("TALCO CREATIVE INDONESIA", textStartX, yPos + 12);
+  
+  doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Rekapitulasi Gaji", pageWidth / 2, yPos, { align: "center" });
-  yPos += 15;
+  doc.setTextColor(100, 100, 100);
+  doc.text("Creative Agency & Digital Marketing Solutions", textStartX, yPos + 20);
+  doc.text("Jakarta, Indonesia", textStartX, yPos + 26);
+
+  yPos = 55;
 
   // Separator line
-  doc.setLineWidth(0.5);
-  doc.line(15, yPos, pageWidth - 15, yPos);
+  doc.setDrawColor(41, 128, 185);
+  doc.setLineWidth(1);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
+  yPos += 3;
+  doc.setLineWidth(0.3);
+  doc.line(margin, yPos, pageWidth - margin, yPos);
   yPos += 15;
 
-  // Employee Information
-  doc.setFontSize(11);
+  // === DOCUMENT TITLE ===
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("DATA KARYAWAN", 15, yPos);
-  yPos += 8;
-
+  doc.setTextColor(0, 0, 0);
+  doc.text("SLIP GAJI KARYAWAN", pageWidth / 2, yPos, { align: "center" });
+  yPos += 6;
+  
+  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Periode: ${payroll.periode}`, pageWidth / 2, yPos, { align: "center" });
+  yPos += 15;
+
+  // === EMPLOYEE DATA ===
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
   
-  const infoLeft = 15;
-  const infoRight = 55;
+  // Box for employee info
+  doc.setDrawColor(200, 200, 200);
+  doc.setFillColor(248, 249, 250);
+  doc.roundedRect(margin, yPos - 5, pageWidth - (margin * 2), 28, 3, 3, "F");
   
-  doc.text("Nama", infoLeft, yPos);
-  doc.text(`: ${payroll.employeeName}`, infoRight, yPos);
-  yPos += 6;
+  const col1 = margin + 5;
+  const col2 = margin + 45;
   
-  doc.text("Jabatan", infoLeft, yPos);
-  doc.text(`: ${payroll.jabatan}`, infoRight, yPos);
-  yPos += 6;
+  doc.setFont("helvetica", "normal");
+  doc.text("Nama Karyawan", col1, yPos + 3);
+  doc.setFont("helvetica", "bold");
+  doc.text(`: ${payroll.employeeName}`, col2, yPos + 3);
   
-  doc.text("Periode", infoLeft, yPos);
-  doc.text(`: ${payroll.periode}`, infoRight, yPos);
-  yPos += 12;
+  doc.setFont("helvetica", "normal");
+  doc.text("Jabatan", col1, yPos + 11);
+  doc.setFont("helvetica", "bold");
+  doc.text(`: ${payroll.jabatan}`, col2, yPos + 11);
+  
+  doc.setFont("helvetica", "normal");
+  doc.text("Periode Gaji", col1, yPos + 19);
+  doc.setFont("helvetica", "bold");
+  doc.text(`: ${payroll.periode}`, col2, yPos + 19);
 
-  // Salary Table
+  yPos += 35;
+
+  // === SALARY TABLE ===
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("RINCIAN GAJI", 15, yPos);
+  doc.text("RINCIAN GAJI", margin, yPos);
   yPos += 8;
 
-  // Table headers
-  const tableStartY = yPos;
-  const col1 = 15;
-  const col2 = 120;
-  const tableWidth = pageWidth - 30;
+  // Table header
+  const tableWidth = pageWidth - (margin * 2);
+  const colWidth1 = tableWidth * 0.6;
+  const colWidth2 = tableWidth * 0.4;
 
-  doc.setFillColor(240, 240, 240);
-  doc.rect(col1, yPos - 5, tableWidth, 8, "F");
+  doc.setFillColor(41, 128, 185);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(margin, yPos - 5, tableWidth, 10, "F");
   doc.setFontSize(10);
-  doc.text("Komponen", col1 + 5, yPos);
-  doc.text("Jumlah", col2 + 20, yPos);
+  doc.text("Komponen Gaji", margin + 5, yPos + 1);
+  doc.text("Jumlah", margin + colWidth1 + 5, yPos + 1);
   yPos += 10;
 
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "normal");
-  
-  // Salary components
-  const components = [
-    { name: "Gaji Pokok", value: payroll.gajiPokok },
-    { name: "Tunjangan Transport", value: payroll.tjTransport },
-    { name: "Tunjangan Internet", value: payroll.tjInternet },
-    { name: "Tunjangan KPI", value: payroll.tjKpi },
+
+  // Salary rows
+  const salaryItems = [
+    { label: "Gaji Pokok", value: payroll.gajiPokok },
+    { label: "Tunjangan Transport", value: payroll.tjTransport },
+    { label: "Tunjangan Internet", value: payroll.tjInternet },
+    { label: "Tunjangan KPI", value: payroll.tjKpi },
   ];
 
-  components.forEach((comp) => {
-    doc.text(comp.name, col1 + 5, yPos);
-    doc.text(formatCurrency(comp.value), col2 + 20, yPos);
-    yPos += 7;
+  salaryItems.forEach((item, index) => {
+    // Alternate row background
+    if (index % 2 === 0) {
+      doc.setFillColor(248, 249, 250);
+      doc.rect(margin, yPos - 4, tableWidth, 8, "F");
+    }
+    
+    doc.text(item.label, margin + 5, yPos);
+    doc.text(formatCurrency(item.value), margin + colWidth1 + 5, yPos);
+    yPos += 8;
   });
 
-  // Total line
-  doc.setLineWidth(0.3);
-  doc.line(col1, yPos, col1 + tableWidth, yPos);
-  yPos += 6;
-
+  // Total row
+  doc.setFillColor(41, 128, 185);
+  doc.setTextColor(255, 255, 255);
+  doc.rect(margin, yPos - 4, tableWidth, 10, "F");
   doc.setFont("helvetica", "bold");
-  doc.text("TOTAL GAJI", col1 + 5, yPos);
-  doc.text(formatCurrency(payroll.totalGaji), col2 + 20, yPos);
-  yPos += 10;
+  doc.setFontSize(11);
+  doc.text("TOTAL GAJI", margin + 5, yPos + 1);
+  doc.text(formatCurrency(payroll.totalGaji), margin + colWidth1 + 5, yPos + 1);
+  yPos += 15;
 
   // Terbilang
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   const terbilangText = `Terbilang: ${terbilang(payroll.totalGaji).trim()} Rupiah`;
-  doc.text(terbilangText, col1 + 5, yPos);
-  yPos += 15;
+  
+  // Word wrap for terbilang
+  const splitText = doc.splitTextToSize(terbilangText, tableWidth - 10);
+  doc.text(splitText, margin + 5, yPos);
+  yPos += splitText.length * 5 + 10;
 
+  // === FOOTER ===
   // Print date
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   const printDate = format(new Date(), "dd MMMM yyyy", { locale: id });
-  doc.text(`Tanggal Cetak: ${printDate}`, col1, yPos);
-  yPos += 20;
+  doc.text(`Jakarta, ${printDate}`, pageWidth - margin, yPos, { align: "right" });
+  yPos += 15;
 
   // Signature section
-  const sigCol1 = 30;
-  const sigCol2 = pageWidth - 70;
+  const sigCol1 = margin + 20;
+  const sigCol2 = pageWidth - margin - 50;
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.text("Pemberi,", sigCol1, yPos);
   doc.text("Penerima,", sigCol2, yPos);
   yPos += 5;
 
-  // HR Signature
+  // HR Signature image
   if (settings.signatureUrl) {
     try {
       const sigData = await loadImage(settings.signatureUrl);
-      doc.addImage(sigData, "PNG", sigCol1 - 10, yPos, 40, 20);
+      doc.addImage(sigData, "PNG", sigCol1 - 10, yPos, 45, 22);
     } catch (error) {
       console.log("Failed to load signature:", error);
     }
   }
 
-  yPos += 25;
+  yPos += 28;
 
-  doc.setFont("helvetica", "normal");
+  // Names with underline
+  doc.setFont("helvetica", "bold");
   doc.text(settings.hrName || "HR Manager", sigCol1, yPos);
   doc.text(payroll.employeeName, sigCol2, yPos);
-  yPos += 5;
   
-  doc.setFontSize(9);
+  // Underlines
+  const hrNameWidth = doc.getTextWidth(settings.hrName || "HR Manager");
+  const empNameWidth = doc.getTextWidth(payroll.employeeName);
+  doc.line(sigCol1, yPos + 1, sigCol1 + hrNameWidth, yPos + 1);
+  doc.line(sigCol2, yPos + 1, sigCol2 + empNameWidth, yPos + 1);
+  
+  yPos += 5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
   doc.text("Human Resources", sigCol1, yPos);
+  doc.text("Karyawan", sigCol2, yPos);
+
+  // === FOOTER NOTE ===
+  yPos = doc.internal.pageSize.getHeight() - 15;
+  doc.setFontSize(7);
+  doc.setTextColor(150, 150, 150);
+  doc.text("Dokumen ini dicetak secara otomatis dan sah tanpa tanda tangan basah.", pageWidth / 2, yPos, { align: "center" });
 
   // Save PDF
-  const fileName = `Slip_Gaji_${payroll.employeeName.replace(/\s+/g, "_")}_${payroll.periode.replace(/\s+/g, "_")}.pdf`;
+  const fileName = `SlipGaji_${payroll.employeeName.replace(/\s+/g, "_")}_${payroll.periode.replace(/\s+/g, "_")}.pdf`;
   doc.save(fileName);
 };
