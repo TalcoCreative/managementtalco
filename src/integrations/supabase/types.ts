@@ -483,7 +483,10 @@ export type Database = {
       }
       payroll: {
         Row: {
+          adjustment_lainnya: number | null
+          adjustment_notes: string | null
           amount: number
+          bonus: number | null
           created_at: string
           created_by: string
           employee_id: string
@@ -492,10 +495,16 @@ export type Database = {
           month: string
           paid_at: string | null
           pay_date: string | null
+          potongan_kasbon: number | null
+          potongan_terlambat: number | null
+          reimburse: number | null
           status: string
         }
         Insert: {
+          adjustment_lainnya?: number | null
+          adjustment_notes?: string | null
           amount: number
+          bonus?: number | null
           created_at?: string
           created_by: string
           employee_id: string
@@ -504,10 +513,16 @@ export type Database = {
           month: string
           paid_at?: string | null
           pay_date?: string | null
+          potongan_kasbon?: number | null
+          potongan_terlambat?: number | null
+          reimburse?: number | null
           status?: string
         }
         Update: {
+          adjustment_lainnya?: number | null
+          adjustment_notes?: string | null
           amount?: number
+          bonus?: number | null
           created_at?: string
           created_by?: string
           employee_id?: string
@@ -516,6 +531,9 @@ export type Database = {
           month?: string
           paid_at?: string | null
           pay_date?: string | null
+          potongan_kasbon?: number | null
+          potongan_terlambat?: number | null
+          reimburse?: number | null
           status?: string
         }
         Relationships: [
