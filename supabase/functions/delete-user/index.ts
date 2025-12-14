@@ -64,7 +64,187 @@ serve(async (req) => {
 
     console.log("Deleting user:", userId);
 
-    // Delete user from auth (this will cascade to profiles due to foreign key)
+    // First, clean up related records that have foreign key constraints
+    // Transfer ownership of clients to the requesting user
+    const { error: clientsError } = await supabaseAdmin
+      .from("clients")
+      .update({ created_by: user.id })
+      .eq("created_by", userId);
+    
+    if (clientsError) {
+      console.error("Error updating clients ownership:", clientsError);
+    }
+
+    // Delete user roles
+    const { error: rolesError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (rolesError) {
+      console.error("Error deleting user roles:", rolesError);
+    }
+
+    // Delete shooting notifications
+    const { error: shootingNotifError } = await supabaseAdmin
+      .from("shooting_notifications")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (shootingNotifError) {
+      console.error("Error deleting shooting notifications:", shootingNotifError);
+    }
+
+    // Delete attendance records
+    const { error: attendanceError } = await supabaseAdmin
+      .from("attendance")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (attendanceError) {
+      console.error("Error deleting attendance:", attendanceError);
+    }
+
+    // Delete leave requests
+    const { error: leaveError } = await supabaseAdmin
+      .from("leave_requests")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (leaveError) {
+      console.error("Error deleting leave requests:", leaveError);
+    }
+
+    // Delete task activities
+    const { error: taskActivitiesError } = await supabaseAdmin
+      .from("task_activities")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (taskActivitiesError) {
+      console.error("Error deleting task activities:", taskActivitiesError);
+    }
+
+    // Update tasks - transfer to requesting user
+    const { error: tasksCreatedError } = await supabaseAdmin
+      .from("tasks")
+      .update({ created_by: user.id })
+      .eq("created_by", userId);
+    
+    if (tasksCreatedError) {
+      console.error("Error updating tasks created_by:", tasksCreatedError);
+    }
+
+    // Unassign tasks assigned to the deleted user
+    const { error: tasksAssignedError } = await supabaseAdmin
+      .from("tasks")
+      .update({ assigned_to: null })
+      .eq("assigned_to", userId);
+    
+    if (tasksAssignedError) {
+      console.error("Error updating tasks assigned_to:", tasksAssignedError);
+    }
+
+    // Update comments - transfer to requesting user
+    const { error: commentsError } = await supabaseAdmin
+      .from("comments")
+      .update({ author_id: user.id })
+      .eq("author_id", userId);
+    
+    if (commentsError) {
+      console.error("Error updating comments:", commentsError);
+    }
+
+    // Update scheduled posts - transfer to requesting user
+    const { error: scheduledPostsError } = await supabaseAdmin
+      .from("scheduled_posts")
+      .update({ created_by: user.id })
+      .eq("created_by", userId);
+    
+    if (scheduledPostsError) {
+      console.error("Error updating scheduled posts:", scheduledPostsError);
+    }
+
+    // Update shooting schedules - transfer to requesting user
+    const { error: shootingCreatedError } = await supabaseAdmin
+      .from("shooting_schedules")
+      .update({ requested_by: user.id })
+      .eq("requested_by", userId);
+    
+    if (shootingCreatedError) {
+      console.error("Error updating shooting schedules requested_by:", shootingCreatedError);
+    }
+
+    // Unassign shooting schedules
+    const { error: shootingDirectorError } = await supabaseAdmin
+      .from("shooting_schedules")
+      .update({ director: null })
+      .eq("director", userId);
+    
+    if (shootingDirectorError) {
+      console.error("Error updating shooting schedules director:", shootingDirectorError);
+    }
+
+    const { error: shootingRunnerError } = await supabaseAdmin
+      .from("shooting_schedules")
+      .update({ runner: null })
+      .eq("runner", userId);
+    
+    if (shootingRunnerError) {
+      console.error("Error updating shooting schedules runner:", shootingRunnerError);
+    }
+
+    // Delete shooting crew
+    const { error: shootingCrewError } = await supabaseAdmin
+      .from("shooting_crew")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (shootingCrewError) {
+      console.error("Error deleting shooting crew:", shootingCrewError);
+    }
+
+    // Update projects - unassign
+    const { error: projectsError } = await supabaseAdmin
+      .from("projects")
+      .update({ assigned_to: null })
+      .eq("assigned_to", userId);
+    
+    if (projectsError) {
+      console.error("Error updating projects:", projectsError);
+    }
+
+    // Delete task attachments uploaded by user
+    const { error: attachmentsError } = await supabaseAdmin
+      .from("task_attachments")
+      .delete()
+      .eq("uploaded_by", userId);
+    
+    if (attachmentsError) {
+      console.error("Error deleting task attachments:", attachmentsError);
+    }
+
+    // Update deletion logs
+    const { error: deletionLogsError } = await supabaseAdmin
+      .from("deletion_logs")
+      .update({ deleted_by: user.id })
+      .eq("deleted_by", userId);
+    
+    if (deletionLogsError) {
+      console.error("Error updating deletion logs:", deletionLogsError);
+    }
+
+    // Delete profile
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+    
+    if (profileError) {
+      console.error("Error deleting profile:", profileError);
+    }
+
+    // Finally, delete user from auth
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteError) {
