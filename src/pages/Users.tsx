@@ -77,32 +77,31 @@ export default function Users() {
     },
   });
 
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
+  const { data: userRoles } = useQuery({
+    queryKey: ["user-roles-current"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return null;
+      if (!session.session) return [];
 
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", session.session.user.id)
-        .single();
+        .eq("user_id", session.session.user.id);
       
-      return data?.role;
+      return data?.map(r => r.role) || [];
     },
   });
 
-  const isSuperAdmin = userRole === "super_admin";
-  const isHR = userRole === "hr";
+  const isSuperAdmin = userRoles?.includes("super_admin");
+  const isHR = userRoles?.includes("hr");
   const canManageUsers = isSuperAdmin || isHR;
 
   // Redirect non-HR/super_admin users
   useEffect(() => {
-    if (userRole && !canManageUsers) {
+    if (userRoles && userRoles.length > 0 && !canManageUsers) {
       navigate("/");
     }
-  }, [userRole, canManageUsers, navigate]);
+  }, [userRoles, canManageUsers, navigate]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
