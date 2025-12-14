@@ -231,7 +231,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                   <SelectValue placeholder="Select user" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users?.map((user) => (
+                  {users?.filter((user) => user.status !== 'non_active').map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.full_name}
                     </SelectItem>

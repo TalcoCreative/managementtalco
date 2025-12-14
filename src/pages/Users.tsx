@@ -149,8 +149,10 @@ export default function Users() {
   };
 
   const handleCardClick = (user: any) => {
-    setSelectedUser(user);
-    setDetailDialogOpen(true);
+    if (canManageUsers) {
+      setSelectedUser(user);
+      setDetailDialogOpen(true);
+    }
   };
 
   const handleEditRole = (e: React.MouseEvent, user: any) => {
@@ -195,7 +197,7 @@ export default function Users() {
               return (
                 <Card 
                   key={user.id} 
-                  className={`hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02] ${user.status === 'non_active' ? 'opacity-60' : ''}`}
+                  className={`hover:shadow-lg transition-all ${canManageUsers ? 'cursor-pointer hover:scale-[1.02]' : ''} ${user.status === 'non_active' ? 'opacity-60' : ''}`}
                   onClick={() => handleCardClick(user)}
                 >
                   <CardHeader>
