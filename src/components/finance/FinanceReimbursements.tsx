@@ -158,18 +158,14 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Map request_from to category structure
-      const categoryMapping = REIMBURSE_CATEGORY_MAPPING[reimburse.request_from] || 
-        { category: "sdm_hr", subCategory: "reimburse_karyawan" };
-
-      // Create ledger entry with proper category mapping
+      // Create ledger entry with valid sub_type for constraint
       const { data: ledgerEntry, error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
-          sub_type: categoryMapping.category,
-          sub_category: categoryMapping.subCategory,
+          sub_type: "reimburse",
+          sub_category: reimburse.request_from,
           project_id: reimburse.project_id,
           client_id: reimburse.client_id,
           amount: reimburse.amount,
@@ -181,6 +177,24 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
         .single();
 
       if (ledgerError) throw ledgerError;
+
+      // Create expense entry
+      const { error: expenseError } = await supabase
+        .from("expenses")
+        .insert({
+          category: "reimburse",
+          sub_category: reimburse.request_from,
+          project_id: reimburse.project_id,
+          client_id: reimburse.client_id,
+          amount: reimburse.amount,
+          description: reimburse.notes || `Reimbursement - ${reimburse.request_from}`,
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          ledger_entry_id: ledgerEntry.id,
+          created_by: session.session.user.id,
+        });
+
+      if (expenseError) throw expenseError;
 
       // Update reimbursement status
       const { error: updateError } = await supabase
@@ -194,9 +208,10 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
 
       if (updateError) throw updateError;
 
-      toast.success("Reimbursement marked as paid and added to ledger");
+      toast.success("Reimbursement paid dan masuk ke Expenses");
       queryClient.invalidateQueries({ queryKey: ["finance-reimbursements"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark reimbursement as paid");
     }
