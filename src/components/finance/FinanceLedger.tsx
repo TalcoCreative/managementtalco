@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { Search, BookOpen, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Search, BookOpen, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
   getMainCategoryLabel, 
@@ -20,6 +23,9 @@ export function FinanceLedger() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   const { data: ledgerEntries, isLoading } = useQuery({
     queryKey: ["finance-ledger"],
@@ -46,6 +52,41 @@ export function FinanceLedger() {
 
     return matchesSearch && matchesType && matchesCategory && matchesSubCategory;
   });
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return;
+    
+    try {
+      // Also delete related payroll/expense if exists
+      if (entryToDelete.source === "payroll") {
+        await supabase
+          .from("payroll")
+          .update({ ledger_entry_id: null, status: "planned", paid_at: null })
+          .eq("ledger_entry_id", entryToDelete.id);
+        
+        await supabase
+          .from("expenses")
+          .delete()
+          .eq("ledger_entry_id", entryToDelete.id);
+      }
+
+      const { error } = await supabase
+        .from("ledger_entries")
+        .delete()
+        .eq("id", entryToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Entry ledger berhasil dihapus");
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus entry");
+    }
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -77,7 +118,7 @@ export function FinanceLedger() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5" />
-          Ledger (Read-Only)
+          Ledger
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -144,6 +185,7 @@ export function FinanceLedger() {
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Source</TableHead>
                   <TableHead>Notes</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -192,6 +234,19 @@ export function FinanceLedger() {
                     <TableCell className="max-w-[200px] truncate">
                       {entry.notes || "-"}
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setEntryToDelete(entry);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -204,6 +259,32 @@ export function FinanceLedger() {
           </div>
         )}
       </CardContent>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Entry Ledger</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus entry ini?
+              {entryToDelete?.source === "payroll" && (
+                <span className="block mt-2 text-yellow-600">
+                  Entry ini berasal dari Payroll. Status payroll terkait akan dikembalikan ke "Planned".
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteEntry}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

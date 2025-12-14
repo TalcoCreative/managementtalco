@@ -24,6 +24,12 @@ interface PayrollEntry {
   tj_transport: number;
   tj_internet: number;
   tj_kpi: number;
+  reimburse: number;
+  potongan_terlambat: number;
+  potongan_kasbon: number;
+  bonus: number;
+  adjustment_lainnya: number;
+  adjustment_notes: string;
   total: number;
   status: string;
   existing?: boolean;
@@ -114,6 +120,12 @@ export function FinancePayroll() {
         tj_transport: Number(p.profiles?.tj_transport) || 0,
         tj_internet: Number(p.profiles?.tj_internet) || 0,
         tj_kpi: Number(p.profiles?.tj_kpi) || 0,
+        reimburse: Number((p as any).reimburse) || 0,
+        potongan_terlambat: Number((p as any).potongan_terlambat) || 0,
+        potongan_kasbon: Number((p as any).potongan_kasbon) || 0,
+        bonus: Number((p as any).bonus) || 0,
+        adjustment_lainnya: Number((p as any).adjustment_lainnya) || 0,
+        adjustment_notes: (p as any).adjustment_notes || "",
         total: Number(p.amount),
         status: p.status,
         existing: true,
@@ -123,7 +135,7 @@ export function FinancePayroll() {
     // Add employees not yet in payroll
     employees?.forEach(emp => {
       if (!existingIds.includes(emp.id)) {
-        const total = (Number(emp.gaji_pokok) || 0) + 
+        const baseTotal = (Number(emp.gaji_pokok) || 0) + 
                       (Number(emp.tj_transport) || 0) + 
                       (Number(emp.tj_internet) || 0) + 
                       (Number(emp.tj_kpi) || 0);
@@ -134,7 +146,13 @@ export function FinancePayroll() {
           tj_transport: Number(emp.tj_transport) || 0,
           tj_internet: Number(emp.tj_internet) || 0,
           tj_kpi: Number(emp.tj_kpi) || 0,
-          total: total || Number(emp.salary) || 0,
+          reimburse: 0,
+          potongan_terlambat: 0,
+          potongan_kasbon: 0,
+          bonus: 0,
+          adjustment_lainnya: 0,
+          adjustment_notes: "",
+          total: baseTotal || Number(emp.salary) || 0,
           status: "planned",
           existing: false,
         });
@@ -145,16 +163,22 @@ export function FinancePayroll() {
     setEditDialogOpen(true);
   };
 
-  const updatePayrollEntry = (index: number, field: keyof PayrollEntry, value: number) => {
+  const updatePayrollEntry = (index: number, field: keyof PayrollEntry, value: number | string) => {
     const updated = [...editablePayroll];
     (updated[index] as any)[field] = value;
     
-    // Recalculate total
+    // Recalculate total (base + additions - deductions)
+    const e = updated[index];
     updated[index].total = 
-      updated[index].gaji_pokok + 
-      updated[index].tj_transport + 
-      updated[index].tj_internet + 
-      updated[index].tj_kpi;
+      e.gaji_pokok + 
+      e.tj_transport + 
+      e.tj_internet + 
+      e.tj_kpi +
+      e.reimburse +
+      e.bonus +
+      e.adjustment_lainnya -
+      e.potongan_terlambat -
+      e.potongan_kasbon;
     
     setEditablePayroll(updated);
   };
@@ -170,11 +194,21 @@ export function FinancePayroll() {
       for (const entry of editablePayroll) {
         if (entry.total <= 0) continue;
 
+        const payrollData = {
+          amount: entry.total,
+          reimburse: entry.reimburse,
+          potongan_terlambat: entry.potongan_terlambat,
+          potongan_kasbon: entry.potongan_kasbon,
+          bonus: entry.bonus,
+          adjustment_lainnya: entry.adjustment_lainnya,
+          adjustment_notes: entry.adjustment_notes || null,
+        };
+
         if (entry.existing && entry.id) {
           // Update existing
           await supabase
             .from("payroll")
-            .update({ amount: entry.total })
+            .update(payrollData)
             .eq("id", entry.id);
         } else if (!entry.existing) {
           // Insert new
@@ -183,8 +217,8 @@ export function FinancePayroll() {
             .insert({
               employee_id: entry.employee_id,
               month: format(monthDate, "yyyy-MM-dd"),
-              amount: entry.total,
               created_by: session.session.user.id,
+              ...payrollData,
             });
         }
       }
@@ -464,7 +498,7 @@ export function FinancePayroll() {
 
       {/* Edit Payroll Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Update Payroll - {format(new Date(selectedMonth + "-01"), "MMMM yyyy", { locale: idLocale })}
@@ -475,25 +509,30 @@ export function FinancePayroll() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Karyawan</TableHead>
+                  <TableHead className="sticky left-0 bg-background z-10">Karyawan</TableHead>
                   <TableHead className="text-right">Gaji Pokok</TableHead>
                   <TableHead className="text-right">Tj. Transport</TableHead>
                   <TableHead className="text-right">Tj. Internet</TableHead>
                   <TableHead className="text-right">Tj. KPI</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right text-green-600">Reimburse (+)</TableHead>
+                  <TableHead className="text-right text-green-600">Bonus (+)</TableHead>
+                  <TableHead className="text-right text-destructive">Pot. Terlambat (-)</TableHead>
+                  <TableHead className="text-right text-destructive">Pot. Kasbon (-)</TableHead>
+                  <TableHead className="text-right">Lainnya (+/-)</TableHead>
+                  <TableHead className="text-right font-bold">Total</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {editablePayroll.map((entry, index) => (
                   <TableRow key={entry.employee_id}>
-                    <TableCell className="font-medium">{entry.employee_name}</TableCell>
+                    <TableCell className="font-medium sticky left-0 bg-background z-10">{entry.employee_name}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         value={entry.gaji_pokok}
                         onChange={(e) => updatePayrollEntry(index, "gaji_pokok", Number(e.target.value))}
-                        className="w-28 text-right"
+                        className="w-24 text-right"
                         disabled={entry.status === "paid"}
                       />
                     </TableCell>
@@ -502,7 +541,7 @@ export function FinancePayroll() {
                         type="number"
                         value={entry.tj_transport}
                         onChange={(e) => updatePayrollEntry(index, "tj_transport", Number(e.target.value))}
-                        className="w-24 text-right"
+                        className="w-20 text-right"
                         disabled={entry.status === "paid"}
                       />
                     </TableCell>
@@ -511,7 +550,7 @@ export function FinancePayroll() {
                         type="number"
                         value={entry.tj_internet}
                         onChange={(e) => updatePayrollEntry(index, "tj_internet", Number(e.target.value))}
-                        className="w-24 text-right"
+                        className="w-20 text-right"
                         disabled={entry.status === "paid"}
                       />
                     </TableCell>
@@ -520,7 +559,52 @@ export function FinancePayroll() {
                         type="number"
                         value={entry.tj_kpi}
                         onChange={(e) => updatePayrollEntry(index, "tj_kpi", Number(e.target.value))}
-                        className="w-24 text-right"
+                        className="w-20 text-right"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.reimburse}
+                        onChange={(e) => updatePayrollEntry(index, "reimburse", Number(e.target.value))}
+                        className="w-20 text-right text-green-600"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.bonus}
+                        onChange={(e) => updatePayrollEntry(index, "bonus", Number(e.target.value))}
+                        className="w-20 text-right text-green-600"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.potongan_terlambat}
+                        onChange={(e) => updatePayrollEntry(index, "potongan_terlambat", Number(e.target.value))}
+                        className="w-20 text-right text-destructive"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.potongan_kasbon}
+                        onChange={(e) => updatePayrollEntry(index, "potongan_kasbon", Number(e.target.value))}
+                        className="w-20 text-right text-destructive"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.adjustment_lainnya}
+                        onChange={(e) => updatePayrollEntry(index, "adjustment_lainnya", Number(e.target.value))}
+                        className="w-20 text-right"
                         disabled={entry.status === "paid"}
                       />
                     </TableCell>
