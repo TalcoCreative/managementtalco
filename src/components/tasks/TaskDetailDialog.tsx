@@ -355,8 +355,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] flex flex-col p-4 sm:p-6">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="w-[95vw] max-w-3xl h-[90vh] flex flex-col p-4 sm:p-6 overflow-hidden">
+          <DialogHeader className="flex-shrink-0 pb-2">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="space-y-1 min-w-0 flex-1">
                 <DialogTitle className="text-lg sm:text-2xl break-words">{task.title}</DialogTitle>
@@ -370,7 +370,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap flex-shrink-0">
-                {isCreator && !isEditing && (
+                {!isEditing && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -417,8 +417,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             </div>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 min-h-0 pr-2 sm:pr-4">
-            <div className="space-y-4 sm:space-y-6">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="space-y-4 sm:space-y-6 pr-2">
               {/* Task Link */}
               {task.link && (
                 <div className="rounded-lg border bg-card p-4">
@@ -711,7 +711,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
 
