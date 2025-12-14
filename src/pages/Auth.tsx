@@ -71,15 +71,18 @@ export default function Auth() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-primary p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
-            ProjectHub
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20 p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-primary">
+            Talco Creative Indonesia
           </CardTitle>
-          <CardDescription>
-            {isLogin ? "Sign in to your account" : "Create a new account"}
+          <CardDescription className="text-base">
+            Management System
           </CardDescription>
+          <p className="text-sm text-muted-foreground mt-2">
+            {isLogin ? "Sign in to your account" : "Create a new account"}
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
