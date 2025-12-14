@@ -352,12 +352,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
-                <DialogTitle className="text-2xl">{task.title}</DialogTitle>
-                <div className="flex items-center gap-2">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[85vh] flex flex-col p-4 sm:p-6">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="space-y-1 min-w-0 flex-1">
+                <DialogTitle className="text-lg sm:text-2xl break-words">{task.title}</DialogTitle>
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={getPriorityColor(task.priority)}>
                     {task.priority}
                   </Badge>
@@ -366,7 +366,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   </Badge>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap flex-shrink-0">
                 {isCreator && !isEditing && (
                   <Button
                     variant="outline"
@@ -413,8 +413,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             </div>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6">
+          <ScrollArea className="flex-1 min-h-0 pr-2 sm:pr-4">
+            <div className="space-y-4 sm:space-y-6">
               {/* Task Link */}
               {task.link && (
                 <div className="rounded-lg border bg-card p-4">
@@ -442,7 +442,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               )}
 
               {/* Task Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {task.projects?.clients && (
                   <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -525,10 +525,10 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
               {/* Attachments Section */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Paperclip className="h-4 w-4" />
-                    <h3 className="font-semibold">Attachments ({attachments?.length || 0})</h3>
+                    <h3 className="font-semibold text-sm sm:text-base">Attachments ({attachments?.length || 0})</h3>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -536,17 +536,19 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                       size="sm"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadingFile}
+                      className="text-xs sm:text-sm"
                     >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploadingFile ? "Uploading..." : "Upload"}
+                      <Upload className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{uploadingFile ? "Uploading..." : "Upload"}</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowLinkInput(!showLinkInput)}
+                      className="text-xs sm:text-sm"
                     >
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      Link
+                      <LinkIcon className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Link</span>
                     </Button>
                   </div>
                 </div>
