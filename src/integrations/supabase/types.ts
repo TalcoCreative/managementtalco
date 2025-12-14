@@ -245,10 +245,13 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          bank_account_name: string | null
+          bank_account_number: string | null
           contract_end: string | null
           contract_start: string | null
           created_at: string | null
           email: string | null
+          emergency_contact: string | null
           full_name: string
           id: string
           ktp_number: string | null
@@ -259,10 +262,13 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string | null
           email?: string | null
+          emergency_contact?: string | null
           full_name: string
           id: string
           ktp_number?: string | null
@@ -273,10 +279,13 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string | null
           email?: string | null
+          emergency_contact?: string | null
           full_name?: string
           id?: string
           ktp_number?: string | null

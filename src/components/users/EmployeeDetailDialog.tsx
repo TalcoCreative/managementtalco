@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X } from "lucide-react";
+import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark } from "lucide-react";
 import { format } from "date-fns";
 
 interface EmployeeDetailDialogProps {
@@ -33,6 +33,9 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
     avatar_url: "",
     phone: "",
     email: "",
+    emergency_contact: "",
+    bank_account_number: "",
+    bank_account_name: "",
   });
   const queryClient = useQueryClient();
 
@@ -48,6 +51,9 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         avatar_url: employee.avatar_url || "",
         phone: employee.phone || "",
         email: employee.email || employee.user_id || "",
+        emergency_contact: employee.emergency_contact || "",
+        bank_account_number: employee.bank_account_number || "",
+        bank_account_name: employee.bank_account_name || "",
       });
     }
   }, [employee]);
@@ -67,6 +73,9 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           avatar_url: formData.avatar_url || null,
           phone: formData.phone || null,
           email: formData.email || null,
+          emergency_contact: formData.emergency_contact || null,
+          bank_account_number: formData.bank_account_number || null,
+          bank_account_name: formData.bank_account_name || null,
         })
         .eq("id", employee.id);
 
@@ -105,6 +114,18 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         return "bg-green-500";
       case "video_editor":
         return "bg-red-500";
+      case "finance":
+        return "bg-emerald-500";
+      case "accounting":
+        return "bg-cyan-500";
+      case "marketing":
+        return "bg-orange-500";
+      case "photographer":
+        return "bg-pink-500";
+      case "director":
+        return "bg-indigo-500";
+      case "project_manager":
+        return "bg-teal-500";
       default:
         return "bg-muted";
     }
@@ -216,8 +237,59 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
                 ) : (
                   <p className="font-medium">{employee.phone || "-"}</p>
                 )}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" /> Emergency Contact
+                </Label>
+                {isEditing ? (
+                  <Input
+                    value={formData.emergency_contact}
+                    onChange={(e) => setFormData({ ...formData, emergency_contact: e.target.value })}
+                    placeholder="08xxxxxxxxxx"
+                  />
+                ) : (
+                  <p className="font-medium">{employee.emergency_contact || "-"}</p>
+                )}
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Bank Account Information */}
+          <div>
+            <h3 className="font-semibold mb-3">Bank Account Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <Landmark className="h-4 w-4" /> Account Number
+                </Label>
+                {isEditing ? (
+                  <Input
+                    value={formData.bank_account_number}
+                    onChange={(e) => setFormData({ ...formData, bank_account_number: e.target.value })}
+                    placeholder="Nomor Rekening"
+                  />
+                ) : (
+                  <p className="font-medium">{employee.bank_account_number || "-"}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4" /> Account Holder Name
+                </Label>
+                {isEditing ? (
+                  <Input
+                    value={formData.bank_account_name}
+                    onChange={(e) => setFormData({ ...formData, bank_account_name: e.target.value })}
+                    placeholder="Atas Nama Rekening"
+                  />
+                ) : (
+                  <p className="font-medium">{employee.bank_account_name || "-"}</p>
+                )}
+              </div>
+            </div>
+          </div>
           </div>
 
           <Separator />
