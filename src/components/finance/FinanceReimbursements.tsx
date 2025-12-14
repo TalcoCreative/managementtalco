@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { Plus, Receipt, CheckCircle, XCircle, Wallet } from "lucide-react";
+import { Plus, Receipt, CheckCircle, XCircle, Wallet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { REIMBURSE_CATEGORY_MAPPING } from "@/lib/finance-categories";
 
@@ -22,6 +23,8 @@ interface Props {
 
 export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reimburseToDelete, setReimburseToDelete] = useState<any>(null);
   const [formData, setFormData] = useState({
     amount: "",
     project_id: "",
@@ -196,6 +199,26 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark reimbursement as paid");
+    }
+  };
+
+  const handleDeleteReimbursement = async () => {
+    if (!reimburseToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("reimbursements")
+        .delete()
+        .eq("id", reimburseToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Reimbursement deleted successfully");
+      setDeleteDialogOpen(false);
+      setReimburseToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-reimbursements"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete reimbursement");
     }
   };
 
@@ -376,6 +399,19 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
                             Pay
                           </Button>
                         )}
+                        {canApprove && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => {
+                              setReimburseToDelete(reimburse);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -390,6 +426,27 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Reimbursement</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus reimbursement dari "{reimburseToDelete?.requester_name}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteReimbursement}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -9,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
-import { Plus, RefreshCw, Pause, Play, CheckCircle } from "lucide-react";
+import { Plus, RefreshCw, Pause, Play, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinanceRecurring() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "expense",
@@ -116,6 +119,26 @@ export function FinanceRecurring() {
       queryClient.invalidateQueries({ queryKey: ["finance-recurring"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to update status");
+    }
+  };
+
+  const handleDeleteRecurring = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from("recurring_budget")
+        .delete()
+        .eq("id", itemToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Recurring budget deleted successfully");
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["finance-recurring"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete recurring budget");
     }
   };
 
@@ -327,6 +350,17 @@ export function FinanceRecurring() {
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setItemToDelete(item);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -341,6 +375,27 @@ export function FinanceRecurring() {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Recurring Budget</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus "{itemToDelete?.name}"? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteRecurring}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
