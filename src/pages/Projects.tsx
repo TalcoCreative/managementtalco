@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -20,6 +22,9 @@ export default function Projects() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [deleteProject, setDeleteProject] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: clients } = useQuery({
     queryKey: ["clients"],
@@ -82,6 +87,37 @@ export default function Projects() {
 
   const canManageProjects = userRole === "super_admin" || userRole === "hr";
 
+  const handleDelete = async (reason: string) => {
+    if (!deleteProject) return;
+    
+    setDeleting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Log the deletion
+      await supabase.from("deletion_logs").insert({
+        entity_type: "project",
+        entity_id: deleteProject.id,
+        entity_name: deleteProject.title,
+        deleted_by: session.session.user.id,
+        reason,
+      });
+
+      // Delete the project
+      const { error } = await supabase.from("projects").delete().eq("id", deleteProject.id);
+      if (error) throw error;
+
+      toast.success("Project dihapus");
+      setDeleteProject(null);
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus project");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -120,9 +156,20 @@ export default function Projects() {
               projects.map((project: any) => (
                 <Card
                   key={project.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
+                  className="cursor-pointer hover:shadow-lg transition-shadow relative group"
                   onClick={() => setSelectedProjectId(project.id)}
                 >
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteProject({ id: project.id, title: project.title });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                   <CardContent className="p-6">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -185,6 +232,15 @@ export default function Projects() {
         projectId={selectedProjectId}
         open={!!selectedProjectId}
         onOpenChange={(open) => !open && setSelectedProjectId(null)}
+      />
+
+      <DeleteConfirmDialog
+        open={!!deleteProject}
+        onOpenChange={(open) => !open && setDeleteProject(null)}
+        title="Hapus Project"
+        description={`Apakah Anda yakin ingin menghapus project "${deleteProject?.title}"? Semua task terkait mungkin akan terpengaruh.`}
+        onConfirm={handleDelete}
+        loading={deleting}
       />
     </AppLayout>
   );

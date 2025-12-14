@@ -7,14 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, MapPin, Users, Check, X, DollarSign } from "lucide-react";
+import { MapPin, Users, Check, X, DollarSign, Trash2 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { CreateShootingDialog } from "@/components/shooting/CreateShootingDialog";
-import { cn } from "@/lib/utils";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 export default function ShootingSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [deleteShooting, setDeleteShooting] = useState<{ id: string; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: userRole } = useQuery({
@@ -99,6 +101,37 @@ export default function ShootingSchedule() {
     }
   };
 
+  const handleDelete = async (reason: string) => {
+    if (!deleteShooting) return;
+    
+    setDeleting(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Log the deletion
+      await supabase.from("deletion_logs").insert({
+        entity_type: "shooting",
+        entity_id: deleteShooting.id,
+        entity_name: deleteShooting.title,
+        deleted_by: session.session.user.id,
+        reason,
+      });
+
+      // Delete the shooting schedule
+      const { error } = await supabase.from("shooting_schedules").delete().eq("id", deleteShooting.id);
+      if (error) throw error;
+
+      toast.success("Shooting schedule dihapus");
+      setDeleteShooting(null);
+      queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus shooting schedule");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved": return "bg-green-500";
@@ -127,7 +160,15 @@ export default function ShootingSchedule() {
     const totalFreelanceCost = freelancers.reduce((sum, f) => sum + (f.freelance_cost || 0), 0);
 
     return (
-      <Card key={shooting.id}>
+      <Card key={shooting.id} className="relative group">
+        <Button
+          variant="destructive"
+          size="icon"
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          onClick={() => setDeleteShooting({ id: shooting.id, title: shooting.title })}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -310,6 +351,15 @@ export default function ShootingSchedule() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <DeleteConfirmDialog
+        open={!!deleteShooting}
+        onOpenChange={(open) => !open && setDeleteShooting(null)}
+        title="Hapus Shooting Schedule"
+        description={`Apakah Anda yakin ingin menghapus shooting "${deleteShooting?.title}"?`}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </AppLayout>
   );
 }
