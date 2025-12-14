@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff } from "lucide-react";
+import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 export function ClockInOut() {
@@ -16,8 +16,11 @@ export function ClockInOut() {
   const [photoClockOut, setPhotoClockOut] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [isCameraForClockIn, setIsCameraForClockIn] = useState(true);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -100,22 +103,134 @@ export function ClockInOut() {
     },
   });
 
+  // Add timestamp watermark to photo
+  const addTimestampToPhoto = useCallback((videoElement: HTMLVideoElement): string => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+
+    // Draw the video frame
+    ctx.drawImage(videoElement, 0, 0);
+
+    // Create timestamp text
+    const now = new Date();
+    const dateStr = format(now, 'dd MMM yyyy');
+    const timeStr = format(now, 'HH:mm:ss');
+    const timestampText = `${dateStr} | ${timeStr}`;
+
+    // Configure text style for watermark
+    const fontSize = Math.max(16, Math.floor(canvas.width / 25));
+    ctx.font = `bold ${fontSize}px Arial`;
+    
+    // Measure text width
+    const textMetrics = ctx.measureText(timestampText);
+    const textWidth = textMetrics.width;
+    const textHeight = fontSize;
+    
+    // Position at bottom-right with padding
+    const padding = 15;
+    const x = canvas.width - textWidth - padding;
+    const y = canvas.height - padding;
+
+    // Draw semi-transparent background
+    const bgPadding = 8;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(
+      x - bgPadding, 
+      y - textHeight - bgPadding / 2, 
+      textWidth + bgPadding * 2, 
+      textHeight + bgPadding
+    );
+
+    // Draw timestamp text
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(timestampText, x, y);
+
+    // Add "Talco Management System" label
+    const labelFontSize = Math.max(12, Math.floor(canvas.width / 35));
+    ctx.font = `${labelFontSize}px Arial`;
+    const labelText = 'Talco Management System';
+    const labelMetrics = ctx.measureText(labelText);
+    const labelX = padding;
+    const labelY = canvas.height - padding;
+
+    // Draw label background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(
+      labelX - bgPadding, 
+      labelY - labelFontSize - bgPadding / 2, 
+      labelMetrics.width + bgPadding * 2, 
+      labelFontSize + bgPadding
+    );
+
+    // Draw label text
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(labelText, labelX, labelY);
+
+    return canvas.toDataURL('image/jpeg', 0.85);
+  }, []);
+
   const startCamera = async (forClockIn: boolean) => {
     try {
       setIsCameraForClockIn(forClockIn);
+      setIsCameraReady(false);
+      
+      // Request camera with preference for front camera on mobile
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' },
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: false 
       });
+      
       streamRef.current = stream;
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          setIsCameraReady(true);
+          // Start auto-capture countdown on mobile
+          if (isMobile()) {
+            startAutoCapture();
+          }
+        };
       }
+      
       setShowCamera(true);
     } catch (error) {
-      toast.error("Could not access camera");
+      console.error("Camera error:", error);
+      toast.error("Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.");
     }
   };
+
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
+  const startAutoCapture = () => {
+    // 3 second countdown before auto-capture
+    setCountdown(3);
+  };
+
+  useEffect(() => {
+    if (countdown === null) return;
+    
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      // Auto capture
+      capturePhoto();
+      setCountdown(null);
+    }
+  }, [countdown]);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -123,19 +238,19 @@ export function ClockInOut() {
       streamRef.current = null;
     }
     setShowCamera(false);
+    setIsCameraReady(false);
+    setCountdown(null);
   };
 
   const capturePhoto = () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !isCameraReady) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.drawImage(videoRef.current, 0, 0);
-    const photoData = canvas.toDataURL('image/jpeg', 0.8);
+    const photoData = addTimestampToPhoto(videoRef.current);
+    
+    if (!photoData) {
+      toast.error("Gagal mengambil foto");
+      return;
+    }
 
     if (isCameraForClockIn) {
       setPhotoClockIn(photoData);
@@ -144,12 +259,12 @@ export function ClockInOut() {
     }
     
     stopCamera();
-    toast.success("Photo captured!");
+    toast.success("Foto berhasil diambil!");
   };
 
   const handleClockIn = async () => {
     if (!photoClockIn) {
-      toast.error("Please take a photo before clocking in");
+      toast.error("Silakan ambil foto terlebih dahulu");
       return;
     }
 
@@ -170,12 +285,12 @@ export function ClockInOut() {
 
       if (error) throw error;
 
-      toast.success("Clocked in successfully!");
+      toast.success("Clock in berhasil!");
       setNotes("");
       setPhotoClockIn(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to clock in");
+      toast.error(error.message || "Gagal clock in");
     } finally {
       setLoading(false);
     }
@@ -184,7 +299,7 @@ export function ClockInOut() {
   const handleClockOut = async () => {
     if (!todayAttendance) return;
     if (!photoClockOut) {
-      toast.error("Please take a photo before clocking out");
+      toast.error("Silakan ambil foto terlebih dahulu");
       return;
     }
 
@@ -210,18 +325,27 @@ export function ClockInOut() {
 
       if (error) throw error;
 
-      toast.success("Clocked out successfully!");
+      toast.success("Clock out berhasil!");
       setNotes("");
       setPhotoClockOut(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
       queryClient.invalidateQueries({ queryKey: ["today-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["today-created-tasks"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to clock out");
+      toast.error(error.message || "Gagal clock out");
     } finally {
       setLoading(false);
     }
   };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const isClockedIn = todayAttendance?.clock_in && !todayAttendance?.clock_out;
   const hasApprovedLeave = !!approvedLeave;
@@ -264,21 +388,62 @@ export function ClockInOut() {
       <CardContent className="space-y-4">
         {showCamera && (
           <div className="space-y-4">
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline
-              className="w-full rounded-lg border"
-            />
+            <div className="relative">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline
+                muted
+                className="w-full rounded-lg border aspect-video object-cover"
+              />
+              
+              {/* Real-time timestamp overlay */}
+              <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                {format(new Date(), 'dd MMM yyyy | HH:mm:ss')}
+              </div>
+              <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                Talco Management System
+              </div>
+
+              {/* Countdown overlay for mobile */}
+              {countdown !== null && countdown > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <div className="text-6xl font-bold text-white animate-pulse">
+                    {countdown}
+                  </div>
+                </div>
+              )}
+
+              {/* Camera loading indicator */}
+              {!isCameraReady && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <div className="flex flex-col items-center gap-2 text-white">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="text-sm">Memuat kamera...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-2">
-              <Button onClick={capturePhoto} className="flex-1">
+              <Button 
+                onClick={capturePhoto} 
+                className="flex-1"
+                disabled={!isCameraReady}
+              >
                 <Camera className="h-4 w-4 mr-2" />
-                Capture Photo
+                {countdown !== null ? `Mengambil dalam ${countdown}...` : 'Ambil Foto'}
               </Button>
               <Button onClick={stopCamera} variant="outline">
-                Cancel
+                Batal
               </Button>
             </div>
+
+            {isMobile() && isCameraReady && countdown === null && (
+              <p className="text-xs text-center text-muted-foreground">
+                Foto akan diambil otomatis dalam 3 detik, atau tekan tombol untuk mengambil sekarang
+              </p>
+            )}
           </div>
         )}
 
@@ -295,12 +460,12 @@ export function ClockInOut() {
               <img 
                 src={todayAttendance.photo_clock_in} 
                 alt="Clock in photo" 
-                className="w-24 h-24 object-cover rounded border"
+                className="w-full max-w-xs h-auto object-cover rounded border"
               />
             )}
             {todayAttendance.clock_out && (
               <>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-3">
                   <LogOut className="h-4 w-4 text-red-500" />
                   <span className="text-muted-foreground">Clock Out:</span>
                   <span className="font-medium">
@@ -311,7 +476,7 @@ export function ClockInOut() {
                   <img 
                     src={todayAttendance.photo_clock_out} 
                     alt="Clock out photo" 
-                    className="w-24 h-24 object-cover rounded border"
+                    className="w-full max-w-xs h-auto object-cover rounded border"
                   />
                 )}
                 {todayAttendance.tasks_completed && todayAttendance.tasks_completed.length > 0 && (
@@ -353,7 +518,7 @@ export function ClockInOut() {
                 <img 
                   src={photoClockIn} 
                   alt="Clock in preview" 
-                  className="w-full h-48 object-cover rounded border"
+                  className="w-full h-auto max-h-64 object-contain rounded border bg-muted"
                 />
                 <Button
                   onClick={() => startCamera(true)}
@@ -361,7 +526,7 @@ export function ClockInOut() {
                   className="w-full gap-2"
                 >
                   <Camera className="h-4 w-4" />
-                  Retake Photo
+                  Ambil Ulang Foto
                 </Button>
               </>
             ) : (
@@ -370,8 +535,8 @@ export function ClockInOut() {
                 variant="outline"
                 className="w-full gap-2"
               >
-                <Camera className="h-4 w-4" />
-                Take Clock In Photo
+                <Video className="h-4 w-4" />
+                Buka Kamera untuk Clock In
               </Button>
             )}
             <Button
@@ -379,7 +544,7 @@ export function ClockInOut() {
               disabled={loading || !photoClockIn}
               className="w-full gap-2"
             >
-              <LogIn className="h-4 w-4" />
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
               Clock In
             </Button>
           </div>
@@ -390,7 +555,7 @@ export function ClockInOut() {
                 <img 
                   src={photoClockOut} 
                   alt="Clock out preview" 
-                  className="w-full h-48 object-cover rounded border"
+                  className="w-full h-auto max-h-64 object-contain rounded border bg-muted"
                 />
                 <Button
                   onClick={() => startCamera(false)}
@@ -398,7 +563,7 @@ export function ClockInOut() {
                   className="w-full gap-2"
                 >
                   <Camera className="h-4 w-4" />
-                  Retake Photo
+                  Ambil Ulang Foto
                 </Button>
               </>
             ) : (
@@ -407,8 +572,8 @@ export function ClockInOut() {
                 variant="outline"
                 className="w-full gap-2"
               >
-                <Camera className="h-4 w-4" />
-                Take Clock Out Photo
+                <Video className="h-4 w-4" />
+                Buka Kamera untuk Clock Out
               </Button>
             )}
             <Button
@@ -417,7 +582,7 @@ export function ClockInOut() {
               variant="destructive"
               className="w-full gap-2"
             >
-              <LogOut className="h-4 w-4" />
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
               Clock Out
             </Button>
           </div>
