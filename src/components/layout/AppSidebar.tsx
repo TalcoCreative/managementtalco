@@ -38,11 +38,11 @@ const navItems = [
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Shooting", url: "/shooting", icon: Video },
   { title: "Leave", url: "/leave", icon: CalendarOff },
-  { title: "Team", url: "/users", icon: Users },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
 const hrItems = [
+  { title: "Team", url: "/users", icon: Users },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
 ];
 
