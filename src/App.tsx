@@ -16,6 +16,7 @@ import HRDashboard from "./pages/HRDashboard";
 import ShootingSchedule from "./pages/ShootingSchedule";
 import Leave from "./pages/Leave";
 import Finance from "./pages/Finance";
+import MyReimbursement from "./pages/MyReimbursement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/shooting" element={<ProtectedRoute><ShootingSchedule /></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+          <Route path="/my-reimbursement" element={<ProtectedRoute><MyReimbursement /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

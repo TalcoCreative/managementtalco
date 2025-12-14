@@ -10,7 +10,8 @@ import {
   Home,
   LogOut,
   CalendarOff,
-  Wallet
+  Wallet,
+  Receipt
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ const navItems = [
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Shooting", url: "/shooting", icon: Video },
   { title: "Leave", url: "/leave", icon: CalendarOff },
+  { title: "Reimburse", url: "/my-reimbursement", icon: Receipt },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
