@@ -754,7 +754,9 @@ export type Database = {
           receipt_url: string | null
           rejection_reason: string | null
           request_from: string
+          request_type: string | null
           status: string
+          title: string | null
           user_id: string
         }
         Insert: {
@@ -771,7 +773,9 @@ export type Database = {
           receipt_url?: string | null
           rejection_reason?: string | null
           request_from: string
+          request_type?: string | null
           status?: string
+          title?: string | null
           user_id: string
         }
         Update: {
@@ -788,7 +792,9 @@ export type Database = {
           receipt_url?: string | null
           rejection_reason?: string | null
           request_from?: string
+          request_type?: string | null
           status?: string
+          title?: string | null
           user_id?: string
         }
         Relationships: [

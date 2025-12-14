@@ -365,8 +365,9 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
+                  <TableHead>Tipe</TableHead>
                   <TableHead>Requester</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead>Judul/Kategori</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Project/Client</TableHead>
                   <TableHead>Status</TableHead>
@@ -377,9 +378,19 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
                 {reimbursements.map((reimburse) => (
                   <TableRow key={reimburse.id}>
                     <TableCell>{format(new Date(reimburse.created_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell>
+                      <Badge variant={(reimburse as any).request_type === "request" ? "default" : "secondary"}>
+                        {(reimburse as any).request_type === "request" ? "Request" : "Reimburse"}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-medium">{reimburse.requester_name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">{getRequestFromLabel(reimburse.request_from)}</Badge>
+                      <div>
+                        {(reimburse as any).title && (
+                          <div className="font-medium">{(reimburse as any).title}</div>
+                        )}
+                        <Badge variant="outline" className="mt-1">{getRequestFromLabel(reimburse.request_from)}</Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(reimburse.amount)}</TableCell>
                     <TableCell>
@@ -437,7 +448,7 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No reimbursement requests</p>
+            <p>No reimbursement/request</p>
           </div>
         )}
       </CardContent>
