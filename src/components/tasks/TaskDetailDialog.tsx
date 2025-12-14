@@ -38,6 +38,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [isEditing, setIsEditing] = useState(false);
   const [editAssignedTo, setEditAssignedTo] = useState<string>("");
   const [editDeadline, setEditDeadline] = useState<string>("");
+  const [editDescription, setEditDescription] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -88,6 +89,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     if (task) {
       setEditAssignedTo(task.assigned_to || "");
       setEditDeadline(task.deadline || "");
+      setEditDescription(task.description || "");
       setIsEditing(false);
     }
   }, [task]);
@@ -134,6 +136,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         .update({
           assigned_to: editAssignedTo || null,
           deadline: editDeadline || null,
+          description: editDescription || null,
           assigned_at: editAssignedTo ? new Date().toISOString() : null,
         })
         .eq("id", taskId);
@@ -395,6 +398,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         setIsEditing(false);
                         setEditAssignedTo(task.assigned_to || "");
                         setEditDeadline(task.deadline || "");
+                        setEditDescription(task.description || "");
                       }}
                     >
                       Cancel
@@ -434,12 +438,22 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               )}
 
               {/* Task Description */}
-              {task.description && (
-                <div className="rounded-lg border bg-card p-4">
-                  <h3 className="font-semibold mb-2">Deskripsi / Brief</h3>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{task.description}</p>
-                </div>
-              )}
+              <div className="rounded-lg border bg-card p-4">
+                <h3 className="font-semibold mb-2">Deskripsi / Brief</h3>
+                {isEditing ? (
+                  <Textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={4}
+                    placeholder="Masukkan deskripsi task..."
+                    className="resize-none"
+                  />
+                ) : (
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {task.description || "-"}
+                  </p>
+                )}
+              </div>
 
               {/* Task Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
