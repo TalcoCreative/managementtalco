@@ -15,6 +15,8 @@ import { z } from "zod";
 
 const shootingSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
+  client_id: z.string().min(1, "Client is required"),
+  project_id: z.string().min(1, "Project is required"),
   scheduled_date: z.string().min(1, "Date is required"),
   scheduled_time: z.string().min(1, "Time is required"),
   location: z.string().trim().max(500).optional(),
@@ -32,6 +34,8 @@ export function CreateShootingDialog() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
+    client_id: "",
+    project_id: "",
     scheduled_date: "",
     scheduled_time: "",
     location: "",
@@ -57,6 +61,33 @@ export function CreateShootingDialog() {
     },
   });
 
+  const { data: clients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: projects } = useQuery({
+    queryKey: ["projects-by-client", formData.client_id],
+    queryFn: async () => {
+      if (!formData.client_id) return [];
+      const { data, error } = await supabase
+        .from("projects")
+        .select("id, title")
+        .eq("client_id", formData.client_id)
+        .order("title");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!formData.client_id,
+  });
+
   const addFreelancer = () => {
     if (!newFreelancer.name.trim()) {
       toast.error("Freelancer name is required");
@@ -80,10 +111,31 @@ export function CreateShootingDialog() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      // Create the task first
+      const { data: task, error: taskError } = await supabase
+        .from("tasks")
+        .insert({
+          title: `Shooting: ${formData.title.trim()}`,
+          description: `Shooting schedule for ${formData.title}\nLocation: ${formData.location || "TBD"}\nTime: ${formData.scheduled_time}`,
+          project_id: formData.project_id,
+          created_by: session.session.user.id,
+          assigned_to: formData.director || session.session.user.id,
+          deadline: formData.scheduled_date,
+          priority: "high",
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (taskError) throw taskError;
+
       const { data: shooting, error: shootingError } = await supabase
         .from("shooting_schedules")
         .insert({
           title: formData.title.trim(),
+          client_id: formData.client_id,
+          project_id: formData.project_id,
+          task_id: task.id,
           scheduled_date: formData.scheduled_date,
           scheduled_time: formData.scheduled_time,
           location: formData.location.trim() || null,
@@ -148,7 +200,7 @@ export function CreateShootingDialog() {
         if (freelancerError) throw freelancerError;
       }
 
-      // Create notifications for all selected users
+      // Create notifications only for involved users
       const notifyUsers = new Set([
         ...selectedCampers,
         ...selectedAdditional,
@@ -157,11 +209,20 @@ export function CreateShootingDialog() {
       ].filter(Boolean));
 
       if (notifyUsers.size > 0) {
-        const notifications = Array.from(notifyUsers).map(userId => ({
-          shooting_id: shooting.id,
-          user_id: userId,
-          status: 'pending',
-        }));
+        const notifications = Array.from(notifyUsers).map(userId => {
+          let role = 'crew';
+          if (userId === formData.director) role = 'director';
+          else if (userId === formData.runner) role = 'runner';
+          else if (selectedCampers.includes(userId)) role = 'camper';
+          else if (selectedAdditional.includes(userId)) role = 'additional';
+          
+          return {
+            shooting_id: shooting.id,
+            user_id: userId,
+            status: 'pending',
+            crew_role: role,
+          };
+        });
 
         await supabase.from("shooting_notifications").insert(notifications);
       }
@@ -170,6 +231,8 @@ export function CreateShootingDialog() {
       setOpen(false);
       setFormData({
         title: "",
+        client_id: "",
+        project_id: "",
         scheduled_date: "",
         scheduled_time: "",
         location: "",
@@ -183,6 +246,8 @@ export function CreateShootingDialog() {
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-crew"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -218,6 +283,47 @@ export function CreateShootingDialog() {
                   maxLength={200}
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Client *</Label>
+                  <Select
+                    value={formData.client_id}
+                    onValueChange={(value) => setFormData({ ...formData, client_id: value, project_id: "" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients?.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Project *</Label>
+                  <Select
+                    value={formData.project_id}
+                    onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                    disabled={!formData.client_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.client_id ? "Select project" : "Select client first"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects?.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

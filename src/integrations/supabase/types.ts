@@ -385,6 +385,7 @@ export type Database = {
       shooting_notifications: {
         Row: {
           created_at: string | null
+          crew_role: string | null
           id: string
           responded_at: string | null
           shooting_id: string
@@ -393,6 +394,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          crew_role?: string | null
           id?: string
           responded_at?: string | null
           shooting_id: string
@@ -401,6 +403,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          crew_role?: string | null
           id?: string
           responded_at?: string | null
           shooting_id?: string
@@ -420,44 +423,68 @@ export type Database = {
       shooting_schedules: {
         Row: {
           approved_by: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          client_id: string | null
           created_at: string | null
           director: string | null
           id: string
           location: string | null
           notes: string | null
+          original_date: string | null
+          project_id: string | null
           requested_by: string
+          reschedule_reason: string | null
+          rescheduled_from: string | null
           runner: string | null
           scheduled_date: string
           scheduled_time: string
           status: string | null
+          task_id: string | null
           title: string
         }
         Insert: {
           approved_by?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          client_id?: string | null
           created_at?: string | null
           director?: string | null
           id?: string
           location?: string | null
           notes?: string | null
+          original_date?: string | null
+          project_id?: string | null
           requested_by: string
+          reschedule_reason?: string | null
+          rescheduled_from?: string | null
           runner?: string | null
           scheduled_date: string
           scheduled_time: string
           status?: string | null
+          task_id?: string | null
           title: string
         }
         Update: {
           approved_by?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          client_id?: string | null
           created_at?: string | null
           director?: string | null
           id?: string
           location?: string | null
           notes?: string | null
+          original_date?: string | null
+          project_id?: string | null
           requested_by?: string
+          reschedule_reason?: string | null
+          rescheduled_from?: string | null
           runner?: string | null
           scheduled_date?: string
           scheduled_time?: string
           status?: string | null
+          task_id?: string | null
           title?: string
         }
         Relationships: [
@@ -480,6 +507,27 @@ export type Database = {
             columns: ["runner"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shooting_schedules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shooting_schedules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shooting_schedules_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]

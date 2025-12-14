@@ -7,15 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { MapPin, Users, Check, X, DollarSign, Trash2 } from "lucide-react";
+import { MapPin, Users, Check, X, DollarSign, Trash2, CalendarClock, Building2 } from "lucide-react";
 import { format, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { CreateShootingDialog } from "@/components/shooting/CreateShootingDialog";
+import { RescheduleShootingDialog } from "@/components/shooting/RescheduleShootingDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 export default function ShootingSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [deleteShooting, setDeleteShooting] = useState<{ id: string; title: string } | null>(null);
+  const [rescheduleShooting, setRescheduleShooting] = useState<{ id: string; title: string; scheduled_date: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -44,7 +46,9 @@ export default function ShootingSchedule() {
           *,
           requested_by_profile:profiles!fk_shooting_requested_by_profiles(full_name),
           runner_profile:profiles!fk_shooting_runner_profiles(full_name),
-          director_profile:profiles!fk_shooting_director_profiles(full_name)
+          director_profile:profiles!fk_shooting_director_profiles(full_name),
+          clients(name),
+          projects(title)
         `)
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
@@ -79,8 +83,24 @@ export default function ShootingSchedule() {
         .eq("id", shootingId);
 
       if (error) throw error;
+
+      // Update linked task to in_progress
+      const { data: shooting } = await supabase
+        .from("shooting_schedules")
+        .select("task_id")
+        .eq("id", shootingId)
+        .single();
+
+      if (shooting?.task_id) {
+        await supabase
+          .from("tasks")
+          .update({ status: "in_progress" })
+          .eq("id", shooting.task_id);
+      }
+
       toast.success("Shooting schedule approved!");
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to approve");
     }
@@ -94,8 +114,24 @@ export default function ShootingSchedule() {
         .eq("id", shootingId);
 
       if (error) throw error;
+
+      // Update linked task to on_hold
+      const { data: shooting } = await supabase
+        .from("shooting_schedules")
+        .select("task_id")
+        .eq("id", shootingId)
+        .single();
+
+      if (shooting?.task_id) {
+        await supabase
+          .from("tasks")
+          .update({ status: "on_hold" })
+          .eq("id", shooting.task_id);
+      }
+
       toast.success("Shooting schedule rejected");
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to reject");
     }
@@ -136,6 +172,7 @@ export default function ShootingSchedule() {
     switch (status) {
       case "approved": return "bg-green-500";
       case "rejected": return "bg-red-500";
+      case "cancelled": return "bg-gray-500";
       default: return "bg-yellow-500";
     }
   };
@@ -161,19 +198,31 @@ export default function ShootingSchedule() {
 
     return (
       <Card key={shooting.id} className="relative group">
-        <Button
-          variant="destructive"
-          size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          onClick={() => setDeleteShooting({ id: shooting.id, title: shooting.title })}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setRescheduleShooting({
+              id: shooting.id,
+              title: shooting.title,
+              scheduled_date: shooting.scheduled_date,
+            })}
+          >
+            <CalendarClock className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={() => setDeleteShooting({ id: shooting.id, title: shooting.title })}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
               <CardTitle>{shooting.title}</CardTitle>
-              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap gap-2 mt-2 text-sm text-muted-foreground">
                 <span>{format(new Date(shooting.scheduled_date), 'PPP')} at {shooting.scheduled_time}</span>
                 {shooting.location && (
                   <div className="flex items-center gap-1">
@@ -182,6 +231,20 @@ export default function ShootingSchedule() {
                   </div>
                 )}
               </div>
+              {/* Client & Project */}
+              {(shooting.clients || shooting.projects) && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-primary">
+                    {shooting.clients?.name}
+                  </span>
+                  {shooting.projects && (
+                    <span className="text-sm text-muted-foreground">
+                      - {shooting.projects.title}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <Badge className={getStatusColor(shooting.status)}>
               {shooting.status}
@@ -190,6 +253,26 @@ export default function ShootingSchedule() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Reschedule info */}
+            {shooting.rescheduled_from && (
+              <div className="p-2 bg-yellow-500/10 rounded border border-yellow-500/20 text-sm">
+                <span className="text-yellow-600 font-medium">Rescheduled</span> from {format(new Date(shooting.rescheduled_from), 'PPP')}
+                {shooting.reschedule_reason && (
+                  <p className="text-muted-foreground mt-1">Reason: {shooting.reschedule_reason}</p>
+                )}
+              </div>
+            )}
+
+            {/* Cancelled info */}
+            {shooting.cancelled_at && (
+              <div className="p-2 bg-red-500/10 rounded border border-red-500/20 text-sm">
+                <span className="text-red-600 font-medium">Cancelled</span>
+                {shooting.cancel_reason && (
+                  <p className="text-muted-foreground mt-1">Reason: {shooting.cancel_reason}</p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-muted-foreground">Requested by: </span>
@@ -359,6 +442,12 @@ export default function ShootingSchedule() {
         description={`Apakah Anda yakin ingin menghapus shooting "${deleteShooting?.title}"?`}
         onConfirm={handleDelete}
         loading={deleting}
+      />
+
+      <RescheduleShootingDialog
+        shooting={rescheduleShooting}
+        open={!!rescheduleShooting}
+        onOpenChange={(open) => !open && setRescheduleShooting(null)}
       />
     </AppLayout>
   );

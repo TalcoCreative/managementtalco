@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine } from "lucide-react";
+import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2 } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 
 const statusLabels: Record<string, string> = {
@@ -91,6 +92,27 @@ export default function HRDashboard() {
         .gte("created_at", `${startDate}T00:00:00`)
         .lte("created_at", `${endDate}T23:59:59`)
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Fetch shooting schedules
+  const { data: shootings } = useQuery({
+    queryKey: ["hr-shootings", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shooting_schedules")
+        .select(`
+          *,
+          clients(name),
+          projects(title),
+          requested_by_profile:profiles!fk_shooting_requested_by_profiles(full_name),
+          tasks(status)
+        `)
+        .gte("scheduled_date", startDate)
+        .lte("scheduled_date", endDate)
+        .order("scheduled_date", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
@@ -263,9 +285,13 @@ export default function HRDashboard() {
           </Card>
         </div>
 
+        {/* Deletion Notifications */}
+        <DeletionNotifications />
+
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Task Overview per Person</TabsTrigger>
+            <TabsTrigger value="shootings">Shooting Schedules</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="all-tasks">All Tasks</TabsTrigger>
           </TabsList>
@@ -320,6 +346,71 @@ export default function HRDashboard() {
                               Detail
                               <ChevronRight className="h-4 w-4 ml-1" />
                             </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Shooting Schedules Tab */}
+          <TabsContent value="shootings">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Shooting Schedules ({shootings?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Client / Project</TableHead>
+                        <TableHead>Date & Time</TableHead>
+                        <TableHead>Requested By</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Task Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shootings?.map((shooting) => (
+                        <TableRow key={shooting.id}>
+                          <TableCell className="font-medium">{shooting.title}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-primary">{shooting.clients?.name}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{shooting.projects?.title}</span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(shooting.scheduled_date), 'dd MMM yyyy')}
+                            <br />
+                            <span className="text-xs text-muted-foreground">{shooting.scheduled_time}</span>
+                          </TableCell>
+                          <TableCell>{shooting.requested_by_profile?.full_name}</TableCell>
+                          <TableCell>
+                            <Badge className={
+                              shooting.status === 'approved' ? 'bg-green-500' :
+                              shooting.status === 'rejected' ? 'bg-red-500' :
+                              shooting.status === 'cancelled' ? 'bg-gray-500' :
+                              'bg-yellow-500'
+                            }>
+                              {shooting.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {shooting.tasks ? (
+                              <Badge className={getStatusColor(shooting.tasks.status)}>
+                                {statusLabels[shooting.tasks.status] || shooting.tasks.status}
+                              </Badge>
+                            ) : '-'}
                           </TableCell>
                         </TableRow>
                       ))}
