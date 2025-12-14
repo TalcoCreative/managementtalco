@@ -3,23 +3,41 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, startOfMonth, addMonths } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Users, RefreshCw, CheckCircle, Trash2, FileDown, Settings } from "lucide-react";
+import { Users, Edit, CheckCircle, Trash2, FileDown, Settings, Save } from "lucide-react";
 import { toast } from "sonner";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
 import { CompanySettingsDialog } from "./CompanySettingsDialog";
 
+interface PayrollEntry {
+  id?: string;
+  employee_id: string;
+  employee_name: string;
+  gaji_pokok: number;
+  tj_transport: number;
+  tj_internet: number;
+  tj_kpi: number;
+  total: number;
+  status: string;
+  existing?: boolean;
+}
+
 export function FinancePayroll() {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [payrollToDelete, setPayrollToDelete] = useState<any>(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
+  const [editablePayroll, setEditablePayroll] = useState<PayrollEntry[]>([]);
+  const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: payrollList, isLoading } = useQuery({
@@ -28,7 +46,7 @@ export function FinancePayroll() {
       const monthDate = startOfMonth(new Date(selectedMonth + "-01"));
       const { data, error } = await supabase
         .from("payroll")
-        .select("*, profiles(full_name, salary, gaji_pokok, tj_transport, tj_internet, tj_kpi, contract_start, contract_end)")
+        .select("*, profiles(full_name, salary, gaji_pokok, tj_transport, tj_internet, tj_kpi)")
         .gte("month", format(monthDate, "yyyy-MM-dd"))
         .lt("month", format(addMonths(monthDate, 1), "yyyy-MM-dd"))
         .order("created_at", { ascending: false });
@@ -38,7 +56,19 @@ export function FinancePayroll() {
     },
   });
 
-  // Fetch company settings for PDF
+  const { data: employees } = useQuery({
+    queryKey: ["employees-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, salary, gaji_pokok, tj_transport, tj_internet, tj_kpi, status")
+        .or("status.is.null,status.eq.active");
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: companySettings } = useQuery({
     queryKey: ["company-settings"],
     queryFn: async () => {
@@ -56,7 +86,6 @@ export function FinancePayroll() {
     },
   });
 
-  // Fetch user roles for PDF
   const { data: userRoles } = useQuery({
     queryKey: ["all-user-roles"],
     queryFn: async () => {
@@ -69,64 +98,104 @@ export function FinancePayroll() {
     },
   });
 
-  // Fetch employees with active contracts
-  const { data: employees } = useQuery({
-    queryKey: ["employees-with-contracts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, salary, contract_start, contract_end, status")
-        .not("salary", "is", null)
-        .or("status.is.null,status.eq.active");
-      
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const openEditDialog = () => {
+    const existingIds = payrollList?.map(p => p.employee_id) || [];
+    
+    // Create editable list from existing payroll + new employees
+    const entries: PayrollEntry[] = [];
+    
+    // Add existing payroll entries
+    payrollList?.forEach(p => {
+      entries.push({
+        id: p.id,
+        employee_id: p.employee_id,
+        employee_name: p.profiles?.full_name || "-",
+        gaji_pokok: Number(p.profiles?.gaji_pokok) || 0,
+        tj_transport: Number(p.profiles?.tj_transport) || 0,
+        tj_internet: Number(p.profiles?.tj_internet) || 0,
+        tj_kpi: Number(p.profiles?.tj_kpi) || 0,
+        total: Number(p.amount),
+        status: p.status,
+        existing: true,
+      });
+    });
 
-  const generatePayroll = async () => {
+    // Add employees not yet in payroll
+    employees?.forEach(emp => {
+      if (!existingIds.includes(emp.id)) {
+        const total = (Number(emp.gaji_pokok) || 0) + 
+                      (Number(emp.tj_transport) || 0) + 
+                      (Number(emp.tj_internet) || 0) + 
+                      (Number(emp.tj_kpi) || 0);
+        entries.push({
+          employee_id: emp.id,
+          employee_name: emp.full_name,
+          gaji_pokok: Number(emp.gaji_pokok) || 0,
+          tj_transport: Number(emp.tj_transport) || 0,
+          tj_internet: Number(emp.tj_internet) || 0,
+          tj_kpi: Number(emp.tj_kpi) || 0,
+          total: total || Number(emp.salary) || 0,
+          status: "planned",
+          existing: false,
+        });
+      }
+    });
+
+    setEditablePayroll(entries);
+    setEditDialogOpen(true);
+  };
+
+  const updatePayrollEntry = (index: number, field: keyof PayrollEntry, value: number) => {
+    const updated = [...editablePayroll];
+    (updated[index] as any)[field] = value;
+    
+    // Recalculate total
+    updated[index].total = 
+      updated[index].gaji_pokok + 
+      updated[index].tj_transport + 
+      updated[index].tj_internet + 
+      updated[index].tj_kpi;
+    
+    setEditablePayroll(updated);
+  };
+
+  const savePayroll = async () => {
+    setSaving(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
       const monthDate = startOfMonth(new Date(selectedMonth + "-01"));
 
-      // Filter employees with active contracts
-      const activeEmployees = employees?.filter(emp => {
-        if (!emp.salary) return false;
-        if (emp.contract_start && new Date(emp.contract_start) > monthDate) return false;
-        if (emp.contract_end && new Date(emp.contract_end) < monthDate) return false;
-        return true;
-      }) || [];
+      for (const entry of editablePayroll) {
+        if (entry.total <= 0) continue;
 
-      if (activeEmployees.length === 0) {
-        toast.error("No employees with active contracts found");
-        return;
+        if (entry.existing && entry.id) {
+          // Update existing
+          await supabase
+            .from("payroll")
+            .update({ amount: entry.total })
+            .eq("id", entry.id);
+        } else if (!entry.existing) {
+          // Insert new
+          await supabase
+            .from("payroll")
+            .insert({
+              employee_id: entry.employee_id,
+              month: format(monthDate, "yyyy-MM-dd"),
+              amount: entry.total,
+              created_by: session.session.user.id,
+            });
+        }
       }
 
-      // Check existing payroll for this month
-      const existingIds = payrollList?.map(p => p.employee_id) || [];
-      const newEmployees = activeEmployees.filter(emp => !existingIds.includes(emp.id));
-
-      if (newEmployees.length === 0) {
-        toast.info("Payroll already generated for all active employees this month");
-        return;
-      }
-
-      const payrollEntries = newEmployees.map(emp => ({
-        employee_id: emp.id,
-        month: format(monthDate, "yyyy-MM-dd"),
-        amount: emp.salary,
-        created_by: session.session.user.id,
-      }));
-
-      const { error } = await supabase.from("payroll").insert(payrollEntries);
-      if (error) throw error;
-
-      toast.success(`Generated payroll for ${newEmployees.length} employee(s)`);
+      toast.success("Payroll berhasil disimpan");
+      setEditDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to generate payroll");
+      toast.error(error.message || "Gagal menyimpan payroll");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -145,7 +214,7 @@ export function FinancePayroll() {
           sub_category: "gaji_upah",
           amount: payroll.amount,
           source: "payroll",
-          notes: `Payroll for ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy")}`,
+          notes: `Payroll ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale })}`,
           created_by: session.session.user.id,
         })
         .select()
@@ -153,14 +222,14 @@ export function FinancePayroll() {
 
       if (ledgerError) throw ledgerError;
 
-      // Create expense entry for payroll
+      // Create expense entry
       const { error: expenseError } = await supabase
         .from("expenses")
         .insert({
           category: "sdm",
           sub_category: "gaji_upah",
           amount: payroll.amount,
-          description: `Gaji ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy")}`,
+          description: `Gaji ${payroll.profiles?.full_name} - ${format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale })}`,
           status: "paid",
           paid_at: new Date().toISOString(),
           ledger_entry_id: ledgerEntry.id,
@@ -182,12 +251,12 @@ export function FinancePayroll() {
 
       if (updateError) throw updateError;
 
-      toast.success("Payroll marked as paid and added to expenses & ledger");
+      toast.success("Payroll ditandai PAID dan masuk ke Expenses");
       queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to mark payroll as paid");
+      toast.error(error.message || "Gagal update payroll");
     }
   };
 
@@ -202,25 +271,24 @@ export function FinancePayroll() {
 
       if (error) throw error;
 
-      toast.success("Payroll deleted successfully");
+      toast.success("Payroll dihapus");
       setDeleteDialogOpen(false);
       setPayrollToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["finance-payroll"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete payroll");
+      toast.error(error.message || "Gagal hapus payroll");
     }
   };
 
   const getEmployeeRole = (userId: string): string => {
     const roles = userRoles?.filter(r => r.user_id === userId).map(r => r.role) || [];
     if (roles.length === 0) return "-";
-    // Return the first role formatted nicely
     return roles[0].replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
   };
 
   const handleDownloadPDF = async (payroll: any) => {
     if (payroll.status !== "paid") {
-      toast.error("PDF hanya bisa di-download untuk payroll dengan status PAID");
+      toast.error("PDF hanya bisa di-download untuk payroll PAID");
       return;
     }
 
@@ -263,12 +331,11 @@ export function FinancePayroll() {
     }).format(value);
   };
 
-  // Generate month options (last 12 months + next 3 months)
   const monthOptions = Array.from({ length: 15 }, (_, i) => {
     const date = addMonths(new Date(), i - 11);
     return {
       value: format(date, "yyyy-MM"),
-      label: format(date, "MMMM yyyy")
+      label: format(date, "MMMM yyyy", { locale: idLocale })
     };
   });
 
@@ -297,9 +364,9 @@ export function FinancePayroll() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={generatePayroll}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Generate
+          <Button onClick={openEditDialog}>
+            <Edit className="h-4 w-4 mr-2" />
+            Update Payroll
           </Button>
         </div>
       </CardHeader>
@@ -327,19 +394,19 @@ export function FinancePayroll() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Month</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Pay Date</TableHead>
+                  <TableHead>Karyawan</TableHead>
+                  <TableHead>Periode</TableHead>
+                  <TableHead className="text-right">Total Gaji</TableHead>
+                  <TableHead>Tanggal Bayar</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payrollList.map((payroll) => (
                   <TableRow key={payroll.id}>
                     <TableCell className="font-medium">{payroll.profiles?.full_name}</TableCell>
-                    <TableCell>{format(new Date(payroll.month), "MMMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale })}</TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(payroll.amount)}</TableCell>
                     <TableCell>
                       {payroll.pay_date ? format(new Date(payroll.pay_date), "dd MMM yyyy") : "-"}
@@ -363,7 +430,7 @@ export function FinancePayroll() {
                           </Button>
                         )}
                         {payroll.status === "planned" && (
-                          <Button size="sm" variant="outline" onClick={() => handleMarkPaid(payroll)}>
+                          <Button size="sm" variant="default" onClick={() => handleMarkPaid(payroll)}>
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Mark Paid
                           </Button>
@@ -389,12 +456,101 @@ export function FinancePayroll() {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No payroll data for this month</p>
-            <p className="text-sm mt-2">Click "Generate" to create payroll from active contracts</p>
+            <p>Belum ada data payroll untuk bulan ini</p>
+            <p className="text-sm mt-2">Klik "Update Payroll" untuk membuat payroll</p>
           </div>
         )}
       </CardContent>
 
+      {/* Edit Payroll Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Update Payroll - {format(new Date(selectedMonth + "-01"), "MMMM yyyy", { locale: idLocale })}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Karyawan</TableHead>
+                  <TableHead className="text-right">Gaji Pokok</TableHead>
+                  <TableHead className="text-right">Tj. Transport</TableHead>
+                  <TableHead className="text-right">Tj. Internet</TableHead>
+                  <TableHead className="text-right">Tj. KPI</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {editablePayroll.map((entry, index) => (
+                  <TableRow key={entry.employee_id}>
+                    <TableCell className="font-medium">{entry.employee_name}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.gaji_pokok}
+                        onChange={(e) => updatePayrollEntry(index, "gaji_pokok", Number(e.target.value))}
+                        className="w-28 text-right"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.tj_transport}
+                        onChange={(e) => updatePayrollEntry(index, "tj_transport", Number(e.target.value))}
+                        className="w-24 text-right"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.tj_internet}
+                        onChange={(e) => updatePayrollEntry(index, "tj_internet", Number(e.target.value))}
+                        className="w-24 text-right"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={entry.tj_kpi}
+                        onChange={(e) => updatePayrollEntry(index, "tj_kpi", Number(e.target.value))}
+                        className="w-24 text-right"
+                        disabled={entry.status === "paid"}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(entry.total)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={entry.status === "paid" ? "bg-green-500" : entry.existing ? "bg-yellow-500" : "bg-muted"}>
+                        {entry.status === "paid" ? "Paid" : entry.existing ? "Planned" : "New"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={savePayroll} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? "Menyimpan..." : "Simpan Payroll"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
