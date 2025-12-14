@@ -100,6 +100,23 @@ export const FINANCE_CATEGORIES: MainCategory[] = [
     ],
   },
   {
+    value: "reimburse",
+    label: "Reimburse & Request",
+    subCategories: [
+      { value: "reimburse_event", label: "Reimburse - Event" },
+      { value: "reimburse_meeting", label: "Reimburse - Meeting" },
+      { value: "reimburse_production", label: "Reimburse - Production" },
+      { value: "reimburse_operational", label: "Reimburse - Operational" },
+      { value: "reimburse_other", label: "Reimburse - Lainnya" },
+      { value: "request_training", label: "Request - Training" },
+      { value: "request_equipment", label: "Request - Equipment" },
+      { value: "request_software", label: "Request - Software" },
+      { value: "request_transport", label: "Request - Transport" },
+      { value: "request_event", label: "Request - Event" },
+      { value: "request_other", label: "Request - Lainnya" },
+    ],
+  },
+  {
     value: "lainnya",
     label: "Lain-lain",
     subCategories: [
@@ -113,11 +130,17 @@ export const FINANCE_CATEGORIES: MainCategory[] = [
 
 // Mapping for reimbursement request_from to categories
 export const REIMBURSE_CATEGORY_MAPPING: Record<string, { category: string; subCategory: string }> = {
-  event: { category: "marketing_growth", subCategory: "event_aktivasi" },
-  meeting: { category: "operasional", subCategory: "konsumsi_meeting" },
-  production: { category: "project", subCategory: "produksi_konten" },
-  operational: { category: "operasional", subCategory: "transport" },
-  other: { category: "sdm_hr", subCategory: "reimburse_karyawan" },
+  // Reimbursement types
+  event: { category: "reimburse", subCategory: "reimburse_event" },
+  meeting: { category: "reimburse", subCategory: "reimburse_meeting" },
+  production: { category: "reimburse", subCategory: "reimburse_production" },
+  operational: { category: "reimburse", subCategory: "reimburse_operational" },
+  other: { category: "reimburse", subCategory: "reimburse_other" },
+  // Request types
+  training: { category: "reimburse", subCategory: "request_training" },
+  equipment: { category: "reimburse", subCategory: "request_equipment" },
+  software: { category: "reimburse", subCategory: "request_software" },
+  transport: { category: "reimburse", subCategory: "request_transport" },
 };
 
 // Helper functions
