@@ -523,11 +523,15 @@ export type Database = {
           email: string | null
           emergency_contact: string | null
           full_name: string
+          gaji_pokok: number | null
           id: string
           ktp_number: string | null
           phone: string | null
           salary: number | null
           status: string | null
+          tj_internet: number | null
+          tj_kpi: number | null
+          tj_transport: number | null
           user_id: string
         }
         Insert: {
@@ -541,11 +545,15 @@ export type Database = {
           email?: string | null
           emergency_contact?: string | null
           full_name: string
+          gaji_pokok?: number | null
           id: string
           ktp_number?: string | null
           phone?: string | null
           salary?: number | null
           status?: string | null
+          tj_internet?: number | null
+          tj_kpi?: number | null
+          tj_transport?: number | null
           user_id: string
         }
         Update: {
@@ -559,11 +567,15 @@ export type Database = {
           email?: string | null
           emergency_contact?: string | null
           full_name?: string
+          gaji_pokok?: number | null
           id?: string
           ktp_number?: string | null
           phone?: string | null
           salary?: number | null
           status?: string | null
+          tj_internet?: number | null
+          tj_kpi?: number | null
+          tj_transport?: number | null
           user_id?: string
         }
         Relationships: []
