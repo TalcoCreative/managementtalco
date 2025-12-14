@@ -11,7 +11,8 @@ import {
   LogOut,
   CalendarOff,
   Wallet,
-  Receipt
+  Receipt,
+  UserPlus
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -52,6 +53,10 @@ const financeItems = [
   { title: "Finance", url: "/finance", icon: Wallet },
 ];
 
+const salesItems = [
+  { title: "Prospects", url: "/prospects", icon: UserPlus },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
@@ -76,6 +81,10 @@ export function AppSidebar() {
                            userRoles?.includes('finance') || 
                            userRoles?.includes('accounting') || 
                            userRoles?.includes('hr');
+  const canAccessSales = userRoles?.includes('super_admin') || 
+                         userRoles?.includes('hr') || 
+                         userRoles?.includes('sales' as any) || 
+                         userRoles?.includes('marketing');
 
   const handleLogout = async () => {
     try {
@@ -154,6 +163,31 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {financeItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        className={({ isActive }) => 
+                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {canAccessSales && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Sales</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {salesItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
