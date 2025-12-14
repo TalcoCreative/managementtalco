@@ -85,8 +85,28 @@ export function FinanceExpenses() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      const mapCategoryToDb = (category: string): string => {
+        switch (category) {
+          case "operasional":
+          case "marketing_growth":
+          case "it_tools":
+          case "administrasi_legal":
+          case "finance":
+            return "operational";
+          case "project":
+            return "project";
+          case "sdm_hr":
+            return "payroll";
+          case "lainnya":
+          default:
+            return "other";
+        }
+      };
+
+      const dbCategory = mapCategoryToDb(formData.category);
+
       const { error } = await supabase.from("expenses").insert({
-        category: formData.category,
+        category: dbCategory,
         sub_category: formData.sub_category,
         project_id: formData.project_id || null,
         client_id: formData.client_id || null,
