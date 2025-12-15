@@ -56,23 +56,23 @@ export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCard
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {columns.map((column) => (
         <div
           key={column.id}
-          className="space-y-4"
+          className="space-y-3 sm:space-y-4"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, column.id)}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2 sm:bg-transparent sm:px-0 sm:py-0">
             <h3 className="font-semibold text-sm uppercase text-muted-foreground">
               {column.title}
             </h3>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs bg-muted rounded-full px-2 py-0.5 text-muted-foreground">
               {getItemsByStatus(column.id).length}
             </span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {getItemsByStatus(column.id).map((item) => (
               <Card
                 key={item.id}
@@ -81,9 +81,9 @@ export function KanbanBoard({ columns, items, onStatusChange, renderCard, onCard
                 onDragStart={(e) => handleDragStart(e, item.id)}
                 onDragEnd={handleDragEnd}
                 onClick={(e) => handleCardClick(e, item)}
-                className={`cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] ${getCardColor ? getCardColor(item) : ""}`}
+                className={`cursor-pointer hover:shadow-lg transition-all active:scale-[0.98] sm:hover:scale-[1.02] ${getCardColor ? getCardColor(item) : ""}`}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-3 sm:p-4">
                   {renderCard(item)}
                 </CardContent>
               </Card>
