@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users } from "lucide-react";
+import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
@@ -18,6 +19,7 @@ interface ProjectDetailDialogProps {
 
 export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDetailDialogProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: project } = useQuery({
@@ -70,14 +72,31 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
   };
 
   const getTaskColumns = () => {
-    return [
+    const baseColumns = [
       { id: "pending", title: "Pending" },
       { id: "in_progress", title: "In Progress" },
-      { id: "completed", title: "Completed" },
       { id: "on_hold", title: "On Hold" },
       { id: "revise", title: "Revise" },
     ];
+    
+    if (showCompletedTasks) {
+      baseColumns.push({ id: "completed", title: "Completed" });
+    }
+    
+    return baseColumns;
   };
+
+  // Filter out completed tasks when not showing them
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
+    if (showCompletedTasks) return tasks;
+    return tasks.filter((task: any) => task.status !== "completed");
+  }, [tasks, showCompletedTasks]);
+
+  const completedTasksCount = useMemo(() => {
+    if (!tasks) return 0;
+    return tasks.filter((task: any) => task.status === "completed").length;
+  }, [tasks]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -276,17 +295,37 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
 
             {/* Tasks Overview (Read Only) */}
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <h3 className="font-semibold text-lg">Tasks Overview</h3>
-                <p className="text-sm text-muted-foreground">
-                  Kelola task di halaman Tasks
-                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                    className="h-9"
+                  >
+                    {showCompletedTasks ? (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-2" />
+                        Sembunyikan Completed ({completedTasksCount})
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Tampilkan Completed ({completedTasksCount})
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-sm text-muted-foreground hidden sm:block">
+                    Kelola task di halaman Tasks
+                  </p>
+                </div>
               </div>
 
-              {tasks && tasks.length > 0 ? (
+              {filteredTasks && filteredTasks.length > 0 ? (
                 <KanbanBoard
                   columns={getTaskColumns()}
-                  items={tasks}
+                  items={filteredTasks}
                   onStatusChange={handleStatusChange}
                   onCardClick={(task) => setSelectedTaskId(task.id)}
                   getCardColor={getCardColor}
@@ -316,6 +355,10 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
                     </div>
                   )}
                 />
+              ) : tasks && tasks.length > 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Semua tasks sudah completed. Klik "Tampilkan Completed" untuk melihat.
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   No tasks yet. Create your first task!
