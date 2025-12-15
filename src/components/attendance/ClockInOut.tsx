@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isAfter, set } from "date-fns";
 
 export function ClockInOut() {
   const [notes, setNotes] = useState("");
@@ -347,6 +347,48 @@ export function ClockInOut() {
     };
   }, []);
 
+  // Auto clock-out at midnight
+  useEffect(() => {
+    const checkMidnight = async () => {
+      const now = new Date();
+      const midnight = set(now, { hours: 0, minutes: 0, seconds: 0, milliseconds: 0 });
+      
+      // If it's past midnight and we have an active clock-in from yesterday
+      if (todayAttendance?.clock_in && !todayAttendance?.clock_out) {
+        const clockInDate = new Date(todayAttendance.clock_in);
+        const clockInDay = format(clockInDate, 'yyyy-MM-dd');
+        const currentDay = format(now, 'yyyy-MM-dd');
+        
+        // If clock-in was from a previous day, auto clock-out
+        if (clockInDay !== currentDay) {
+          try {
+            // Set clock out to 23:59:59 of the clock-in day
+            const autoClockOutTime = set(clockInDate, { hours: 23, minutes: 59, seconds: 59 });
+            
+            await supabase
+              .from("attendance")
+              .update({
+                clock_out: autoClockOutTime.toISOString(),
+                notes: (todayAttendance.notes || "") + " [Auto clock-out at midnight]",
+              })
+              .eq("id", todayAttendance.id);
+            
+            toast.info("Clock out otomatis karena melewati jam 12 malam");
+            queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+          } catch (error) {
+            console.error("Auto clock-out error:", error);
+          }
+        }
+      }
+    };
+
+    checkMidnight();
+    
+    // Check every minute for midnight
+    const interval = setInterval(checkMidnight, 60000);
+    return () => clearInterval(interval);
+  }, [todayAttendance, queryClient]);
+
   const isClockedIn = todayAttendance?.clock_in && !todayAttendance?.clock_out;
   const hasApprovedLeave = !!approvedLeave;
 
@@ -428,19 +470,19 @@ export function ClockInOut() {
             <div className="flex gap-2">
               <Button 
                 onClick={capturePhoto} 
-                className="flex-1"
+                className="flex-1 h-12 text-base"
                 disabled={!isCameraReady}
               >
-                <Camera className="h-4 w-4 mr-2" />
+                <Camera className="h-5 w-5 mr-2" />
                 {countdown !== null ? `Mengambil dalam ${countdown}...` : 'Ambil Foto'}
               </Button>
-              <Button onClick={stopCamera} variant="outline">
+              <Button onClick={stopCamera} variant="outline" className="h-12 px-4">
                 Batal
               </Button>
             </div>
 
             {isMobile() && isCameraReady && countdown === null && (
-              <p className="text-xs text-center text-muted-foreground">
+              <p className="text-sm text-center text-muted-foreground">
                 Foto akan diambil otomatis dalam 3 detik, atau tekan tombol untuk mengambil sekarang
               </p>
             )}
@@ -512,7 +554,7 @@ export function ClockInOut() {
         )}
 
         {!todayAttendance?.clock_in ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {photoClockIn ? (
               <>
                 <img 
@@ -523,9 +565,9 @@ export function ClockInOut() {
                 <Button
                   onClick={() => startCamera(true)}
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full gap-2 h-12 text-base"
                 >
-                  <Camera className="h-4 w-4" />
+                  <Camera className="h-5 w-5" />
                   Ambil Ulang Foto
                 </Button>
               </>
@@ -533,23 +575,23 @@ export function ClockInOut() {
               <Button
                 onClick={() => startCamera(true)}
                 variant="outline"
-                className="w-full gap-2"
+                className="w-full gap-2 h-12 text-base"
               >
-                <Video className="h-4 w-4" />
+                <Video className="h-5 w-5" />
                 Buka Kamera untuk Clock In
               </Button>
             )}
             <Button
               onClick={handleClockIn}
               disabled={loading || !photoClockIn}
-              className="w-full gap-2"
+              className="w-full gap-2 h-14 text-lg font-semibold"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
               Clock In
             </Button>
           </div>
         ) : !todayAttendance.clock_out ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {photoClockOut ? (
               <>
                 <img 
@@ -560,9 +602,9 @@ export function ClockInOut() {
                 <Button
                   onClick={() => startCamera(false)}
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full gap-2 h-12 text-base"
                 >
-                  <Camera className="h-4 w-4" />
+                  <Camera className="h-5 w-5" />
                   Ambil Ulang Foto
                 </Button>
               </>
@@ -570,9 +612,9 @@ export function ClockInOut() {
               <Button
                 onClick={() => startCamera(false)}
                 variant="outline"
-                className="w-full gap-2"
+                className="w-full gap-2 h-12 text-base"
               >
-                <Video className="h-4 w-4" />
+                <Video className="h-5 w-5" />
                 Buka Kamera untuk Clock Out
               </Button>
             )}
@@ -580,9 +622,9 @@ export function ClockInOut() {
               onClick={handleClockOut}
               disabled={loading || !photoClockOut}
               variant="destructive"
-              className="w-full gap-2"
+              className="w-full gap-2 h-14 text-lg font-semibold"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
               Clock Out
             </Button>
           </div>

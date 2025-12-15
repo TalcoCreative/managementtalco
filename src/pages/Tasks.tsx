@@ -185,25 +185,26 @@ export default function Tasks() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Tasks</h1>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold">Tasks</h1>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="default" className="h-10 sm:h-9">
                   <Filter className="mr-2 h-4 w-4" />
-                  Filters
+                  <span className="hidden sm:inline">Filters</span>
+                  <span className="sm:hidden">Filter</span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="end">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80" align="end">
                 <div className="space-y-4">
                   <h4 className="font-medium text-sm">Filter Tasks</h4>
                   
                   <div className="space-y-2">
                     <Label className="text-xs">Project</Label>
                     <Select value={selectedProject} onValueChange={setSelectedProject}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 sm:h-9">
                         <SelectValue placeholder="All Projects" />
                       </SelectTrigger>
                       <SelectContent>
@@ -220,7 +221,7 @@ export default function Tasks() {
                   <div className="space-y-2">
                     <Label className="text-xs">Status</Label>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 sm:h-9">
                         <SelectValue placeholder="All Statuses" />
                       </SelectTrigger>
                       <SelectContent>
@@ -237,7 +238,7 @@ export default function Tasks() {
                   <div className="space-y-2">
                     <Label className="text-xs">Assigned To</Label>
                     <Select value={selectedUser} onValueChange={setSelectedUser}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 sm:h-9">
                         <SelectValue placeholder="All Users" />
                       </SelectTrigger>
                       <SelectContent>
@@ -260,6 +261,7 @@ export default function Tasks() {
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
                           placeholder="Start date"
+                          className="h-10 sm:h-9"
                         />
                       </div>
                       <div>
@@ -268,12 +270,13 @@ export default function Tasks() {
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
                           placeholder="End date"
+                          className="h-10 sm:h-9"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">
+                  <Button variant="outline" onClick={clearFilters} className="w-full h-10 sm:h-9">
                     Clear All Filters
                   </Button>
                 </div>
@@ -281,20 +284,22 @@ export default function Tasks() {
             </Popover>
 
             {canCreateTasks && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
+              <Button onClick={() => setCreateDialogOpen(true)} className="h-10 sm:h-9">
                 <Plus className="mr-2 h-4 w-4" />
-                New Task
+                <span className="hidden sm:inline">New Task</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             )}
           </div>
         </div>
 
         <Tabs defaultValue="active" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="active">Active Tasks</TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center gap-2">
+          <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:flex h-auto">
+            <TabsTrigger value="active" className="h-10 sm:h-9 text-sm">Active Tasks</TabsTrigger>
+            <TabsTrigger value="completed" className="flex items-center gap-2 h-10 sm:h-9 text-sm">
               <Archive className="h-4 w-4" />
-              Completed Tasks
+              <span className="hidden sm:inline">Completed Tasks</span>
+              <span className="sm:hidden">Done</span>
               {completedTasks && completedTasks.length > 0 && (
                 <Badge variant="secondary" className="ml-1">{completedTasks.length}</Badge>
               )}
@@ -314,20 +319,20 @@ export default function Tasks() {
                 onCardClick={(task) => setSelectedTaskId(task.id)}
                 getCardColor={getCardColor}
                 renderCard={(task) => (
-                  <div className="space-y-2">
+                  <div className="space-y-2 sm:space-y-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-medium flex-1 line-clamp-2">{task.title}</h4>
-                      <Badge className={getPriorityColor(task.priority)}>
+                      <h4 className="font-medium flex-1 line-clamp-2 text-sm sm:text-base">{task.title}</h4>
+                      <Badge className={`${getPriorityColor(task.priority)} text-xs`}>
                         {task.priority}
                       </Badge>
                     </div>
                     {task.projects?.clients && (
-                      <p className="text-xs font-medium text-primary">
+                      <p className="text-xs sm:text-sm font-medium text-primary truncate">
                         {task.projects.clients.name}
                       </p>
                     )}
                     {task.projects && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         Project: {task.projects.title}
                       </p>
                     )}
@@ -337,7 +342,7 @@ export default function Tasks() {
                       </p>
                     )}
                     {task.profiles && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         Assigned: {task.profiles.full_name}
                       </p>
                     )}
@@ -346,7 +351,7 @@ export default function Tasks() {
                         value={task.status}
                         onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
                       >
-                        <SelectTrigger className="h-7 text-xs">
+                        <SelectTrigger className="h-9 sm:h-7 text-sm sm:text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -370,32 +375,32 @@ export default function Tasks() {
                 <p className="text-muted-foreground">Loading completed tasks...</p>
               </div>
             ) : completedTasks && completedTasks.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {completedTasks.map((task: any) => (
                   <Card 
                     key={task.id} 
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    className="cursor-pointer hover:shadow-lg transition-shadow active:scale-[0.98]"
                     onClick={() => setSelectedTaskId(task.id)}
                   >
-                    <CardContent className="p-4 space-y-2">
+                    <CardContent className="p-3 sm:p-4 space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-medium flex-1 line-clamp-2">{task.title}</h4>
-                        <Badge className={getPriorityColor(task.priority)}>
+                        <h4 className="font-medium flex-1 line-clamp-2 text-sm sm:text-base">{task.title}</h4>
+                        <Badge className={`${getPriorityColor(task.priority)} text-xs`}>
                           {task.priority}
                         </Badge>
                       </div>
                       {task.projects?.clients && (
-                        <p className="text-xs font-medium text-primary">
+                        <p className="text-xs sm:text-sm font-medium text-primary truncate">
                           {task.projects.clients.name}
                         </p>
                       )}
                       {task.projects && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           Project: {task.projects.title}
                         </p>
                       )}
                       {task.profiles && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           Assigned: {task.profiles.full_name}
                         </p>
                       )}
@@ -404,7 +409,7 @@ export default function Tasks() {
                           value={task.status}
                           onValueChange={(newStatus) => handleStatusChange(task.id, newStatus)}
                         >
-                          <SelectTrigger className="h-7 text-xs">
+                          <SelectTrigger className="h-9 sm:h-7 text-sm sm:text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
