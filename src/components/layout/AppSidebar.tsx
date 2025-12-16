@@ -13,7 +13,8 @@ import {
   Wallet,
   Receipt,
   UserPlus,
-  TrendingUp
+  TrendingUp,
+  UserSearch
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ const hrItems = [
   { title: "Team", url: "/users", icon: Users },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
   { title: "Performance", url: "/performance", icon: TrendingUp },
+  { title: "Recruitment", url: "/recruitment", icon: UserSearch },
 ];
 
 const financeItems = [

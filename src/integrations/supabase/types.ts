@@ -61,6 +61,200 @@ export type Database = {
           },
         ]
       }
+      candidate_assessments: {
+        Row: {
+          assessment_type: string
+          assessor_id: string
+          candidate_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          assessment_type: string
+          assessor_id: string
+          candidate_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          assessment_type?: string
+          assessor_id?: string
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_assessments_assessor_id_fkey"
+            columns: ["assessor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_notes: {
+        Row: {
+          author_id: string
+          candidate_id: string
+          content: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          author_id: string
+          candidate_id: string
+          content: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          author_id?: string
+          candidate_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_notes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_status_history: {
+        Row: {
+          candidate_id: string
+          changed_by: string
+          created_at: string
+          id: string
+          new_status: Database["public"]["Enums"]["recruitment_status"]
+          notes: string | null
+          old_status: Database["public"]["Enums"]["recruitment_status"]
+        }
+        Insert: {
+          candidate_id: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          new_status: Database["public"]["Enums"]["recruitment_status"]
+          notes?: string | null
+          old_status: Database["public"]["Enums"]["recruitment_status"]
+        }
+        Update: {
+          candidate_id?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["recruitment_status"]
+          notes?: string | null
+          old_status?: Database["public"]["Enums"]["recruitment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_status_history_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidates: {
+        Row: {
+          applied_at: string
+          created_at: string
+          created_by: string
+          cv_url: string | null
+          division: string
+          email: string
+          full_name: string
+          hr_pic_id: string | null
+          id: string
+          location: string | null
+          phone: string
+          portfolio_url: string | null
+          position: string
+          status: Database["public"]["Enums"]["recruitment_status"]
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string
+          created_at?: string
+          created_by: string
+          cv_url?: string | null
+          division: string
+          email: string
+          full_name: string
+          hr_pic_id?: string | null
+          id?: string
+          location?: string | null
+          phone: string
+          portfolio_url?: string | null
+          position: string
+          status?: Database["public"]["Enums"]["recruitment_status"]
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string
+          created_at?: string
+          created_by?: string
+          cv_url?: string | null
+          division?: string
+          email?: string
+          full_name?: string
+          hr_pic_id?: string | null
+          id?: string
+          location?: string | null
+          phone?: string
+          portfolio_url?: string | null
+          position?: string
+          status?: Database["public"]["Enums"]["recruitment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidates_hr_pic_id_fkey"
+            columns: ["hr_pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           company: string | null
@@ -1436,6 +1630,14 @@ export type Database = {
         | "director"
         | "project_manager"
         | "sales"
+      recruitment_status:
+        | "applied"
+        | "screening_hr"
+        | "interview_user"
+        | "interview_final"
+        | "offering"
+        | "hired"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1577,6 +1779,15 @@ export const Constants = {
         "director",
         "project_manager",
         "sales",
+      ],
+      recruitment_status: [
+        "applied",
+        "screening_hr",
+        "interview_user",
+        "interview_final",
+        "offering",
+        "hired",
+        "rejected",
       ],
     },
   },
