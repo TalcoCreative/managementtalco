@@ -14,7 +14,8 @@ import {
   Receipt,
   UserPlus,
   TrendingUp,
-  UserSearch
+  UserSearch,
+  CalendarClock
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +42,7 @@ const navItems = [
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Schedule", url: "/schedule", icon: Calendar },
   { title: "Shooting", url: "/shooting", icon: Video },
+  { title: "Meeting", url: "/meeting", icon: CalendarClock },
   { title: "Leave", url: "/leave", icon: CalendarOff },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt },
   { title: "Reports", url: "/reports", icon: BarChart3 },

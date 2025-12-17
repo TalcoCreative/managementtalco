@@ -20,6 +20,7 @@ import MyReimbursement from "./pages/MyReimbursement";
 import Prospects from "./pages/Prospects";
 import Performance from "./pages/Performance";
 import Recruitment from "./pages/Recruitment";
+import Meeting from "./pages/Meeting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
           <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
           <Route path="/recruitment" element={<ProtectedRoute><Recruitment /></ProtectedRoute>} />
+          <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
