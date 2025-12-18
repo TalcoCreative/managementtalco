@@ -84,12 +84,10 @@ export default function Clients() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Clients</h1>
-          {canManageClients && (
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Client
-            </Button>
-          )}
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Client
+          </Button>
         </div>
 
         {isLoading ? (
