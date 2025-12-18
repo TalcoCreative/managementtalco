@@ -15,14 +15,13 @@ export function DeletionNotifications() {
       const { data, error } = await supabase
         .from("deletion_logs")
         .select("*, profiles:profiles!deletion_logs_deleted_by_fkey(full_name)")
+        .is("viewed_at", null) // Only fetch unviewed logs
         .order("created_at", { ascending: false })
         .limit(10);
       if (error) throw error;
       return data as any[];
     },
   });
-
-  const unviewedCount = deletionLogs?.filter(log => !log.viewed_at).length || 0;
 
   const handleMarkViewed = async (logId: string) => {
     await supabase
@@ -55,6 +54,8 @@ export function DeletionNotifications() {
 
   if (!deletionLogs || deletionLogs.length === 0) return null;
 
+  const logCount = deletionLogs.length;
+
   return (
     <Card>
       <CardHeader>
@@ -62,8 +63,8 @@ export function DeletionNotifications() {
           <CardTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5" />
             Deletion Logs
-            {unviewedCount > 0 && (
-              <Badge variant="destructive">{unviewedCount} new</Badge>
+            {logCount > 0 && (
+              <Badge variant="destructive">{logCount} new</Badge>
             )}
           </CardTitle>
         </div>
@@ -72,9 +73,7 @@ export function DeletionNotifications() {
         {deletionLogs.map((log) => (
           <div
             key={log.id}
-            className={`rounded-lg border p-4 space-y-2 ${
-              !log.viewed_at ? "bg-destructive/5 border-destructive/20" : ""
-            }`}
+            className="rounded-lg border p-4 space-y-2 bg-destructive/5 border-destructive/20"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -83,15 +82,13 @@ export function DeletionNotifications() {
                 </Badge>
                 <span className="font-medium">{log.entity_name}</span>
               </div>
-              {!log.viewed_at && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleMarkViewed(log.id)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleMarkViewed(log.id)}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
             </div>
             <p className="text-sm text-muted-foreground">
               <strong>Alasan:</strong> {log.reason}

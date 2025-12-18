@@ -172,6 +172,13 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         reason,
       });
 
+      // Remove foreign key references first
+      await supabase.from("task_attachments").delete().eq("task_id", taskId);
+      await supabase.from("comments").delete().eq("task_id", taskId);
+      await supabase.from("task_activities").delete().eq("task_id", taskId);
+      await supabase.from("scheduled_posts").update({ task_id: null }).eq("task_id", taskId);
+      await supabase.from("shooting_schedules").update({ task_id: null }).eq("task_id", taskId);
+
       // Delete the task
       const { error } = await supabase.from("tasks").delete().eq("id", taskId);
       if (error) throw error;
