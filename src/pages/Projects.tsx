@@ -104,6 +104,18 @@ export default function Projects() {
         reason,
       });
 
+      // Remove foreign key references first
+      await supabase.from("shooting_schedules").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("meetings").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("expenses").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("income").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("reimbursements").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("recurring_budget").update({ project_id: null }).eq("project_id", deleteProject.id);
+      await supabase.from("ledger_entries").update({ project_id: null }).eq("project_id", deleteProject.id);
+      
+      // Delete tasks related to this project
+      await supabase.from("tasks").delete().eq("project_id", deleteProject.id);
+
       // Delete the project
       const { error } = await supabase.from("projects").delete().eq("id", deleteProject.id);
       if (error) throw error;
