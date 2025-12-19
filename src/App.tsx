@@ -22,6 +22,7 @@ import Performance from "./pages/Performance";
 import Recruitment from "./pages/Recruitment";
 import Meeting from "./pages/Meeting";
 import Asset from "./pages/Asset";
+import Letters from "./pages/Letters";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/recruitment" element={<ProtectedRoute><Recruitment /></ProtectedRoute>} />
           <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
           <Route path="/asset" element={<ProtectedRoute><Asset /></ProtectedRoute>} />
+          <Route path="/letters" element={<ProtectedRoute><Letters /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
