@@ -283,13 +283,11 @@ export default function Tasks() {
               </PopoverContent>
             </Popover>
 
-            {canCreateTasks && (
-              <Button onClick={() => setCreateDialogOpen(true)} className="h-10 sm:h-9">
-                <Plus className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">New Task</span>
-                <span className="sm:hidden">Add</span>
-              </Button>
-            )}
+            <Button onClick={() => setCreateDialogOpen(true)} className="h-10 sm:h-9">
+              <Plus className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">New Task</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
           </div>
         </div>
 
