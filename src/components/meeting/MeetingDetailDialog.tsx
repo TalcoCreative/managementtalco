@@ -666,7 +666,7 @@ const MeetingDetailDialog = ({
               <TabsContent value="mom" className="mt-4 space-y-4">
                 {/* Actions */}
                 <div className="flex gap-2">
-                  {canEdit && !showMOMForm && (
+                  {!showMOMForm && (
                     <Button variant="outline" onClick={() => setShowMOMForm(true)}>
                       <Plus className="w-4 h-4 mr-2" />
                       Tambah MOM
