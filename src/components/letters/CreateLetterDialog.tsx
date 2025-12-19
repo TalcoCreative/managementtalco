@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 
 const ENTITIES = [
   { code: "TCI", name: "Talco Creative Indonesia" },
@@ -54,6 +55,7 @@ export function CreateLetterDialog({
   const [recipientName, setRecipientName] = useState("");
   const [recipientCompany, setRecipientCompany] = useState("");
   const [notes, setNotes] = useState("");
+  const [isConfidential, setIsConfidential] = useState(false);
 
   const { data: projects } = useQuery({
     queryKey: ["projects-for-letters"],
@@ -121,6 +123,7 @@ export function CreateLetterDialog({
         year,
         month,
         status: "draft",
+        is_confidential: isConfidential,
       }).select().single();
 
       if (error) throw error;
@@ -129,7 +132,7 @@ export function CreateLetterDialog({
       await supabase.from("letter_activity_logs").insert({
         letter_id: data.id,
         action: "created",
-        new_value: `Surat dibuat dengan nomor ${letterNumber}`,
+        new_value: `Surat dibuat dengan nomor ${letterNumber}${isConfidential ? " (Rahasia)" : ""}`,
         changed_by: profile.id,
       });
 
@@ -153,6 +156,7 @@ export function CreateLetterDialog({
     setRecipientName("");
     setRecipientCompany("");
     setNotes("");
+    setIsConfidential(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -264,6 +268,21 @@ export function CreateLetterDialog({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
             />
+          </div>
+
+          {/* Confidential Toggle */}
+          <div className="flex items-center space-x-2 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+            <Checkbox
+              id="confidential"
+              checked={isConfidential}
+              onCheckedChange={(checked) => setIsConfidential(checked as boolean)}
+            />
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-red-500" />
+              <Label htmlFor="confidential" className="text-sm cursor-pointer">
+                Surat Rahasia (hanya pembuat & Super Admin yang bisa lihat)
+              </Label>
+            </div>
           </div>
 
           {entityCode && categoryCode && (

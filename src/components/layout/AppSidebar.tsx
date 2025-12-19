@@ -48,7 +48,6 @@ const navItems = [
   { title: "Leave", url: "/leave", icon: CalendarOff },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt },
   { title: "Asset", url: "/asset", icon: Package },
-  { title: "Surat", url: "/letters", icon: FileText },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
@@ -96,6 +95,11 @@ export function AppSidebar() {
                          userRoles?.includes('hr') || 
                          userRoles?.includes('sales' as any) || 
                          userRoles?.includes('marketing');
+  const canAccessLetters = userRoles?.includes('super_admin') || 
+                           userRoles?.includes('hr') || 
+                           userRoles?.includes('finance') || 
+                           userRoles?.includes('project_manager') || 
+                           userRoles?.includes('sales' as any);
 
   const handleLogout = async () => {
     try {
@@ -139,6 +143,21 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {canAccessLetters && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/letters" 
+                      className={({ isActive }) => 
+                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                      }
+                    >
+                      <FileText className="h-5 w-5" />
+                      {!isCollapsed && <span>Surat</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
