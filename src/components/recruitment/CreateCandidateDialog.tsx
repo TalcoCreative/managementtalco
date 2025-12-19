@@ -71,7 +71,14 @@ export function CreateCandidateDialog({ open, onOpenChange }: CreateCandidateDia
         .select("user_id, profiles!inner(id, full_name)")
         .in("role", ["hr", "super_admin"]);
       if (error) throw error;
-      return data?.map((r: any) => r.profiles) || [];
+      // Deduplicate users who have both hr and super_admin roles
+      const uniqueUsers = new Map();
+      data?.forEach((r: any) => {
+        if (!uniqueUsers.has(r.profiles.id)) {
+          uniqueUsers.set(r.profiles.id, r.profiles);
+        }
+      });
+      return Array.from(uniqueUsers.values());
     },
   });
 
