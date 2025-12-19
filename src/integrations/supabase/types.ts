@@ -402,6 +402,72 @@ export type Database = {
           },
         ]
       }
+      disciplinary_cases: {
+        Row: {
+          action_date: string | null
+          action_taken: string | null
+          case_date: string
+          created_at: string
+          description: string
+          employee_id: string
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          reported_by: string
+          severity: string
+          status: string
+          updated_at: string
+          violation_type: string
+        }
+        Insert: {
+          action_date?: string | null
+          action_taken?: string | null
+          case_date?: string
+          created_at?: string
+          description: string
+          employee_id: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          reported_by: string
+          severity?: string
+          status?: string
+          updated_at?: string
+          violation_type: string
+        }
+        Update: {
+          action_date?: string | null
+          action_taken?: string | null
+          case_date?: string
+          created_at?: string
+          description?: string
+          employee_id?: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          reported_by?: string
+          severity?: string
+          status?: string
+          updated_at?: string
+          violation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_cases_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disciplinary_cases_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number

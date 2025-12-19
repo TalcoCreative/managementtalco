@@ -12,8 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
+import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle } from "lucide-react";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -370,6 +371,10 @@ export default function HRDashboard() {
             <TabsTrigger value="shootings">Shooting Schedules</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="all-tasks">All Tasks</TabsTrigger>
+            <TabsTrigger value="disciplinary">
+              <FileWarning className="h-4 w-4 mr-2" />
+              Disciplinary
+            </TabsTrigger>
           </TabsList>
 
           {/* Leave Approval Tab */}
@@ -694,6 +699,11 @@ export default function HRDashboard() {
                 </ScrollArea>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Disciplinary Cases Tab */}
+          <TabsContent value="disciplinary">
+            <DisciplinaryCases />
           </TabsContent>
         </Tabs>
 
