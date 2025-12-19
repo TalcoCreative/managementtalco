@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, Filter } from "lucide-react";
-import { format, parseISO, isToday, isFuture, isPast } from "date-fns";
+import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange } from "lucide-react";
+import { format, parseISO, isToday, isFuture, isPast, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { id } from "date-fns/locale";
 import CreateMeetingDialog from "@/components/meeting/CreateMeetingDialog";
 import MeetingDetailDialog from "@/components/meeting/MeetingDetailDialog";
 import MeetingNotifications from "@/components/meeting/MeetingNotifications";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 const Meeting = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -22,6 +24,10 @@ const Meeting = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modeFilter, setModeFilter] = useState<string>("all");
+  
+  // Date range filter for stats - default to current month
+  const [statsDateFrom, setStatsDateFrom] = useState<Date>(startOfMonth(new Date()));
+  const [statsDateTo, setStatsDateTo] = useState<Date>(endOfMonth(new Date()));
 
   // Fetch current user
   const { data: currentUser } = useQuery({
@@ -169,21 +175,48 @@ const Meeting = () => {
     });
   }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter]);
 
-  // Calculate stats
+  // Filter meetings by date range for stats
+  const meetingsInRange = useMemo(() => {
+    if (!meetings) return [];
+    return meetings.filter(m => {
+      const meetingDate = parseISO(m.meeting_date);
+      return isWithinInterval(meetingDate, { start: statsDateFrom, end: statsDateTo });
+    });
+  }, [meetings, statsDateFrom, statsDateTo]);
+
+  // Calculate stats based on filtered date range
   const stats = useMemo(() => {
-    if (!meetings) return { total: 0, internal: 0, external: 0, upcoming: 0 };
+    if (!meetingsInRange) return { total: 0, internal: 0, external: 0, upcoming: 0 };
     
-    const now = new Date();
     return {
-      total: meetings.length,
-      internal: meetings.filter(m => m.type === "internal").length,
-      external: meetings.filter(m => m.type === "external").length,
-      upcoming: meetings.filter(m => {
+      total: meetingsInRange.length,
+      internal: meetingsInRange.filter(m => m.type === "internal").length,
+      external: meetingsInRange.filter(m => m.type === "external").length,
+      upcoming: meetingsInRange.filter(m => {
         const meetingDate = parseISO(m.meeting_date);
         return (isFuture(meetingDate) || isToday(meetingDate)) && m.status !== "cancelled";
       }).length,
     };
-  }, [meetings]);
+  }, [meetingsInRange]);
+
+  // Quick date range presets
+  const setThisMonth = () => {
+    setStatsDateFrom(startOfMonth(new Date()));
+    setStatsDateTo(endOfMonth(new Date()));
+  };
+
+  const setLastMonth = () => {
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    setStatsDateFrom(startOfMonth(lastMonth));
+    setStatsDateTo(endOfMonth(lastMonth));
+  };
+
+  const setThisYear = () => {
+    const now = new Date();
+    setStatsDateFrom(new Date(now.getFullYear(), 0, 1));
+    setStatsDateTo(new Date(now.getFullYear(), 11, 31));
+  };
 
   return (
     <AppLayout>
@@ -202,6 +235,62 @@ const Meeting = () => {
           </div>
         </div>
 
+        {/* Stats Date Range Filter */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <CalendarRange className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Periode Statistik:</span>
+              
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[130px]">
+                      {format(statsDateFrom, "dd MMM yyyy", { locale: id })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={statsDateFrom}
+                      onSelect={(date) => date && setStatsDateFrom(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <span className="text-muted-foreground">-</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-[130px]">
+                      {format(statsDateTo, "dd MMM yyyy", { locale: id })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={statsDateTo}
+                      onSelect={(date) => date && setStatsDateTo(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={setThisMonth}>
+                  Bulan Ini
+                </Button>
+                <Button variant="secondary" size="sm" onClick={setLastMonth}>
+                  Bulan Lalu
+                </Button>
+                <Button variant="secondary" size="sm" onClick={setThisYear}>
+                  Tahun Ini
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -211,6 +300,9 @@ const Meeting = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">
+                {format(statsDateFrom, "dd MMM", { locale: id })} - {format(statsDateTo, "dd MMM yyyy", { locale: id })}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -220,6 +312,7 @@ const Meeting = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.upcoming}</div>
+              <p className="text-xs text-muted-foreground">Dalam periode</p>
             </CardContent>
           </Card>
           <Card>
@@ -229,6 +322,7 @@ const Meeting = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.internal}</div>
+              <p className="text-xs text-muted-foreground">Dalam periode</p>
             </CardContent>
           </Card>
           <Card>
@@ -238,6 +332,7 @@ const Meeting = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.external}</div>
+              <p className="text-xs text-muted-foreground">Dalam periode</p>
             </CardContent>
           </Card>
         </div>
