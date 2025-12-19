@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning } from "lucide-react";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -158,6 +158,20 @@ export default function HRDashboard() {
       return data || [];
     },
   });
+
+  // Fetch prospects count
+  const { data: prospects } = useQuery({
+    queryKey: ["hr-prospects", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("prospects")
+        .select("id, status")
+        .gte("created_at", `${startDate}T00:00:00`)
+        .lte("created_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
   // Fetch tasks for selected user detail view
   const { data: userTasks } = useQuery({
     queryKey: ["hr-user-tasks", selectedUser?.id, startDate, endDate],
@@ -209,6 +223,8 @@ export default function HRDashboard() {
     todayAttendance: attendance?.filter(a => a.date === format(new Date(), 'yyyy-MM-dd')).length || 0,
     activeTasks: tasks?.filter(t => t.status !== 'done' && t.status !== 'completed').length || 0,
     completedTasks: tasks?.filter(t => t.status === 'done' || t.status === 'completed').length || 0,
+    totalProspects: prospects?.length || 0,
+    activeProspects: prospects?.filter(p => p.status !== 'closed_won' && p.status !== 'closed_lost').length || 0,
   };
 
   const calculateWorkHours = (clockIn: string | null, clockOut: string | null) => {
@@ -311,7 +327,7 @@ export default function HRDashboard() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -349,6 +365,17 @@ export default function HRDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.completedTasks}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Prospects (Period)</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalProspects}</div>
+              <p className="text-xs text-muted-foreground">{stats.activeProspects} active</p>
             </CardContent>
           </Card>
         </div>
