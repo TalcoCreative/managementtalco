@@ -782,6 +782,7 @@ export type Database = {
           created_at: string
           id: string
           meeting_id: string
+          rejection_reason: string | null
           responded_at: string | null
           status: string
           user_id: string
@@ -790,6 +791,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_id: string
+          rejection_reason?: string | null
           responded_at?: string | null
           status?: string
           user_id: string
@@ -798,6 +800,7 @@ export type Database = {
           created_at?: string
           id?: string
           meeting_id?: string
+          rejection_reason?: string | null
           responded_at?: string | null
           status?: string
           user_id?: string

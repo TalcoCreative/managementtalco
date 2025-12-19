@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClockInOut } from "@/components/attendance/ClockInOut";
 import { ShootingNotifications } from "@/components/shooting/ShootingNotifications";
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
+import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvitationNotifications";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
@@ -138,6 +139,8 @@ export default function Index() {
         </div>
 
         <ClockInOut />
+
+        <MeetingInvitationNotifications />
 
         <ShootingNotifications />
 
