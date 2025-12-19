@@ -353,14 +353,14 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
                 <div>
                   <Label>Client (Opsional)</Label>
                   <Select 
-                    value={formData.client_id} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
+                    value={formData.client_id || "_none"} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value === "_none" ? "" : value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih client" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tidak ada</SelectItem>
+                      <SelectItem value="_none">Tidak ada</SelectItem>
                       {clients?.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
@@ -372,14 +372,14 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
                 <div>
                   <Label>Project (Opsional)</Label>
                   <Select 
-                    value={formData.project_id} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value }))}
+                    value={formData.project_id || "_none"} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value === "_none" ? "" : value }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih project" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tidak ada</SelectItem>
+                      <SelectItem value="_none">Tidak ada</SelectItem>
                       {projects?.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.title}
