@@ -76,8 +76,8 @@ export function LetterDetailDialog({
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", user.id)
-        .single();
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (!profile) throw new Error("Profile not found");
 
