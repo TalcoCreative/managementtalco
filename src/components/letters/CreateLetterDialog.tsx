@@ -206,12 +206,12 @@ export function CreateLetterDialog({
 
           <div className="space-y-2">
             <Label>Project Terkait (Opsional)</Label>
-            <Select value={projectId} onValueChange={setProjectId}>
+            <Select value={projectId} onValueChange={(val) => setProjectId(val === "none" ? "" : val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tidak ada</SelectItem>
+                <SelectItem value="none">Tidak ada</SelectItem>
                 {projects?.map(project => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.title}
