@@ -887,6 +887,145 @@ export type Database = {
           },
         ]
       }
+      letter_activity_logs: {
+        Row: {
+          action: string
+          changed_by: string
+          created_at: string
+          id: string
+          letter_id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          changed_by: string
+          created_at?: string
+          id?: string
+          letter_id: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string
+          created_at?: string
+          id?: string
+          letter_id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letter_activity_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letter_activity_logs_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      letters: {
+        Row: {
+          category_code: string
+          category_name: string
+          created_at: string
+          created_by: string
+          document_url: string | null
+          entity_code: string
+          entity_name: string
+          id: string
+          letter_number: string
+          month: number
+          notes: string | null
+          project_id: string | null
+          project_label: string | null
+          recipient_company: string | null
+          recipient_name: string
+          running_number: number
+          sent_at: string | null
+          sent_by: string | null
+          status: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          category_code: string
+          category_name: string
+          created_at?: string
+          created_by: string
+          document_url?: string | null
+          entity_code: string
+          entity_name: string
+          id?: string
+          letter_number: string
+          month: number
+          notes?: string | null
+          project_id?: string | null
+          project_label?: string | null
+          recipient_company?: string | null
+          recipient_name: string
+          running_number: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          category_code?: string
+          category_name?: string
+          created_at?: string
+          created_by?: string
+          document_url?: string | null
+          entity_code?: string
+          entity_name?: string
+          id?: string
+          letter_number?: string
+          month?: number
+          notes?: string | null
+          project_id?: string | null
+          project_label?: string | null
+          recipient_company?: string | null
+          recipient_name?: string
+          running_number?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "letters_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letters_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letters_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_external_participants: {
         Row: {
           company: string | null
@@ -2061,6 +2200,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_next_letter_number: {
+        Args: {
+          p_category_code: string
+          p_entity_code: string
+          p_month: number
+          p_year: number
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
