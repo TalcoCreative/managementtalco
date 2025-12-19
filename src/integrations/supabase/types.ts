@@ -14,6 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_transactions: {
+        Row: {
+          asset_id: string
+          checkin_at: string | null
+          checkin_by: string | null
+          checkin_location: string | null
+          checkout_at: string | null
+          checkout_by: string | null
+          checkout_location: string | null
+          condition_after: string | null
+          condition_before: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          transaction_type: string
+          used_by: string | null
+        }
+        Insert: {
+          asset_id: string
+          checkin_at?: string | null
+          checkin_by?: string | null
+          checkin_location?: string | null
+          checkout_at?: string | null
+          checkout_by?: string | null
+          checkout_location?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          transaction_type: string
+          used_by?: string | null
+        }
+        Update: {
+          asset_id?: string
+          checkin_at?: string | null
+          checkin_by?: string | null
+          checkin_location?: string | null
+          checkout_at?: string | null
+          checkout_by?: string | null
+          checkout_location?: string | null
+          condition_after?: string | null
+          condition_before?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          transaction_type?: string
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_transactions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_transactions_checkin_by_fkey"
+            columns: ["checkin_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_transactions_checkout_by_fkey"
+            columns: ["checkout_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_transactions_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          category: string
+          code: string
+          condition: string
+          created_at: string
+          created_by: string
+          current_holder_id: string | null
+          current_location: string | null
+          default_location: string
+          description: string | null
+          id: string
+          name: string
+          qr_code: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          condition?: string
+          created_at?: string
+          created_by: string
+          current_holder_id?: string | null
+          current_location?: string | null
+          default_location?: string
+          description?: string | null
+          id?: string
+          name: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          condition?: string
+          created_at?: string
+          created_by?: string
+          current_holder_id?: string | null
+          current_location?: string | null
+          default_location?: string
+          description?: string | null
+          id?: string
+          name?: string
+          qr_code?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_current_holder_id_fkey"
+            columns: ["current_holder_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           clock_in: string | null
