@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { 
   Calendar, Clock, MapPin, Video, Users, Building2, 
-  Link as LinkIcon, Check, X, ExternalLink 
+  Link as LinkIcon, Check, X, ExternalLink, CalendarClock,
+  FileText, Plus, Pencil, Trash2, Save
 } from "lucide-react";
 import { format, parseISO, isToday, isFuture } from "date-fns";
 import { id } from "date-fns/locale";
@@ -30,6 +34,17 @@ const MeetingDetailDialog = ({
   isHRorAdmin 
 }: MeetingDetailDialogProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleData, setRescheduleData] = useState({
+    meeting_date: "",
+    start_time: "",
+    end_time: "",
+    reschedule_reason: "",
+  });
+  const [showMOMForm, setShowMOMForm] = useState(false);
+  const [momContent, setMomContent] = useState("");
+  const [editingMOM, setEditingMOM] = useState<string | null>(null);
+  const [editMOMContent, setEditMOMContent] = useState("");
   const queryClient = useQueryClient();
 
   // Fetch current user
@@ -66,6 +81,24 @@ const MeetingDetailDialog = ({
         .from("meeting_external_participants")
         .select("*")
         .eq("meeting_id", meeting.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!meeting.id,
+  });
+
+  // Fetch meeting minutes
+  const { data: meetingMinutes, refetch: refetchMOM } = useQuery({
+    queryKey: ["meeting-minutes", meeting.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_minutes")
+        .select(`
+          *,
+          creator:created_by(full_name)
+        `)
+        .eq("meeting_id", meeting.id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -129,6 +162,118 @@ const MeetingDetailDialog = ({
     }
   };
 
+  const handleReschedule = async () => {
+    if (!rescheduleData.meeting_date || !rescheduleData.start_time || !rescheduleData.end_time) {
+      toast.error("Mohon lengkapi data reschedule");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("meetings")
+        .update({
+          original_date: meeting.original_date || meeting.meeting_date,
+          meeting_date: rescheduleData.meeting_date,
+          start_time: rescheduleData.start_time,
+          end_time: rescheduleData.end_time,
+          reschedule_reason: rescheduleData.reschedule_reason,
+          rescheduled_at: new Date().toISOString(),
+        })
+        .eq("id", meeting.id);
+
+      if (error) throw error;
+
+      toast.success("Meeting berhasil di-reschedule");
+      setShowReschedule(false);
+      setRescheduleData({ meeting_date: "", start_time: "", end_time: "", reschedule_reason: "" });
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal reschedule meeting");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAddMOM = async () => {
+    if (!momContent.trim()) {
+      toast.error("Mohon isi content MOM");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("meeting_minutes")
+        .insert({
+          meeting_id: meeting.id,
+          content: momContent,
+          created_by: currentUser?.id,
+        });
+
+      if (error) throw error;
+
+      toast.success("MOM berhasil ditambahkan");
+      setMomContent("");
+      setShowMOMForm(false);
+      refetchMOM();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menambahkan MOM");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateMOM = async (momId: string) => {
+    if (!editMOMContent.trim()) {
+      toast.error("Mohon isi content MOM");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("meeting_minutes")
+        .update({
+          content: editMOMContent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", momId);
+
+      if (error) throw error;
+
+      toast.success("MOM berhasil diperbarui");
+      setEditingMOM(null);
+      setEditMOMContent("");
+      refetchMOM();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal memperbarui MOM");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteMOM = async (momId: string) => {
+    if (!confirm("Hapus MOM ini?")) return;
+
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("meeting_minutes")
+        .delete()
+        .eq("id", momId);
+
+      if (error) throw error;
+
+      toast.success("MOM berhasil dihapus");
+      refetchMOM();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus MOM");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "accepted":
@@ -163,6 +308,9 @@ const MeetingDetailDialog = ({
               <Badge variant="outline" className="bg-purple-50 text-purple-700">Internal</Badge>
             ) : (
               <Badge variant="outline" className="bg-orange-50 text-orange-700">External</Badge>
+            )}
+            {meeting.rescheduled_at && (
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Rescheduled</Badge>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -203,6 +351,18 @@ const MeetingDetailDialog = ({
               </span>
             </div>
           </div>
+
+          {/* Reschedule Info */}
+          {meeting.original_date && meeting.rescheduled_at && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Rescheduled:</strong> Dari tanggal {format(parseISO(meeting.original_date), "dd MMM yyyy", { locale: id })}
+              </p>
+              {meeting.reschedule_reason && (
+                <p className="text-sm text-yellow-700 mt-1">Alasan: {meeting.reschedule_reason}</p>
+              )}
+            </div>
+          )}
 
           {/* Meeting Link/Location */}
           {meeting.mode === "online" && meeting.meeting_link && (
@@ -285,45 +445,155 @@ const MeetingDetailDialog = ({
 
           <Separator />
 
-          {/* Participants Tabs */}
-          <Tabs defaultValue="internal">
-            <TabsList>
-              <TabsTrigger value="internal">
-                Internal ({participants?.length || 0})
+          {/* Tabs */}
+          <Tabs defaultValue="participants">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="participants">
+                <Users className="w-4 h-4 mr-2" />
+                Partisipan
               </TabsTrigger>
-              <TabsTrigger value="external">
-                External ({externalParticipants?.length || 0})
+              <TabsTrigger value="mom">
+                <FileText className="w-4 h-4 mr-2" />
+                MOM ({meetingMinutes?.length || 0})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="internal" className="mt-4">
-              {participants?.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Tidak ada partisipan internal</p>
-              ) : (
-                <div className="space-y-2">
-                  {participants?.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between p-2 border rounded">
-                      <div>
-                        <p className="font-medium">{p.user?.full_name}</p>
-                        <p className="text-sm text-muted-foreground">{p.user?.email}</p>
+            <TabsContent value="participants" className="mt-4 space-y-4">
+              {/* Internal Participants */}
+              <div>
+                <p className="text-sm font-medium mb-2">Internal ({participants?.length || 0})</p>
+                {participants?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Tidak ada partisipan internal</p>
+                ) : (
+                  <div className="space-y-2">
+                    {participants?.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between p-2 border rounded">
+                        <div>
+                          <p className="font-medium">{p.user?.full_name}</p>
+                          <p className="text-sm text-muted-foreground">{p.user?.email}</p>
+                        </div>
+                        {getStatusBadge(p.status)}
                       </div>
-                      {getStatusBadge(p.status)}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* External Participants */}
+              <div>
+                <p className="text-sm font-medium mb-2">External ({externalParticipants?.length || 0})</p>
+                {externalParticipants?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Tidak ada partisipan external</p>
+                ) : (
+                  <div className="space-y-2">
+                    {externalParticipants?.map((p) => (
+                      <div key={p.id} className="p-2 border rounded">
+                        <p className="font-medium">{p.name}</p>
+                        {p.company && <p className="text-sm text-muted-foreground">{p.company}</p>}
+                        {p.email && <p className="text-sm text-muted-foreground">{p.email}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
-            <TabsContent value="external" className="mt-4">
-              {externalParticipants?.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Tidak ada partisipan external</p>
+            <TabsContent value="mom" className="mt-4 space-y-4">
+              {/* Add MOM Button */}
+              {canEdit && !showMOMForm && (
+                <Button variant="outline" onClick={() => setShowMOMForm(true)} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Tambah MOM
+                </Button>
+              )}
+
+              {/* Add MOM Form */}
+              {showMOMForm && (
+                <div className="p-4 border rounded-lg space-y-3">
+                  <Label>Minutes of Meeting</Label>
+                  <Textarea
+                    value={momContent}
+                    onChange={(e) => setMomContent(e.target.value)}
+                    placeholder="Tulis notulen meeting..."
+                    rows={5}
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={handleAddMOM} disabled={isUpdating}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Simpan
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setShowMOMForm(false);
+                      setMomContent("");
+                    }}>
+                      Batal
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* MOM List */}
+              {meetingMinutes?.length === 0 && !showMOMForm ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Belum ada MOM untuk meeting ini
+                </p>
               ) : (
-                <div className="space-y-2">
-                  {externalParticipants?.map((p) => (
-                    <div key={p.id} className="p-2 border rounded">
-                      <p className="font-medium">{p.name}</p>
-                      {p.company && <p className="text-sm text-muted-foreground">{p.company}</p>}
-                      {p.email && <p className="text-sm text-muted-foreground">{p.email}</p>}
+                <div className="space-y-3">
+                  {meetingMinutes?.map((mom: any) => (
+                    <div key={mom.id} className="p-4 border rounded-lg">
+                      {editingMOM === mom.id ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            value={editMOMContent}
+                            onChange={(e) => setEditMOMContent(e.target.value)}
+                            rows={5}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleUpdateMOM(mom.id)} disabled={isUpdating}>
+                              <Save className="w-4 h-4 mr-2" />
+                              Simpan
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setEditingMOM(null);
+                              setEditMOMContent("");
+                            }}>
+                              Batal
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm whitespace-pre-wrap">{mom.content}</p>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                            <div className="text-xs text-muted-foreground">
+                              <span>Oleh: {mom.creator?.full_name || "Unknown"}</span>
+                              <span className="mx-2">•</span>
+                              <span>{format(parseISO(mom.created_at), "dd MMM yyyy HH:mm", { locale: id })}</span>
+                            </div>
+                            {canEdit && (
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => {
+                                    setEditingMOM(mom.id);
+                                    setEditMOMContent(mom.content);
+                                  }}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={() => handleDeleteMOM(mom.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -342,13 +612,77 @@ const MeetingDetailDialog = ({
             </>
           )}
 
+          {/* Reschedule Form */}
+          {showReschedule && (
+            <>
+              <Separator />
+              <div className="p-4 border rounded-lg space-y-4">
+                <p className="font-medium">Reschedule Meeting</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Tanggal Baru</Label>
+                    <Input
+                      type="date"
+                      value={rescheduleData.meeting_date}
+                      onChange={(e) => setRescheduleData(prev => ({ ...prev, meeting_date: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Jam Mulai</Label>
+                    <Input
+                      type="time"
+                      value={rescheduleData.start_time}
+                      onChange={(e) => setRescheduleData(prev => ({ ...prev, start_time: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Jam Selesai</Label>
+                    <Input
+                      type="time"
+                      value={rescheduleData.end_time}
+                      onChange={(e) => setRescheduleData(prev => ({ ...prev, end_time: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Alasan Reschedule</Label>
+                  <Textarea
+                    value={rescheduleData.reschedule_reason}
+                    onChange={(e) => setRescheduleData(prev => ({ ...prev, reschedule_reason: e.target.value }))}
+                    placeholder="Alasan reschedule meeting..."
+                    rows={2}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleReschedule} disabled={isUpdating}>
+                    <CalendarClock className="w-4 h-4 mr-2" />
+                    Konfirmasi Reschedule
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowReschedule(false)}>
+                    Batal
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Creator Actions */}
           {canEdit && (
             <>
               <Separator />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {meeting.status === "scheduled" && (
                   <>
+                    {!showReschedule && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setShowReschedule(true)}
+                        disabled={isUpdating}
+                      >
+                        <CalendarClock className="w-4 h-4 mr-2" />
+                        Reschedule
+                      </Button>
+                    )}
                     <Button 
                       variant="outline" 
                       onClick={() => handleUpdateStatus("completed")}

@@ -710,6 +710,41 @@ export type Database = {
           },
         ]
       }
+      meeting_minutes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          meeting_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          meeting_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          meeting_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_notifications: {
         Row: {
           created_at: string
@@ -796,7 +831,10 @@ export type Database = {
           meeting_link: string | null
           mode: string
           notes: string | null
+          original_date: string | null
           project_id: string | null
+          reschedule_reason: string | null
+          rescheduled_at: string | null
           start_time: string
           status: string
           title: string
@@ -814,7 +852,10 @@ export type Database = {
           meeting_link?: string | null
           mode?: string
           notes?: string | null
+          original_date?: string | null
           project_id?: string | null
+          reschedule_reason?: string | null
+          rescheduled_at?: string | null
           start_time: string
           status?: string
           title: string
@@ -832,7 +873,10 @@ export type Database = {
           meeting_link?: string | null
           mode?: string
           notes?: string | null
+          original_date?: string | null
           project_id?: string | null
+          reschedule_reason?: string | null
+          rescheduled_at?: string | null
           start_time?: string
           status?: string
           title?: string
