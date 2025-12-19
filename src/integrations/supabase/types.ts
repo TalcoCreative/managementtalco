@@ -1190,6 +1190,7 @@ export type Database = {
           created_by: string
           end_time: string
           id: string
+          is_confidential: boolean
           location: string | null
           meeting_date: string
           meeting_link: string | null
@@ -1211,6 +1212,7 @@ export type Database = {
           created_by: string
           end_time: string
           id?: string
+          is_confidential?: boolean
           location?: string | null
           meeting_date: string
           meeting_link?: string | null
@@ -1232,6 +1234,7 @@ export type Database = {
           created_by?: string
           end_time?: string
           id?: string
+          is_confidential?: boolean
           location?: string | null
           meeting_date?: string
           meeting_link?: string | null

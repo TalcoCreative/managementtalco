@@ -38,6 +38,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
     client_id: "",
     project_id: "",
     notes: "",
+    is_confidential: false,
   });
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>([]);
@@ -156,6 +157,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
           project_id: formData.project_id || null,
           notes: formData.notes || null,
           created_by: currentUser.id,
+          is_confidential: formData.is_confidential,
         })
         .select()
         .single();
@@ -230,6 +232,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
       client_id: "",
       project_id: "",
       notes: "",
+      is_confidential: false,
     });
     setSelectedParticipants([]);
     setExternalParticipants([]);
@@ -470,6 +473,21 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
                 placeholder="Catatan tambahan..."
                 rows={3}
               />
+            </div>
+
+            {/* Confidential */}
+            <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+              <Checkbox
+                id="is_confidential"
+                checked={formData.is_confidential}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_confidential: checked as boolean }))}
+              />
+              <label htmlFor="is_confidential" className="text-sm cursor-pointer">
+                <span className="font-medium">Meeting Rahasia</span>
+                <p className="text-xs text-muted-foreground">
+                  Hanya pembuat, partisipan internal, dan Super Admin yang dapat melihat meeting ini
+                </p>
+              </label>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
