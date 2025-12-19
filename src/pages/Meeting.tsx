@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange, Lock } from "lucide-react";
 import { format, parseISO, isToday, isFuture, isPast, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { id } from "date-fns/locale";
 import CreateMeetingDialog from "@/components/meeting/CreateMeetingDialog";
@@ -53,7 +53,8 @@ const Meeting = () => {
     enabled: !!currentUser?.id,
   });
 
-  const isHRorAdmin = userRoles?.includes("super_admin") || userRoles?.includes("hr");
+  const isSuperAdmin = userRoles?.includes("super_admin");
+  const isHRorAdmin = isSuperAdmin || userRoles?.includes("hr");
 
   // Fetch meetings
   const { data: meetings, isLoading, refetch: refetchMeetings } = useQuery({
@@ -153,6 +154,14 @@ const Meeting = () => {
 
   const filteredMeetings = useMemo(() => {
     return meetings?.filter(meeting => {
+      // Filter confidential meetings: only creator, participants, and super_admin can see
+      if (meeting.is_confidential && currentUser?.id) {
+        const isCreator = meeting.created_by === currentUser.id;
+        const isParticipant = participants?.some(p => p.meeting_id === meeting.id && p.user_id === currentUser.id);
+        const canSeeConfidential = isCreator || isParticipant || isSuperAdmin;
+        if (!canSeeConfidential) return false;
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === "all" || meeting.type === typeFilter;
       const matchesMode = modeFilter === "all" || meeting.mode === modeFilter;
@@ -173,7 +182,7 @@ const Meeting = () => {
       
       return matchesSearch && matchesType && matchesMode && matchesStatus;
     });
-  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter]);
+  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter, currentUser?.id, participants, isSuperAdmin]);
 
   // Filter meetings by date range for stats
   const meetingsInRange = useMemo(() => {
@@ -416,7 +425,15 @@ const Meeting = () => {
                     >
                       <TableCell className="font-medium">
                         <div>
-                          <p>{meeting.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p>{meeting.title}</p>
+                            {meeting.is_confidential && (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                <Lock className="w-3 h-3 mr-1" />
+                                Rahasia
+                              </Badge>
+                            )}
+                          </div>
                           {meeting.client && (
                             <p className="text-xs text-muted-foreground">
                               Client: {meeting.client.name}

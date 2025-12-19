@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { 
   Calendar, Clock, MapPin, Video, Users, Building2, 
   Link as LinkIcon, Check, X, ExternalLink, CalendarClock,
-  FileText, Plus, Pencil, Trash2, Save, Download
+  FileText, Plus, Pencil, Trash2, Save, Download, Lock
 } from "lucide-react";
 import { format, parseISO, isToday, isFuture } from "date-fns";
 import { id } from "date-fns/locale";
@@ -441,12 +441,18 @@ const MeetingDetailDialog = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 flex-wrap">
               {meeting.title}
               {meeting.type === "internal" ? (
                 <Badge variant="outline" className="bg-purple-50 text-purple-700">Internal</Badge>
               ) : (
                 <Badge variant="outline" className="bg-orange-50 text-orange-700">External</Badge>
+              )}
+              {meeting.is_confidential && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                  <Lock className="w-3 h-3 mr-1" />
+                  Rahasia
+                </Badge>
               )}
               {meeting.rescheduled_at && (
                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Rescheduled</Badge>
