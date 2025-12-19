@@ -72,12 +72,12 @@ export function CreateLetterDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get user profile
+      // Get user profile - profiles.id is the auth user id
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", user.id)
-        .single();
+        .eq("id", user.id)
+        .maybeSingle();
 
       if (!profile) throw new Error("Profile not found");
 
