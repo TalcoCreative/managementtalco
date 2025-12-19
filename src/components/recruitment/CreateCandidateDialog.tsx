@@ -66,19 +66,26 @@ export function CreateCandidateDialog({ open, onOpenChange }: CreateCandidateDia
   const { data: hrUsers } = useQuery({
     queryKey: ["hr-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get user_ids with HR or Super Admin role
+      const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
-        .select("user_id, profiles!inner(id, full_name)")
+        .select("user_id")
         .in("role", ["hr", "super_admin"]);
-      if (error) throw error;
-      // Deduplicate users who have both hr and super_admin roles
-      const uniqueUsers = new Map();
-      data?.forEach((r: any) => {
-        if (!uniqueUsers.has(r.profiles.id)) {
-          uniqueUsers.set(r.profiles.id, r.profiles);
-        }
-      });
-      return Array.from(uniqueUsers.values());
+      if (roleError) throw roleError;
+      
+      if (!roleData || roleData.length === 0) return [];
+      
+      // Get unique user_ids
+      const userIds = [...new Set(roleData.map(r => r.user_id))];
+      
+      // Get profiles for these users
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      if (profileError) throw profileError;
+      
+      return profiles || [];
     },
   });
 
