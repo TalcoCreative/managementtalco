@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Loader2, FileText, History, ExternalLink, Copy } from "lucide-react";
+import { Loader2, FileText, History, ExternalLink, Copy, Lock } from "lucide-react";
 
 const STATUSES = [
   { value: "draft", label: "Draft" },
@@ -172,6 +172,16 @@ export function LetterDetailDialog({
           </TabsList>
 
           <TabsContent value="detail" className="space-y-4 mt-4">
+            {/* Confidential Badge */}
+            {letter.is_confidential && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900">
+                <Lock className="h-5 w-5 text-red-500" />
+                <span className="text-red-600 dark:text-red-400 font-medium">
+                  Surat Rahasia - Hanya pembuat & Super Admin yang bisa melihat
+                </span>
+              </div>
+            )}
+
             {/* Letter Number */}
             <div className="bg-muted/50 p-4 rounded-lg">
               <Label className="text-muted-foreground text-sm">Nomor Surat</Label>

@@ -942,6 +942,7 @@ export type Database = {
           entity_code: string
           entity_name: string
           id: string
+          is_confidential: boolean
           letter_number: string
           month: number
           notes: string | null
@@ -965,6 +966,7 @@ export type Database = {
           entity_code: string
           entity_name: string
           id?: string
+          is_confidential?: boolean
           letter_number: string
           month: number
           notes?: string | null
@@ -988,6 +990,7 @@ export type Database = {
           entity_code?: string
           entity_name?: string
           id?: string
+          is_confidential?: boolean
           letter_number?: string
           month?: number
           notes?: string | null
