@@ -98,7 +98,7 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", session.session.user.email)
+        .eq("user_id", session.session.user.id)
         .single();
 
       if (!profile) throw new Error("Profile not found");
@@ -217,7 +217,7 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{task.assigned_profile?.full_name || "-"}</TableCell>
+                <TableCell>{(task as any).assigned_profile?.full_name || "-"}</TableCell>
                 <TableCell>
                   {task.deadline 
                     ? format(new Date(task.deadline), "d MMM yyyy", { locale: localeId })
