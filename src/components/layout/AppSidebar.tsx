@@ -19,7 +19,8 @@ import {
   Package,
   FileText,
   Star,
-  Megaphone
+  Megaphone,
+  PartyPopper
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -50,6 +51,7 @@ const navItems = [
   { title: "Leave", url: "/leave", icon: CalendarOff },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt },
   { title: "Asset", url: "/asset", icon: Package },
+  { title: "Event", url: "/event", icon: PartyPopper },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 

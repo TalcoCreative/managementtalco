@@ -25,6 +25,7 @@ import Asset from "./pages/Asset";
 import Letters from "./pages/Letters";
 import KolDatabase from "./pages/KolDatabase";
 import KolCampaign from "./pages/KolCampaign";
+import Event from "./pages/Event";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/letters" element={<ProtectedRoute><Letters /></ProtectedRoute>} />
           <Route path="/kol-database" element={<ProtectedRoute><KolDatabase /></ProtectedRoute>} />
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
+          <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
