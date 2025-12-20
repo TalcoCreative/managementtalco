@@ -614,6 +614,397 @@ export type Database = {
           },
         ]
       }
+      event_checklists: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          event_id: string
+          id: string
+          is_completed: boolean | null
+          item: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          is_completed?: boolean | null
+          item: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_completed?: boolean | null
+          item?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_checklists_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_checklists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_crew: {
+        Row: {
+          bank_account: string | null
+          created_at: string
+          crew_type: string
+          event_id: string
+          fee: number | null
+          freelancer_company: string | null
+          freelancer_contact: string | null
+          freelancer_location: string | null
+          freelancer_name: string | null
+          id: string
+          is_paid: boolean | null
+          notes: string | null
+          paid_at: string | null
+          role: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          bank_account?: string | null
+          created_at?: string
+          crew_type: string
+          event_id: string
+          fee?: number | null
+          freelancer_company?: string | null
+          freelancer_contact?: string | null
+          freelancer_location?: string | null
+          freelancer_name?: string | null
+          id?: string
+          is_paid?: boolean | null
+          notes?: string | null
+          paid_at?: string | null
+          role: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          bank_account?: string | null
+          created_at?: string
+          crew_type?: string
+          event_id?: string
+          fee?: number | null
+          freelancer_company?: string | null
+          freelancer_contact?: string | null
+          freelancer_location?: string | null
+          freelancer_name?: string | null
+          id?: string
+          is_paid?: boolean | null
+          notes?: string | null
+          paid_at?: string | null
+          role?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_crew_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_crew_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_documents: {
+        Row: {
+          created_at: string
+          document_type: string | null
+          document_url: string | null
+          event_id: string
+          id: string
+          notes: string | null
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string | null
+          document_url?: string | null
+          event_id: string
+          id?: string
+          notes?: string | null
+          title: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string | null
+          document_url?: string | null
+          event_id?: string
+          id?: string
+          notes?: string | null
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_documents_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_history: {
+        Row: {
+          action: string
+          changed_by: string
+          created_at: string
+          event_id: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          changed_by: string
+          created_at?: string
+          event_id: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_history_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_issues: {
+        Row: {
+          created_at: string
+          description: string
+          event_id: string
+          id: string
+          reported_by: string
+          resolution_notes: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          event_id: string
+          id?: string
+          reported_by: string
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          event_id?: string
+          id?: string
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_issues_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_issues_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_vendors: {
+        Row: {
+          contact: string | null
+          cost: number | null
+          created_at: string
+          event_id: string
+          id: string
+          is_paid: boolean | null
+          name: string
+          notes: string | null
+          purpose: string | null
+          status: string
+        }
+        Insert: {
+          contact?: string | null
+          cost?: number | null
+          created_at?: string
+          event_id: string
+          id?: string
+          is_paid?: boolean | null
+          name: string
+          notes?: string | null
+          purpose?: string | null
+          status?: string
+        }
+        Update: {
+          contact?: string | null
+          cost?: number | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_paid?: boolean | null
+          name?: string
+          notes?: string | null
+          purpose?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_vendors_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          current_phase: string
+          end_date: string
+          event_type: string
+          id: string
+          is_online: boolean | null
+          location: string | null
+          name: string
+          notes: string | null
+          pic_id: string | null
+          project_id: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          current_phase?: string
+          end_date: string
+          event_type: string
+          id?: string
+          is_online?: boolean | null
+          location?: string | null
+          name: string
+          notes?: string | null
+          pic_id?: string | null
+          project_id?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          current_phase?: string
+          end_date?: string
+          event_type?: string
+          id?: string
+          is_online?: boolean | null
+          location?: string | null
+          name?: string
+          notes?: string | null
+          pic_id?: string | null
+          project_id?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_pic_id_fkey"
+            columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -686,6 +1077,56 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      freelancers: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          company: string | null
+          contact: string | null
+          created_at: string
+          created_by: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          specialization: string | null
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          company?: string | null
+          contact?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          specialization?: string | null
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          company?: string | null
+          contact?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          specialization?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freelancers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2352,6 +2793,7 @@ export type Database = {
           created_by: string
           deadline: string | null
           description: string | null
+          event_id: string | null
           id: string
           link: string | null
           priority: string | null
@@ -2367,6 +2809,7 @@ export type Database = {
           created_by: string
           deadline?: string | null
           description?: string | null
+          event_id?: string | null
           id?: string
           link?: string | null
           priority?: string | null
@@ -2382,6 +2825,7 @@ export type Database = {
           created_by?: string
           deadline?: string | null
           description?: string | null
+          event_id?: string | null
           id?: string
           link?: string | null
           priority?: string | null
@@ -2417,6 +2861,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
           {
