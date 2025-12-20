@@ -7,7 +7,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.78.0";
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 type SharedTaskResponse = {
@@ -36,11 +36,19 @@ function extractStoragePath(fileUrl: string, bucket: string) {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
 
   try {
     const url = new URL(req.url);
-    const token = url.searchParams.get("token")?.trim();
+    let token = url.searchParams.get("token")?.trim() || "";
+
+    if (!token && req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      token = String(body?.token || "").trim();
+    }
+
     if (!token) return json(400, { error: "Missing token" });
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -109,15 +117,19 @@ serve(async (req) => {
 
     const hydratedAttachments = await Promise.all(
       (attachments || []).map(async (a: any) => {
-        if (a.attachment_type !== "file" || !a.file_url) return a;
+        const isLink = a?.file_type === "link";
+        const attachment_kind = isLink ? "link" : "file";
+
+        // Only files that live in storage need signed URLs
+        if (isLink || !a?.file_url) return { ...a, attachment_kind };
 
         const path = extractStoragePath(a.file_url, bucket);
-        if (!path) return a;
+        if (!path) return { ...a, attachment_kind };
 
         const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 60 * 60);
-        if (error || !data?.signedUrl) return a;
+        if (error || !data?.signedUrl) return { ...a, attachment_kind };
 
-        return { ...a, signed_url: data.signedUrl };
+        return { ...a, attachment_kind, signed_url: data.signedUrl };
       })
     );
 

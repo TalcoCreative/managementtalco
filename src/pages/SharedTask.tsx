@@ -42,10 +42,13 @@ export default function SharedTask() {
     queryFn: async () => {
       if (!token) throw new Error("No token provided");
 
-      const base = import.meta.env.VITE_SUPABASE_URL;
-      const res = await fetch(`${base}/functions/v1/shared-task?token=${encodeURIComponent(token)}`);
-      if (!res.ok) throw new Error("Failed to load shared task");
-      return (await res.json()) as SharedTaskPayload;
+      const { data, error } = await supabase.functions.invoke<SharedTaskPayload>("shared-task", {
+        body: { token },
+      });
+
+      if (error) throw error;
+      if (!data) throw new Error("Failed to load shared task");
+      return data;
     },
     enabled: !!token,
   });
@@ -54,14 +57,19 @@ export default function SharedTask() {
   const attachments = data?.attachments || [];
   const allComments = data?.comments || [];
 
-  const fileAttachments = useMemo(
-    () => attachments.filter((a: any) => a.attachment_type === "file"),
-    [attachments]
-  );
-  const linkAttachments = useMemo(
-    () => attachments.filter((a: any) => a.attachment_type === "link"),
-    [attachments]
-  );
+  const fileAttachments = useMemo(() => {
+    return attachments.filter((a: any) => {
+      const kind = a.attachment_kind || (a.file_type === "link" ? "link" : "file");
+      return kind === "file";
+    });
+  }, [attachments]);
+
+  const linkAttachments = useMemo(() => {
+    return attachments.filter((a: any) => {
+      const kind = a.attachment_kind || (a.file_type === "link" ? "link" : "file");
+      return kind === "link";
+    });
+  }, [attachments]);
 
   const addCommentMutation = useMutation({
     mutationFn: async () => {
@@ -304,19 +312,23 @@ export default function SharedTask() {
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground font-medium">Links</p>
                       <div className="space-y-2">
-                        {linkAttachments.map((attachment: any) => (
-                          <a
-                            key={attachment.id}
-                            href={attachment.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 p-2 rounded border hover:bg-muted/50 transition-colors"
-                          >
-                            <LinkIcon className="h-4 w-4" />
-                            <span className="text-sm truncate flex-1">{attachment.file_url}</span>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </a>
-                        ))}
+                        {linkAttachments.map((attachment: any) => {
+                          const raw = String(attachment.file_url || "").trim();
+                          const href = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
+                          return (
+                            <a
+                              key={attachment.id}
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 rounded border hover:bg-muted/50 transition-colors"
+                            >
+                              <LinkIcon className="h-4 w-4" />
+                              <span className="text-sm truncate flex-1">{raw}</span>
+                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                            </a>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
