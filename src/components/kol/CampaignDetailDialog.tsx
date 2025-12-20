@@ -78,11 +78,27 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
     queryFn: async () => {
       const { data, error } = await supabase
         .from("kol_campaign_history")
-        .select("*, created_by_profile:profiles!kol_campaign_history_created_by_fkey(full_name)")
+        .select("*")
         .eq("campaign_id", campaign.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      
+      // Fetch profile names separately
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map((item: any) => item.created_by))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+        
+        const profileMap = new Map(profiles?.map((p: any) => [p.id, p.full_name]) || []);
+        return data.map((item: any) => ({
+          ...item,
+          created_by_name: profileMap.get(item.created_by) || "Unknown"
+        }));
+      }
+      
+      return data || [];
     },
   });
 
@@ -410,7 +426,7 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
                           )}
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <User className="h-3 w-3" />
-                            {item.created_by_profile?.full_name || "Unknown"}
+                            {item.created_by_name || "Unknown"}
                           </div>
                         </div>
                       </div>
