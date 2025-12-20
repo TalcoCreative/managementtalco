@@ -17,7 +17,9 @@ import {
   UserSearch,
   CalendarClock,
   Package,
-  FileText
+  FileText,
+  Star,
+  Megaphone
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -65,6 +67,8 @@ const financeItems = [
 
 const salesItems = [
   { title: "Prospects", url: "/prospects", icon: UserPlus },
+  { title: "KOL Database", url: "/kol-database", icon: Star },
+  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
 ];
 
 export function AppSidebar() {
