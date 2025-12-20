@@ -25,7 +25,18 @@ import {
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { Clock, User, DollarSign, Link as LinkIcon, Image } from "lucide-react";
+import { Clock, User, DollarSign, Link as LinkIcon, Image, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CampaignDetailDialogProps {
   open: boolean;
@@ -167,6 +178,32 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
     },
     onError: (error: any) => {
       toast.error("Gagal mengupdate campaign: " + error.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      // Delete history first
+      await supabase
+        .from("kol_campaign_history")
+        .delete()
+        .eq("campaign_id", campaign.id);
+      
+      // Delete campaign
+      const { error } = await supabase
+        .from("kol_campaigns")
+        .delete()
+        .eq("id", campaign.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kol-campaigns"] });
+      toast.success("Campaign berhasil dihapus");
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast.error("Gagal menghapus campaign: " + error.message);
     },
   });
 
@@ -389,13 +426,41 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
                   />
                 </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => onOpenChange(false)}>
-                    Tutup
-                  </Button>
-                  <Button onClick={handleSave} disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
-                  </Button>
+                <div className="flex justify-between gap-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Campaign?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Campaign "{campaign.campaign_name}" akan dihapus beserta semua riwayat aktivitasnya. Tindakan ini tidak dapat dibatalkan.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate()}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {deleteMutation.isPending ? "Menghapus..." : "Hapus"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                      Tutup
+                    </Button>
+                    <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                      {updateMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </ScrollArea>
