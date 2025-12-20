@@ -187,7 +187,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
       }
       
-      const shareUrl = `${window.location.origin}/projects/task/${token}`;
+      const shareUrl = `https://ms.talco.id/projects/task/${token}`;
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       toast.success("Link berhasil disalin!");
