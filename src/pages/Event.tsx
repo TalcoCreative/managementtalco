@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateEventDialog } from "@/components/event/CreateEventDialog";
-import { EventDetailDialog } from "@/components/event/EventDetailDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const statusColors: Record<string, string> = {
@@ -60,10 +60,10 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 export default function Event() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const { data: events, isLoading, refetch } = useQuery({
     queryKey: ["events", statusFilter],
@@ -229,10 +229,10 @@ export default function Event() {
                 </TableRow>
               ) : (
                 filteredEvents?.map((event) => (
-                  <TableRow 
-                    key={event.id} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedEventId(event.id)}
+                    <TableRow 
+                      key={event.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/event/${event.id}`)}
                   >
                     <TableCell>
                       <div>
@@ -299,14 +299,6 @@ export default function Event() {
         }}
       />
 
-      {selectedEventId && (
-        <EventDetailDialog
-          eventId={selectedEventId}
-          open={!!selectedEventId}
-          onOpenChange={(open) => !open && setSelectedEventId(null)}
-          onUpdate={() => refetch()}
-        />
-      )}
     </AppLayout>
   );
 }
