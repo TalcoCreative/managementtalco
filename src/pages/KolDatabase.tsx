@@ -63,7 +63,7 @@ export default function KolDatabase() {
     queryFn: async () => {
       let query = supabase
         .from("kol_database")
-        .select("*, updated_by_profile:profiles!kol_database_updated_by_fkey(full_name)")
+        .select("*")
         .order("updated_at", { ascending: false });
 
       if (searchQuery) {
@@ -288,14 +288,14 @@ export default function KolDatabase() {
                           {kol.rate_tiktok_video && (
                             <p>TikTok: {formatCurrency(kol.rate_tiktok_video)}</p>
                           )}
+                          {kol.rate_youtube_video && (
+                            <p>YouTube: {formatCurrency(kol.rate_youtube_video)}</p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <p>{format(new Date(kol.updated_at), "dd MMM yyyy")}</p>
-                          <p className="text-muted-foreground">
-                            by {kol.updated_by_profile?.full_name || "Unknown"}
-                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
