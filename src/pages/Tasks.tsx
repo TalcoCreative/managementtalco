@@ -336,12 +336,17 @@ export default function Tasks() {
                     )}
                     {task.deadline && (
                       <p className="text-xs text-muted-foreground">
-                        Due: {new Date(task.deadline).toLocaleDateString()}
+                      Due: {new Date(task.deadline).toLocaleDateString()}
                       </p>
                     )}
                     {task.profiles && (
                       <p className="text-xs text-muted-foreground truncate">
                         Assigned: {task.profiles.full_name}
+                      </p>
+                    )}
+                    {task.notes && (
+                      <p className="text-xs text-muted-foreground italic line-clamp-2 border-t border-border/50 pt-1 mt-1">
+                        {task.notes}
                       </p>
                     )}
                     <div onClick={(e) => e.stopPropagation()}>
@@ -400,6 +405,11 @@ export default function Tasks() {
                       {task.profiles && (
                         <p className="text-xs text-muted-foreground truncate">
                           Assigned: {task.profiles.full_name}
+                        </p>
+                      )}
+                      {task.notes && (
+                        <p className="text-xs text-muted-foreground italic line-clamp-2 border-t border-border/50 pt-1 mt-1">
+                          {task.notes}
                         </p>
                       )}
                       <div onClick={(e) => e.stopPropagation()}>
