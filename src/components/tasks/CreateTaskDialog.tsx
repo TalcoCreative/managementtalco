@@ -4,16 +4,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, X, Link as LinkIcon, Paperclip } from "lucide-react";
 import { z } from "zod";
+import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+
+interface TableData {
+  headers: string[];
+  rows: string[][];
+}
 
 const taskSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  description: z.string().trim().max(1000, "Description must be less than 1000 characters").optional(),
   priority: z.enum(["low", "medium", "high"]),
   deadline: z.string().optional(),
   link: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
@@ -34,12 +38,15 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
     priority: "medium",
     project_id: "",
     assigned_to: "",
     deadline: "",
     link: "",
+  });
+  const [tableData, setTableData] = useState<TableData>({
+    headers: ["No", "Item", "Keterangan", "Status"],
+    rows: [["1", "", "", ""]],
   });
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +121,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
       const { data: taskData, error } = await supabase.from("tasks").insert({
         title: formData.title.trim(),
-        description: formData.description.trim() || null,
+        table_data: tableData as any,
         priority: formData.priority,
         project_id: formData.project_id,
         assigned_to: formData.assigned_to || null,
@@ -144,12 +151,15 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       setOpen(false);
       setFormData({
         title: "",
-        description: "",
         priority: "medium",
         project_id: "",
         assigned_to: "",
         deadline: "",
         link: "",
+      });
+      setTableData({
+        headers: ["No", "Item", "Keterangan", "Status"],
+        rows: [["1", "", "", ""]],
       });
       setFiles([]);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -191,13 +201,11 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              maxLength={1000}
-              rows={3}
+            <Label>Brief / Deskripsi</Label>
+            <EditableTaskTable
+              data={tableData}
+              onChange={setTableData}
+              readOnly={false}
             />
           </div>
 
