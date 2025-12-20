@@ -64,7 +64,7 @@ const App = () => (
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
-          <Route path="/shared/task/:token" element={<SharedTask />} />
+          <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
