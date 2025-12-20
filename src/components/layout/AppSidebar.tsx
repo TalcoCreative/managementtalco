@@ -20,7 +20,8 @@ import {
   FileText,
   Star,
   Megaphone,
-  PartyPopper
+  PartyPopper,
+  Crown
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -92,6 +93,7 @@ export function AppSidebar() {
     },
   });
 
+  const isSuperAdmin = userRoles?.includes('super_admin');
   const isHRorAdmin = userRoles?.includes('hr') || userRoles?.includes('super_admin');
   const canAccessFinance = userRoles?.includes('super_admin') || 
                            userRoles?.includes('finance') || 
@@ -238,6 +240,29 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Executive</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/ceo-dashboard" 
+                      className={({ isActive }) => 
+                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                      }
+                    >
+                      <Crown className="h-5 w-5" />
+                      {!isCollapsed && <span>CEO Dashboard</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

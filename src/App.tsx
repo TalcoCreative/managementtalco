@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import CEODashboard from "./pages/CEODashboard";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+          <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
