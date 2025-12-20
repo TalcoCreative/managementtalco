@@ -19,6 +19,7 @@ import {
 import { format, parseISO, isToday, isFuture } from "date-fns";
 import { id } from "date-fns/locale";
 import { generateMOMPDF } from "@/lib/mom-pdf";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 interface MeetingDetailDialogProps {
   open: boolean;
@@ -55,6 +56,8 @@ const MeetingDetailDialog = ({
   const [editMomItems, setEditMomItems] = useState<MOMItem[]>([]);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch current user
@@ -977,6 +980,14 @@ const MeetingDetailDialog = ({
                       </Button>
                     </>
                   )}
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={isUpdating}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Hapus Meeting
+                  </Button>
                 </div>
               </>
             )}
@@ -1021,6 +1032,51 @@ const MeetingDetailDialog = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Meeting Dialog */}
+      <DeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Hapus Meeting"
+        description={`Apakah Anda yakin ingin menghapus meeting "${meeting.title}"? Semua data terkait (participants, MOM, notifications) akan ikut terhapus.`}
+        loading={isDeleting}
+        onConfirm={async (reason) => {
+          setIsDeleting(true);
+          try {
+            // Delete related data first
+            await supabase.from("meeting_minutes").delete().eq("meeting_id", meeting.id);
+            await supabase.from("meeting_participants").delete().eq("meeting_id", meeting.id);
+            await supabase.from("meeting_external_participants").delete().eq("meeting_id", meeting.id);
+            await supabase.from("meeting_notifications").delete().eq("meeting_id", meeting.id);
+            
+            // Delete the meeting
+            const { error } = await supabase.from("meetings").delete().eq("id", meeting.id);
+            if (error) throw error;
+
+            // Log deletion
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from("deletion_logs").insert({
+                entity_type: "meeting",
+                entity_id: meeting.id,
+                entity_name: meeting.title,
+                deleted_by: user.id,
+                reason: reason,
+              });
+            }
+
+            toast.success("Meeting berhasil dihapus");
+            queryClient.invalidateQueries({ queryKey: ["meetings"] });
+            queryClient.invalidateQueries({ queryKey: ["meeting-notifications"] });
+            setShowDeleteDialog(false);
+            onOpenChange(false);
+          } catch (error: any) {
+            toast.error(error.message || "Gagal menghapus meeting");
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+      />
     </>
   );
 };
