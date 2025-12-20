@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,6 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
         .from("tasks")
         .select(`
           *,
-          assigned_profile:profiles!tasks_assigned_to_fkey(full_name),
           project:projects(title)
         `)
         .eq("event_id", eventId)
@@ -90,6 +89,12 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
     },
   });
 
+  const profilesById = useMemo(() => {
+    const map = new Map<string, string>();
+    (profiles || []).forEach((p) => map.set(p.id, p.full_name));
+    return map;
+  }, [profiles]);
+
   const addTaskMutation = useMutation({
     mutationFn: async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -98,8 +103,8 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", session.session.user.id)
-        .single();
+        .eq("id", session.session.user.id)
+        .maybeSingle();
 
       if (!profile) throw new Error("Profile not found");
 
@@ -217,7 +222,7 @@ export function EventTasksTab({ eventId, projectId, canManage }: EventTasksTabPr
                     )}
                   </div>
                 </TableCell>
-                <TableCell>{(task as any).assigned_profile?.full_name || "-"}</TableCell>
+                <TableCell>{task.assigned_to ? (profilesById.get(task.assigned_to) || "-") : "-"}</TableCell>
                 <TableCell>
                   {task.deadline 
                     ? format(new Date(task.deadline), "d MMM yyyy", { locale: localeId })

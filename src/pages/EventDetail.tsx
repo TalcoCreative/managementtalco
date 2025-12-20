@@ -141,8 +141,8 @@ export default function EventDetail() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", session.session.user.id)
-        .single();
+        .eq("id", session.session.user.id)
+        .maybeSingle();
 
       if (!profile) throw new Error("Profile not found");
 
