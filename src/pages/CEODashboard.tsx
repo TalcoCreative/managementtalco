@@ -9,13 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { 
   TrendingUp, 
   Users, 
   DollarSign, 
   BarChart3, 
   ArrowLeft,
-  Calendar,
+  CalendarIcon,
   ClipboardList,
   Video,
   PartyPopper,
@@ -24,8 +26,10 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 interface ClientResourceData {
   clientId: string;
@@ -51,31 +55,12 @@ interface EmployeeBreakdown {
   estimatedCostForClient: number;
 }
 
-const months = [
-  { value: "1", label: "Januari" },
-  { value: "2", label: "Februari" },
-  { value: "3", label: "Maret" },
-  { value: "4", label: "April" },
-  { value: "5", label: "Mei" },
-  { value: "6", label: "Juni" },
-  { value: "7", label: "Juli" },
-  { value: "8", label: "Agustus" },
-  { value: "9", label: "September" },
-  { value: "10", label: "Oktober" },
-  { value: "11", label: "November" },
-  { value: "12", label: "Desember" },
-];
-
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 5 }, (_, i) => ({
-  value: String(currentYear - i),
-  label: String(currentYear - i),
-}));
-
 export default function CEODashboard() {
   const navigate = useNavigate();
-  const [selectedMonth, setSelectedMonth] = useState(String(new Date().getMonth() + 1));
-  const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
   const [selectedClient, setSelectedClient] = useState<ClientResourceData | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
 
@@ -145,21 +130,24 @@ export default function CEODashboard() {
     enabled: !!selectedClient,
   });
 
-  // Calculate date range
-  const dateRange = useMemo(() => {
-    const year = parseInt(selectedYear);
-    const month = parseInt(selectedMonth) - 1;
-    const start = startOfMonth(new Date(year, month));
-    const end = endOfMonth(new Date(year, month));
+  // Format date range for queries
+  const formattedDateRange = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) {
+      const now = new Date();
+      return {
+        start: format(startOfMonth(now), "yyyy-MM-dd"),
+        end: format(endOfMonth(now), "yyyy-MM-dd"),
+      };
+    }
     return {
-      start: format(start, "yyyy-MM-dd"),
-      end: format(end, "yyyy-MM-dd"),
+      start: format(dateRange.from, "yyyy-MM-dd"),
+      end: format(dateRange.to, "yyyy-MM-dd"),
     };
-  }, [selectedMonth, selectedYear]);
+  }, [dateRange]);
 
   // Fetch tasks within date range
   const { data: tasks } = useQuery({
-    queryKey: ["ceo-tasks", dateRange],
+    queryKey: ["ceo-tasks", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
@@ -167,8 +155,8 @@ export default function CEODashboard() {
           id, assigned_to, project_id, created_at,
           project:projects(client_id)
         `)
-        .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end + "T23:59:59");
+        .gte("created_at", formattedDateRange.start)
+        .lte("created_at", formattedDateRange.end + "T23:59:59");
       if (error) throw error;
       return data || [];
     },
@@ -177,7 +165,7 @@ export default function CEODashboard() {
 
   // Fetch meetings with participants within date range
   const { data: meetings } = useQuery({
-    queryKey: ["ceo-meetings", dateRange],
+    queryKey: ["ceo-meetings", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meetings")
@@ -185,8 +173,8 @@ export default function CEODashboard() {
           id, client_id, project_id, meeting_date,
           meeting_participants(user_id)
         `)
-        .gte("meeting_date", dateRange.start)
-        .lte("meeting_date", dateRange.end);
+        .gte("meeting_date", formattedDateRange.start)
+        .lte("meeting_date", formattedDateRange.end);
       if (error) throw error;
       return data || [];
     },
@@ -195,7 +183,7 @@ export default function CEODashboard() {
 
   // Fetch shootings with crew within date range
   const { data: shootings } = useQuery({
-    queryKey: ["ceo-shootings", dateRange],
+    queryKey: ["ceo-shootings", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shooting_schedules")
@@ -203,8 +191,8 @@ export default function CEODashboard() {
           id, client_id, project_id, scheduled_date,
           shooting_crew(user_id, is_freelance)
         `)
-        .gte("scheduled_date", dateRange.start)
-        .lte("scheduled_date", dateRange.end);
+        .gte("scheduled_date", formattedDateRange.start)
+        .lte("scheduled_date", formattedDateRange.end);
       if (error) throw error;
       return data || [];
     },
@@ -213,7 +201,7 @@ export default function CEODashboard() {
 
   // Fetch events with crew within date range
   const { data: events } = useQuery({
-    queryKey: ["ceo-events", dateRange],
+    queryKey: ["ceo-events", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
@@ -221,8 +209,8 @@ export default function CEODashboard() {
           id, client_id, project_id, pic_id, start_date,
           event_crew(user_id, crew_type)
         `)
-        .gte("start_date", dateRange.start)
-        .lte("start_date", dateRange.end);
+        .gte("start_date", formattedDateRange.start)
+        .lte("start_date", formattedDateRange.end);
       if (error) throw error;
       return data || [];
     },
@@ -497,32 +485,42 @@ export default function CEODashboard() {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-[140px]">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y.value} value={y.value}>
-                    {y.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[280px] justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd MMM yyyy", { locale: localeId })} -{" "}
+                        {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd MMM yyyy", { locale: localeId })
+                    )
+                  ) : (
+                    <span>Pilih rentang tanggal</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
 
             {selectedClient && projects && projects.length > 0 && (
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -553,7 +551,11 @@ export default function CEODashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{clientResourceData.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {months.find((m) => m.value === selectedMonth)?.label} {selectedYear}
+                  {dateRange?.from && dateRange?.to ? (
+                    <>
+                      {format(dateRange.from, "dd MMM", { locale: localeId })} - {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                    </>
+                  ) : "Bulan ini"}
                 </p>
               </CardContent>
             </Card>
