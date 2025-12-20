@@ -2799,7 +2799,9 @@ export type Database = {
           priority: string | null
           project_id: string
           requested_at: string | null
+          share_token: string | null
           status: string | null
+          table_data: Json | null
           title: string
         }
         Insert: {
@@ -2815,7 +2817,9 @@ export type Database = {
           priority?: string | null
           project_id: string
           requested_at?: string | null
+          share_token?: string | null
           status?: string | null
+          table_data?: Json | null
           title: string
         }
         Update: {
@@ -2831,7 +2835,9 @@ export type Database = {
           priority?: string | null
           project_id?: string
           requested_at?: string | null
+          share_token?: string | null
           status?: string | null
+          table_data?: Json | null
           title?: string
         }
         Relationships: [

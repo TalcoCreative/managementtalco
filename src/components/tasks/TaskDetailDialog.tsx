@@ -9,9 +9,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save } from "lucide-react";
+import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,11 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface TableData {
+  headers: string[];
+  rows: string[][];
+}
+
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,8 +44,10 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [isEditing, setIsEditing] = useState(false);
   const [editAssignedTo, setEditAssignedTo] = useState<string>("");
   const [editDeadline, setEditDeadline] = useState<string>("");
-  const [editDescription, setEditDescription] = useState<string>("");
+  const [editTableData, setEditTableData] = useState<TableData | null>(null);
   const [saving, setSaving] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -89,7 +97,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     if (task) {
       setEditAssignedTo(task.assigned_to || "");
       setEditDeadline(task.deadline || "");
-      setEditDescription(task.description || "");
+      setEditTableData(task.table_data || null);
       setIsEditing(false);
     }
   }, [task]);
@@ -136,7 +144,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         .update({
           assigned_to: editAssignedTo || null,
           deadline: editDeadline || null,
-          description: editDescription || null,
+          table_data: editTableData as any,
           assigned_at: editAssignedTo ? new Date().toISOString() : null,
         })
         .eq("id", taskId);
@@ -152,6 +160,42 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       toast.error(error.message || "Gagal update task");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const generateShareToken = () => {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const handleShare = async () => {
+    if (!taskId || !task) return;
+    
+    setShareLoading(true);
+    try {
+      let token = task.share_token;
+      
+      if (!token) {
+        token = generateShareToken();
+        const { error } = await supabase
+          .from("tasks")
+          .update({ share_token: token })
+          .eq("id", taskId);
+        
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      }
+      
+      const shareUrl = `${window.location.origin}/shared/task/${token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link berhasil disalin!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal membuat share link");
+    } finally {
+      setShareLoading(false);
     }
   };
 
@@ -405,13 +449,22 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         setIsEditing(false);
                         setEditAssignedTo(task.assigned_to || "");
                         setEditDeadline(task.deadline || "");
-                        setEditDescription(task.description || "");
+                        setEditTableData(task.table_data || null);
                       }}
                     >
                       Cancel
                     </Button>
                   </>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleShare}
+                  disabled={shareLoading}
+                >
+                  {copied ? <Check className="h-4 w-4 mr-1" /> : <Share2 className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied!" : "Share"}
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -444,22 +497,14 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               )}
 
-              {/* Task Description */}
+              {/* Task Brief Table */}
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">Deskripsi / Brief</h3>
-                {isEditing ? (
-                  <Textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    rows={4}
-                    placeholder="Masukkan deskripsi task..."
-                    className="resize-none"
-                  />
-                ) : (
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {task.description || "-"}
-                  </p>
-                )}
+                <h3 className="font-semibold mb-3">Brief / Deskripsi</h3>
+                <EditableTaskTable
+                  data={isEditing ? editTableData : (task.table_data as TableData | null)}
+                  onChange={setEditTableData}
+                  readOnly={!isEditing}
+                />
               </div>
 
               {/* Task Info */}
