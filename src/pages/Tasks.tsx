@@ -344,9 +344,9 @@ export default function Tasks() {
                         Assigned: {task.profiles.full_name}
                       </p>
                     )}
-                    {task.notes && (
+                    {task.description && (
                       <p className="text-xs text-muted-foreground italic line-clamp-2 border-t border-border/50 pt-1 mt-1">
-                        {task.notes}
+                        {task.description}
                       </p>
                     )}
                     <div onClick={(e) => e.stopPropagation()}>
@@ -407,9 +407,9 @@ export default function Tasks() {
                           Assigned: {task.profiles.full_name}
                         </p>
                       )}
-                      {task.notes && (
+                      {task.description && (
                         <p className="text-xs text-muted-foreground italic line-clamp-2 border-t border-border/50 pt-1 mt-1">
-                          {task.notes}
+                          {task.description}
                         </p>
                       )}
                       <div onClick={(e) => e.stopPropagation()}>

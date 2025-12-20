@@ -528,6 +528,14 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 />
               </div>
 
+              {/* Notes */}
+              {task.description && (
+                <div className="rounded-lg border bg-card p-4">
+                  <h3 className="font-semibold mb-2">Notes</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+                </div>
+              )}
+
               {/* Task Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {task.projects?.clients && (
