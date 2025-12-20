@@ -210,24 +210,24 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
             Campaign: {campaign.kol?.name}
             <Badge className={`${statusColors[campaign.status]} text-white`}>
               {statuses.find(s => s.value === campaign.status)?.label}
             </Badge>
           </DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="details" className="w-full flex-1 overflow-hidden flex flex-col">
+          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
             <TabsTrigger value="details">Detail & Update</TabsTrigger>
             <TabsTrigger value="history">Activity History</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details">
-            <ScrollArea className="max-h-[60vh] pr-4">
-              <div className="space-y-6 py-4">
+          <TabsContent value="details" className="flex-1 overflow-hidden mt-2">
+            <ScrollArea className="h-[calc(90vh-180px)] pr-4">
+              <div className="space-y-4 py-2">
                 {/* Campaign Info */}
                 <Card>
                   <CardHeader>
@@ -385,8 +385,8 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="history">
-            <ScrollArea className="max-h-[60vh] pr-4">
+          <TabsContent value="history" className="flex-1 overflow-hidden mt-2">
+            <ScrollArea className="h-[calc(90vh-180px)] pr-4">
               <div className="space-y-4 py-4">
                 {historyLoading ? (
                   <p className="text-center text-muted-foreground">Loading...</p>
