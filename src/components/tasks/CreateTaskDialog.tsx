@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     assigned_to: "",
     deadline: "",
     link: "",
+    notes: "",
   });
   const [tableData, setTableData] = useState<TableData>({
     headers: ["No", "Item", "Keterangan", "Status"],
@@ -122,6 +124,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       const { data: taskData, error } = await supabase.from("tasks").insert({
         title: formData.title.trim(),
         table_data: tableData as any,
+        description: formData.notes.trim() || null,
         priority: formData.priority,
         project_id: formData.project_id,
         assigned_to: formData.assigned_to || null,
@@ -156,6 +159,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         assigned_to: "",
         deadline: "",
         link: "",
+        notes: "",
       });
       setTableData({
         headers: ["No", "Item", "Keterangan", "Status"],
@@ -206,6 +210,17 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
               data={tableData}
               onChange={setTableData}
               readOnly={false}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Catatan tambahan..."
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
             />
           </div>
 
