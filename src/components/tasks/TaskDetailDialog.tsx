@@ -119,6 +119,27 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     enabled: !!taskId,
   });
 
+  const { data: publicComments } = useQuery({
+    queryKey: ["task-public-comments", taskId],
+    queryFn: async () => {
+      if (!taskId) return [];
+      const { data, error } = await supabase
+        .from("task_public_comments")
+        .select("*")
+        .eq("task_id", taskId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!taskId,
+  });
+
+  // Combine and sort all comments
+  const allComments = [
+    ...(comments?.map(c => ({ ...c, type: 'employee' as const })) || []),
+    ...(publicComments?.map(c => ({ ...c, type: 'public' as const })) || []),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   const { data: attachments } = useQuery({
     queryKey: ["task-attachments", taskId],
     queryFn: async () => {
@@ -722,7 +743,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
-                  <h3 className="font-semibold">Comments ({comments?.length || 0})</h3>
+                  <h3 className="font-semibold">Comments ({allComments?.length || 0})</h3>
                 </div>
 
                 {/* Add Comment */}
@@ -744,15 +765,23 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
                 {/* Comments List */}
                 <div className="space-y-3">
-                  {comments?.map((comment) => (
+                  {allComments?.map((comment) => (
                     <div
                       key={comment.id}
                       className="rounded-lg border bg-card p-4 space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">
-                          {comment.profiles?.full_name || "Unknown User"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">
+                            {comment.type === 'employee' 
+                              ? (comment.profiles?.full_name || "Unknown User")
+                              : comment.commenter_name
+                            }
+                          </span>
+                          {comment.type === 'public' && (
+                            <Badge variant="outline" className="text-xs">External</Badge>
+                          )}
+                        </div>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(comment.created_at), "PPp")}
                         </span>
