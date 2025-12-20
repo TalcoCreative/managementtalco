@@ -26,6 +26,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { CANDIDATE_COLUMNS } from "@/lib/excel-utils";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
@@ -142,6 +144,55 @@ export default function Recruitment() {
     );
   };
 
+  // Export data for Excel
+  const exportData = candidates?.map(c => ({
+    full_name: c.full_name,
+    email: c.email,
+    phone: c.phone,
+    position: c.position,
+    division: c.division,
+    location: c.location || '',
+    cv_url: c.cv_url || '',
+    portfolio_url: c.portfolio_url || '',
+    status: c.status,
+  })) || [];
+
+  const handleImportCandidates = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    for (const row of data) {
+      if (!row.full_name || !row.email || !row.position) continue;
+      
+      // Check if candidate already exists
+      const { data: existing } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("email", row.email)
+        .single();
+
+      if (!existing) {
+        await supabase.from("candidates").insert({
+          full_name: row.full_name,
+          email: row.email,
+          phone: row.phone || '',
+          position: row.position,
+          division: row.division || 'General',
+          location: row.location || null,
+          cv_url: row.cv_url || null,
+          portfolio_url: row.portfolio_url || null,
+          status: row.status || 'applied',
+          created_by: session.session.user.id,
+        });
+      }
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["candidates"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
@@ -151,10 +202,18 @@ export default function Recruitment() {
             <h1 className="text-2xl sm:text-3xl font-bold">Recruitment</h1>
             <p className="text-muted-foreground text-sm sm:text-base">Database kandidat karyawan</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto h-12 sm:h-10">
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Kandidat
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <ExcelActions
+              data={exportData}
+              columns={CANDIDATE_COLUMNS}
+              filename="candidates"
+              onImport={handleImportCandidates}
+            />
+            <Button onClick={() => setCreateDialogOpen(true)} className="flex-1 sm:flex-none h-12 sm:h-10">
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah Kandidat
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
