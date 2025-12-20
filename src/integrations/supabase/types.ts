@@ -770,6 +770,254 @@ export type Database = {
           },
         ]
       }
+      kol_campaign_history: {
+        Row: {
+          action: string
+          campaign_id: string
+          created_at: string
+          created_by: string
+          id: string
+          new_value: string | null
+          notes: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          campaign_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          campaign_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kol_campaign_history_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "kol_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kol_campaigns: {
+        Row: {
+          bank_account_name: string | null
+          bank_account_number: string | null
+          campaign_name: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          evidence_url: string | null
+          fee: number | null
+          id: string
+          is_paid: boolean
+          is_posted: boolean
+          is_visit: boolean
+          kol_id: string
+          paid_at: string | null
+          paid_by: string | null
+          pic_id: string | null
+          platform: string
+          post_link: string | null
+          project_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string
+          visit_location: string | null
+        }
+        Insert: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          campaign_name: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          evidence_url?: string | null
+          fee?: number | null
+          id?: string
+          is_paid?: boolean
+          is_posted?: boolean
+          is_visit?: boolean
+          kol_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          pic_id?: string | null
+          platform: string
+          post_link?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by: string
+          visit_location?: string | null
+        }
+        Update: {
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          campaign_name?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          evidence_url?: string | null
+          fee?: number | null
+          id?: string
+          is_paid?: boolean
+          is_posted?: boolean
+          is_visit?: boolean
+          kol_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          pic_id?: string | null
+          platform?: string
+          post_link?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string
+          visit_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kol_campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kol_campaigns_kol_id_fkey"
+            columns: ["kol_id"]
+            isOneToOne: false
+            referencedRelation: "kol_database"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kol_campaigns_paid_by_fkey"
+            columns: ["paid_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kol_campaigns_pic_id_fkey"
+            columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kol_campaigns_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kol_database: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          ig_followers: number | null
+          industry: string | null
+          instagram_url: string | null
+          link_account: string | null
+          linkedin_followers: number | null
+          linkedin_url: string | null
+          name: string
+          notes: string | null
+          rate_ig_feed: number | null
+          rate_ig_reels: number | null
+          rate_ig_story: number | null
+          rate_tiktok_video: number | null
+          rate_youtube_video: number | null
+          threads_followers: number | null
+          threads_url: string | null
+          tiktok_followers: number | null
+          tiktok_url: string | null
+          twitter_followers: number | null
+          twitter_url: string | null
+          updated_at: string
+          updated_by: string
+          username: string
+          youtube_followers: number | null
+          youtube_url: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          ig_followers?: number | null
+          industry?: string | null
+          instagram_url?: string | null
+          link_account?: string | null
+          linkedin_followers?: number | null
+          linkedin_url?: string | null
+          name: string
+          notes?: string | null
+          rate_ig_feed?: number | null
+          rate_ig_reels?: number | null
+          rate_ig_story?: number | null
+          rate_tiktok_video?: number | null
+          rate_youtube_video?: number | null
+          threads_followers?: number | null
+          threads_url?: string | null
+          tiktok_followers?: number | null
+          tiktok_url?: string | null
+          twitter_followers?: number | null
+          twitter_url?: string | null
+          updated_at?: string
+          updated_by: string
+          username: string
+          youtube_followers?: number | null
+          youtube_url?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          ig_followers?: number | null
+          industry?: string | null
+          instagram_url?: string | null
+          link_account?: string | null
+          linkedin_followers?: number | null
+          linkedin_url?: string | null
+          name?: string
+          notes?: string | null
+          rate_ig_feed?: number | null
+          rate_ig_reels?: number | null
+          rate_ig_story?: number | null
+          rate_tiktok_video?: number | null
+          rate_youtube_video?: number | null
+          threads_followers?: number | null
+          threads_url?: string | null
+          tiktok_followers?: number | null
+          tiktok_url?: string | null
+          twitter_followers?: number | null
+          twitter_url?: string | null
+          updated_at?: string
+          updated_by?: string
+          username?: string
+          youtube_followers?: number | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
