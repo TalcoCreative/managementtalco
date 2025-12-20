@@ -15,6 +15,8 @@ import { Users, Edit, CheckCircle, Trash2, FileDown, Settings, Save } from "luci
 import { toast } from "sonner";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
 import { CompanySettingsDialog } from "./CompanySettingsDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { PAYROLL_COLUMNS } from "@/lib/excel-utils";
 
 interface PayrollEntry {
   id?: string;
@@ -376,6 +378,23 @@ export function FinancePayroll() {
   const totalPlanned = payrollList?.filter(p => p.status === "planned").reduce((sum, p) => sum + Number(p.amount), 0) || 0;
   const totalPaid = payrollList?.filter(p => p.status === "paid").reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
+  // Export payroll data
+  const exportPayrollData = payrollList?.map(p => ({
+    employee_name: p.profiles?.full_name || '',
+    month: format(new Date(p.month), "yyyy-MM-dd"),
+    amount: p.amount,
+    bonus: (p as any).bonus || 0,
+    potongan_terlambat: (p as any).potongan_terlambat || 0,
+    potongan_kasbon: (p as any).potongan_kasbon || 0,
+    adjustment_lainnya: (p as any).adjustment_lainnya || 0,
+    reimburse: (p as any).reimburse || 0,
+    status: p.status,
+  })) || [];
+
+  const handleImportPayroll = async (data: any[]) => {
+    toast.info("Import payroll disarankan melalui tombol Update Payroll untuk memastikan kalkulasi yang tepat");
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
@@ -384,6 +403,12 @@ export function FinancePayroll() {
           Payroll
         </CardTitle>
         <div className="flex items-center gap-2 flex-wrap">
+          <ExcelActions
+            data={exportPayrollData}
+            columns={PAYROLL_COLUMNS}
+            filename="payroll"
+            onImport={handleImportPayroll}
+          />
           <Button variant="outline" size="sm" onClick={() => setSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Pengaturan

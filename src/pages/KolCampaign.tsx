@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Eye, MapPin, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { CreateCampaignDialog } from "@/components/kol/CreateCampaignDialog";
 import { CampaignDetailDialog } from "@/components/kol/CampaignDetailDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { KOL_CAMPAIGN_COLUMNS } from "@/lib/excel-utils";
 
 const statusColors: Record<string, string> = {
   contacted: "bg-gray-500",
@@ -57,6 +60,7 @@ const platformLabels: Record<string, string> = {
 };
 
 export default function KolCampaign() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [clientFilter, setClientFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -152,6 +156,24 @@ export default function KolCampaign() {
     setDetailDialogOpen(true);
   };
 
+  // Export data for Excel
+  const exportData = campaigns?.map(c => ({
+    kol_name: c.kol?.name || '',
+    campaign_name: c.campaign_name,
+    client_name: c.client?.name || '',
+    platform: c.platform,
+    fee: c.fee || '',
+    is_visit: c.is_visit ? 'Ya' : 'Tidak',
+    visit_location: c.visit_location || '',
+    status: c.status,
+    is_paid: c.is_paid ? 'Ya' : 'Tidak',
+    is_posted: c.is_posted ? 'Ya' : 'Tidak',
+  })) || [];
+
+  const handleImportCampaign = async (data: any[]) => {
+    toast.info("Import campaign memerlukan data KOL yang sudah ada. Gunakan form Assign KOL ke Campaign untuk menambah data.");
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -162,10 +184,18 @@ export default function KolCampaign() {
               Track and manage KOL campaigns and activations
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Assign KOL ke Campaign
-          </Button>
+          <div className="flex gap-2">
+            <ExcelActions
+              data={exportData}
+              columns={KOL_CAMPAIGN_COLUMNS}
+              filename="kol_campaigns"
+              onImport={handleImportCampaign}
+            />
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Assign KOL ke Campaign
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

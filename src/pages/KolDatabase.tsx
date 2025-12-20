@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { KOL_COLUMNS } from "@/lib/excel-utils";
 
 const categoryColors: Record<string, string> = {
   nano: "bg-gray-500",
@@ -50,6 +52,7 @@ const industries = [
 ];
 
 export default function KolDatabase() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [industryFilter, setIndustryFilter] = useState<string>("all");
@@ -134,6 +137,79 @@ export default function KolDatabase() {
     setEditDialogOpen(true);
   };
 
+  // Export data for Excel
+  const exportData = kols?.map(k => ({
+    name: k.name,
+    username: k.username,
+    category: k.category,
+    industry: k.industry || '',
+    instagram_url: k.instagram_url || '',
+    ig_followers: k.ig_followers || '',
+    tiktok_url: k.tiktok_url || '',
+    tiktok_followers: k.tiktok_followers || '',
+    youtube_url: k.youtube_url || '',
+    youtube_followers: k.youtube_followers || '',
+    rate_ig_story: k.rate_ig_story || '',
+    rate_ig_feed: k.rate_ig_feed || '',
+    rate_ig_reels: k.rate_ig_reels || '',
+    rate_tiktok_video: k.rate_tiktok_video || '',
+    rate_youtube_video: k.rate_youtube_video || '',
+    notes: k.notes || '',
+  })) || [];
+
+  const handleImportKol = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    for (const row of data) {
+      if (!row.name || !row.username) continue;
+      
+      // Check if KOL exists
+      const { data: existing } = await supabase
+        .from("kol_database")
+        .select("id")
+        .eq("username", row.username)
+        .single();
+
+      const kolData = {
+        name: row.name,
+        username: row.username,
+        category: row.category || 'micro',
+        industry: row.industry || null,
+        instagram_url: row.instagram_url || null,
+        ig_followers: row.ig_followers ? Number(row.ig_followers) : null,
+        tiktok_url: row.tiktok_url || null,
+        tiktok_followers: row.tiktok_followers ? Number(row.tiktok_followers) : null,
+        youtube_url: row.youtube_url || null,
+        youtube_followers: row.youtube_followers ? Number(row.youtube_followers) : null,
+        rate_ig_story: row.rate_ig_story ? Number(row.rate_ig_story) : null,
+        rate_ig_feed: row.rate_ig_feed ? Number(row.rate_ig_feed) : null,
+        rate_ig_reels: row.rate_ig_reels ? Number(row.rate_ig_reels) : null,
+        rate_tiktok_video: row.rate_tiktok_video ? Number(row.rate_tiktok_video) : null,
+        rate_youtube_video: row.rate_youtube_video ? Number(row.rate_youtube_video) : null,
+        notes: row.notes || null,
+        updated_by: session.session.user.id,
+      };
+
+      if (existing) {
+        await supabase
+          .from("kol_database")
+          .update(kolData)
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("kol_database").insert({
+          ...kolData,
+          created_by: session.session.user.id,
+        });
+      }
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -144,10 +220,18 @@ export default function KolDatabase() {
               Manage your Key Opinion Leaders database
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah KOL
-          </Button>
+          <div className="flex gap-2">
+            <ExcelActions
+              data={exportData}
+              columns={KOL_COLUMNS}
+              filename="kol_database"
+              onImport={handleImportKol}
+            />
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah KOL
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
