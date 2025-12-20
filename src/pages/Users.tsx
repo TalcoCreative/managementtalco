@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -12,9 +12,13 @@ import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { AddUserRoleDialog } from "@/components/users/AddUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { USER_COLUMNS } from "@/lib/excel-utils";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function Users() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
@@ -175,17 +179,71 @@ export default function Users() {
     setDeleteDialogOpen(true);
   };
 
+  const handleImportUsers = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    // Import is limited - users need to be created via edge function
+    // This updates existing profiles only
+    for (const row of data) {
+      if (!row.email) continue;
+      
+      // Find profile by email
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", row.email)
+        .single();
+
+      if (existingProfile) {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: row.full_name || undefined,
+            phone: row.phone || undefined,
+            address: row.address || undefined,
+            ktp_number: row.ktp_number || undefined,
+            bank_account_name: row.bank_account_name || undefined,
+            bank_account_number: row.bank_account_number || undefined,
+            gaji_pokok: row.gaji_pokok ? Number(row.gaji_pokok) : undefined,
+            tj_transport: row.tj_transport ? Number(row.tj_transport) : undefined,
+            tj_internet: row.tj_internet ? Number(row.tj_internet) : undefined,
+            tj_kpi: row.tj_kpi ? Number(row.tj_kpi) : undefined,
+            contract_start: row.contract_start || undefined,
+            contract_end: row.contract_end || undefined,
+            emergency_contact: row.emergency_contact || undefined,
+            status: row.status || undefined,
+          })
+          .eq("id", existingProfile.id);
+      }
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["all-users"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Team Members</h1>
-          {isSuperAdmin && (
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create User
-            </Button>
-          )}
+          <div className="flex gap-2">
+            <ExcelActions
+              data={users || []}
+              columns={USER_COLUMNS}
+              filename="team_members"
+              onImport={handleImportUsers}
+              disabled={!canManageUsers}
+            />
+            {isSuperAdmin && (
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create User
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

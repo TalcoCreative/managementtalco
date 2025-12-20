@@ -11,7 +11,10 @@ import { DollarSign, Users, TrendingUp, Briefcase, Target, Receipt, AlertCircle 
 import { PerformanceOverview } from "@/components/performance/PerformanceOverview";
 import { TeamEffectiveness } from "@/components/performance/TeamEffectiveness";
 import { IndividualPerformance } from "@/components/performance/IndividualPerformance";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { PAYROLL_COLUMNS } from "@/lib/excel-utils";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 export default function Performance() {
   const currentYear = new Date().getFullYear();
@@ -259,6 +262,25 @@ export default function Performance() {
     { value: "12", label: "Desember" },
   ];
 
+  // Export payroll data
+  const payrollExportData = payrollData.map(p => {
+    const employee = profiles.find(pr => pr.id === p.employee_id);
+    return {
+      employee_name: employee?.full_name || '',
+      month: p.month,
+      amount: p.amount,
+      bonus: p.bonus || 0,
+      potongan_terlambat: p.potongan_terlambat || 0,
+      potongan_kasbon: p.potongan_kasbon || 0,
+      adjustment_lainnya: p.adjustment_lainnya || 0,
+      reimburse: p.reimburse || 0,
+      status: p.status,
+    };
+  });
+
+  const handleImportPayroll = async (data: any[]) => {
+    toast.info("Import payroll hanya tersedia melalui menu Finance");
+  };
   if (rolesLoading) {
     return (
       <AppLayout>
@@ -289,7 +311,15 @@ export default function Performance() {
             <h1 className="text-3xl font-bold">Performance Insight</h1>
             <p className="text-muted-foreground">Dashboard efektivitas biaya & kinerja tim</p>
           </div>
-          <Badge variant="secondary" className="w-fit">Read-Only Dashboard</Badge>
+          <div className="flex gap-2 items-center">
+            <ExcelActions
+              data={payrollExportData}
+              columns={PAYROLL_COLUMNS}
+              filename="performance_payroll"
+              onImport={handleImportPayroll}
+            />
+            <Badge variant="secondary" className="w-fit">Read-Only Dashboard</Badge>
+          </div>
         </div>
 
         {/* Filters */}

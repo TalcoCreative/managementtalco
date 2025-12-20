@@ -14,9 +14,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { ATTENDANCE_COLUMNS } from "@/lib/excel-utils";
 import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -268,12 +271,78 @@ export default function HRDashboard() {
         return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" /> Pending</Badge>;
     }
   };
+
+  // Export attendance data
+  const attendanceExportData = attendance?.map(a => ({
+    employee_name: a.profiles?.full_name || '',
+    date: a.date,
+    clock_in: a.clock_in ? format(parseISO(a.clock_in), 'HH:mm') : '',
+    clock_out: a.clock_out ? format(parseISO(a.clock_out), 'HH:mm') : '',
+    notes: a.notes || '',
+  })) || [];
+
+  const handleImportAttendance = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    for (const row of data) {
+      if (!row.employee_name || !row.date) continue;
+      
+      // Find profile by name
+      const profile = profiles?.find(p => 
+        p.full_name.toLowerCase() === row.employee_name.toLowerCase()
+      );
+      
+      if (profile) {
+        // Check if attendance exists
+        const { data: existing } = await supabase
+          .from("attendance")
+          .select("id")
+          .eq("user_id", profile.id)
+          .eq("date", row.date)
+          .single();
+
+        const attendanceData = {
+          user_id: profile.id,
+          date: row.date,
+          clock_in: row.clock_in ? `${row.date}T${row.clock_in}:00` : null,
+          clock_out: row.clock_out ? `${row.date}T${row.clock_out}:00` : null,
+          notes: row.notes || null,
+        };
+
+        if (existing) {
+          await supabase
+            .from("attendance")
+            .update(attendanceData)
+            .eq("id", existing.id);
+        } else {
+          await supabase
+            .from("attendance")
+            .insert(attendanceData);
+        }
+      }
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">HR Dashboard</h1>
-          <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">HR Dashboard</h1>
+            <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
+          </div>
+          <ExcelActions
+            data={attendanceExportData}
+            columns={ATTENDANCE_COLUMNS}
+            filename="attendance"
+            onImport={handleImportAttendance}
+          />
         </div>
 
         {/* Date Range Filter */}

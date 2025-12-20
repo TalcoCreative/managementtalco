@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
 import { ProspectDetailDialog } from "@/components/prospects/ProspectDetailDialog";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { PROSPECT_COLUMNS } from "@/lib/excel-utils";
 
 const STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500" },
@@ -121,6 +123,46 @@ export default function Prospects() {
     return acc;
   }, {} as Record<string, number>) || {};
 
+  // Export data for Excel
+  const exportData = prospects?.map(p => ({
+    contact_name: p.contact_name,
+    company: p.company || '',
+    email: p.email || '',
+    phone: p.phone || '',
+    location: p.location || '',
+    source: p.source,
+    product_service: p.product_service || '',
+    needs: p.needs || '',
+    status: p.status,
+  })) || [];
+
+  const handleImportProspects = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    for (const row of data) {
+      if (!row.contact_name || !row.source) continue;
+      
+      await supabase.from("prospects").insert({
+        contact_name: row.contact_name,
+        company: row.company || null,
+        email: row.email || null,
+        phone: row.phone || null,
+        location: row.location || null,
+        source: row.source,
+        product_service: row.product_service || null,
+        needs: row.needs || null,
+        status: row.status || 'new',
+        created_by: session.session.user.id,
+      });
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["prospects"] });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -129,10 +171,18 @@ export default function Prospects() {
             <h1 className="text-3xl font-bold">Prospects</h1>
             <p className="text-muted-foreground">Manage your sales leads and prospects</p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Prospect
-          </Button>
+          <div className="flex gap-2">
+            <ExcelActions
+              data={exportData}
+              columns={PROSPECT_COLUMNS}
+              filename="prospects"
+              onImport={handleImportProspects}
+            />
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Prospect
+            </Button>
+          </div>
         </div>
 
         {/* Status Summary Cards */}
