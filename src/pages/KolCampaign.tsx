@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -117,6 +117,14 @@ export default function KolCampaign() {
       return filteredData;
     },
   });
+
+  useEffect(() => {
+    if (!detailDialogOpen || !selectedCampaign || !campaigns) return;
+    const latest = campaigns.find((c: any) => c.id === selectedCampaign.id);
+    if (latest && latest.updated_at !== selectedCampaign.updated_at) {
+      setSelectedCampaign(latest);
+    }
+  }, [campaigns, detailDialogOpen, selectedCampaign]);
 
   const { data: clients } = useQuery({
     queryKey: ["clients-list"],

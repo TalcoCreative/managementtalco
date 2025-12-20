@@ -93,11 +93,24 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
 
       const userId = session.session.user.id;
 
+      const normalizedUpdates: any = { ...updates };
+
+      // Normalize paid fields so toggling "Sudah Dibayar" is persisted correctly
+      if (typeof normalizedUpdates.is_paid === "boolean") {
+        if (normalizedUpdates.is_paid) {
+          normalizedUpdates.paid_at = normalizedUpdates.paid_at ?? new Date().toISOString();
+          normalizedUpdates.paid_by = userId;
+        } else {
+          normalizedUpdates.paid_at = null;
+          normalizedUpdates.paid_by = null;
+        }
+      }
+
       // Update campaign
       const { error } = await supabase
         .from("kol_campaigns")
         .update({
-          ...updates,
+          ...normalizedUpdates,
           updated_by: userId,
         })
         .eq("id", campaign.id);
@@ -143,6 +156,16 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
 
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus);
+  };
+
+  const handleTogglePaid = (checked: boolean) => {
+    setIsPaid(checked);
+    updateMutation.mutate({ is_paid: checked });
+  };
+
+  const handleTogglePosted = (checked: boolean) => {
+    setIsPosted(checked);
+    updateMutation.mutate({ is_posted: checked });
   };
 
   const handleSave = () => {
@@ -289,7 +312,7 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
                       <Switch
                         id="is_paid"
                         checked={isPaid}
-                        onCheckedChange={setIsPaid}
+                        onCheckedChange={handleTogglePaid}
                       />
                       <Label htmlFor="is_paid">Sudah Dibayar</Label>
                     </div>
@@ -313,7 +336,7 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
                       <Switch
                         id="is_posted"
                         checked={isPosted}
-                        onCheckedChange={setIsPosted}
+                        onCheckedChange={handleTogglePosted}
                       />
                       <Label htmlFor="is_posted">Sudah Posting</Label>
                     </div>
