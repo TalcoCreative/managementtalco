@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -101,17 +102,24 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
             {tableData.rows.map((row, rowIdx) => (
               <tr key={rowIdx} className="hover:bg-muted/30">
                 {row.map((cell, colIdx) => (
-                  <td key={colIdx} className="p-2 border-b border-r last:border-r-0">
+                  <td key={colIdx} className="p-2 border-b border-r last:border-r-0 align-top">
                     {colIdx === 0 ? (
                       <span className="text-muted-foreground w-12 block text-center">{cell}</span>
                     ) : readOnly ? (
-                      <span>{cell || "-"}</span>
+                      <span className="whitespace-pre-wrap">{cell || "-"}</span>
                     ) : (
-                      <Input
+                      <Textarea
                         value={cell}
                         onChange={(e) => handleCellChange(rowIdx, colIdx, e.target.value)}
                         placeholder="..."
-                        className="h-8 text-sm bg-transparent border-0 p-0 focus-visible:ring-0"
+                        rows={1}
+                        className="min-h-[32px] text-sm bg-transparent border-0 p-0 resize-none focus-visible:ring-0 overflow-hidden"
+                        style={{ height: 'auto' }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = 'auto';
+                          target.style.height = target.scrollHeight + 'px';
+                        }}
                       />
                     )}
                   </td>
