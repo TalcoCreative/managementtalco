@@ -168,3 +168,46 @@ export const PAYROLL_COLUMNS = [
   { key: 'reimburse', header: 'Reimburse', example: '0' },
   { key: 'status', header: 'Status', example: 'pending' },
 ];
+
+export const KOL_COLUMNS = [
+  { key: 'name', header: 'Nama', example: 'John Doe' },
+  { key: 'username', header: 'Username', example: 'johndoe' },
+  { key: 'category', header: 'Kategori', example: 'micro' },
+  { key: 'industry', header: 'Industri', example: 'Fashion & Beauty' },
+  { key: 'instagram_url', header: 'Instagram URL', example: 'https://instagram.com/johndoe' },
+  { key: 'ig_followers', header: 'IG Followers', example: '50000' },
+  { key: 'tiktok_url', header: 'TikTok URL', example: 'https://tiktok.com/@johndoe' },
+  { key: 'tiktok_followers', header: 'TikTok Followers', example: '30000' },
+  { key: 'youtube_url', header: 'YouTube URL', example: '' },
+  { key: 'youtube_followers', header: 'YouTube Followers', example: '' },
+  { key: 'rate_ig_story', header: 'Rate IG Story', example: '500000' },
+  { key: 'rate_ig_feed', header: 'Rate IG Feed', example: '1000000' },
+  { key: 'rate_ig_reels', header: 'Rate IG Reels', example: '1500000' },
+  { key: 'rate_tiktok_video', header: 'Rate TikTok Video', example: '1000000' },
+  { key: 'rate_youtube_video', header: 'Rate YouTube Video', example: '2000000' },
+  { key: 'notes', header: 'Catatan', example: '' },
+];
+
+export const KOL_CAMPAIGN_COLUMNS = [
+  { key: 'kol_name', header: 'Nama KOL', example: 'John Doe' },
+  { key: 'campaign_name', header: 'Nama Campaign', example: 'Summer Sale 2024' },
+  { key: 'client_name', header: 'Client', example: 'PT. Example' },
+  { key: 'platform', header: 'Platform', example: 'ig_reels' },
+  { key: 'fee', header: 'Fee', example: '1500000' },
+  { key: 'is_visit', header: 'Visit', example: 'Ya' },
+  { key: 'visit_location', header: 'Lokasi Visit', example: 'Jakarta' },
+  { key: 'status', header: 'Status', example: 'deal' },
+  { key: 'is_paid', header: 'Paid', example: 'Ya' },
+  { key: 'is_posted', header: 'Posted', example: 'Ya' },
+];
+
+export const EXPENSE_COLUMNS = [
+  { key: 'date', header: 'Tanggal', example: '2024-01-15' },
+  { key: 'category', header: 'Kategori', example: 'operational' },
+  { key: 'sub_category', header: 'Sub Kategori', example: 'transport' },
+  { key: 'description', header: 'Deskripsi', example: 'Ongkos perjalanan meeting' },
+  { key: 'amount', header: 'Jumlah', example: '500000' },
+  { key: 'project_name', header: 'Project', example: 'Project ABC' },
+  { key: 'client_name', header: 'Client', example: 'PT. Example' },
+  { key: 'status', header: 'Status', example: 'pending' },
+];

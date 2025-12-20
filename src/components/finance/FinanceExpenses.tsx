@@ -20,6 +20,8 @@ import {
   getSubCategoryLabel,
   getSubCategories 
 } from "@/lib/finance-categories";
+import { ExcelActions } from "@/components/shared/ExcelActions";
+import { EXPENSE_COLUMNS } from "@/lib/excel-utils";
 
 export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -208,20 +210,62 @@ export function FinanceExpenses() {
 
   const subCategories = getSubCategories(formData.category);
 
+  // Export data for Excel
+  const exportData = expenses?.map(e => ({
+    date: format(new Date(e.created_at), "yyyy-MM-dd"),
+    category: e.category,
+    sub_category: e.sub_category || '',
+    description: e.description,
+    amount: e.amount,
+    project_name: e.projects?.title || '',
+    client_name: e.clients?.name || '',
+    status: e.status,
+  })) || [];
+
+  const handleImportExpenses = async (data: any[]) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      toast.error("Tidak terautentikasi");
+      return;
+    }
+
+    for (const row of data) {
+      if (!row.description || !row.amount) continue;
+
+      await supabase.from("expenses").insert({
+        category: row.category || 'operational',
+        sub_category: row.sub_category || null,
+        amount: Number(row.amount),
+        description: row.description,
+        status: row.status || 'pending',
+        created_by: session.session.user.id,
+      });
+    }
+    
+    queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+  };
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
         <CardTitle className="flex items-center gap-2">
           <ArrowDownCircle className="h-5 w-5" />
           Expenses
         </CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <ExcelActions
+            data={exportData}
+            columns={EXPENSE_COLUMNS}
+            filename="expenses"
+            onImport={handleImportExpenses}
+          />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Expense</DialogTitle>
@@ -317,6 +361,7 @@ export function FinanceExpenses() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
