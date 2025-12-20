@@ -1,15 +1,23 @@
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Building2, User } from "lucide-react";
+import { Calendar, Building2, User, MessageCircle, Send } from "lucide-react";
 import { format } from "date-fns";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function SharedTask() {
   const { token } = useParams<{ token: string }>();
+  const queryClient = useQueryClient();
+  const [commenterName, setCommenterName] = useState("");
+  const [commentContent, setCommentContent] = useState("");
 
   const { data: task, isLoading, error } = useQuery({
     queryKey: ["shared-task", token],
@@ -32,6 +40,52 @@ export default function SharedTask() {
     },
     enabled: !!token,
   });
+
+  const { data: comments = [] } = useQuery({
+    queryKey: ["shared-task-comments", task?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_public_comments")
+        .select("*")
+        .eq("task_id", task.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!task?.id,
+  });
+
+  const addCommentMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("task_public_comments")
+        .insert({
+          task_id: task.id,
+          commenter_name: commenterName.trim(),
+          content: commentContent.trim(),
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-task-comments", task?.id] });
+      setCommentContent("");
+      toast.success("Komentar berhasil ditambahkan");
+    },
+    onError: () => {
+      toast.error("Gagal menambahkan komentar");
+    },
+  });
+
+  const handleSubmitComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commenterName.trim() || !commentContent.trim()) {
+      toast.error("Nama dan komentar harus diisi");
+      return;
+    }
+    addCommentMutation.mutate();
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -89,7 +143,7 @@ export default function SharedTask() {
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto space-y-6">
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -180,7 +234,66 @@ export default function SharedTask() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
+        {/* Comments Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MessageCircle className="h-5 w-5" />
+              Komentar ({comments.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Comment List */}
+            {comments.length > 0 ? (
+              <div className="space-y-3">
+                {comments.map((comment: any) => (
+                  <div key={comment.id} className="rounded-lg border bg-muted/50 p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{comment.commenter_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(comment.created_at), "dd MMM yyyy, HH:mm")}
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                Belum ada komentar
+              </p>
+            )}
+
+            <Separator />
+
+            {/* Add Comment Form */}
+            <form onSubmit={handleSubmitComment} className="space-y-3">
+              <Input
+                placeholder="Nama Anda"
+                value={commenterName}
+                onChange={(e) => setCommenterName(e.target.value)}
+                required
+              />
+              <Textarea
+                placeholder="Tulis komentar..."
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                rows={3}
+                required
+              />
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={addCommentMutation.isPending}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {addCommentMutation.isPending ? "Mengirim..." : "Kirim Komentar"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground">
           Shared via Talco Creative Indonesia
         </p>
       </div>
