@@ -27,13 +27,6 @@ interface CreateCampaignDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const platforms = [
-  { value: "ig_story", label: "IG Story" },
-  { value: "ig_feed", label: "IG Feed" },
-  { value: "ig_reels", label: "IG Reels" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "youtube", label: "YouTube" },
-];
 
 const statuses = [
   { value: "contacted", label: "Baru Dikontak" },
@@ -281,21 +274,12 @@ export function CreateCampaignDialog({ open, onOpenChange }: CreateCampaignDialo
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="platform">Platform *</Label>
-                  <Select
+                  <Input
+                    id="platform"
                     value={formData.platform}
-                    onValueChange={(value) => setFormData({ ...formData, platform: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {platforms.map((platform) => (
-                        <SelectItem key={platform.value} value={platform.value}>
-                          {platform.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                    placeholder="Contoh: IG Story, TikTok, YouTube, etc."
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>

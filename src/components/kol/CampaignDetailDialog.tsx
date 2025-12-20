@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -63,6 +63,15 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
   const [postLink, setPostLink] = useState(campaign.post_link || "");
   const [evidenceUrl, setEvidenceUrl] = useState(campaign.evidence_url || "");
   const [historyNote, setHistoryNote] = useState("");
+
+  // Reset state when campaign prop changes
+  useEffect(() => {
+    setStatus(campaign.status);
+    setIsPaid(campaign.is_paid);
+    setIsPosted(campaign.is_posted);
+    setPostLink(campaign.post_link || "");
+    setEvidenceUrl(campaign.evidence_url || "");
+  }, [campaign]);
 
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ["campaign-history", campaign.id],
