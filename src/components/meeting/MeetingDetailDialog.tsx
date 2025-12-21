@@ -236,6 +236,24 @@ const MeetingDetailDialog = ({
 
       if (error) throw error;
 
+      // If meeting is completed and has a linked task, mark the task as done
+      if (newStatus === "completed" && meeting.task_id) {
+        const { error: taskError } = await supabase
+          .from("tasks")
+          .update({ status: "done" })
+          .eq("id", meeting.task_id);
+        
+        if (taskError) {
+          console.error("Error updating task:", taskError);
+          // Don't throw - meeting update was successful
+        } else {
+          toast.success("Meeting selesai & task terkait ditandai selesai");
+          queryClient.invalidateQueries({ queryKey: ["tasks"] });
+          onUpdate();
+          return;
+        }
+      }
+
       toast.success("Status meeting diperbarui");
       onUpdate();
     } catch (error: any) {

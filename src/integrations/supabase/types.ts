@@ -1891,6 +1891,7 @@ export type Database = {
           rescheduled_at: string | null
           start_time: string
           status: string
+          task_id: string | null
           title: string
           type: string
           updated_at: string
@@ -1913,6 +1914,7 @@ export type Database = {
           rescheduled_at?: string | null
           start_time: string
           status?: string
+          task_id?: string | null
           title: string
           type?: string
           updated_at?: string
@@ -1935,6 +1937,7 @@ export type Database = {
           rescheduled_at?: string | null
           start_time?: string
           status?: string
+          task_id?: string | null
           title?: string
           type?: string
           updated_at?: string
@@ -1959,6 +1962,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]

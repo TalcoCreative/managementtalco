@@ -37,6 +37,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
     location: "",
     client_id: "",
     project_id: "",
+    task_id: "",
     notes: "",
     is_confidential: false,
   });
@@ -92,6 +93,25 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
       return data;
     },
   });
+
+  // Fetch tasks
+  const { data: tasks } = useQuery({
+    queryKey: ["tasks-for-meeting"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title, project_id")
+        .in("status", ["todo", "in_progress"])
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Filter tasks based on selected project
+  const filteredTasks = formData.project_id 
+    ? tasks?.filter(t => t.project_id === formData.project_id)
+    : tasks;
 
   const handleParticipantToggle = (profileId: string) => {
     setSelectedParticipants(prev => 
@@ -155,6 +175,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
           location: formData.mode === "offline" ? formData.location : null,
           client_id: formData.client_id || null,
           project_id: formData.project_id || null,
+          task_id: formData.task_id || null,
           notes: formData.notes || null,
           created_by: currentUser.id,
           is_confidential: formData.is_confidential,
@@ -231,6 +252,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
       location: "",
       client_id: "",
       project_id: "",
+      task_id: "",
       notes: "",
       is_confidential: false,
     });
@@ -390,6 +412,30 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Task Selection */}
+                <div>
+                  <Label>Task Terkait (Opsional)</Label>
+                  <Select 
+                    value={formData.task_id || "_none"} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, task_id: value === "_none" ? "" : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih task" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Tidak ada</SelectItem>
+                      {filteredTasks?.map((task) => (
+                        <SelectItem key={task.id} value={task.id}>
+                          {task.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Task akan otomatis selesai saat meeting ditandai selesai
+                  </p>
                 </div>
               </div>
             </div>
