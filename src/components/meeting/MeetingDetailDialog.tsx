@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { 
@@ -58,6 +59,8 @@ const MeetingDetailDialog = ({
   const [rejectionReason, setRejectionReason] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditParticipants, setShowEditParticipants] = useState(false);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   // Fetch current user
@@ -98,6 +101,20 @@ const MeetingDetailDialog = ({
       return data;
     },
     enabled: !!meeting.id,
+  });
+
+  // Fetch all profiles for edit participants
+  const { data: allProfiles } = useQuery({
+    queryKey: ["all-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("status", "active")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
   });
 
   // Fetch meeting minutes
@@ -202,9 +219,19 @@ const MeetingDetailDialog = ({
   const handleUpdateStatus = async (newStatus: string) => {
     setIsUpdating(true);
     try {
+      const updateData: any = { status: newStatus };
+      
+      // If marking as completed, set end_time to current time
+      if (newStatus === "completed") {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        updateData.end_time = `${hours}:${minutes}:00`;
+      }
+      
       const { error } = await supabase
         .from("meetings")
-        .update({ status: newStatus })
+        .update(updateData)
         .eq("id", meeting.id);
 
       if (error) throw error;
@@ -213,6 +240,86 @@ const MeetingDetailDialog = ({
       onUpdate();
     } catch (error: any) {
       toast.error(error.message || "Gagal memperbarui status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartEditParticipants = () => {
+    // Initialize selected participants from current participants
+    const currentParticipantIds = participants?.map(p => p.user_id) || [];
+    setSelectedParticipants(currentParticipantIds);
+    setShowEditParticipants(true);
+  };
+
+  const handleParticipantToggle = (profileId: string) => {
+    setSelectedParticipants(prev => 
+      prev.includes(profileId) 
+        ? prev.filter(id => id !== profileId)
+        : [...prev, profileId]
+    );
+  };
+
+  const handleSaveParticipants = async () => {
+    setIsUpdating(true);
+    try {
+      const currentParticipantIds = participants?.map(p => p.user_id) || [];
+      
+      // Find participants to add
+      const toAdd = selectedParticipants.filter(id => !currentParticipantIds.includes(id));
+      
+      // Find participants to remove
+      const toRemove = currentParticipantIds.filter(id => !selectedParticipants.includes(id));
+      
+      // Add new participants
+      if (toAdd.length > 0) {
+        const newParticipants = toAdd.map(userId => ({
+          meeting_id: meeting.id,
+          user_id: userId,
+          status: "pending",
+        }));
+        
+        const { error: addError } = await supabase
+          .from("meeting_participants")
+          .insert(newParticipants);
+        
+        if (addError) throw addError;
+        
+        // Create notifications for new participants
+        const notifications = toAdd.map(userId => ({
+          meeting_id: meeting.id,
+          user_id: userId,
+        }));
+        
+        await supabase
+          .from("meeting_notifications")
+          .insert(notifications);
+      }
+      
+      // Remove participants
+      if (toRemove.length > 0) {
+        const { error: removeError } = await supabase
+          .from("meeting_participants")
+          .delete()
+          .eq("meeting_id", meeting.id)
+          .in("user_id", toRemove);
+        
+        if (removeError) throw removeError;
+        
+        // Remove their notifications too
+        await supabase
+          .from("meeting_notifications")
+          .delete()
+          .eq("meeting_id", meeting.id)
+          .in("user_id", toRemove);
+      }
+      
+      toast.success("Peserta meeting berhasil diperbarui");
+      setShowEditParticipants(false);
+      refetchParticipants();
+      queryClient.invalidateQueries({ queryKey: ["meeting-notifications"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal memperbarui peserta");
     } finally {
       setIsUpdating(false);
     }
@@ -607,6 +714,52 @@ const MeetingDetailDialog = ({
               </TabsList>
 
               <TabsContent value="participants" className="mt-4 space-y-4">
+                {/* Edit Participants Button */}
+                {canEdit && !showEditParticipants && meeting.status !== "completed" && meeting.status !== "cancelled" && (
+                  <Button variant="outline" size="sm" onClick={handleStartEditParticipants}>
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Peserta
+                  </Button>
+                )}
+
+                {/* Edit Participants Form */}
+                {showEditParticipants && (
+                  <div className="p-4 border rounded-lg space-y-4 bg-muted/50">
+                    <Label className="text-base font-medium">Edit Peserta Internal</Label>
+                    <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-background">
+                      {allProfiles?.filter(p => p.id !== meeting.created_by).map((profile) => (
+                        <div key={profile.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`edit-${profile.id}`}
+                            checked={selectedParticipants.includes(profile.id)}
+                            onCheckedChange={() => handleParticipantToggle(profile.id)}
+                          />
+                          <label htmlFor={`edit-${profile.id}`} className="text-sm cursor-pointer flex-1">
+                            {profile.full_name}
+                            <span className="text-muted-foreground ml-1">({profile.email})</span>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedParticipants.length} peserta dipilih
+                    </p>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveParticipants} disabled={isUpdating} size="sm">
+                        <Save className="w-4 h-4 mr-2" />
+                        Simpan
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowEditParticipants(false)}
+                      >
+                        Batal
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Internal Participants */}
                 <div>
                   <p className="text-sm font-medium mb-2">Internal ({participants?.length || 0})</p>
