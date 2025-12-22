@@ -11,14 +11,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format } from "date-fns";
-import { Plus, ArrowUpCircle, CheckCircle, Trash2 } from "lucide-react";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Plus, ArrowUpCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinanceIncome() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [formData, setFormData] = useState({
     source: "",
     client_id: "",
@@ -59,6 +62,20 @@ export function FinanceIncome() {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  // Filter income by search and date
+  const filteredIncome = incomeList?.filter(income => {
+    const matchesSearch = 
+      income.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      income.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      income.projects?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      income.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const incomeDate = income.date;
+    const matchesDateRange = incomeDate >= startDate && incomeDate <= endDate;
+
+    return matchesSearch && matchesDateRange;
   });
 
   const handleSubmit = async () => {
@@ -173,8 +190,8 @@ export function FinanceIncome() {
     }).format(value);
   };
 
-  const totalExpected = incomeList?.filter(i => i.status === "expected").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
-  const totalReceived = incomeList?.filter(i => i.status === "received").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+  const totalExpected = filteredIncome?.filter(i => i.status === "expected").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+  const totalReceived = filteredIncome?.filter(i => i.status === "received").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
 
   return (
     <Card>
@@ -291,9 +308,49 @@ export function FinanceIncome() {
           </Card>
         </div>
 
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-sm mb-2 block">Cari</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari source, notes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="min-w-[150px]">
+            <Label className="text-sm mb-2 block">Dari Tanggal</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="min-w-[150px]">
+            <Label className="text-sm mb-2 block">Sampai Tanggal</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
-        ) : incomeList && incomeList.length > 0 ? (
+        ) : filteredIncome && filteredIncome.length > 0 ? (
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
@@ -308,10 +365,15 @@ export function FinanceIncome() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {incomeList.map((income) => (
+                {filteredIncome.map((income) => (
                   <TableRow key={income.id}>
                     <TableCell>{format(new Date(income.date), "dd MMM yyyy")}</TableCell>
-                    <TableCell className="font-medium">{income.source}</TableCell>
+                    <TableCell className="font-medium">
+                      {income.source}
+                      {income.recurring_id && (
+                        <Badge variant="secondary" className="ml-2 text-xs">Recurring</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="text-sm">
                         {income.clients?.name && <div>{income.clients.name}</div>}

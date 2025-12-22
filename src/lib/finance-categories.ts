@@ -17,12 +17,18 @@ export const FINANCE_CATEGORIES: MainCategory[] = [
     label: "Operasional",
     subCategories: [
       { value: "transport", label: "Transport" },
+      { value: "transport_online", label: "Transport Online (Gocar/Gojek)" },
       { value: "konsumsi_meeting", label: "Konsumsi / Meeting" },
       { value: "atk", label: "ATK" },
       { value: "maintenance", label: "Maintenance" },
+      { value: "service_ac", label: "Service AC" },
       { value: "logistik", label: "Logistik" },
       { value: "internet_komunikasi", label: "Internet & Komunikasi" },
       { value: "office_supplies", label: "Office Supplies" },
+      { value: "iuran", label: "Iuran" },
+      { value: "kebersihan", label: "Kebersihan" },
+      { value: "listrik_air", label: "Listrik & Air" },
+      { value: "parkir", label: "Parkir" },
     ],
   },
   {

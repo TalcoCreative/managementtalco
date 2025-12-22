@@ -11,8 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format } from "date-fns";
-import { Plus, ArrowDownCircle, CheckCircle, Trash2 } from "lucide-react";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Plus, ArrowDownCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
@@ -27,6 +27,9 @@ export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [formData, setFormData] = useState({
     category: "operasional",
     sub_category: "transport",
@@ -66,6 +69,21 @@ export function FinanceExpenses() {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  // Filter expenses by search and date
+  const filteredExpenses = expenses?.filter(expense => {
+    const matchesSearch = 
+      expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.sub_category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.projects?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const expenseDate = format(new Date(expense.created_at), "yyyy-MM-dd");
+    const matchesDateRange = expenseDate >= startDate && expenseDate <= endDate;
+
+    return matchesSearch && matchesDateRange;
   });
 
   const handleCategoryChange = (category: string) => {
@@ -211,7 +229,7 @@ export function FinanceExpenses() {
   const subCategories = getSubCategories(formData.category);
 
   // Export data for Excel
-  const exportData = expenses?.map(e => ({
+  const exportData = filteredExpenses?.map(e => ({
     date: format(new Date(e.created_at), "yyyy-MM-dd"),
     category: e.category,
     sub_category: e.sub_category || '',
@@ -244,6 +262,9 @@ export function FinanceExpenses() {
     
     queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
   };
+
+  const totalPending = filteredExpenses?.filter(e => e.status === "pending").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+  const totalPaid = filteredExpenses?.filter(e => e.status === "paid").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
   return (
     <Card>
@@ -363,10 +384,66 @@ export function FinanceExpenses() {
         </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-sm text-muted-foreground">Pending</div>
+              <div className="text-2xl font-bold text-yellow-500">{formatCurrency(totalPending)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="text-sm text-muted-foreground">Paid</div>
+              <div className="text-2xl font-bold text-green-500">{formatCurrency(totalPaid)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-sm mb-2 block">Cari</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari deskripsi, kategori..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="min-w-[150px]">
+            <Label className="text-sm mb-2 block">Dari Tanggal</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="min-w-[150px]">
+            <Label className="text-sm mb-2 block">Sampai Tanggal</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading...</div>
-        ) : expenses && expenses.length > 0 ? (
+        ) : filteredExpenses && filteredExpenses.length > 0 ? (
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
@@ -381,7 +458,7 @@ export function FinanceExpenses() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((expense) => (
+                {filteredExpenses.map((expense) => (
                   <TableRow key={expense.id}>
                     <TableCell>{format(new Date(expense.created_at), "dd MMM yyyy")}</TableCell>
                     <TableCell>
@@ -394,7 +471,12 @@ export function FinanceExpenses() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {expense.description}
+                      {expense.is_recurring && (
+                        <Badge variant="secondary" className="ml-2 text-xs">Recurring</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="text-sm">
                         {expense.projects?.title && <div>{expense.projects.title}</div>}

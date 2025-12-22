@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,14 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format } from "date-fns";
-import { Plus, RefreshCw, Pause, Play, CheckCircle, Trash2 } from "lucide-react";
+import { format, addMonths, addWeeks, addYears, startOfMonth, endOfMonth, isBefore, isAfter, parseISO } from "date-fns";
+import { Plus, RefreshCw, Pause, Play, CheckCircle, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinanceRecurring() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [generating, setGenerating] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     type: "expense",
@@ -62,17 +63,113 @@ export function FinanceRecurring() {
     },
   });
 
+  // Generate entries on component mount
+  useEffect(() => {
+    if (recurringItems && recurringItems.length > 0) {
+      generateRecurringEntries();
+    }
+  }, [recurringItems]);
+
+  const generateRecurringEntries = async () => {
+    if (!recurringItems || generating) return;
+
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) return;
+
+    const today = new Date();
+    const currentMonth = startOfMonth(today);
+    const nextMonth = endOfMonth(addMonths(today, 1));
+
+    for (const recurring of recurringItems) {
+      if (recurring.status !== "active") continue;
+
+      const startDate = parseISO(recurring.start_date);
+      const endDate = recurring.end_date ? parseISO(recurring.end_date) : null;
+      const dueDay = recurring.due_day || 1;
+
+      // Generate for current and next month
+      const monthsToCheck = [currentMonth, addMonths(currentMonth, 1)];
+
+      for (const month of monthsToCheck) {
+        // Skip if before start date or after end date
+        if (isBefore(month, startOfMonth(startDate))) continue;
+        if (endDate && isAfter(month, endOfMonth(endDate))) continue;
+
+        // Calculate the due date for this month
+        const year = month.getFullYear();
+        const monthNum = month.getMonth();
+        const maxDay = new Date(year, monthNum + 1, 0).getDate();
+        const actualDueDay = Math.min(dueDay, maxDay);
+        const dueDate = new Date(year, monthNum, actualDueDay);
+        const dueDateStr = format(dueDate, "yyyy-MM-dd");
+
+        if (recurring.type === "expense") {
+          // Check if entry already exists for this recurring + date
+          const { data: existing } = await supabase
+            .from("expenses")
+            .select("id")
+            .eq("recurring_id", recurring.id)
+            .gte("created_at", format(startOfMonth(month), "yyyy-MM-dd"))
+            .lte("created_at", format(endOfMonth(month), "yyyy-MM-dd"))
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await supabase.from("expenses").insert({
+              category: "operational",
+              description: recurring.name,
+              amount: recurring.amount,
+              project_id: recurring.project_id,
+              client_id: recurring.client_id,
+              is_recurring: true,
+              recurring_id: recurring.id,
+              status: "pending",
+              created_by: session.session.user.id,
+            });
+          }
+        } else {
+          // Income type
+          const { data: existing } = await supabase
+            .from("income")
+            .select("id")
+            .eq("recurring_id", recurring.id)
+            .gte("date", format(startOfMonth(month), "yyyy-MM-dd"))
+            .lte("date", format(endOfMonth(month), "yyyy-MM-dd"))
+            .limit(1);
+
+          if (!existing || existing.length === 0) {
+            await supabase.from("income").insert({
+              source: recurring.name,
+              amount: recurring.amount,
+              date: dueDateStr,
+              type: "recurring",
+              project_id: recurring.project_id,
+              client_id: recurring.client_id,
+              recurring_id: recurring.id,
+              status: "expected",
+              created_by: session.session.user.id,
+            });
+          }
+        }
+      }
+    }
+
+    // Refresh data
+    queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["finance-income"] });
+  };
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.amount) {
       toast.error("Please fill in all required fields");
       return;
     }
 
+    setGenerating(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("recurring_budget").insert({
+      const { data: newRecurring, error } = await supabase.from("recurring_budget").insert({
         name: formData.name,
         type: formData.type,
         amount: parseFloat(formData.amount),
@@ -83,11 +180,50 @@ export function FinanceRecurring() {
         project_id: formData.project_id || null,
         client_id: formData.client_id || null,
         created_by: session.session.user.id,
-      });
+      }).select().single();
 
       if (error) throw error;
 
-      toast.success("Recurring budget created successfully");
+      // Generate initial entries
+      if (newRecurring) {
+        const today = new Date();
+        const currentMonth = startOfMonth(today);
+        const dueDay = parseInt(formData.due_day) || 1;
+        const year = currentMonth.getFullYear();
+        const monthNum = currentMonth.getMonth();
+        const maxDay = new Date(year, monthNum + 1, 0).getDate();
+        const actualDueDay = Math.min(dueDay, maxDay);
+        const dueDate = new Date(year, monthNum, actualDueDay);
+        const dueDateStr = format(dueDate, "yyyy-MM-dd");
+
+        if (formData.type === "expense") {
+          await supabase.from("expenses").insert({
+            category: "operational",
+            description: formData.name,
+            amount: parseFloat(formData.amount),
+            project_id: formData.project_id || null,
+            client_id: formData.client_id || null,
+            is_recurring: true,
+            recurring_id: newRecurring.id,
+            status: "pending",
+            created_by: session.session.user.id,
+          });
+        } else {
+          await supabase.from("income").insert({
+            source: formData.name,
+            amount: parseFloat(formData.amount),
+            date: dueDateStr,
+            type: "recurring",
+            project_id: formData.project_id || null,
+            client_id: formData.client_id || null,
+            recurring_id: newRecurring.id,
+            status: "expected",
+            created_by: session.session.user.id,
+          });
+        }
+      }
+
+      toast.success("Recurring budget created and entry generated");
       setDialogOpen(false);
       setFormData({
         name: "",
@@ -101,8 +237,12 @@ export function FinanceRecurring() {
         client_id: "",
       });
       queryClient.invalidateQueries({ queryKey: ["finance-recurring"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-income"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to create recurring budget");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -152,9 +292,9 @@ export function FinanceRecurring() {
 
   const getPeriodLabel = (period: string) => {
     const labels: Record<string, string> = {
-      weekly: "Weekly",
-      monthly: "Monthly",
-      yearly: "Yearly",
+      weekly: "Mingguan",
+      monthly: "Bulanan",
+      yearly: "Tahunan",
       custom: "Custom"
     };
     return labels[period] || period;
@@ -169,6 +309,15 @@ export function FinanceRecurring() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "active": return "Aktif";
+      case "paused": return "Di-pause";
+      case "completed": return "Selesai";
+      default: return status;
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -180,37 +329,37 @@ export function FinanceRecurring() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Add Recurring
+              Tambah Recurring
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Recurring Budget</DialogTitle>
+              <DialogTitle>Tambah Recurring Budget</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-2">
-                <Label>Name *</Label>
+                <Label>Nama *</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Office Rent"
+                  placeholder="contoh: Sewa Kantor, Retainer Fee"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Type *</Label>
+                  <Label>Tipe *</Label>
                   <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Pengeluaran</SelectItem>
+                      <SelectItem value="income">Pemasukan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Amount (IDR) *</Label>
+                  <Label>Jumlah (IDR) *</Label>
                   <Input
                     type="number"
                     value={formData.amount}
@@ -220,32 +369,33 @@ export function FinanceRecurring() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Period *</Label>
+                  <Label>Periode *</Label>
                   <Select value={formData.period} onValueChange={(v) => setFormData({ ...formData, period: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="weekly">Mingguan</SelectItem>
+                      <SelectItem value="monthly">Bulanan</SelectItem>
+                      <SelectItem value="yearly">Tahunan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Due Day</Label>
+                  <Label>Dibayar Setiap Tanggal</Label>
                   <Input
                     type="number"
                     min="1"
                     max="31"
                     value={formData.due_day}
                     onChange={(e) => setFormData({ ...formData, due_day: e.target.value })}
+                    placeholder="1-31"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Start Date *</Label>
+                  <Label>Tanggal Mulai *</Label>
                   <Input
                     type="date"
                     value={formData.start_date}
@@ -253,7 +403,7 @@ export function FinanceRecurring() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Date (Optional)</Label>
+                  <Label>Tanggal Selesai (Opsional)</Label>
                   <Input
                     type="date"
                     value={formData.end_date}
@@ -262,13 +412,13 @@ export function FinanceRecurring() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Project (Optional)</Label>
+                <Label>Project (Opsional)</Label>
                 <Select value={formData.project_id || "none"} onValueChange={(v) => setFormData({ ...formData, project_id: v === "none" ? "" : v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select project" />
+                    <SelectValue placeholder="Pilih project" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">Tidak ada</SelectItem>
                     {projects?.map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
                     ))}
@@ -276,20 +426,26 @@ export function FinanceRecurring() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Client (Optional)</Label>
+                <Label>Client (Opsional)</Label>
                 <Select value={formData.client_id || "none"} onValueChange={(v) => setFormData({ ...formData, client_id: v === "none" ? "" : v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
+                    <SelectValue placeholder="Pilih client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">Tidak ada</SelectItem>
                     {clients?.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleSubmit} className="w-full">Create Recurring Budget</Button>
+              <p className="text-sm text-muted-foreground">
+                Entry akan otomatis muncul di {formData.type === "expense" ? "Expenses" : "Income"} setiap tanggal {formData.due_day || "1"} setiap bulan. Anda tinggal mark as {formData.type === "expense" ? "paid" : "received"}.
+              </p>
+              <Button onClick={handleSubmit} className="w-full" disabled={generating}>
+                {generating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Buat Recurring Budget
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -302,13 +458,14 @@ export function FinanceRecurring() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Duration</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Tipe</TableHead>
+                  <TableHead className="text-right">Jumlah</TableHead>
+                  <TableHead>Periode</TableHead>
+                  <TableHead>Tgl Bayar</TableHead>
+                  <TableHead>Durasi</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -317,36 +474,38 @@ export function FinanceRecurring() {
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>
                       <Badge className={item.type === "income" ? "bg-green-500" : "bg-destructive"}>
-                        {item.type === "income" ? "Income" : "Expense"}
+                        {item.type === "income" ? "Pemasukan" : "Pengeluaran"}
                       </Badge>
                     </TableCell>
                     <TableCell className={`text-right font-medium ${item.type === "income" ? "text-green-500" : "text-destructive"}`}>
                       {formatCurrency(item.amount)}
                     </TableCell>
                     <TableCell>{getPeriodLabel(item.period)}</TableCell>
+                    <TableCell>Tgl {item.due_day || 1}</TableCell>
                     <TableCell className="text-sm">
                       {format(new Date(item.start_date), "dd/MM/yy")}
                       {item.end_date && ` - ${format(new Date(item.end_date), "dd/MM/yy")}`}
+                      {!item.end_date && " - ∞"}
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(item.status)}>
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                        {getStatusLabel(item.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         {item.status === "active" && (
-                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "paused")}>
+                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "paused")} title="Pause">
                             <Pause className="h-4 w-4" />
                           </Button>
                         )}
                         {item.status === "paused" && (
-                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "active")}>
+                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "active")} title="Aktifkan">
                             <Play className="h-4 w-4" />
                           </Button>
                         )}
                         {item.status !== "completed" && (
-                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "completed")}>
+                          <Button size="sm" variant="ghost" onClick={() => handleStatusChange(item.id, "completed")} title="Selesai">
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
@@ -371,7 +530,7 @@ export function FinanceRecurring() {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <RefreshCw className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No recurring budgets</p>
+            <p>Belum ada recurring budget</p>
           </div>
         )}
       </CardContent>
@@ -382,7 +541,7 @@ export function FinanceRecurring() {
             <AlertDialogTitle>Hapus Recurring Budget</AlertDialogTitle>
             <AlertDialogDescription>
               Apakah Anda yakin ingin menghapus "{itemToDelete?.name}"? 
-              Tindakan ini tidak dapat dibatalkan.
+              Entry yang sudah di-generate tidak akan terhapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
