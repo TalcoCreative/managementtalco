@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { format } from "date-fns";
-import { Search, BookOpen, ArrowUpCircle, ArrowDownCircle, Trash2 } from "lucide-react";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Search, BookOpen, ArrowUpCircle, ArrowDownCircle, Trash2, Calendar } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
@@ -23,6 +24,8 @@ export function FinanceLedger() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
+  const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<any>(null);
   const queryClient = useQueryClient();
@@ -49,8 +52,9 @@ export function FinanceLedger() {
     const matchesType = typeFilter === "all" || entry.type === typeFilter;
     const matchesCategory = categoryFilter === "all" || entry.sub_type === categoryFilter;
     const matchesSubCategory = subCategoryFilter === "all" || entry.sub_category === subCategoryFilter;
+    const matchesDateRange = entry.date >= startDate && entry.date <= endDate;
 
-    return matchesSearch && matchesType && matchesCategory && matchesSubCategory;
+    return matchesSearch && matchesType && matchesCategory && matchesSubCategory && matchesDateRange;
   });
 
   const handleDeleteEntry = async () => {
@@ -123,51 +127,45 @@ export function FinanceLedger() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="relative col-span-2 md:col-span-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <div className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-[150px]">
+            <Label className="text-sm mb-2 block">Cari</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+            </div>
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setSubCategoryFilter("all"); }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {FINANCE_CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={subCategoryFilter} onValueChange={setSubCategoryFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sub-Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sub-Categories</SelectItem>
-              {(categoryFilter === "all" 
-                ? allSubCategories 
-                : FINANCE_CATEGORIES.find(c => c.value === categoryFilter)?.subCategories || []
-              ).map(sub => (
-                <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="min-w-[120px]">
+            <Label className="text-sm mb-2 block">Dari</Label>
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </div>
+          <div className="min-w-[120px]">
+            <Label className="text-sm mb-2 block">Sampai</Label>
+            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
+          <div className="min-w-[120px]">
+            <Label className="text-sm mb-2 block">Type</Label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="min-w-[140px]">
+            <Label className="text-sm mb-2 block">Category</Label>
+            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setSubCategoryFilter("all"); }}>
+              <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {FINANCE_CATEGORIES.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Table */}
