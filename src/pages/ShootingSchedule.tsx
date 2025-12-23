@@ -13,11 +13,13 @@ import { toast } from "sonner";
 import { CreateShootingDialog } from "@/components/shooting/CreateShootingDialog";
 import { RescheduleShootingDialog } from "@/components/shooting/RescheduleShootingDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 
 export default function ShootingSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [deleteShooting, setDeleteShooting] = useState<{ id: string; title: string } | null>(null);
   const [rescheduleShooting, setRescheduleShooting] = useState<{ id: string; title: string; scheduled_date: string } | null>(null);
+  const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -197,23 +199,33 @@ export default function ShootingSchedule() {
     const totalFreelanceCost = freelancers.reduce((sum, f) => sum + (f.freelance_cost || 0), 0);
 
     return (
-      <Card key={shooting.id} className="relative group">
+      <Card 
+        key={shooting.id} 
+        className="relative group cursor-pointer hover:shadow-lg transition-shadow"
+        onClick={() => setSelectedShootingId(shooting.id)}
+      >
         <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setRescheduleShooting({
-              id: shooting.id,
-              title: shooting.title,
-              scheduled_date: shooting.scheduled_date,
-            })}
+            onClick={(e) => {
+              e.stopPropagation();
+              setRescheduleShooting({
+                id: shooting.id,
+                title: shooting.title,
+                scheduled_date: shooting.scheduled_date,
+              });
+            }}
           >
             <CalendarClock className="h-4 w-4" />
           </Button>
           <Button
             variant="destructive"
             size="icon"
-            onClick={() => setDeleteShooting({ id: shooting.id, title: shooting.title })}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteShooting({ id: shooting.id, title: shooting.title });
+            }}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -448,6 +460,12 @@ export default function ShootingSchedule() {
         shooting={rescheduleShooting}
         open={!!rescheduleShooting}
         onOpenChange={(open) => !open && setRescheduleShooting(null)}
+      />
+
+      <ShootingDetailDialog
+        shootingId={selectedShootingId}
+        open={!!selectedShootingId}
+        onOpenChange={(open) => !open && setSelectedShootingId(null)}
       />
     </AppLayout>
   );
