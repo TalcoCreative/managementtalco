@@ -443,8 +443,8 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
             {/* Internal Participants */}
             <div className="space-y-2">
               <Label>Partisipan Internal</Label>
-              <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
-                {profiles?.filter(p => p.id !== currentUser?.id).map((profile) => (
+            <div className="border rounded-lg p-3 max-h-40 overflow-y-auto space-y-2">
+                {profiles?.map((profile) => (
                   <div key={profile.id} className="flex items-center gap-2">
                     <Checkbox
                       id={profile.id}
