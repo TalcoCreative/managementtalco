@@ -69,23 +69,6 @@ export default function Projects() {
     }
   };
 
-  const { data: userRole } = useQuery({
-    queryKey: ["user-role"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return null;
-
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.session.user.id)
-        .single();
-      
-      return data?.role;
-    },
-  });
-
-  const canManageProjects = userRole === "super_admin" || userRole === "hr";
 
   const handleDelete = async (reason: string) => {
     if (!deleteProject) return;
