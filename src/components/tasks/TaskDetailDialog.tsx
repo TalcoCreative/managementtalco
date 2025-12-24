@@ -42,6 +42,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [editAssignedTo, setEditAssignedTo] = useState<string>("");
   const [editDeadline, setEditDeadline] = useState<string>("");
   const [editTableData, setEditTableData] = useState<TableData | null>(null);
@@ -95,6 +97,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   // Reset edit state when task changes
   useEffect(() => {
     if (task) {
+      setEditTitle(task.title || "");
+      setEditDescription(task.description || "");
       setEditAssignedTo(task.assigned_to || "");
       setEditDeadline(task.deadline || "");
       setEditTableData(task.table_data || null);
@@ -163,10 +167,14 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       const { error } = await supabase
         .from("tasks")
         .update({
+          title: editTitle,
+          description: editDescription,
           assigned_to: editAssignedTo || null,
           deadline: editDeadline || null,
           table_data: editTableData as any,
           assigned_at: editAssignedTo ? new Date().toISOString() : null,
+          title_edited_at: editTitle !== task?.title ? new Date().toISOString() : task?.title_edited_at,
+          description_edited_at: editDescription !== task?.description ? new Date().toISOString() : task?.description_edited_at,
         })
         .eq("id", taskId);
 
@@ -431,7 +439,16 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           <DialogHeader className="flex-shrink-0 pb-2">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="space-y-1 min-w-0 flex-1">
-                <DialogTitle className="text-lg sm:text-2xl break-words">{task.title}</DialogTitle>
+                {isEditing ? (
+                  <Input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="text-lg sm:text-2xl font-semibold"
+                    placeholder="Task title"
+                  />
+                ) : (
+                  <DialogTitle className="text-lg sm:text-2xl break-words">{task.title}</DialogTitle>
+                )}
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={getPriorityColor(task.priority)}>
                     {task.priority}
@@ -468,6 +485,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                       size="sm"
                       onClick={() => {
                         setIsEditing(false);
+                        setEditTitle(task.title || "");
+                        setEditDescription(task.description || "");
                         setEditAssignedTo(task.assigned_to || "");
                         setEditDeadline(task.deadline || "");
                         setEditTableData(task.table_data || null);
@@ -529,12 +548,22 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               </div>
 
               {/* Notes */}
-              {task.description && (
-                <div className="rounded-lg border bg-card p-4">
-                  <h3 className="font-semibold mb-2">Notes</h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
-                </div>
-              )}
+              <div className="rounded-lg border bg-card p-4">
+                <h3 className="font-semibold mb-2">Notes</h3>
+                {isEditing ? (
+                  <Textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Add notes or description..."
+                    rows={4}
+                    className="resize-none"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {task.description || "No notes"}
+                  </p>
+                )}
+              </div>
 
               {/* Task Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">

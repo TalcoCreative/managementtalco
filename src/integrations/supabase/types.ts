@@ -2747,6 +2747,42 @@ export type Database = {
           },
         ]
       }
+      task_assignees: {
+        Row: {
+          assigned_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_attachments: {
         Row: {
           created_at: string | null
@@ -2795,6 +2831,81 @@ export type Database = {
           },
         ]
       }
+      task_notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_read: boolean
+          meeting_id: string | null
+          message: string
+          notification_type: string
+          shooting_id: string | null
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_read?: boolean
+          meeting_id?: string | null
+          message: string
+          notification_type: string
+          shooting_id?: string | null
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_read?: boolean
+          meeting_id?: string | null
+          message?: string
+          notification_type?: string
+          shooting_id?: string | null
+          task_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_notifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notifications_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notifications_shooting_id_fkey"
+            columns: ["shooting_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notifications_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_public_comments: {
         Row: {
           commenter_name: string
@@ -2835,6 +2946,7 @@ export type Database = {
           created_by: string
           deadline: string | null
           description: string | null
+          description_edited_at: string | null
           event_id: string | null
           id: string
           link: string | null
@@ -2845,6 +2957,7 @@ export type Database = {
           status: string | null
           table_data: Json | null
           title: string
+          title_edited_at: string | null
         }
         Insert: {
           assigned_at?: string | null
@@ -2853,6 +2966,7 @@ export type Database = {
           created_by: string
           deadline?: string | null
           description?: string | null
+          description_edited_at?: string | null
           event_id?: string | null
           id?: string
           link?: string | null
@@ -2863,6 +2977,7 @@ export type Database = {
           status?: string | null
           table_data?: Json | null
           title: string
+          title_edited_at?: string | null
         }
         Update: {
           assigned_at?: string | null
@@ -2871,6 +2986,7 @@ export type Database = {
           created_by?: string
           deadline?: string | null
           description?: string | null
+          description_edited_at?: string | null
           event_id?: string | null
           id?: string
           link?: string | null
@@ -2881,6 +2997,7 @@ export type Database = {
           status?: string | null
           table_data?: Json | null
           title?: string
+          title_edited_at?: string | null
         }
         Relationships: [
           {
