@@ -5,11 +5,12 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { toast } from "sonner";
+import { isPast, parseISO } from "date-fns";
 import {
   Select,
   SelectContent,
@@ -53,6 +54,37 @@ export default function Projects() {
       const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch overdue tasks per project
+  const { data: overdueTasks } = useQuery({
+    queryKey: ["overdue-tasks-by-project"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title, project_id, deadline, status")
+        .not("status", "in", "(completed,done)")
+        .not("deadline", "is", null);
+      if (error) throw error;
+      
+      // Filter overdue tasks
+      const overdue = data?.filter(task => 
+        task.deadline && isPast(parseISO(task.deadline))
+      ) || [];
+      
+      // Group by project
+      const byProject = new Map<string, any[]>();
+      overdue.forEach(task => {
+        if (task.project_id) {
+          if (!byProject.has(task.project_id)) {
+            byProject.set(task.project_id, []);
+          }
+          byProject.get(task.project_id)!.push(task);
+        }
+      });
+      
+      return byProject;
     },
   });
 
@@ -201,6 +233,28 @@ export default function Projects() {
                           <p className="text-muted-foreground">
                             Deadline: {new Date(project.deadline).toLocaleDateString()}
                           </p>
+                        )}
+
+                        {/* Overdue tasks indicator */}
+                        {overdueTasks?.get(project.id)?.length > 0 && (
+                          <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                            <div className="flex items-center gap-2 text-destructive text-sm font-medium">
+                              <AlertTriangle className="h-4 w-4" />
+                              {overdueTasks.get(project.id)!.length} Overdue Task(s)
+                            </div>
+                            <div className="mt-1 space-y-1">
+                              {overdueTasks.get(project.id)!.slice(0, 3).map((task: any) => (
+                                <p key={task.id} className="text-xs text-muted-foreground truncate">
+                                  • {task.title}
+                                </p>
+                              ))}
+                              {overdueTasks.get(project.id)!.length > 3 && (
+                                <p className="text-xs text-muted-foreground">
+                                  +{overdueTasks.get(project.id)!.length - 3} more
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>

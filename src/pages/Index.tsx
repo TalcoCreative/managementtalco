@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -6,8 +7,11 @@ import { ClockInOut } from "@/components/attendance/ClockInOut";
 import { ShootingNotifications } from "@/components/shooting/ShootingNotifications";
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvitationNotifications";
+import { TaskNotifications } from "@/components/notifications/TaskNotifications";
+import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Badge } from "@/components/ui/badge";
-import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine, ChevronRight, AlertTriangle } from "lucide-react";
+import { isPast, parseISO } from "date-fns";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
@@ -38,7 +42,14 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const isTaskOverdue = (task: any) => {
+  if (!task.deadline) return false;
+  if (task.status === 'completed' || task.status === 'done') return false;
+  return isPast(parseISO(task.deadline));
+};
+
 export default function Index() {
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const { data: session } = useQuery({
     queryKey: ["current-session"],
     queryFn: async () => {
@@ -133,9 +144,12 @@ export default function Index() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
-          <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
+            <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
+          </div>
+          <TaskNotifications />
         </div>
 
         <ClockInOut />
@@ -189,22 +203,33 @@ export default function Index() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Tasks Assigned TO Me */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ArrowDownToLine className="h-5 w-5" />
                 Tasks Assigned to Me
+                {tasksAssignedToMe && tasksAssignedToMe.length > 0 && (
+                  <Badge variant="secondary">{tasksAssignedToMe.length}</Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {tasksAssignedToMe && tasksAssignedToMe.length > 0 ? (
                 <div className="space-y-3">
                   {tasksAssignedToMe.map((task: any) => (
-                    <div key={task.id} className="p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div 
+                      key={task.id} 
+                      className={`p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
+                      onClick={() => setSelectedTaskId(task.id)}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{task.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{task.title}</p>
+                            {isTaskOverdue(task) && (
+                              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {task.projects?.clients?.name} - {task.projects?.title}
                           </p>
@@ -212,13 +237,18 @@ export default function Index() {
                             From: {task.created_by_profile?.full_name || "Unknown"}
                           </p>
                         </div>
-                        <Badge className={getStatusColor(task.status)}>
-                          {statusLabels[task.status] || task.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusColor(task.status)}>
+                            {statusLabels[task.status] || task.status}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </div>
                       <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                         <span>Requested: {formatDate(task.requested_at)}</span>
-                        <span>Deadline: {formatDate(task.deadline)}</span>
+                        <span className={isTaskOverdue(task) ? 'text-destructive font-medium' : ''}>
+                          Deadline: {formatDate(task.deadline)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -229,22 +259,33 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          {/* Tasks Assigned BY Me */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ArrowUpFromLine className="h-5 w-5" />
                 Tasks I Assigned to Others
+                {tasksAssignedByMe && tasksAssignedByMe.length > 0 && (
+                  <Badge variant="secondary">{tasksAssignedByMe.length}</Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {tasksAssignedByMe && tasksAssignedByMe.length > 0 ? (
                 <div className="space-y-3">
                   {tasksAssignedByMe.map((task: any) => (
-                    <div key={task.id} className="p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div 
+                      key={task.id} 
+                      className={`p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
+                      onClick={() => setSelectedTaskId(task.id)}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{task.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{task.title}</p>
+                            {isTaskOverdue(task) && (
+                              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             {task.projects?.clients?.name} - {task.projects?.title}
                           </p>
@@ -252,13 +293,18 @@ export default function Index() {
                             Assigned to: {task.assigned_profile?.full_name || "Unassigned"}
                           </p>
                         </div>
-                        <Badge className={getStatusColor(task.status)}>
-                          {statusLabels[task.status] || task.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getStatusColor(task.status)}>
+                            {statusLabels[task.status] || task.status}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </div>
                       <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                         <span>Requested: {formatDate(task.requested_at)}</span>
-                        <span>Deadline: {formatDate(task.deadline)}</span>
+                        <span className={isTaskOverdue(task) ? 'text-destructive font-medium' : ''}>
+                          Deadline: {formatDate(task.deadline)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -270,6 +316,12 @@ export default function Index() {
           </Card>
         </div>
       </div>
+
+      <TaskDetailDialog
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => !open && setSelectedTaskId(null)}
+      />
     </AppLayout>
   );
 }

@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Archive } from "lucide-react";
+import { Plus, Filter, Archive, AlertTriangle } from "lucide-react";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { isPast, parseISO } from "date-fns";
 
 const taskColumns = [
   { id: "pending", title: "Pending" },
@@ -31,6 +32,12 @@ const taskColumns = [
   { id: "on_hold", title: "On Hold" },
   { id: "revise", title: "Revise" },
 ];
+
+const isTaskOverdue = (task: any) => {
+  if (!task.deadline) return false;
+  if (task.status === 'completed' || task.status === 'done') return false;
+  return isPast(parseISO(task.deadline));
+};
 
 export default function Tasks() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -160,6 +167,10 @@ export default function Tasks() {
   };
 
   const getCardColor = (task: any) => {
+    // Overdue tasks get red styling
+    if (isTaskOverdue(task)) {
+      return "border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-transparent";
+    }
     switch (task.priority) {
       case "high":
         return "border-l-4 border-l-priority-high bg-gradient-to-r from-priority-high/5 to-transparent";
@@ -320,9 +331,17 @@ export default function Tasks() {
                   <div className="space-y-2 sm:space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-medium flex-1 line-clamp-2 text-sm sm:text-base">{task.title}</h4>
-                      <Badge className={`${getPriorityColor(task.priority)} text-xs`}>
-                        {task.priority}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        {isTaskOverdue(task) && (
+                          <Badge variant="destructive" className="text-xs">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Overdue
+                          </Badge>
+                        )}
+                        <Badge className={`${getPriorityColor(task.priority)} text-xs`}>
+                          {task.priority}
+                        </Badge>
+                      </div>
                     </div>
                     {task.projects?.clients && (
                       <p className="text-xs sm:text-sm font-medium text-primary truncate">
@@ -335,7 +354,7 @@ export default function Tasks() {
                       </p>
                     )}
                     {task.deadline && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className={`text-xs ${isTaskOverdue(task) ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                       Due: {new Date(task.deadline).toLocaleDateString()}
                       </p>
                     )}
