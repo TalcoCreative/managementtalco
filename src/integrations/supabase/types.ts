@@ -162,6 +162,8 @@ export type Database = {
       }
       attendance: {
         Row: {
+          break_end: string | null
+          break_start: string | null
           clock_in: string | null
           clock_out: string | null
           created_at: string | null
@@ -171,9 +173,12 @@ export type Database = {
           photo_clock_in: string | null
           photo_clock_out: string | null
           tasks_completed: string[] | null
+          total_break_minutes: number | null
           user_id: string
         }
         Insert: {
+          break_end?: string | null
+          break_start?: string | null
           clock_in?: string | null
           clock_out?: string | null
           created_at?: string | null
@@ -183,9 +188,12 @@ export type Database = {
           photo_clock_in?: string | null
           photo_clock_out?: string | null
           tasks_completed?: string[] | null
+          total_break_minutes?: number | null
           user_id: string
         }
         Update: {
+          break_end?: string | null
+          break_start?: string | null
           clock_in?: string | null
           clock_out?: string | null
           created_at?: string | null
@@ -195,6 +203,7 @@ export type Database = {
           photo_clock_in?: string | null
           photo_clock_out?: string | null
           tasks_completed?: string[] | null
+          total_break_minutes?: number | null
           user_id?: string
         }
         Relationships: [
@@ -203,6 +212,41 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_clockout_notifications: {
+        Row: {
+          attendance_id: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          user_id: string
+        }
+        Insert: {
+          attendance_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          user_id: string
+        }
+        Update: {
+          attendance_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_clockout_notifications_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
             referencedColumns: ["id"]
           },
         ]

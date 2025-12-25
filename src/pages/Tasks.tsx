@@ -5,10 +5,11 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Archive, AlertTriangle } from "lucide-react";
+import { Plus, Filter, Archive, AlertTriangle, Clock } from "lucide-react";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Input } from "@/components/ui/input";
+import { CompletedTasksFilter } from "@/components/tasks/CompletedTasksFilter";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { isPast, parseISO } from "date-fns";
+import { isPast, parseISO, isToday } from "date-fns";
 
 const taskColumns = [
   { id: "pending", title: "Pending" },
@@ -36,7 +37,13 @@ const taskColumns = [
 const isTaskOverdue = (task: any) => {
   if (!task.deadline) return false;
   if (task.status === 'completed' || task.status === 'done') return false;
-  return isPast(parseISO(task.deadline));
+  return isPast(parseISO(task.deadline)) && !isToday(parseISO(task.deadline));
+};
+
+const isTaskDueToday = (task: any) => {
+  if (!task.deadline) return false;
+  if (task.status === 'completed' || task.status === 'done') return false;
+  return isToday(parseISO(task.deadline));
 };
 
 export default function Tasks() {
@@ -47,6 +54,14 @@ export default function Tasks() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [completedFilters, setCompletedFilters] = useState({
+    search: "",
+    project: "all",
+    assignee: "all",
+    client: "all",
+    startDate: "",
+    endDate: "",
+  });
   const queryClient = useQueryClient();
 
   const { data: projects } = useQuery({
@@ -170,6 +185,10 @@ export default function Tasks() {
     // Overdue tasks get red styling
     if (isTaskOverdue(task)) {
       return "border-l-4 border-l-destructive bg-gradient-to-r from-destructive/10 to-transparent";
+    }
+    // Today tasks get amber/warning styling
+    if (isTaskDueToday(task)) {
+      return "border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-500/10 to-transparent";
     }
     switch (task.priority) {
       case "high":
@@ -331,11 +350,17 @@ export default function Tasks() {
                   <div className="space-y-2 sm:space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-medium flex-1 line-clamp-2 text-sm sm:text-base">{task.title}</h4>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-wrap justify-end">
                         {isTaskOverdue(task) && (
                           <Badge variant="destructive" className="text-xs">
                             <AlertTriangle className="h-3 w-3 mr-1" />
                             Overdue
+                          </Badge>
+                        )}
+                        {isTaskDueToday(task) && (
+                          <Badge className="bg-amber-500 text-white text-xs">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Hari Ini
                           </Badge>
                         )}
                         <Badge className={`${getPriorityColor(task.priority)} text-xs`}>
@@ -391,14 +416,27 @@ export default function Tasks() {
             )}
           </TabsContent>
 
-          <TabsContent value="completed">
+          <TabsContent value="completed" className="space-y-4">
+            <CompletedTasksFilter
+              projects={projects}
+              users={users}
+              clients={[]}
+              onFilterChange={setCompletedFilters}
+            />
             {loadingCompleted ? (
               <div className="flex items-center justify-center py-12">
                 <p className="text-muted-foreground">Loading completed tasks...</p>
               </div>
             ) : completedTasks && completedTasks.length > 0 ? (
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {completedTasks.map((task: any) => (
+                {completedTasks
+                  .filter((task: any) => {
+                    if (completedFilters.search && !task.title.toLowerCase().includes(completedFilters.search.toLowerCase())) return false;
+                    if (completedFilters.project !== "all" && task.project_id !== completedFilters.project) return false;
+                    if (completedFilters.assignee !== "all" && task.assigned_to !== completedFilters.assignee) return false;
+                    return true;
+                  })
+                  .map((task: any) => (
                   <Card 
                     key={task.id} 
                     className="cursor-pointer hover:shadow-lg transition-shadow active:scale-[0.98]"
