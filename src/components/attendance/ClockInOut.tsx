@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2 } from "lucide-react";
-import { format, isAfter, set } from "date-fns";
+import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2, Coffee, Play, Square } from "lucide-react";
+import { format, isAfter, set, differenceInMinutes } from "date-fns";
+import { AutoClockoutNotification } from "./AutoClockoutNotification";
 
 export function ClockInOut() {
   const [notes, setNotes] = useState("");
@@ -18,6 +19,8 @@ export function ClockInOut() {
   const [isCameraForClockIn, setIsCameraForClockIn] = useState(true);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [breakLoading, setBreakLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -389,6 +392,72 @@ export function ClockInOut() {
     return () => clearInterval(interval);
   }, [todayAttendance, queryClient]);
 
+  // Handle break start
+  const handleBreakStart = async () => {
+    if (!todayAttendance) return;
+    
+    setBreakLoading(true);
+    try {
+      const now = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from("attendance")
+        .update({ break_start: now })
+        .eq("id", todayAttendance.id);
+
+      if (error) throw error;
+
+      setIsOnBreak(true);
+      toast.success("Break started!");
+      queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to start break");
+    } finally {
+      setBreakLoading(false);
+    }
+  };
+
+  // Handle break end
+  const handleBreakEnd = async () => {
+    if (!todayAttendance || !todayAttendance.break_start) return;
+    
+    setBreakLoading(true);
+    try {
+      const now = new Date();
+      const breakStart = new Date(todayAttendance.break_start);
+      const breakMinutes = differenceInMinutes(now, breakStart);
+      const totalBreak = (todayAttendance.total_break_minutes || 0) + breakMinutes;
+      
+      const { error } = await supabase
+        .from("attendance")
+        .update({
+          break_end: now.toISOString(),
+          total_break_minutes: totalBreak,
+          break_start: null, // Reset break_start for next break
+        })
+        .eq("id", todayAttendance.id);
+
+      if (error) throw error;
+
+      setIsOnBreak(false);
+      toast.success(`Break ended! (${breakMinutes} minutes)`);
+      queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to end break");
+    } finally {
+      setBreakLoading(false);
+    }
+  };
+
+  // Check if currently on break
+  useEffect(() => {
+    if (todayAttendance?.break_start && !todayAttendance?.break_end) {
+      setIsOnBreak(true);
+    } else {
+      setIsOnBreak(false);
+    }
+  }, [todayAttendance]);
+
   const isClockedIn = todayAttendance?.clock_in && !todayAttendance?.clock_out;
   const hasApprovedLeave = !!approvedLeave;
 
@@ -428,6 +497,9 @@ export function ClockInOut() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Auto-clockout notifications */}
+        <AutoClockoutNotification />
+
         {showCamera && (
           <div className="space-y-4">
             <div className="relative">
@@ -439,7 +511,6 @@ export function ClockInOut() {
                 className="w-full rounded-lg border aspect-video object-cover"
               />
               
-              {/* Real-time timestamp overlay */}
               <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
                 {format(new Date(), 'dd MMM yyyy | HH:mm:ss')}
               </div>
@@ -447,7 +518,6 @@ export function ClockInOut() {
                 Talco Management System
               </div>
 
-              {/* Countdown overlay for mobile */}
               {countdown !== null && countdown > 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                   <div className="text-6xl font-bold text-white animate-pulse">
@@ -456,7 +526,6 @@ export function ClockInOut() {
                 </div>
               )}
 
-              {/* Camera loading indicator */}
               {!isCameraReady && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <div className="flex flex-col items-center gap-2 text-white">
@@ -505,6 +574,15 @@ export function ClockInOut() {
                 className="w-full max-w-xs h-auto object-cover rounded border"
               />
             )}
+            
+            {/* Break time info */}
+            {(todayAttendance.total_break_minutes || 0) > 0 && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Coffee className="h-4 w-4 text-amber-500" />
+                <span>Total Break: {todayAttendance.total_break_minutes} menit</span>
+              </div>
+            )}
+
             {todayAttendance.clock_out && (
               <>
                 <div className="flex items-center gap-2 mt-3">
@@ -535,6 +613,40 @@ export function ClockInOut() {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {/* Break button - only show when clocked in but not clocked out */}
+        {isClockedIn && !showCamera && (
+          <div className="border rounded-lg p-3 bg-muted/50">
+            {isOnBreak ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                  <Coffee className="h-4 w-4 animate-pulse" />
+                  <span className="text-sm font-medium">On Break</span>
+                </div>
+                <Button
+                  onClick={handleBreakEnd}
+                  disabled={breakLoading}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  {breakLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
+                  End Break
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={handleBreakStart}
+                disabled={breakLoading}
+                variant="outline"
+                className="w-full gap-2"
+              >
+                {breakLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                <Coffee className="h-4 w-4" />
+                Start Break
+              </Button>
             )}
           </div>
         )}
@@ -620,13 +732,18 @@ export function ClockInOut() {
             )}
             <Button
               onClick={handleClockOut}
-              disabled={loading || !photoClockOut}
+              disabled={loading || !photoClockOut || isOnBreak}
               variant="destructive"
               className="w-full gap-2 h-14 text-lg font-semibold"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
               Clock Out
             </Button>
+            {isOnBreak && (
+              <p className="text-xs text-center text-amber-600 dark:text-amber-400">
+                End your break before clocking out
+              </p>
+            )}
           </div>
         ) : (
           <div className="text-center text-sm text-muted-foreground">

@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
@@ -57,9 +57,9 @@ export default function Projects() {
     },
   });
 
-  // Fetch overdue tasks per project
-  const { data: overdueTasks } = useQuery({
-    queryKey: ["overdue-tasks-by-project"],
+  // Fetch overdue and today's tasks per project
+  const { data: tasksByProject } = useQuery({
+    queryKey: ["tasks-by-project-deadline"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
@@ -68,19 +68,29 @@ export default function Projects() {
         .not("deadline", "is", null);
       if (error) throw error;
       
-      // Filter overdue tasks
-      const overdue = data?.filter(task => 
-        task.deadline && isPast(parseISO(task.deadline))
-      ) || [];
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
       
-      // Group by project
-      const byProject = new Map<string, any[]>();
-      overdue.forEach(task => {
-        if (task.project_id) {
+      // Group by project with overdue and today
+      const byProject = new Map<string, { overdue: any[]; today: any[] }>();
+      
+      data?.forEach(task => {
+        if (task.project_id && task.deadline) {
+          const deadline = parseISO(task.deadline);
+          const isOverdue = isPast(deadline) && deadline < today;
+          const isToday = deadline >= today && deadline <= todayEnd;
+          
           if (!byProject.has(task.project_id)) {
-            byProject.set(task.project_id, []);
+            byProject.set(task.project_id, { overdue: [], today: [] });
           }
-          byProject.get(task.project_id)!.push(task);
+          
+          if (isOverdue) {
+            byProject.get(task.project_id)!.overdue.push(task);
+          } else if (isToday) {
+            byProject.get(task.project_id)!.today.push(task);
+          }
         }
       });
       
@@ -235,22 +245,39 @@ export default function Projects() {
                           </p>
                         )}
 
-                        {/* Overdue tasks indicator */}
-                        {overdueTasks?.get(project.id)?.length > 0 && (
-                          <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
-                            <div className="flex items-center gap-2 text-destructive text-sm font-medium">
-                              <AlertTriangle className="h-4 w-4" />
-                              {overdueTasks.get(project.id)!.length} Overdue Task(s)
+                        {/* Today's tasks indicator */}
+                        {tasksByProject?.get(project.id)?.today?.length > 0 && (
+                          <div className="mt-2 p-2 bg-amber-500/10 rounded border border-amber-500/20">
+                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
+                              <Clock className="h-4 w-4" />
+                              {tasksByProject.get(project.id)!.today.length} Hari Ini
                             </div>
                             <div className="mt-1 space-y-1">
-                              {overdueTasks.get(project.id)!.slice(0, 3).map((task: any) => (
+                              {tasksByProject.get(project.id)!.today.slice(0, 2).map((task: any) => (
                                 <p key={task.id} className="text-xs text-muted-foreground truncate">
                                   • {task.title}
                                 </p>
                               ))}
-                              {overdueTasks.get(project.id)!.length > 3 && (
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Overdue tasks indicator */}
+                        {tasksByProject?.get(project.id)?.overdue?.length > 0 && (
+                          <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                            <div className="flex items-center gap-2 text-destructive text-sm font-medium">
+                              <AlertTriangle className="h-4 w-4" />
+                              {tasksByProject.get(project.id)!.overdue.length} Overdue
+                            </div>
+                            <div className="mt-1 space-y-1">
+                              {tasksByProject.get(project.id)!.overdue.slice(0, 3).map((task: any) => (
+                                <p key={task.id} className="text-xs text-muted-foreground truncate">
+                                  • {task.title}
+                                </p>
+                              ))}
+                              {tasksByProject.get(project.id)!.overdue.length > 3 && (
                                 <p className="text-xs text-muted-foreground">
-                                  +{overdueTasks.get(project.id)!.length - 3} more
+                                  +{tasksByProject.get(project.id)!.overdue.length - 3} more
                                 </p>
                               )}
                             </div>
