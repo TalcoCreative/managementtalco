@@ -29,6 +29,7 @@ import KolCampaign from "./pages/KolCampaign";
 import Event from "./pages/Event";
 import EventDetail from "./pages/EventDetail";
 import SharedTask from "./pages/SharedTask";
+import SocialMedia from "./pages/SocialMedia";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+          <Route path="/social-media" element={<ProtectedRoute><SocialMedia /></ProtectedRoute>} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="*" element={<NotFound />} />
