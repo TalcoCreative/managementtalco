@@ -21,7 +21,8 @@ import {
   Star,
   Megaphone,
   PartyPopper,
-  Crown
+  Crown,
+  Share2
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -72,6 +73,7 @@ const salesItems = [
   { title: "Prospects", url: "/prospects", icon: UserPlus },
   { title: "KOL Database", url: "/kol-database", icon: Star },
   { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
+  { title: "Social Media", url: "/social-media", icon: Share2 },
 ];
 
 export function AppSidebar() {

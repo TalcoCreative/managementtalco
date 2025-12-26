@@ -2756,6 +2756,176 @@ export type Database = {
           },
         ]
       }
+      social_media_accounts: {
+        Row: {
+          access_token: string | null
+          account_id: string | null
+          account_name: string | null
+          created_at: string
+          id: string
+          is_connected: boolean | null
+          page_id: string | null
+          platform: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          account_id?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          page_id?: string | null
+          platform: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          account_id?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          page_id?: string | null
+          platform?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      social_media_analytics: {
+        Row: {
+          comments: number | null
+          created_at: string
+          fetched_at: string
+          id: string
+          likes: number | null
+          platform: string
+          post_id: string | null
+          reach: number | null
+          saves: number | null
+          shares: number | null
+          views: number | null
+        }
+        Insert: {
+          comments?: number | null
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          likes?: number | null
+          platform: string
+          post_id?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+          views?: number | null
+        }
+        Update: {
+          comments?: number | null
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          likes?: number | null
+          platform?: string
+          post_id?: string | null
+          reach?: number | null
+          saves?: number | null
+          shares?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_media_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_media_posts: {
+        Row: {
+          caption: string | null
+          client_id: string | null
+          content_type: string
+          created_at: string
+          error_message: string | null
+          hashtags: string | null
+          id: string
+          media_urls: string[] | null
+          platform: string
+          post_id: string | null
+          post_url: string | null
+          posted_at: string | null
+          project_id: string | null
+          scheduled_at: string | null
+          staff_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          client_id?: string | null
+          content_type: string
+          created_at?: string
+          error_message?: string | null
+          hashtags?: string | null
+          id?: string
+          media_urls?: string[] | null
+          platform: string
+          post_id?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          project_id?: string | null
+          scheduled_at?: string | null
+          staff_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          client_id?: string | null
+          content_type?: string
+          created_at?: string
+          error_message?: string | null
+          hashtags?: string | null
+          id?: string
+          media_urls?: string[] | null
+          platform?: string
+          post_id?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          project_id?: string | null
+          scheduled_at?: string | null
+          staff_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_posts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_media_posts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_activities: {
         Row: {
           activity_type: string
