@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Plus, Trash2, Video, MapPin } from "lucide-react";
+import { Plus, Trash2, Video, MapPin, Calendar, ExternalLink, Copy } from "lucide-react";
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -355,13 +355,92 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
               </div>
 
               {formData.mode === "online" ? (
-                <div>
+                <div className="space-y-2">
                   <Label>Link Meeting *</Label>
-                  <Input
-                    value={formData.meeting_link}
-                    onChange={(e) => setFormData(prev => ({ ...prev, meeting_link: e.target.value }))}
-                    placeholder="https://meet.google.com/..."
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.meeting_link}
+                      onChange={(e) => setFormData(prev => ({ ...prev, meeting_link: e.target.value }))}
+                      placeholder="https://meet.google.com/..."
+                      className="flex-1"
+                    />
+                    {formData.meeting_link && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            navigator.clipboard.writeText(formData.meeting_link);
+                            toast.success("Link disalin!");
+                          }}
+                          title="Salin link"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => window.open(formData.meeting_link, "_blank")}
+                          title="Buka link"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Generate Google Calendar Link Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={!formData.title || !formData.meeting_date || !formData.start_time || !formData.end_time}
+                    onClick={() => {
+                      // Format dates for Google Calendar URL
+                      const startDate = new Date(`${formData.meeting_date}T${formData.start_time}:00`);
+                      const endDate = new Date(`${formData.meeting_date}T${formData.end_time}:00`);
+                      
+                      // Convert to UTC format: YYYYMMDDTHHMMSSZ
+                      const formatDateForGCal = (date: Date) => {
+                        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+                      };
+                      
+                      const startFormatted = formatDateForGCal(startDate);
+                      const endFormatted = formatDateForGCal(endDate);
+                      
+                      // Build description with meeting details
+                      let description = `Meeting: ${formData.title}`;
+                      if (formData.notes) {
+                        description += `\n\nNotes: ${formData.notes}`;
+                      }
+                      
+                      // Build Google Calendar URL
+                      const params = new URLSearchParams({
+                        text: formData.title,
+                        dates: `${startFormatted}/${endFormatted}`,
+                        details: description,
+                        trp: 'false',
+                      });
+                      
+                      // Add add conferencing parameter for Google Meet
+                      params.append('add', 'GOOGLE_MEET');
+                      
+                      const calendarUrl = `https://calendar.google.com/calendar/u/0/r/eventedit?${params.toString()}`;
+                      
+                      // Open in new tab
+                      window.open(calendarUrl, "_blank");
+                      
+                      toast.info("Setelah membuat event di Google Calendar, salin link Google Meet dan tempel di field Link Meeting");
+                    }}
+                  >
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Buat Link via Google Calendar
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Klik tombol di atas untuk membuat event Google Calendar dengan Google Meet link, lalu salin link-nya ke field di atas.
+                  </p>
                 </div>
               ) : (
                 <div>
