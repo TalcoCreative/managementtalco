@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { MapPin, Users, DollarSign, Building2, Check, X } from "lucide-react";
+import { MapPin, Users, DollarSign, Building2, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { EditShootingDialog } from "./EditShootingDialog";
 
 interface ShootingDetailDialogProps {
   shootingId: string | null;
@@ -15,6 +17,7 @@ interface ShootingDetailDialogProps {
 
 export function ShootingDetailDialog({ shootingId, open, onOpenChange }: ShootingDetailDialogProps) {
   const queryClient = useQueryClient();
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: shooting } = useQuery({
     queryKey: ["shooting-detail", shootingId],
@@ -145,16 +148,27 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
   if (!shooting) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between gap-4">
-            <DialogTitle className="text-xl">{shooting.title}</DialogTitle>
-            <Badge className={getStatusColor(shooting.status)}>
-              {shooting.status}
-            </Badge>
-          </div>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-4">
+              <DialogTitle className="text-xl">{shooting.title}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Badge className={getStatusColor(shooting.status)}>
+                  {shooting.status}
+                </Badge>
+              </div>
+            </div>
+          </DialogHeader>
 
         <div className="space-y-6">
           {/* Date, Time, Location */}
@@ -299,5 +313,16 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
         </div>
       </DialogContent>
     </Dialog>
+
+    <EditShootingDialog
+      shootingId={shootingId}
+      open={editOpen}
+      onOpenChange={setEditOpen}
+      onSuccess={() => {
+        queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
+        queryClient.invalidateQueries({ queryKey: ["shooting-crew", shootingId] });
+      }}
+    />
+  </>
   );
 }
