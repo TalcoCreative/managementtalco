@@ -263,11 +263,11 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Buat Meeting Baru</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 max-h-[calc(90vh-120px)] pr-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Basic Info */}
             <div className="space-y-4">
