@@ -184,8 +184,8 @@ export function EditShootingDialog({ shootingId, open, onOpenChange, onSuccess }
         .from("shooting_schedules")
         .update({
           title: formData.title.trim(),
-          client_id: formData.client_id,
-          project_id: formData.project_id,
+          client_id: formData.client_id || null,
+          project_id: formData.project_id || null,
           scheduled_date: formData.scheduled_date,
           scheduled_time: formData.scheduled_time,
           location: formData.location.trim() || null,
