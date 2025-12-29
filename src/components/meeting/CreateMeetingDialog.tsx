@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Plus, Trash2, Video, MapPin, Calendar, ExternalLink, Copy } from "lucide-react";
+import { sendMeetingInvitationEmail } from "@/lib/email-notifications";
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -208,6 +209,30 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
         await supabase
           .from("meeting_notifications")
           .insert(notificationRecords);
+
+        // Send email notifications (async, non-blocking)
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", currentUser.id)
+          .single();
+
+        const participantNames = profiles
+          ?.filter(p => selectedParticipants.includes(p.id))
+          .map(p => p.full_name)
+          .join(", ") || "";
+
+        selectedParticipants.forEach(userId => {
+          sendMeetingInvitationEmail(userId, {
+            id: meeting.id,
+            title: formData.title,
+            date: formData.meeting_date,
+            time: `${formData.start_time} - ${formData.end_time}`,
+            location: formData.mode === "offline" ? formData.location : formData.meeting_link,
+            creatorName: creatorProfile?.full_name || "Someone",
+            participants: participantNames,
+          }).catch(err => console.error("Email notification failed:", err));
+        });
       }
 
       // Add external participants

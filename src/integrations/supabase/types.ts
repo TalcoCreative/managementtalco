@@ -658,6 +658,95 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          body: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          notification_type: string
+          recipient_email: string
+          recipient_name: string | null
+          related_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type: string
+          recipient_email: string
+          recipient_name?: string | null
+          related_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          related_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
+      email_settings: {
+        Row: {
+          id: string
+          is_connected: boolean | null
+          last_test_at: string | null
+          sender_name: string | null
+          smtp_email: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          is_connected?: boolean | null
+          last_test_at?: string | null
+          sender_name?: string | null
+          smtp_email?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          is_connected?: boolean | null
+          last_test_at?: string | null
+          sender_name?: string | null
+          smtp_email?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_checklists: {
         Row: {
           completed_at: string | null

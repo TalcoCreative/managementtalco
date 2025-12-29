@@ -22,7 +22,9 @@ import {
   Megaphone,
   PartyPopper,
   Crown,
-  Share2
+  Share2,
+  Mail,
+  Settings
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -262,6 +264,29 @@ export function AppSidebar() {
                     >
                       <Crown className="h-5 w-5" />
                       {!isCollapsed && <span>CEO Dashboard</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>System</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/system/email-settings" 
+                      className={({ isActive }) => 
+                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                      }
+                    >
+                      <Mail className="h-5 w-5" />
+                      {!isCollapsed && <span>Email Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
