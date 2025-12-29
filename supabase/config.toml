@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.shared-task]
 verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = false
+
+[functions.generate-recurring-entries]
+verify_jwt = false

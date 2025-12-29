@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Upload, X, Link as LinkIcon, Paperclip } from "lucide-react";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 
 interface TableData {
   headers: string[];
@@ -149,6 +150,24 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         task_id: taskData?.id || null,
         task_title: formData.title.trim(),
       });
+
+      // Send email notification to assignee (async, non-blocking)
+      if (formData.assigned_to && taskData) {
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", session.session.user.id)
+          .single();
+        
+        sendTaskAssignmentEmail(formData.assigned_to, {
+          id: taskData.id,
+          title: formData.title.trim(),
+          description: formData.notes?.trim(),
+          deadline: formData.deadline,
+          priority: formData.priority,
+          creatorName: creatorProfile?.full_name || "Someone",
+        }).catch(err => console.error("Email notification failed:", err));
+      }
 
       toast.success("Task created successfully!");
       setOpen(false);

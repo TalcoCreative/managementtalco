@@ -30,6 +30,7 @@ import Event from "./pages/Event";
 import EventDetail from "./pages/EventDetail";
 import SharedTask from "./pages/SharedTask";
 import SocialMedia from "./pages/SocialMedia";
+import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
           <Route path="/social-media" element={<ProtectedRoute><SocialMedia /></ProtectedRoute>} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
+          <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
