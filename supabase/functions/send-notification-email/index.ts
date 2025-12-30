@@ -26,6 +26,59 @@ interface EmailRequest {
   related_id?: string;
 }
 
+// Parse error messages to provide clear feedback
+const parseSmtpError = (error: Error): string => {
+  const message = error.message || error.toString();
+  const name = error.name || "";
+  
+  console.log("Parsing error:", { name, message });
+  
+  // Authentication errors
+  if (message.includes("535") || message.includes("Authentication") || 
+      message.includes("Username and Password not accepted") ||
+      message.includes("Invalid credentials")) {
+    return "Authentication Failed: Email atau App Password salah. Pastikan menggunakan App Password 16 digit dari Google Account Settings.";
+  }
+  
+  // Connection errors
+  if (message.includes("connection") || message.includes("ECONNREFUSED") ||
+      message.includes("ETIMEDOUT") || message.includes("ENOTFOUND") ||
+      name === "ConnectionRefused" || name === "ConnectionReset") {
+    return "Connection Failed: Tidak bisa terhubung ke server Gmail. Periksa koneksi internet.";
+  }
+  
+  // TLS/SSL errors
+  if (message.includes("TLS") || message.includes("SSL") || 
+      message.includes("certificate") || message.includes("handshake") ||
+      message.includes("InvalidContentType") || message.includes("corrupt message")) {
+    return "TLS/SSL Error: Gagal membuat koneksi aman ke Gmail. Coba lagi dalam beberapa saat.";
+  }
+  
+  // Sender rejected
+  if (message.includes("550") || message.includes("sender") || 
+      message.includes("rejected") || message.includes("not allowed")) {
+    return "Sender Rejected: Email pengirim ditolak oleh Gmail. Pastikan email yang digunakan valid.";
+  }
+  
+  // SMTP blocked
+  if (message.includes("blocked") || message.includes("554") ||
+      message.includes("spam") || message.includes("denied")) {
+    return "SMTP Blocked: Gmail memblokir pengiriman. Cek apakah Less Secure Apps diaktifkan atau gunakan App Password.";
+  }
+  
+  // Rate limiting
+  if (message.includes("rate") || message.includes("limit") || message.includes("too many")) {
+    return "Rate Limited: Terlalu banyak percobaan. Tunggu beberapa menit dan coba lagi.";
+  }
+  
+  // Invalid data errors
+  if (name === "InvalidData") {
+    return "Invalid Data: Format data tidak valid. Pastikan email dan password sudah benar.";
+  }
+  
+  return `Error: ${message}`;
+};
+
 const getSubject = (type: string, name: string): string => {
   const firstName = name.split(" ")[0];
   switch (type) {
@@ -175,9 +228,15 @@ const buildTestEmailBody = (): string => {
         
         <div style="text-align: center;">
           <p style="font-size: 48px; margin: 0;">✅</p>
-          <h2 style="color: #16a34a; margin: 16px 0;">Koneksi Email Berhasil!</h2>
-          <p style="color: #555;">SMTP settings sudah terkonfigurasi dengan benar.</p>
+          <h2 style="color: #16a34a; margin: 16px 0;">SMTP Berhasil Terkoneksi!</h2>
+          <p style="color: #555; font-size: 16px;">SMTP Gmail Connected & Ready 🎉</p>
           <p style="color: #555;">Sistem notifikasi email siap digunakan.</p>
+        </div>
+        
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 24px 0;">
+          <p style="margin: 0; color: #166534;"><strong>✓</strong> Koneksi SMTP: OK</p>
+          <p style="margin: 8px 0 0 0; color: #166534;"><strong>✓</strong> Autentikasi: OK</p>
+          <p style="margin: 8px 0 0 0; color: #166534;"><strong>✓</strong> Pengiriman: OK</p>
         </div>
         
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
@@ -198,13 +257,16 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Store request body for error logging
+  let requestBody: EmailRequest | null = null;
+  
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const body: EmailRequest = await req.json();
-    console.log("Email request received:", JSON.stringify(body, null, 2));
+    requestBody = await req.json();
+    console.log("Email request received:", JSON.stringify(requestBody, null, 2));
 
     // Get email settings
     const { data: settings, error: settingsError } = await supabase
@@ -215,35 +277,45 @@ serve(async (req: Request): Promise<Response> => {
 
     if (settingsError || !settings) {
       console.error("Failed to fetch email settings:", settingsError);
-      throw new Error("Email settings not configured");
+      throw new Error("Email settings not configured. Buka Email Settings untuk konfigurasi SMTP.");
     }
 
     if (!settings.smtp_email || !settings.smtp_password) {
-      throw new Error("SMTP credentials not configured");
+      throw new Error("SMTP credentials not configured. Masukkan Email dan App Password di Email Settings.");
     }
 
+    // Remove spaces from password (App Passwords often have spaces)
+    const cleanPassword = settings.smtp_password.replace(/\s/g, '');
+    
     console.log("Using SMTP email:", settings.smtp_email);
+    console.log("SMTP Host:", settings.smtp_host || "smtp.gmail.com");
+    console.log("SMTP Port:", settings.smtp_port || 587);
 
-    // Create SMTP client
+    // Create SMTP client with STARTTLS configuration for Gmail
+    // Gmail port 587 requires STARTTLS, not direct TLS
     const client = new SMTPClient({
       connection: {
         hostname: settings.smtp_host || "smtp.gmail.com",
         port: settings.smtp_port || 587,
-        tls: true,
+        tls: false, // Start without TLS
         auth: {
           username: settings.smtp_email,
-          password: settings.smtp_password,
+          password: cleanPassword,
         },
       },
     });
 
     let recipientEmail: string;
+    let recipientName: string;
     let subject: string;
     let htmlBody: string;
+    
+    const body = requestBody!;
 
     if (body.type === "test") {
       // Test email - send to the configured SMTP email
       recipientEmail = settings.smtp_email;
+      recipientName = "Admin";
       subject = "✅ Talco System - Test Email Berhasil!";
       htmlBody = buildTestEmailBody();
     } else {
@@ -252,9 +324,10 @@ serve(async (req: Request): Promise<Response> => {
         throw new Error("Recipient email is required for notifications");
       }
       recipientEmail = body.recipient_email;
-      subject = getSubject(body.notification_type || "general", body.recipient_name || "User");
+      recipientName = body.recipient_name || "User";
+      subject = getSubject(body.notification_type || "general", recipientName);
       htmlBody = buildEmailBody(
-        body.recipient_name || "User",
+        recipientName,
         body.notification_type || "general",
         body.data
       );
@@ -262,24 +335,31 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Sending email to: ${recipientEmail}, Subject: ${subject}`);
 
-    // Send email
-    await client.send({
-      from: `${settings.sender_name || "Talco System"} <${settings.smtp_email}>`,
-      to: recipientEmail,
-      subject: subject,
-      content: "Please view this email in an HTML-compatible email client.",
-      html: htmlBody,
-    });
+    // Send email with STARTTLS
+    try {
+      await client.send({
+        from: `${settings.sender_name || "Talco System"} <${settings.smtp_email}>`,
+        to: recipientEmail,
+        subject: subject,
+        content: "Please view this email in an HTML-compatible email client.",
+        html: htmlBody,
+      });
+    } finally {
+      // Always close the client
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.log("Error closing SMTP client (non-fatal):", closeError);
+      }
+    }
 
-    await client.close();
-
-    console.log("Email sent successfully");
+    console.log("Email sent successfully!");
 
     // Log the email
-    if (body.type !== "test") {
+    if (body.type === "notification") {
       await supabase.from("email_logs").insert({
         recipient_email: recipientEmail,
-        recipient_name: body.recipient_name,
+        recipient_name: recipientName,
         subject: subject,
         body: htmlBody,
         notification_type: body.notification_type || "general",
@@ -287,59 +367,71 @@ serve(async (req: Request): Promise<Response> => {
         status: "sent",
         sent_at: new Date().toISOString(),
       });
+    } else {
+      // Log test emails too
+      await supabase.from("email_logs").insert({
+        recipient_email: recipientEmail,
+        recipient_name: "Admin (Test)",
+        subject: subject,
+        notification_type: "test",
+        status: "sent",
+        sent_at: new Date().toISOString(),
+      });
     }
 
-    // Update connection status for test emails
-    if (body.type === "test") {
-      await supabase
-        .from("email_settings")
-        .update({
-          is_connected: true,
-          last_test_at: new Date().toISOString(),
-        })
-        .eq("id", settings.id);
-    }
+    // Update connection status
+    await supabase
+      .from("email_settings")
+      .update({
+        is_connected: true,
+        last_test_at: new Date().toISOString(),
+      })
+      .eq("id", settings.id);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully" }),
+      JSON.stringify({ 
+        success: true, 
+        message: "Success — SMTP Gmail Connected & Ready 🎉" 
+      }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
     console.error("Error sending email:", error);
+    
+    // Parse the error to provide clear feedback
+    const errorMessage = parseSmtpError(error);
+    console.log("Parsed error message:", errorMessage);
 
-    // Try to log the error
+    // Try to log the error and update status
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      const body: EmailRequest = await req.clone().json().catch(() => ({}));
-      
-      if (body.type !== "test" && body.recipient_email) {
+      // Log failed attempt
+      if (requestBody) {
         await supabase.from("email_logs").insert({
-          recipient_email: body.recipient_email || "unknown",
-          recipient_name: body.recipient_name,
+          recipient_email: requestBody.recipient_email || "unknown",
+          recipient_name: requestBody.recipient_name || (requestBody.type === "test" ? "Admin (Test)" : null),
           subject: "Failed to send",
-          notification_type: body.notification_type || "general",
-          related_id: body.related_id || null,
+          notification_type: requestBody.notification_type || (requestBody.type === "test" ? "test" : "general"),
+          related_id: requestBody.related_id || null,
           status: "failed",
-          error_message: error.message,
+          error_message: errorMessage,
         });
       }
 
       // Update connection status to false on error
-      if (body.type === "test") {
-        await supabase
-          .from("email_settings")
-          .update({ is_connected: false })
-          .neq("id", "00000000-0000-0000-0000-000000000000");
-      }
+      await supabase
+        .from("email_settings")
+        .update({ is_connected: false })
+        .neq("id", "00000000-0000-0000-0000-000000000000");
     } catch (logError) {
       console.error("Failed to log email error:", logError);
     }
 
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
