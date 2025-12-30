@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, Send, CheckCircle, XCircle, Loader2, Eye, EyeOff, Settings, History } from "lucide-react";
+import { Mail, Send, CheckCircle, XCircle, Loader2, Eye, EyeOff, Settings, History, AlertCircle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const EmailSettings = () => {
   const { toast } = useToast();
@@ -23,9 +24,10 @@ const EmailSettings = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Fetch email settings
-  const { data: settings, isLoading: loadingSettings } = useQuery({
+  const { data: settings, isLoading: loadingSettings, refetch: refetchSettings } = useQuery({
     queryKey: ["email-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,14 +41,14 @@ const EmailSettings = () => {
   });
 
   // Fetch email logs
-  const { data: logs, isLoading: loadingLogs } = useQuery({
+  const { data: logs, isLoading: loadingLogs, refetch: refetchLogs } = useQuery({
     queryKey: ["email-logs"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_logs")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -63,17 +65,25 @@ const EmailSettings = () => {
   const handleSave = async () => {
     if (!smtpEmail.trim()) {
       toast({ title: "Error", description: "Email pengirim harus diisi", variant: "destructive" });
-      return;
+      return false;
+    }
+
+    if (!smtpPassword.trim()) {
+      toast({ title: "Error", description: "App Password harus diisi", variant: "destructive" });
+      return false;
     }
 
     setSaving(true);
+    setTestResult(null);
     try {
       const { error } = await supabase
         .from("email_settings")
         .update({
           smtp_email: smtpEmail.trim(),
-          smtp_password: smtpPassword,
-          sender_name: senderName.trim(),
+          smtp_password: smtpPassword.trim(),
+          sender_name: senderName.trim() || "Talco System",
+          smtp_host: "smtp.gmail.com",
+          smtp_port: 587,
           updated_at: new Date().toISOString(),
         })
         .eq("id", settings?.id);
@@ -82,16 +92,18 @@ const EmailSettings = () => {
 
       toast({ title: "Berhasil", description: "Pengaturan email berhasil disimpan" });
       queryClient.invalidateQueries({ queryKey: ["email-settings"] });
+      return true;
     } catch (error: any) {
       console.error("Error saving email settings:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const handleTestEmail = async () => {
-    if (!smtpEmail.trim() || !smtpPassword) {
+    if (!smtpEmail.trim() || !smtpPassword.trim()) {
       toast({ 
         title: "Error", 
         description: "Isi email dan app password terlebih dahulu", 
@@ -101,30 +113,53 @@ const EmailSettings = () => {
     }
 
     // Save first before testing
-    await handleSave();
+    const saved = await handleSave();
+    if (!saved) return;
 
     setTesting(true);
+    setTestResult(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke("send-notification-email", {
         body: { type: "test" },
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || "Failed to send test email");
+      console.log("Test email response:", data, error);
 
+      if (error) {
+        throw new Error(error.message || "Failed to invoke email function");
+      }
+      
+      if (!data?.success) {
+        throw new Error(data?.error || "Failed to send test email");
+      }
+
+      setTestResult({ 
+        success: true, 
+        message: data.message || "Success — SMTP Gmail Connected & Ready 🎉" 
+      });
+      
       toast({ 
         title: "Berhasil! ✅", 
         description: "Test email berhasil dikirim. Cek inbox kamu." 
       });
+      
       queryClient.invalidateQueries({ queryKey: ["email-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["email-logs"] });
     } catch (error: any) {
       console.error("Error sending test email:", error);
+      
+      const errorMessage = error.message || "Gagal mengirim email";
+      setTestResult({ success: false, message: errorMessage });
+      
       toast({ 
         title: "Gagal mengirim email", 
-        description: error.message, 
+        description: errorMessage, 
         variant: "destructive" 
       });
+      
       queryClient.invalidateQueries({ queryKey: ["email-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["email-logs"] });
     } finally {
       setTesting(false);
     }
@@ -133,7 +168,7 @@ const EmailSettings = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "sent":
-        return <Badge className="bg-green-100 text-green-800">Terkirim</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">Terkirim</Badge>;
       case "failed":
         return <Badge variant="destructive">Gagal</Badge>;
       default:
@@ -158,7 +193,7 @@ const EmailSettings = () => {
           <Mail className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Email Settings</h1>
-            <p className="text-muted-foreground">Konfigurasi SMTP untuk notifikasi email</p>
+            <p className="text-muted-foreground">Konfigurasi SMTP Gmail untuk notifikasi email</p>
           </div>
         </div>
 
@@ -189,7 +224,7 @@ const EmailSettings = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="smtp_email">Email Pengirim</Label>
+                    <Label htmlFor="smtp_email">Email Pengirim (Gmail)</Label>
                     <Input
                       id="smtp_email"
                       type="email"
@@ -200,7 +235,7 @@ const EmailSettings = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="smtp_password">App Password Gmail</Label>
+                    <Label htmlFor="smtp_password">App Password Gmail (16 digit)</Label>
                     <div className="relative">
                       <Input
                         id="smtp_password"
@@ -247,7 +282,11 @@ const EmailSettings = () => {
                       {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                       Simpan
                     </Button>
-                    <Button variant="outline" onClick={handleTestEmail} disabled={testing || !smtpEmail || !smtpPassword}>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleTestEmail} 
+                      disabled={testing || !smtpEmail || !smtpPassword}
+                    >
                       {testing ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
@@ -256,31 +295,55 @@ const EmailSettings = () => {
                       Test Email
                     </Button>
                   </div>
+
+                  {/* Test Result Alert */}
+                  {testResult && (
+                    <Alert variant={testResult.success ? "default" : "destructive"} className="mt-4">
+                      {testResult.success ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4" />
+                      )}
+                      <AlertTitle>{testResult.success ? "Berhasil!" : "Gagal"}</AlertTitle>
+                      <AlertDescription className="whitespace-pre-wrap">
+                        {testResult.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Status Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Status Koneksi</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Status Koneksi</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => refetchSettings()}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <CardDescription>Status dan informasi SMTP</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 p-4 rounded-lg border">
                     {settings?.is_connected ? (
                       <>
-                        <CheckCircle className="h-8 w-8 text-green-500" />
+                        <CheckCircle className="h-10 w-10 text-green-500" />
                         <div>
-                          <p className="font-semibold text-green-600">Connected</p>
-                          <p className="text-sm text-muted-foreground">SMTP sudah terkonfigurasi</p>
+                          <p className="font-semibold text-lg text-green-600">🟢 Connected</p>
+                          <p className="text-sm text-muted-foreground">SMTP Gmail siap digunakan</p>
                         </div>
                       </>
                     ) : (
                       <>
-                        <XCircle className="h-8 w-8 text-red-500" />
+                        <XCircle className="h-10 w-10 text-red-500" />
                         <div>
-                          <p className="font-semibold text-red-600">Not Connected</p>
-                          <p className="text-sm text-muted-foreground">SMTP belum dikonfigurasi</p>
+                          <p className="font-semibold text-lg text-red-600">🔴 Not Connected</p>
+                          <p className="text-sm text-muted-foreground">SMTP belum dikonfigurasi / gagal</p>
                         </div>
                       </>
                     )}
@@ -289,16 +352,26 @@ const EmailSettings = () => {
                   <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Host:</span>
-                      <span className="font-mono">{settings?.smtp_host || "smtp.gmail.com"}</span>
+                      <span className="font-mono">smtp.gmail.com</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Port:</span>
-                      <span className="font-mono">{settings?.smtp_port || 587}</span>
+                      <span className="font-mono">587</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Security:</span>
-                      <span>TLS</span>
+                      <span>TLS (STARTTLS)</span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Authentication:</span>
+                      <span>YES</span>
+                    </div>
+                    {settings?.smtp_email && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-mono text-xs">{settings.smtp_email}</span>
+                      </div>
+                    )}
                     {settings?.last_test_at && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Test terakhir:</span>
@@ -329,11 +402,19 @@ const EmailSettings = () => {
           <TabsContent value="logs">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <History className="h-5 w-5" />
-                  Log Email
-                </CardTitle>
-                <CardDescription>Riwayat pengiriman email notifikasi</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <History className="h-5 w-5" />
+                      Log Email
+                    </CardTitle>
+                    <CardDescription>Riwayat pengiriman email notifikasi</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => refetchLogs()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {loadingLogs ? (
@@ -350,6 +431,7 @@ const EmailSettings = () => {
                           <TableHead>Subject</TableHead>
                           <TableHead>Tipe</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Error</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -370,8 +452,10 @@ const EmailSettings = () => {
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(log.status)}
+                            </TableCell>
+                            <TableCell className="max-w-xs">
                               {log.error_message && (
-                                <p className="text-xs text-red-500 mt-1">{log.error_message}</p>
+                                <p className="text-xs text-red-500 whitespace-pre-wrap">{log.error_message}</p>
                               )}
                             </TableCell>
                           </TableRow>
