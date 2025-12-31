@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, Send, CheckCircle, XCircle, Loader2, Eye, EyeOff, Settings, History, AlertCircle, RefreshCw } from "lucide-react";
+import { Mail, Send, CheckCircle, XCircle, Loader2, Settings, History, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,10 +18,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 const EmailSettings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [smtpEmail, setSmtpEmail] = useState("");
-  const [smtpPassword, setSmtpPassword] = useState("");
+  const [senderEmail, setSenderEmail] = useState("onboarding@resend.dev");
   const [senderName, setSenderName] = useState("Talco System");
-  const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -56,34 +54,20 @@ const EmailSettings = () => {
 
   useEffect(() => {
     if (settings) {
-      setSmtpEmail(settings.smtp_email || "");
-      setSmtpPassword(settings.smtp_password || "");
+      setSenderEmail(settings.smtp_email || "onboarding@resend.dev");
       setSenderName(settings.sender_name || "Talco System");
     }
   }, [settings]);
 
   const handleSave = async () => {
-    if (!smtpEmail.trim()) {
-      toast({ title: "Error", description: "Email pengirim harus diisi", variant: "destructive" });
-      return false;
-    }
-
-    if (!smtpPassword.trim()) {
-      toast({ title: "Error", description: "App Password harus diisi", variant: "destructive" });
-      return false;
-    }
-
     setSaving(true);
     setTestResult(null);
     try {
       const { error } = await supabase
         .from("email_settings")
         .update({
-          smtp_email: smtpEmail.trim(),
-          smtp_password: smtpPassword.trim(),
+          smtp_email: senderEmail.trim() || "onboarding@resend.dev",
           sender_name: senderName.trim() || "Talco System",
-          smtp_host: "smtp.gmail.com",
-          smtp_port: 587,
           updated_at: new Date().toISOString(),
         })
         .eq("id", settings?.id);
@@ -103,15 +87,6 @@ const EmailSettings = () => {
   };
 
   const handleTestEmail = async () => {
-    if (!smtpEmail.trim() || !smtpPassword.trim()) {
-      toast({ 
-        title: "Error", 
-        description: "Isi email dan app password terlebih dahulu", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
     // Save first before testing
     const saved = await handleSave();
     if (!saved) return;
@@ -136,7 +111,7 @@ const EmailSettings = () => {
 
       setTestResult({ 
         success: true, 
-        message: data.message || "Success — SMTP Gmail Connected & Ready 🎉" 
+        message: data.message || "Success — Email Service Connected & Ready 🎉" 
       });
       
       toast({ 
@@ -193,7 +168,7 @@ const EmailSettings = () => {
           <Mail className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Email Settings</h1>
-            <p className="text-muted-foreground">Konfigurasi SMTP Gmail untuk notifikasi email</p>
+            <p className="text-muted-foreground">Konfigurasi Resend untuk notifikasi email</p>
           </div>
         </div>
 
@@ -211,59 +186,45 @@ const EmailSettings = () => {
 
           <TabsContent value="settings">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* SMTP Configuration Card */}
+              {/* Configuration Card */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mail className="h-5 w-5" />
-                    Konfigurasi SMTP Gmail
+                    Konfigurasi Email (Resend)
                   </CardTitle>
                   <CardDescription>
-                    Masukkan kredensial Gmail untuk mengirim email notifikasi
+                    Menggunakan Resend untuk pengiriman email yang reliable
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="smtp_email">Email Pengirim (Gmail)</Label>
-                    <Input
-                      id="smtp_email"
-                      type="email"
-                      placeholder="your-email@gmail.com"
-                      value={smtpEmail}
-                      onChange={(e) => setSmtpEmail(e.target.value)}
-                    />
-                  </div>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Menggunakan Resend</AlertTitle>
+                    <AlertDescription className="text-sm">
+                      API Key sudah dikonfigurasi via Secrets. Untuk custom domain, verifikasi di{" "}
+                      <a 
+                        href="https://resend.com/domains" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary underline inline-flex items-center gap-1"
+                      >
+                        Resend Dashboard <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </AlertDescription>
+                  </Alert>
 
                   <div className="space-y-2">
-                    <Label htmlFor="smtp_password">App Password Gmail (16 digit)</Label>
-                    <div className="relative">
-                      <Input
-                        id="smtp_password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="xxxx xxxx xxxx xxxx"
-                        value={smtpPassword}
-                        onChange={(e) => setSmtpPassword(e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
+                    <Label htmlFor="sender_email">Email Pengirim</Label>
+                    <Input
+                      id="sender_email"
+                      type="email"
+                      placeholder="onboarding@resend.dev"
+                      value={senderEmail}
+                      onChange={(e) => setSenderEmail(e.target.value)}
+                    />
                     <p className="text-xs text-muted-foreground">
-                      Buat App Password di{" "}
-                      <a
-                        href="https://myaccount.google.com/apppasswords"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        Google Account Settings
-                      </a>
+                      Gunakan <code className="bg-muted px-1 rounded">onboarding@resend.dev</code> untuk testing, atau email dari domain yang sudah diverifikasi.
                     </p>
                   </div>
 
@@ -285,7 +246,7 @@ const EmailSettings = () => {
                     <Button 
                       variant="outline" 
                       onClick={handleTestEmail} 
-                      disabled={testing || !smtpEmail || !smtpPassword}
+                      disabled={testing}
                     >
                       {testing ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -326,7 +287,7 @@ const EmailSettings = () => {
                       <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
-                  <CardDescription>Status dan informasi SMTP</CardDescription>
+                  <CardDescription>Status email service</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3 p-4 rounded-lg border">
@@ -335,7 +296,7 @@ const EmailSettings = () => {
                         <CheckCircle className="h-10 w-10 text-green-500" />
                         <div>
                           <p className="font-semibold text-lg text-green-600">🟢 Connected</p>
-                          <p className="text-sm text-muted-foreground">SMTP Gmail siap digunakan</p>
+                          <p className="text-sm text-muted-foreground">Resend siap digunakan</p>
                         </div>
                       </>
                     ) : (
@@ -343,7 +304,7 @@ const EmailSettings = () => {
                         <XCircle className="h-10 w-10 text-red-500" />
                         <div>
                           <p className="font-semibold text-lg text-red-600">🔴 Not Connected</p>
-                          <p className="text-sm text-muted-foreground">SMTP belum dikonfigurasi / gagal</p>
+                          <p className="text-sm text-muted-foreground">Klik Test Email untuk cek koneksi</p>
                         </div>
                       </>
                     )}
@@ -351,27 +312,13 @@ const EmailSettings = () => {
 
                   <div className="border-t pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Host:</span>
-                      <span className="font-mono">smtp.gmail.com</span>
+                      <span className="text-muted-foreground">Provider:</span>
+                      <span className="font-medium">Resend</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Port:</span>
-                      <span className="font-mono">587</span>
+                      <span className="text-muted-foreground">Sender:</span>
+                      <span className="font-mono text-xs">{senderEmail}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Security:</span>
-                      <span>TLS (STARTTLS)</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Authentication:</span>
-                      <span>YES</span>
-                    </div>
-                    {settings?.smtp_email && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-mono text-xs">{settings.smtp_email}</span>
-                      </div>
-                    )}
                     {settings?.last_test_at && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Test terakhir:</span>
