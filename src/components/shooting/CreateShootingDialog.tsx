@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 import { z } from "zod";
+import { sendShootingAssignmentEmail } from "@/lib/email-notifications";
 
 const shootingSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
@@ -226,6 +227,31 @@ export function CreateShootingDialog() {
         });
 
         await supabase.from("shooting_notifications").insert(notifications);
+
+        // Send email notifications to all crew members (async, non-blocking)
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", session.session.user.id)
+          .single();
+
+        Array.from(notifyUsers).forEach(userId => {
+          let role = 'crew';
+          if (userId === formData.director) role = 'Director';
+          else if (userId === formData.runner) role = 'Runner';
+          else if (selectedCampers.includes(userId)) role = 'Camper';
+          else if (selectedAdditional.includes(userId)) role = 'Additional Crew';
+
+          sendShootingAssignmentEmail(userId, {
+            id: shooting.id,
+            title: formData.title,
+            date: formData.scheduled_date,
+            time: formData.scheduled_time,
+            location: formData.location,
+            creatorName: creatorProfile?.full_name || "Someone",
+            role,
+          }).catch(err => console.error("Email notification failed:", err));
+        });
       }
 
       toast.success("Shooting schedule requested successfully!");

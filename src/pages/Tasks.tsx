@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { isPast, parseISO, isToday } from "date-fns";
+import { sendTaskStatusChangeEmail } from "@/lib/email-notifications";
 
 const taskColumns = [
   { id: "pending", title: "Pending" },
@@ -154,6 +155,13 @@ export default function Tasks() {
   });
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
+    // First get the task data before updating
+    const { data: taskData } = await supabase
+      .from("tasks")
+      .select("title, assigned_to, created_by")
+      .eq("id", itemId)
+      .single();
+
     const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus })
@@ -162,6 +170,37 @@ export default function Tasks() {
     if (error) {
       console.error("Error updating task:", error);
       return;
+    }
+
+    // Send email notification to involved users (async, non-blocking)
+    if (taskData) {
+      const { data: session } = await supabase.auth.getSession();
+      const currentUserId = session.session?.user.id;
+      
+      // Get changer's name
+      const { data: changerProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", currentUserId)
+        .single();
+
+      // Notify assignee and creator (except the one who made the change)
+      const notifyUsers = new Set<string>();
+      if (taskData.assigned_to && taskData.assigned_to !== currentUserId) {
+        notifyUsers.add(taskData.assigned_to);
+      }
+      if (taskData.created_by && taskData.created_by !== currentUserId) {
+        notifyUsers.add(taskData.created_by);
+      }
+
+      if (notifyUsers.size > 0) {
+        sendTaskStatusChangeEmail(Array.from(notifyUsers), {
+          id: itemId,
+          title: taskData.title,
+          newStatus,
+          changerName: changerProfile?.full_name || "Someone",
+        }).catch(err => console.error("Email notification failed:", err));
+      }
     }
 
     queryClient.invalidateQueries({ queryKey: ["active-tasks"] });

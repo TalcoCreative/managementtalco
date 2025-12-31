@@ -13,6 +13,7 @@ import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as Li
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { sendTaskAssignmentEmail } from "@/lib/email-notifications";
 import {
   Select,
   SelectContent,
@@ -164,6 +165,9 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     
     setSaving(true);
     try {
+      // Check if assignee is being changed
+      const isNewAssignee = editAssignedTo && editAssignedTo !== task?.assigned_to;
+
       const { error } = await supabase
         .from("tasks")
         .update({
@@ -179,6 +183,24 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         .eq("id", taskId);
 
       if (error) throw error;
+
+      // Send email notification if assignee changed (async, non-blocking)
+      if (isNewAssignee) {
+        const { data: session } = await supabase.auth.getSession();
+        const { data: creatorProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", session.session?.user.id)
+          .single();
+
+        sendTaskAssignmentEmail(editAssignedTo, {
+          id: taskId,
+          title: editTitle,
+          description: editDescription,
+          deadline: editDeadline,
+          creatorName: creatorProfile?.full_name || "Someone",
+        }).catch(err => console.error("Email notification failed:", err));
+      }
 
       toast.success("Task berhasil diupdate");
       setIsEditing(false);

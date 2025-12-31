@@ -139,6 +139,46 @@ export const sendTaskAssignmentEmail = async (
   });
 };
 
+// Send email when task status changes
+export const sendTaskStatusChangeEmail = async (
+  userIds: string[],
+  taskData: {
+    id: string;
+    title: string;
+    newStatus: string;
+    changerName: string;
+  }
+): Promise<void> => {
+  const baseUrl = window.location.origin;
+  const statusLabels: Record<string, string> = {
+    pending: "Pending",
+    in_progress: "In Progress",
+    on_hold: "On Hold",
+    revise: "Revise",
+    completed: "Completed",
+  };
+  
+  const notificationType = taskData.newStatus === "completed" ? "task_completed" : "task_updated";
+  
+  for (const userId of userIds) {
+    const { email, name } = await getUserEmailById(userId);
+    if (email) {
+      await sendEmailNotification({
+        recipientEmail: email,
+        recipientName: name,
+        notificationType,
+        data: {
+          title: taskData.title,
+          status: statusLabels[taskData.newStatus] || taskData.newStatus,
+          creator_name: taskData.changerName,
+          link: `${baseUrl}/tasks`,
+        },
+        relatedId: taskData.id,
+      });
+    }
+  }
+};
+
 export const sendTaskOverdueEmail = async (
   assigneeId: string,
   taskData: {
@@ -206,6 +246,7 @@ export const sendShootingAssignmentEmail = async (
     time: string;
     location?: string;
     creatorName: string;
+    role?: string;
   }
 ): Promise<void> => {
   const { email, name } = await getUserEmailById(crewId);
@@ -221,6 +262,7 @@ export const sendShootingAssignmentEmail = async (
       deadline: `${shootingData.date} ${shootingData.time}`,
       location: shootingData.location,
       creator_name: shootingData.creatorName,
+      description: shootingData.role ? `Role: ${shootingData.role}` : undefined,
       link: `${baseUrl}/shooting`,
     },
     relatedId: shootingData.id,
@@ -256,6 +298,51 @@ export const sendEventAssignmentEmail = async (
   });
 };
 
+// Send shooting status update email (approved, rejected, rescheduled, cancelled)
+export const sendShootingStatusEmail = async (
+  userIds: string[],
+  shootingData: {
+    id: string;
+    title: string;
+    status: string;
+    date?: string;
+    time?: string;
+    location?: string;
+    changerName: string;
+    reason?: string;
+  }
+): Promise<void> => {
+  const baseUrl = window.location.origin;
+  const statusLabels: Record<string, string> = {
+    approved: "Approved ✅",
+    rejected: "Rejected ❌",
+    rescheduled: "Rescheduled 📅",
+    cancelled: "Cancelled ❌",
+    pending: "Pending",
+  };
+
+  for (const userId of userIds) {
+    const { email, name } = await getUserEmailById(userId);
+    if (email) {
+      await sendEmailNotification({
+        recipientEmail: email,
+        recipientName: name,
+        notificationType: "shooting_status_update",
+        data: {
+          title: shootingData.title,
+          status: statusLabels[shootingData.status] || shootingData.status,
+          deadline: shootingData.date && shootingData.time ? `${shootingData.date} ${shootingData.time}` : shootingData.date,
+          location: shootingData.location,
+          creator_name: shootingData.changerName,
+          description: shootingData.reason,
+          link: `${baseUrl}/shooting`,
+        },
+        relatedId: shootingData.id,
+      });
+    }
+  }
+};
+
 export const sendProjectAssignmentEmail = async (
   memberId: string,
   projectData: {
@@ -281,4 +368,21 @@ export const sendProjectAssignmentEmail = async (
     },
     relatedId: projectData.id,
   });
+};
+
+// Send to all involved users in a shooting
+export const sendShootingEmailsToAllCrew = async (
+  crewIds: string[],
+  shootingData: {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    location?: string;
+    creatorName: string;
+  }
+): Promise<void> => {
+  for (const crewId of crewIds) {
+    await sendShootingAssignmentEmail(crewId, shootingData);
+  }
 };
