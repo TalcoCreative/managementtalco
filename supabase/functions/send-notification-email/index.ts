@@ -76,7 +76,9 @@ const getSubject = (type: string, name: string): string => {
     case "project_assignment":
       return `Hi @${firstName} – lo join project baru nih 🚀`;
     case "shooting_assignment":
-      return `Hi @${firstName} – lo dijadwalkan produksi nih 🎥`;
+      return `Hi @${firstName} – lo dijadwalkan shooting nih 🎥`;
+    case "shooting_status_update":
+      return `Hi @${firstName} – ada update shooting nih 🎬`;
     case "event_assignment":
       return `Hi @${firstName} – lo dijadwalkan event nih 🎥`;
     case "meeting_invitation":
@@ -98,6 +100,7 @@ const getNotificationLabel = (type: string): string => {
     case "project_assignment":
       return "Project";
     case "shooting_assignment":
+    case "shooting_status_update":
       return "Shooting";
     case "event_assignment":
       return "Event";
