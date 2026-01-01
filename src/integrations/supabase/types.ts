@@ -2022,6 +2022,7 @@ export type Database = {
           project_id: string | null
           reschedule_reason: string | null
           rescheduled_at: string | null
+          share_token: string | null
           start_time: string
           status: string
           task_id: string | null
@@ -2045,6 +2046,7 @@ export type Database = {
           project_id?: string | null
           reschedule_reason?: string | null
           rescheduled_at?: string | null
+          share_token?: string | null
           start_time: string
           status?: string
           task_id?: string | null
@@ -2068,6 +2070,7 @@ export type Database = {
           project_id?: string | null
           reschedule_reason?: string | null
           rescheduled_at?: string | null
+          share_token?: string | null
           start_time?: string
           status?: string
           task_id?: string | null
@@ -2255,6 +2258,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          share_token: string | null
           status: string | null
           title: string
           type: string | null
@@ -2266,6 +2270,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          share_token?: string | null
           status?: string | null
           title: string
           type?: string | null
@@ -2277,6 +2282,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          share_token?: string | null
           status?: string | null
           title?: string
           type?: string | null
@@ -2752,6 +2758,7 @@ export type Database = {
           runner: string | null
           scheduled_date: string
           scheduled_time: string
+          share_token: string | null
           status: string | null
           task_id: string | null
           title: string
@@ -2774,6 +2781,7 @@ export type Database = {
           runner?: string | null
           scheduled_date: string
           scheduled_time: string
+          share_token?: string | null
           status?: string | null
           task_id?: string | null
           title: string
@@ -2796,6 +2804,7 @@ export type Database = {
           runner?: string | null
           scheduled_date?: string
           scheduled_time?: string
+          share_token?: string | null
           status?: string | null
           task_id?: string | null
           title?: string

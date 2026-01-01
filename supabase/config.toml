@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.generate-recurring-entries]
 verify_jwt = false
+
+[functions.shared-project]
+verify_jwt = false
+
+[functions.shared-shooting]
+verify_jwt = false
+
+[functions.shared-meeting]
+verify_jwt = false

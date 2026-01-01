@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { MapPin, Users, DollarSign, Building2, Check, X, Pencil } from "lucide-react";
+import { MapPin, Users, DollarSign, Building2, Check, X, Pencil, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { EditShootingDialog } from "./EditShootingDialog";
 
@@ -18,6 +18,37 @@ interface ShootingDetailDialogProps {
 export function ShootingDetailDialog({ shootingId, open, onOpenChange }: ShootingDetailDialogProps) {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const generateShareToken = () => {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const handleShare = async () => {
+    if (!shootingId || !shooting) return;
+    setShareLoading(true);
+    try {
+      let token = shooting.share_token;
+      if (!token) {
+        token = generateShareToken();
+        const { error } = await supabase.from("shooting_schedules").update({ share_token: token }).eq("id", shootingId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
+      }
+      const shareUrl = `${window.location.origin}/share/shooting/${token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link berhasil disalin!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal membuat share link");
+    } finally {
+      setShareLoading(false);
+    }
+  };
 
   const { data: shooting } = useQuery({
     queryKey: ["shooting-detail", shootingId],
@@ -155,13 +186,13 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
             <div className="flex items-start justify-between gap-4">
               <DialogTitle className="text-xl">{shooting.title}</DialogTitle>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditOpen(true)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
                   <Pencil className="h-4 w-4 mr-1" />
                   Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleShare} disabled={shareLoading}>
+                  {copied ? <Check className="h-4 w-4 mr-1" /> : <Share2 className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied!" : "Share"}
                 </Button>
                 <Badge className={getStatusColor(shooting.status)}>
                   {shooting.status}

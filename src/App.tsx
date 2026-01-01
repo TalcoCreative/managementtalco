@@ -29,6 +29,9 @@ import KolCampaign from "./pages/KolCampaign";
 import Event from "./pages/Event";
 import EventDetail from "./pages/EventDetail";
 import SharedTask from "./pages/SharedTask";
+import SharedProject from "./pages/SharedProject";
+import SharedShooting from "./pages/SharedShooting";
+import SharedMeeting from "./pages/SharedMeeting";
 import SocialMedia from "./pages/SocialMedia";
 import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
@@ -69,6 +72,10 @@ const App = () => (
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
+          <Route path="/share/task/:token" element={<SharedTask />} />
+          <Route path="/share/project/:token" element={<SharedProject />} />
+          <Route path="/share/shooting/:token" element={<SharedShooting />} />
+          <Route path="/share/meeting/:token" element={<SharedMeeting />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

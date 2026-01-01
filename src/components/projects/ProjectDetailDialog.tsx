@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users, Eye, EyeOff } from "lucide-react";
+import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users, Eye, EyeOff, Share2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
+import { toast } from "sonner";
 
 interface ProjectDetailDialogProps {
   projectId: string | null;
@@ -20,7 +21,38 @@ interface ProjectDetailDialogProps {
 export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDetailDialogProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
+
+  const generateShareToken = () => {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const handleShare = async () => {
+    if (!projectId || !project) return;
+    setShareLoading(true);
+    try {
+      let token = project.share_token;
+      if (!token) {
+        token = generateShareToken();
+        const { error } = await supabase.from("projects").update({ share_token: token }).eq("id", projectId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ["project-detail", projectId] });
+      }
+      const shareUrl = `${window.location.origin}/share/project/${token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link berhasil disalin!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal membuat share link");
+    } finally {
+      setShareLoading(false);
+    }
+  };
 
   const { data: project } = useQuery({
     queryKey: ["project-detail", projectId],
@@ -179,13 +211,19 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between gap-4">
               <DialogTitle className="text-2xl">{project.title}</DialogTitle>
-              <Badge className={getStatusColor(project.status)}>
-                {project.status?.replace("_", " ")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleShare} disabled={shareLoading}>
+                  {copied ? <Check className="h-4 w-4 mr-1" /> : <Share2 className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied!" : "Share"}
+                </Button>
+                <Badge className={getStatusColor(project.status)}>
+                  {project.status?.replace("_", " ")}
+                </Badge>
+              </div>
             </div>
           </DialogHeader>
 
