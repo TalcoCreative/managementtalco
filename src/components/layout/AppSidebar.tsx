@@ -24,12 +24,10 @@ import {
   Crown,
   Share2,
   Mail,
-  Settings
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Sidebar,
@@ -126,31 +124,49 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
+    <Sidebar collapsible="icon" className="border-r-0">
+      <SidebarContent className="bg-gradient-to-b from-sidebar to-sidebar/95">
         <div className="px-4 py-6">
           {!isCollapsed && (
-            <h1 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Talco Management System
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">T</span>
+              </div>
+              <h1 className="text-base font-bold text-sidebar-foreground">
+                Talco Management
+              </h1>
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="flex justify-center">
+              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">T</span>
+              </div>
+            </div>
           )}
         </div>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="px-2 space-y-0.5">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) => 
-                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <item.icon className="h-5 w-5" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4" />
+                      {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -161,11 +177,15 @@ export function AppSidebar() {
                     <NavLink 
                       to="/letters" 
                       className={({ isActive }) => 
-                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <FileText className="h-5 w-5" />
-                      {!isCollapsed && <span>Surat</span>}
+                      <FileText className="h-4 w-4" />
+                      {!isCollapsed && <span className="text-sm font-medium">Surat</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -176,20 +196,26 @@ export function AppSidebar() {
 
         {isHRorAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>HR</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+              HR
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="px-2 space-y-0.5">
                 {hrItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
                         className={({ isActive }) => 
-                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                          }`
                         }
                       >
-                        <item.icon className="h-5 w-5" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -201,20 +227,26 @@ export function AppSidebar() {
 
         {canAccessFinance && (
           <SidebarGroup>
-            <SidebarGroupLabel>Finance</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+              Finance
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="px-2 space-y-0.5">
                 {financeItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
                         className={({ isActive }) => 
-                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                          }`
                         }
                       >
-                        <item.icon className="h-5 w-5" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -226,20 +258,26 @@ export function AppSidebar() {
 
         {canAccessSales && (
           <SidebarGroup>
-            <SidebarGroupLabel>Sales</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+              Sales
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="px-2 space-y-0.5">
                 {salesItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink 
                         to={item.url} 
                         className={({ isActive }) => 
-                          `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                          }`
                         }
                       >
-                        <item.icon className="h-5 w-5" />
-                        {!isCollapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4" />
+                        {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -251,19 +289,25 @@ export function AppSidebar() {
 
         {isSuperAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>Executive</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+              Executive
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="px-2 space-y-0.5">
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/ceo-dashboard" 
                       className={({ isActive }) => 
-                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <Crown className="h-5 w-5" />
-                      {!isCollapsed && <span>CEO Dashboard</span>}
+                      <Crown className="h-4 w-4" />
+                      {!isCollapsed && <span className="text-sm font-medium">CEO Dashboard</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -274,19 +318,25 @@ export function AppSidebar() {
 
         {isSuperAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel>System</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-4">
+              System
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="px-2 space-y-0.5">
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to="/system/email-settings" 
                       className={({ isActive }) => 
-                        `flex items-center gap-3 ${isActive ? 'bg-sidebar-accent' : ''}`
+                        `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-primary/20 text-primary-foreground border border-primary/30' 
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                        }`
                       }
                     >
-                      <Mail className="h-5 w-5" />
-                      {!isCollapsed && <span>Email Settings</span>}
+                      <Mail className="h-4 w-4" />
+                      {!isCollapsed && <span className="text-sm font-medium">Email Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -296,12 +346,15 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border/50 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="w-full">
-              <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span>Logout</span>}
+            <SidebarMenuButton 
+              onClick={handleLogout} 
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive transition-all duration-200"
+            >
+              <LogOut className="h-4 w-4" />
+              {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
