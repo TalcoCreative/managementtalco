@@ -37,6 +37,7 @@ export function FinanceExpenses() {
     client_id: "",
     amount: "",
     description: "",
+    expense_date: format(new Date(), "yyyy-MM-dd"),
   });
   const queryClient = useQueryClient();
 
@@ -133,6 +134,7 @@ export function FinanceExpenses() {
         amount: parseFloat(formData.amount),
         description: formData.description,
         created_by: session.session.user.id,
+        created_at: new Date(formData.expense_date).toISOString(),
       });
 
       if (error) throw error;
@@ -145,7 +147,8 @@ export function FinanceExpenses() {
         project_id: "", 
         client_id: "", 
         amount: "", 
-        description: "" 
+        description: "",
+        expense_date: format(new Date(), "yyyy-MM-dd"),
       });
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
@@ -325,6 +328,18 @@ export function FinanceExpenses() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Expense *</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="date"
+                    value={formData.expense_date}
+                    onChange={(e) => setFormData({ ...formData, expense_date: e.target.value })}
+                    className="pl-10"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
