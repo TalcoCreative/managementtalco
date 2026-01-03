@@ -287,12 +287,12 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 pb-2">
           <DialogTitle>Buat Meeting Baru</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 max-h-[calc(90vh-120px)] pr-4">
+        <ScrollArea className="flex-1 -mr-4 pr-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Basic Info */}
             <div className="space-y-4">
@@ -640,16 +640,17 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
               </label>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Menyimpan..." : "Buat Meeting"}
-              </Button>
-            </div>
           </form>
         </ScrollArea>
+
+        <div className="flex-shrink-0 flex justify-end gap-2 pt-3 border-t">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Batal
+          </Button>
+          <Button onClick={(e) => { e.preventDefault(); document.querySelector('form')?.requestSubmit(); }} disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : "Buat Meeting"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
