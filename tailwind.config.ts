@@ -93,11 +93,9 @@ export default {
         "3xl": "calc(var(--radius) + 16px)",
       },
       boxShadow: {
-        soft: "0 1px 2px hsl(217 91% 60% / 0.02), 0 4px 8px hsl(217 91% 60% / 0.04), 0 12px 24px hsl(217 91% 60% / 0.06)",
-        "soft-lg": "0 2px 4px hsl(217 91% 60% / 0.02), 0 8px 16px hsl(217 91% 60% / 0.06), 0 24px 48px hsl(217 91% 60% / 0.08)",
-        "soft-xl": "0 4px 8px hsl(217 91% 60% / 0.04), 0 16px 32px hsl(217 91% 60% / 0.08), 0 32px 64px hsl(217 91% 60% / 0.12)",
-        glow: "0 0 20px hsl(217 91% 60% / 0.3)",
-        "glow-lg": "0 0 40px hsl(217 91% 60% / 0.4)",
+        soft: "0 1px 3px hsl(220 25% 20% / 0.04), 0 4px 12px hsl(220 25% 20% / 0.06)",
+        "soft-lg": "0 2px 6px hsl(220 25% 20% / 0.04), 0 8px 24px hsl(220 25% 20% / 0.08)",
+        "soft-xl": "0 4px 8px hsl(220 25% 20% / 0.04), 0 12px 32px hsl(220 25% 20% / 0.1)",
       },
       keyframes: {
         "accordion-down": {
