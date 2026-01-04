@@ -85,6 +85,8 @@ const getSubject = (type: string, name: string): string => {
       return `Hi @${firstName} – lo diundang meeting nih 📅`;
     case "meeting_reminder":
       return `Hi @${firstName} – reminder meeting nih 📅`;
+    case "announcement":
+      return `📢 Pengumuman: Ada info penting nih buat lo!`;
     default:
       return `Hi @${firstName} – ada update buat lo nih 🚀`;
   }
@@ -107,6 +109,8 @@ const getNotificationLabel = (type: string): string => {
     case "meeting_invitation":
     case "meeting_reminder":
       return "Meeting";
+    case "announcement":
+      return "Pengumuman";
     default:
       return "Notifikasi";
   }
