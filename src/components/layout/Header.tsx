@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Bell, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, LogOut, Megaphone, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,10 +12,20 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { CreateAnnouncementDialog } from "@/components/announcements/CreateAnnouncementDialog";
+import { ManageAnnouncementsDialog } from "@/components/announcements/ManageAnnouncementsDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
+  const [manageAnnouncementsOpen, setManageAnnouncementsOpen] = useState(false);
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -25,6 +35,21 @@ export function Header() {
       return session.session.user;
     },
   });
+
+  const { data: userRoles } = useQuery({
+    queryKey: ["user-roles", currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", currentUser.id);
+      return data?.map((r) => r.role) || [];
+    },
+    enabled: !!currentUser,
+  });
+
+  const canManageAnnouncements = userRoles?.includes("hr") || userRoles?.includes("super_admin");
 
   const { data: tasks } = useQuery({
     queryKey: ["active-tasks"],
@@ -94,7 +119,25 @@ export function Header() {
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
       <SidebarTrigger />
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        {canManageAnnouncements && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" title="Pengumuman">
+                <Megaphone className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setCreateAnnouncementOpen(true)}>
+                Buat Pengumuman
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setManageAnnouncementsOpen(true)}>
+                Kelola Pengumuman
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -138,6 +181,15 @@ export function Header() {
           <LogOut className="h-5 w-5" />
         </Button>
       </div>
+
+      <CreateAnnouncementDialog
+        open={createAnnouncementOpen}
+        onOpenChange={setCreateAnnouncementOpen}
+      />
+      <ManageAnnouncementsDialog
+        open={manageAnnouncementsOpen}
+        onOpenChange={setManageAnnouncementsOpen}
+      />
     </header>
   );
 }

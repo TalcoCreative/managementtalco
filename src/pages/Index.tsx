@@ -8,6 +8,7 @@ import { ShootingNotifications } from "@/components/shooting/ShootingNotificatio
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvitationNotifications";
 import { TaskNotifications } from "@/components/notifications/TaskNotifications";
+import { AnnouncementNotifications } from "@/components/announcements/AnnouncementNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine, ChevronRight, AlertTriangle } from "lucide-react";
@@ -153,6 +154,8 @@ export default function Index() {
         </div>
 
         <ClockInOut />
+
+        <AnnouncementNotifications />
 
         <MeetingInvitationNotifications />
 
