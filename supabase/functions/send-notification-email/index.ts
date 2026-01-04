@@ -9,20 +9,27 @@ const corsHeaders = {
 interface EmailRequest {
   type: "test" | "notification";
   notification_type?: string;
+  notificationType?: string; // Support camelCase
   recipient_email?: string;
+  recipientEmail?: string; // Support camelCase
   recipient_name?: string;
+  recipientName?: string; // Support camelCase
   data?: {
     title?: string;
     description?: string;
+    content?: string; // For announcements
     deadline?: string;
     creator_name?: string;
+    creatorName?: string; // Support camelCase
     link?: string;
     priority?: string;
     status?: string;
     participants?: string;
     location?: string;
+    createdAt?: string;
   };
   related_id?: string;
+  relatedId?: string; // Support camelCase
 }
 
 interface ResendResponse {
@@ -321,6 +328,19 @@ serve(async (req: Request): Promise<Response> => {
     let htmlBody: string;
     
     const body = requestBody!;
+    
+    // Normalize camelCase to snake_case for compatibility
+    const normalizedRecipientEmail = body.recipient_email || body.recipientEmail;
+    const normalizedRecipientName = body.recipient_name || body.recipientName;
+    const normalizedNotificationType = body.notification_type || body.notificationType;
+    const normalizedRelatedId = body.related_id || body.relatedId;
+    
+    // Normalize data fields
+    const normalizedData = body.data ? {
+      ...body.data,
+      description: body.data.description || body.data.content, // For announcements
+      creator_name: body.data.creator_name || body.data.creatorName,
+    } : undefined;
 
     if (body.type === "test") {
       // Test email - send to the configured email or a test email
@@ -330,16 +350,16 @@ serve(async (req: Request): Promise<Response> => {
       htmlBody = buildTestEmailBody(recipientEmail);
     } else {
       // Notification email
-      if (!body.recipient_email) {
+      if (!normalizedRecipientEmail) {
         throw new Error("Recipient email is required for notifications");
       }
-      recipientEmail = body.recipient_email;
-      recipientName = body.recipient_name || "User";
-      subject = getSubject(body.notification_type || "general", recipientName);
+      recipientEmail = normalizedRecipientEmail;
+      recipientName = normalizedRecipientName || "User";
+      subject = getSubject(normalizedNotificationType || "general", recipientName);
       htmlBody = buildEmailBody(
         recipientName,
-        body.notification_type || "general",
-        body.data
+        normalizedNotificationType || "general",
+        normalizedData
       );
     }
 
@@ -362,8 +382,8 @@ serve(async (req: Request): Promise<Response> => {
       recipient_name: body.type === "test" ? "Admin (Test)" : recipientName,
       subject: subject,
       body: htmlBody,
-      notification_type: body.notification_type || (body.type === "test" ? "test" : "general"),
-      related_id: body.related_id || null,
+      notification_type: normalizedNotificationType || (body.type === "test" ? "test" : "general"),
+      related_id: normalizedRelatedId || null,
       status: "sent",
       sent_at: new Date().toISOString(),
     });
