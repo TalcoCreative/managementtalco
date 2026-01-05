@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Building2, Trash2 } from "lucide-react";
+import { Plus, Building2, Trash2, FolderOpen, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateClientDialog } from "@/components/clients/CreateClientDialog";
-import { ClientDashboardDialog } from "@/components/clients/ClientDashboardDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { toast } from "sonner";
 
 export default function Clients() {
+  const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [deleteClient, setDeleteClient] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
@@ -27,6 +27,54 @@ export default function Clients() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch projects count for each client
+  const { data: projectCounts } = useQuery({
+    queryKey: ["client-project-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("client_id");
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data.forEach(p => {
+        counts[p.client_id] = (counts[p.client_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  // Fetch tasks count for each client
+  const { data: taskCounts } = useQuery({
+    queryKey: ["client-task-counts"],
+    queryFn: async () => {
+      const { data: projects, error: projectError } = await supabase
+        .from("projects")
+        .select("id, client_id");
+      if (projectError) throw projectError;
+
+      const projectClientMap = new Map(projects.map(p => [p.id, p.client_id]));
+      const projectIds = projects.map(p => p.id);
+
+      if (projectIds.length === 0) return {};
+
+      const { data: tasks, error: taskError } = await supabase
+        .from("tasks")
+        .select("project_id")
+        .in("project_id", projectIds);
+      if (taskError) throw taskError;
+
+      const counts: Record<string, number> = {};
+      tasks.forEach(t => {
+        const clientId = projectClientMap.get(t.project_id);
+        if (clientId) {
+          counts[clientId] = (counts[clientId] || 0) + 1;
+        }
+      });
+      return counts;
     },
   });
 
@@ -104,7 +152,7 @@ export default function Clients() {
               <Card
                 key={client.id}
                 className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 relative group"
-                onClick={() => setSelectedClient(client.id)}
+                onClick={() => navigate(`/clients/${client.id}`)}
               >
                 {canManageClients && (
                   <Button
@@ -138,6 +186,16 @@ export default function Clients() {
                   </div>
                 </CardHeader>
                 <CardContent>
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <FolderOpen className="h-4 w-4" />
+                      <span>{projectCounts?.[client.id] || 0} Projects</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>{taskCounts?.[client.id] || 0} Tasks</span>
+                    </div>
+                  </div>
                   {client.email && (
                     <p className="text-sm text-muted-foreground">{client.email}</p>
                   )}
@@ -159,14 +217,6 @@ export default function Clients() {
       </div>
 
       <CreateClientDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
-      
-      {selectedClient && (
-        <ClientDashboardDialog
-          clientId={selectedClient}
-          open={!!selectedClient}
-          onOpenChange={(open) => !open && setSelectedClient(null)}
-        />
-      )}
 
       <DeleteConfirmDialog
         open={!!deleteClient}
