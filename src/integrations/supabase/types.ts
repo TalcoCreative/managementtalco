@@ -515,6 +515,308 @@ export type Database = {
           },
         ]
       }
+      client_accounts: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          password_encrypted: string | null
+          platform: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          password_encrypted?: string | null
+          platform: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          password_encrypted?: string | null
+          platform?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_activity_logs: {
+        Row: {
+          action: string
+          changed_by: string
+          client_id: string
+          created_at: string
+          description: string
+          id: string
+        }
+        Insert: {
+          action: string
+          changed_by: string
+          client_id: string
+          created_at?: string
+          description: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          changed_by?: string
+          client_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_activity_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_contracts: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          end_date: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          end_date: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_documents: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          document_type: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          notes: string | null
+          title: string
+          version: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          document_type: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          title: string
+          version?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          document_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          notes?: string | null
+          title?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_payment_settings: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          payment_day: number | null
+          scheme: string
+          total_payments: number | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          payment_day?: number | null
+          scheme?: string
+          total_payments?: number | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          payment_day?: number | null
+          scheme?: string
+          total_payments?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_payment_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_payments: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_number: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_quotas: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          quota_type: string
+          total_quota: number
+          updated_at: string
+          used_quota: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          quota_type: string
+          total_quota?: number
+          updated_at?: string
+          used_quota?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          quota_type?: string
+          total_quota?: number
+          updated_at?: string
+          used_quota?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_quotas_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           company: string | null
@@ -522,8 +824,12 @@ export type Database = {
           created_by: string
           email: string | null
           id: string
+          industry: string | null
           name: string
           phone: string | null
+          pic_contact: string | null
+          pic_name: string | null
+          start_date: string | null
           status: string | null
         }
         Insert: {
@@ -532,8 +838,12 @@ export type Database = {
           created_by: string
           email?: string | null
           id?: string
+          industry?: string | null
           name: string
           phone?: string | null
+          pic_contact?: string | null
+          pic_name?: string | null
+          start_date?: string | null
           status?: string | null
         }
         Update: {
@@ -542,8 +852,12 @@ export type Database = {
           created_by?: string
           email?: string | null
           id?: string
+          industry?: string | null
           name?: string
           phone?: string | null
+          pic_contact?: string | null
+          pic_name?: string | null
+          start_date?: string | null
           status?: string | null
         }
         Relationships: []
@@ -3467,6 +3781,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_client_activity: {
+        Args: {
+          p_action: string
+          p_changed_by: string
+          p_client_id: string
+          p_description: string
+        }
+        Returns: string
       }
     }
     Enums: {
