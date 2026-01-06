@@ -29,6 +29,10 @@ export function ShareLinkDialog({
 
   const getShareUrl = () => {
     if (!shareToken) return "";
+    // Use custom domain for task and meeting
+    if (entityType === "task" || entityType === "meeting") {
+      return `https://ms.talco.id/${shareToken}`;
+    }
     const baseUrl = window.location.origin;
     return `${baseUrl}/share/${entityType}/${shareToken}`;
   };
