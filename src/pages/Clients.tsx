@@ -78,7 +78,7 @@ export default function Clients() {
     },
   });
 
-  const { data: userRole } = useQuery({
+  const { data: userRole, isLoading: loadingRole } = useQuery({
     queryKey: ["user-role"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -94,7 +94,20 @@ export default function Clients() {
     },
   });
 
-  const canManageClients = userRole === "super_admin" || userRole === "hr";
+  const isSuperAdmin = userRole === "super_admin";
+
+  // Only super_admin can access /clients
+  if (!loadingRole && !isSuperAdmin) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Anda tidak memiliki akses ke halaman ini</p>
+          <p className="text-sm text-muted-foreground mt-1">Hanya Super Admin yang dapat mengakses Client Management</p>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const handleDelete = async (reason: string) => {
     if (!deleteClient) return;
@@ -132,10 +145,12 @@ export default function Clients() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Clients</h1>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Client
-          </Button>
+          {isSuperAdmin && (
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Client
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -154,7 +169,7 @@ export default function Clients() {
                 className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 relative group"
                 onClick={() => navigate(`/clients/${client.id}`)}
               >
-                {canManageClients && (
+                {isSuperAdmin && (
                   <Button
                     variant="destructive"
                     size="icon"
@@ -180,7 +195,10 @@ export default function Clients() {
                         )}
                       </div>
                     </div>
-                    <Badge variant={client.status === "active" ? "default" : "secondary"}>
+                    <Badge 
+                      variant={client.status === "active" ? "default" : client.status === "upcoming" ? "outline" : "secondary"}
+                      className={client.status === "upcoming" ? "border-primary text-primary" : ""}
+                    >
                       {client.status}
                     </Badge>
                   </div>

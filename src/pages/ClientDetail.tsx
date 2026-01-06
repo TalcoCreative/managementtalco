@@ -49,7 +49,7 @@ export default function ClientDetail() {
     enabled: !!clientId,
   });
 
-  const { data: userRole } = useQuery({
+  const { data: userRole, isLoading: loadingRole } = useQuery({
     queryKey: ["user-role"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -65,8 +65,24 @@ export default function ClientDetail() {
     },
   });
 
-  const canEditSensitive = userRole === "super_admin" || userRole === "finance";
-  const canView = userRole === "super_admin" || userRole === "project_manager" || userRole === "finance";
+  const isSuperAdmin = userRole === "super_admin";
+  const canEditSensitive = isSuperAdmin;
+  const canView = isSuperAdmin;
+
+  // Only super_admin can access client detail
+  if (!loadingRole && !isSuperAdmin) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">Anda tidak memiliki akses ke halaman ini</p>
+          <Button variant="link" onClick={() => navigate("/")}>
+            Kembali ke dashboard
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -101,13 +117,13 @@ export default function ClientDetail() {
   }
 
   const sections = [
-    { id: "overview", title: "Overview", icon: Building2, component: ClientOverviewSection },
-    { id: "contract", title: "Kontrak", icon: FileText, component: ClientContractSection },
-    { id: "payment", title: "Pembayaran", icon: CreditCard, component: ClientPaymentSection },
-    { id: "quota", title: "Kuota & Pemakaian", icon: Package, component: ClientQuotaSection },
-    { id: "accounts", title: "Data Akun Client", icon: Lock, component: ClientAccountSection, sensitive: true },
-    { id: "documents", title: "Dokumen", icon: FolderOpen, component: ClientDocumentSection },
-    { id: "projects", title: "Project & Task", icon: CheckCircle2, component: ClientProjectTaskSection },
+    { id: "overview", title: "Overview", icon: Building2, component: ClientOverviewSection, superAdminOnly: false },
+    { id: "contract", title: "Kontrak", icon: FileText, component: ClientContractSection, superAdminOnly: true },
+    { id: "payment", title: "Pembayaran", icon: CreditCard, component: ClientPaymentSection, superAdminOnly: true },
+    { id: "quota", title: "Kuota & Pemakaian", icon: Package, component: ClientQuotaSection, superAdminOnly: false },
+    { id: "accounts", title: "Data Akun Client", icon: Lock, component: ClientAccountSection, sensitive: true, superAdminOnly: true },
+    { id: "documents", title: "Dokumen", icon: FolderOpen, component: ClientDocumentSection, superAdminOnly: true },
+    { id: "projects", title: "Project & Task", icon: CheckCircle2, component: ClientProjectTaskSection, superAdminOnly: false },
     { id: "activity", title: "Activity Log", icon: Activity, component: ClientActivitySection },
   ];
 
@@ -144,9 +160,10 @@ export default function ClientDetail() {
 
         {/* Sections */}
         <div className="space-y-4">
-          {sections.map(({ id, title, icon: Icon, component: Component, sensitive }) => {
-            // Skip sensitive sections if user doesn't have permission
+          {sections.map(({ id, title, icon: Icon, component: Component, sensitive, superAdminOnly }) => {
+            // Skip sections based on permissions
             if (sensitive && !canEditSensitive) return null;
+            if (superAdminOnly && !isSuperAdmin) return null;
 
             return (
               <Collapsible
