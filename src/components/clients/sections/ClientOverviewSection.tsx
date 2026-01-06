@@ -169,9 +169,9 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
               </SelectContent>
             </Select>
           </div>
