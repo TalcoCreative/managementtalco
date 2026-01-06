@@ -80,6 +80,22 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
 
+  const { data: userProfile } = useQuery({
+    queryKey: ["user-profile-sidebar"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", session.session.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: userRoles } = useQuery({
     queryKey: ["user-roles"],
     queryFn: async () => {
@@ -137,17 +153,21 @@ export function AppSidebar() {
           {!isCollapsed && (
             <div className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-semibold text-sm">T</span>
+                <span className="text-sidebar-primary-foreground font-semibold text-sm">
+                  {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
               </div>
               <h1 className="text-sm font-semibold text-sidebar-foreground">
-                Talco Management
+                Hi, {userProfile?.full_name?.split(" ")[0] || "User"}
               </h1>
             </div>
           )}
           {isCollapsed && (
             <div className="flex justify-center">
               <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-semibold text-sm">T</span>
+                <span className="text-sidebar-primary-foreground font-semibold text-sm">
+                  {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
               </div>
             </div>
           )}
