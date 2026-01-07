@@ -13,7 +13,8 @@ import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as Li
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
-import { sendTaskAssignmentEmail } from "@/lib/email-notifications";
+import { MentionInput, extractMentions, renderCommentWithMentions } from "@/components/tasks/MentionInput";
+import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
 import {
   Select,
   SelectContent,
@@ -299,13 +300,49 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("comments").insert({
+      // Insert comment
+      const { data: newComment, error } = await supabase.from("comments").insert({
         content: comment,
         task_id: taskId,
         author_id: session.session.user.id,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Extract mentions and process them
+      if (users && users.length > 0) {
+        const mentionedUserIds = extractMentions(comment, users);
+        
+        if (mentionedUserIds.length > 0) {
+          // Get current user's profile for the mentioner name
+          const { data: currentProfile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", session.session.user.id)
+            .single();
+
+          // Insert mention records (for in-app notifications)
+          for (const mentionedUserId of mentionedUserIds) {
+            // Don't notify yourself
+            if (mentionedUserId === session.session.user.id) continue;
+
+            await supabase.from("comment_mentions").insert({
+              comment_id: newComment.id,
+              mentioned_user_id: mentionedUserId,
+              task_id: taskId,
+            });
+
+            // Send email notification (async, non-blocking)
+            sendMentionEmail(mentionedUserId, {
+              taskId: taskId,
+              taskTitle: task?.title || "Task",
+              commentContent: comment,
+              mentionerName: currentProfile?.full_name || "Someone",
+              shareToken: task?.share_token,
+            }).catch(err => console.error("Mention email failed:", err));
+          }
+        }
+      }
 
       toast.success("Comment added!");
       setComment("");
@@ -807,10 +844,10 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
                 {/* Add Comment */}
                 <div className="space-y-2">
-                  <Textarea
-                    placeholder="Add a comment..."
+                  <MentionInput
+                    placeholder="Add a comment... (use @ to mention)"
                     value={comment}
-                    onChange={(e) => setComment(e.target.value)}
+                    onChange={setComment}
                     rows={3}
                   />
                   <Button 
@@ -824,28 +861,30 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
                 {/* Comments List */}
                 <div className="space-y-3">
-                  {allComments?.map((comment) => (
+                  {allComments?.map((commentItem) => (
                     <div
-                      key={comment.id}
+                      key={commentItem.id}
                       className="rounded-lg border bg-card p-4 space-y-2"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm">
-                            {comment.type === 'employee' 
-                              ? (comment.profiles?.full_name || "Unknown User")
-                              : comment.commenter_name
+                            {commentItem.type === 'employee' 
+                              ? (commentItem.profiles?.full_name || "Unknown User")
+                              : commentItem.commenter_name
                             }
                           </span>
-                          {comment.type === 'public' && (
+                          {commentItem.type === 'public' && (
                             <Badge variant="outline" className="text-xs">External</Badge>
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(comment.created_at), "PPp")}
+                          {format(new Date(commentItem.created_at), "PPp")}
                         </span>
                       </div>
-                      <p className="text-sm">{comment.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {renderCommentWithMentions(commentItem.content)}
+                      </p>
                     </div>
                   ))}
                 </div>

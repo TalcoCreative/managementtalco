@@ -27,6 +27,8 @@ interface EmailRequest {
     participants?: string;
     location?: string;
     createdAt?: string;
+    comment_content?: string; // For mentions
+    updated_at?: string; // For status changes
   };
   related_id?: string;
   relatedId?: string; // Support camelCase
@@ -78,8 +80,12 @@ const getSubject = (type: string, name: string): string => {
       return `Hi @${firstName} – Task lo ada update nih 📝`;
     case "task_completed":
       return `Hi @${firstName} – Task selesai nih ✅`;
+    case "task_status_change":
+      return `Hi @${firstName} – status task berubah nih 🔄`;
     case "task_overdue":
       return `Hi @${firstName} – Task lo udah lewat nih 😬`;
+    case "task_mention":
+      return `Hi @${firstName} – lo di-mention di task nih 👀`;
     case "project_assignment":
       return `Hi @${firstName} – lo join project baru nih 🚀`;
     case "shooting_assignment":
@@ -104,7 +110,9 @@ const getNotificationLabel = (type: string): string => {
     case "task_assignment":
     case "task_updated":
     case "task_completed":
+    case "task_status_change":
     case "task_overdue":
+    case "task_mention":
       return "Task";
     case "project_assignment":
       return "Project";
@@ -132,9 +140,29 @@ const buildEmailBody = (
   const label = getNotificationLabel(notificationType);
   
   let additionalInfo = "";
+  let mainMessage = "Ada update baru buat lo nih:";
+  
+  // Custom messages for different notification types
+  if (notificationType === "task_mention") {
+    mainMessage = "Lo baru aja di-mention di sebuah task:";
+    if (data?.comment_content) {
+      additionalInfo += `
+        <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px; margin: 12px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0; font-style: italic; color: #0369a1;">"${data.comment_content}"</p>
+        </div>
+      `;
+    }
+  }
+  
+  if (notificationType === "task_status_change" || notificationType === "task_completed") {
+    mainMessage = "Ada update status task:";
+    if (data?.updated_at) {
+      additionalInfo += `<p>📅 Waktu Update: <strong>${data.updated_at}</strong></p>`;
+    }
+  }
   
   if (notificationType === "task_overdue") {
-    additionalInfo = `
+    additionalInfo += `
       <p style="color: #e74c3c; font-weight: bold;">⚠️ Status: Overdue</p>
       <p>Segera cek & update ya 🙏</p>
     `;
@@ -172,14 +200,14 @@ const buildEmailBody = (
         
         <p style="font-size: 18px; color: #333;">Halo @${firstName} 👋</p>
         
-        <p style="color: #555; font-size: 16px;">Ada update baru buat lo nih:</p>
+        <p style="color: #555; font-size: 16px;">${mainMessage}</p>
         
         <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0;">
           <p style="margin: 8px 0;"><strong>📌 Jenis:</strong> ${label}</p>
-          <p style="margin: 8px 0;"><strong>📝 Judul:</strong> ${data?.title || "-"}</p>
-          ${data?.description ? `<p style="margin: 8px 0;"><strong>ℹ️ Deskripsi:</strong> ${data.description}</p>` : ""}
+          <p style="margin: 8px 0;"><strong>📝 ${notificationType === "task_mention" ? "Task" : "Judul"}:</strong> ${data?.title || "-"}</p>
+          ${data?.description && notificationType !== "task_mention" ? `<p style="margin: 8px 0;"><strong>ℹ️ Deskripsi:</strong> ${data.description}</p>` : ""}
           ${data?.deadline ? `<p style="margin: 8px 0;"><strong>📅 Tanggal / Deadline:</strong> ${data.deadline}</p>` : ""}
-          ${data?.creator_name ? `<p style="margin: 8px 0;"><strong>👤 Dibuat oleh:</strong> ${data.creator_name}</p>` : ""}
+          ${data?.creator_name ? `<p style="margin: 8px 0;"><strong>👤 ${notificationType === "task_mention" ? "Di-mention oleh" : "Diupdate oleh"}:</strong> ${data.creator_name}</p>` : ""}
           ${additionalInfo}
         </div>
         

@@ -10,6 +10,8 @@ interface EmailNotificationData {
   status?: string;
   participants?: string;
   location?: string;
+  comment_content?: string;
+  updated_at?: string;
 }
 
 interface SendEmailParams {
@@ -85,16 +87,19 @@ export const getUserEmailById = async (profileId: string): Promise<{ email: stri
   }
 };
 
-// Send email to multiple users
+// Send email to multiple users (avoiding duplicates)
 export const sendEmailToMultipleUsers = async (
   userIds: string[],
   notificationType: string,
   data: EmailNotificationData,
   relatedId?: string
 ): Promise<void> => {
+  const sentEmails = new Set<string>();
+  
   for (const userId of userIds) {
     const { email, name } = await getUserEmailById(userId);
-    if (email) {
+    if (email && !sentEmails.has(email)) {
+      sentEmails.add(email);
       await sendEmailNotification({
         recipientEmail: email,
         recipientName: name,
@@ -147,22 +152,31 @@ export const sendTaskStatusChangeEmail = async (
     title: string;
     newStatus: string;
     changerName: string;
+    shareToken?: string;
   }
 ): Promise<void> => {
   const baseUrl = window.location.origin;
   const statusLabels: Record<string, string> = {
-    pending: "Pending",
+    pending: "To Do",
     in_progress: "In Progress",
     on_hold: "On Hold",
     revise: "Revise",
-    completed: "Completed",
+    completed: "Done ✅",
+    cancelled: "Cancelled ❌",
   };
   
-  const notificationType = taskData.newStatus === "completed" ? "task_completed" : "task_updated";
+  const notificationType = taskData.newStatus === "completed" ? "task_completed" : "task_status_change";
+  const sentEmails = new Set<string>();
+  
+  // Generate task link - use share token if available for direct link
+  const taskLink = taskData.shareToken 
+    ? `https://ms.talco.id/${taskData.shareToken}`
+    : `${baseUrl}/tasks`;
   
   for (const userId of userIds) {
     const { email, name } = await getUserEmailById(userId);
-    if (email) {
+    if (email && !sentEmails.has(email)) {
+      sentEmails.add(email);
       await sendEmailNotification({
         recipientEmail: email,
         recipientName: name,
@@ -171,12 +185,49 @@ export const sendTaskStatusChangeEmail = async (
           title: taskData.title,
           status: statusLabels[taskData.newStatus] || taskData.newStatus,
           creator_name: taskData.changerName,
-          link: `${baseUrl}/tasks`,
+          link: taskLink,
+          updated_at: new Date().toLocaleString("id-ID", { 
+            dateStyle: "long", 
+            timeStyle: "short" 
+          }),
         },
         relatedId: taskData.id,
       });
     }
   }
+};
+
+// Send email when user is mentioned in a comment
+export const sendMentionEmail = async (
+  mentionedUserId: string,
+  mentionData: {
+    taskId: string;
+    taskTitle: string;
+    commentContent: string;
+    mentionerName: string;
+    shareToken?: string;
+  }
+): Promise<void> => {
+  const { email, name } = await getUserEmailById(mentionedUserId);
+  if (!email) return;
+
+  const baseUrl = window.location.origin;
+  const taskLink = mentionData.shareToken 
+    ? `https://ms.talco.id/${mentionData.shareToken}`
+    : `${baseUrl}/tasks`;
+
+  await sendEmailNotification({
+    recipientEmail: email,
+    recipientName: name,
+    notificationType: "task_mention",
+    data: {
+      title: mentionData.taskTitle,
+      comment_content: mentionData.commentContent,
+      creator_name: mentionData.mentionerName,
+      link: taskLink,
+    },
+    relatedId: mentionData.taskId,
+  });
 };
 
 export const sendTaskOverdueEmail = async (

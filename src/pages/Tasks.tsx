@@ -158,9 +158,12 @@ export default function Tasks() {
     // First get the task data before updating
     const { data: taskData } = await supabase
       .from("tasks")
-      .select("title, assigned_to, created_by")
+      .select("title, assigned_to, created_by, share_token, status")
       .eq("id", itemId)
       .single();
+
+    // Only send notification if status actually changed
+    const statusChanged = taskData && taskData.status !== newStatus;
 
     const { error } = await supabase
       .from("tasks")
@@ -173,7 +176,7 @@ export default function Tasks() {
     }
 
     // Send email notification to involved users (async, non-blocking)
-    if (taskData) {
+    if (taskData && statusChanged) {
       const { data: session } = await supabase.auth.getSession();
       const currentUserId = session.session?.user.id;
       
@@ -199,6 +202,7 @@ export default function Tasks() {
           title: taskData.title,
           newStatus,
           changerName: changerProfile?.full_name || "Someone",
+          shareToken: taskData.share_token,
         }).catch(err => console.error("Email notification failed:", err));
       }
     }
