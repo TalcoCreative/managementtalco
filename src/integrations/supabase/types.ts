@@ -822,6 +822,7 @@ export type Database = {
           company: string | null
           created_at: string | null
           created_by: string
+          dashboard_slug: string | null
           email: string | null
           id: string
           industry: string | null
@@ -836,6 +837,7 @@ export type Database = {
           company?: string | null
           created_at?: string | null
           created_by: string
+          dashboard_slug?: string | null
           email?: string | null
           id?: string
           industry?: string | null
@@ -850,6 +852,7 @@ export type Database = {
           company?: string | null
           created_at?: string | null
           created_by?: string
+          dashboard_slug?: string | null
           email?: string | null
           id?: string
           industry?: string | null

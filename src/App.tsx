@@ -37,6 +37,7 @@ import SocialMedia from "./pages/SocialMedia";
 import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
 import SharedShortUrl from "./pages/SharedShortUrl";
+import SharedClientDashboard from "./pages/SharedClientDashboard";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => (
           <Route path="/share/project/:token" element={<SharedProject />} />
           <Route path="/share/shooting/:token" element={<SharedShooting />} />
           <Route path="/share/meeting/:token" element={<SharedMeeting />} />
+          <Route path="/dashboard/:slug" element={<SharedClientDashboard />} />
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

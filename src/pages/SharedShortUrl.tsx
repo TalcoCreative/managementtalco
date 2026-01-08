@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import SharedTask from "./SharedTask";
@@ -7,8 +7,8 @@ import SharedMeeting from "./SharedMeeting";
 const SharedShortUrl = () => {
   const { token } = useParams<{ token: string }>();
 
-  // Try to find if this token belongs to a task or meeting
-  const { data: entityType, isLoading } = useQuery({
+  // Try to find if this token belongs to a task, meeting, or client dashboard
+  const { data: entityInfo, isLoading } = useQuery({
     queryKey: ["resolve-share-token", token],
     queryFn: async () => {
       if (!token) return null;
@@ -20,7 +20,7 @@ const SharedShortUrl = () => {
         .eq("share_token", token)
         .maybeSingle();
 
-      if (task) return "task";
+      if (task) return { type: "task" };
 
       // Check meetings
       const { data: meeting } = await supabase
@@ -29,7 +29,16 @@ const SharedShortUrl = () => {
         .eq("share_token", token)
         .maybeSingle();
 
-      if (meeting) return "meeting";
+      if (meeting) return { type: "meeting" };
+
+      // Check client dashboard slug
+      const { data: client } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("dashboard_slug", token)
+        .maybeSingle();
+
+      if (client) return { type: "client", slug: token };
 
       return null;
     },
@@ -47,12 +56,16 @@ const SharedShortUrl = () => {
     );
   }
 
-  if (entityType === "task") {
+  if (entityInfo?.type === "task") {
     return <SharedTask />;
   }
 
-  if (entityType === "meeting") {
+  if (entityInfo?.type === "meeting") {
     return <SharedMeeting />;
+  }
+
+  if (entityInfo?.type === "client") {
+    return <Navigate to={`/dashboard/${entityInfo.slug}`} replace />;
   }
 
   return (
