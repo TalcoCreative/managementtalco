@@ -13,6 +13,20 @@ interface CreateClientDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Generate a unique slug from client name
+const generateSlug = (clientName: string): string => {
+  const baseSlug = clientName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+  
+  // Add random suffix for uniqueness
+  const randomSuffix = Math.random().toString(36).substring(2, 6);
+  return `${baseSlug}-${randomSuffix}`;
+};
+
 export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,12 +44,16 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      // Generate unique dashboard slug
+      const dashboardSlug = generateSlug(name);
+
       const { error } = await supabase.from("clients").insert({
         name,
         email,
         phone,
         company,
         status,
+        dashboard_slug: dashboardSlug,
         created_by: session.session.user.id,
       });
 
