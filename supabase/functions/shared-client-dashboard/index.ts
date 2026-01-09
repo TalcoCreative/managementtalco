@@ -67,7 +67,7 @@ serve(async (req) => {
 
     console.log("Found client:", client.id);
 
-    // Fetch projects for this client
+    // Fetch projects for this client (only visible ones)
     const { data: projects, error: projectsError } = await supabase
       .from("projects")
       .select(`
@@ -78,6 +78,7 @@ serve(async (req) => {
         created_at
       `)
       .eq("client_id", client.id)
+      .or("hidden_from_dashboard.is.null,hidden_from_dashboard.eq.false")
       .order("created_at", { ascending: false });
 
     if (projectsError) {

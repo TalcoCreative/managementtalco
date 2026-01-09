@@ -2693,6 +2693,7 @@ export type Database = {
           created_at: string | null
           deadline: string | null
           description: string | null
+          hidden_from_dashboard: boolean | null
           id: string
           share_token: string | null
           status: string | null
@@ -2705,6 +2706,7 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description?: string | null
+          hidden_from_dashboard?: boolean | null
           id?: string
           share_token?: string | null
           status?: string | null
@@ -2717,6 +2719,7 @@ export type Database = {
           created_at?: string | null
           deadline?: string | null
           description?: string | null
+          hidden_from_dashboard?: boolean | null
           id?: string
           share_token?: string | null
           status?: string | null

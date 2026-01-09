@@ -1,11 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FolderOpen, CheckCircle2, Clock, ExternalLink } from "lucide-react";
+import { 
+  FolderOpen, CheckCircle2, Clock, ExternalLink, 
+  MoreHorizontal, Trash2, EyeOff, Eye, Calendar 
+} from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 interface ClientProjectTaskSectionProps {
   clientId: string;
@@ -15,6 +29,9 @@ interface ClientProjectTaskSectionProps {
 
 export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientProjectTaskSectionProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+  const [deleteProjectTitle, setDeleteProjectTitle] = useState("");
 
   const { data: projects, isLoading: loadingProjects } = useQuery({
     queryKey: ["client-projects", clientId],
@@ -55,7 +72,7 @@ export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientPr
 
   const taskProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, isHidden?: boolean) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       pending: { variant: "outline", label: "Pending" },
       in_progress: { variant: "default", label: "In Progress" },
@@ -63,7 +80,64 @@ export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientPr
       on_hold: { variant: "destructive", label: "On Hold" },
     };
     const config = variants[status] || { variant: "outline", label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return (
+      <div className="flex items-center gap-1">
+        <Badge variant={config.variant}>{config.label}</Badge>
+        {isHidden && (
+          <Badge variant="outline" className="text-xs">
+            <EyeOff className="h-3 w-3 mr-1" />
+            Hidden
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const handleUpdateStatus = async (projectId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from("projects")
+      .update({ status: newStatus })
+      .eq("id", projectId);
+
+    if (error) {
+      toast.error("Gagal mengubah status project");
+      return;
+    }
+
+    toast.success(`Status project diubah ke ${newStatus === "completed" ? "Completed" : newStatus}`);
+    queryClient.invalidateQueries({ queryKey: ["client-projects", clientId] });
+  };
+
+  const handleToggleVisibility = async (projectId: string, currentHidden: boolean) => {
+    const { error } = await supabase
+      .from("projects")
+      .update({ hidden_from_dashboard: !currentHidden })
+      .eq("id", projectId);
+
+    if (error) {
+      toast.error("Gagal mengubah visibilitas project");
+      return;
+    }
+
+    toast.success(currentHidden ? "Project ditampilkan di dashboard client" : "Project disembunyikan dari dashboard client");
+    queryClient.invalidateQueries({ queryKey: ["client-projects", clientId] });
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", projectId);
+
+    if (error) {
+      toast.error("Gagal menghapus project");
+      return;
+    }
+
+    toast.success("Project berhasil dihapus");
+    setDeleteProjectId(null);
+    queryClient.invalidateQueries({ queryKey: ["client-projects", clientId] });
+    queryClient.invalidateQueries({ queryKey: ["client-all-tasks", clientId] });
   };
 
   const isLoading = loadingProjects || loadingTasks;
@@ -165,23 +239,28 @@ export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientPr
           <div className="text-center py-4 text-muted-foreground">Loading...</div>
         ) : projects && projects.length > 0 ? (
           <div className="space-y-2">
-            {projects.slice(0, 5).map((project) => {
+            {projects.slice(0, 10).map((project) => {
               const projectTasks = tasks?.filter(t => t.project_id === project.id) || [];
               const projectCompleted = projectTasks.filter(t => t.status === "completed").length;
               const projectTotal = projectTasks.length;
               const projectProgress = projectTotal > 0 ? (projectCompleted / projectTotal) * 100 : 0;
+              const isHidden = project.hidden_from_dashboard === true;
 
               return (
                 <div
                   key={project.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                  className={`flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors ${isHidden ? 'opacity-60' : ''}`}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium truncate">{project.title}</p>
-                      {getStatusBadge(project.status)}
+                      {getStatusBadge(project.status, isHidden)}
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
+                    <div className="flex items-center gap-4 mt-1 flex-wrap">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Dibuat: {format(new Date(project.created_at), "dd MMM yyyy")}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {projectCompleted}/{projectTotal} tasks
                       </span>
@@ -192,8 +271,58 @@ export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientPr
                       )}
                     </div>
                   </div>
-                  <div className="w-24 ml-4">
-                    <Progress value={projectProgress} className="h-1.5" />
+                  <div className="flex items-center gap-2 ml-4">
+                    <div className="w-20">
+                      <Progress value={projectProgress} className="h-1.5" />
+                    </div>
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {project.status !== "completed" && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(project.id, "completed")}>
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Set Completed
+                            </DropdownMenuItem>
+                          )}
+                          {project.status === "completed" && (
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(project.id, "in_progress")}>
+                              <Clock className="h-4 w-4 mr-2" />
+                              Set In Progress
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleToggleVisibility(project.id, isHidden)}>
+                            {isHidden ? (
+                              <>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Tampilkan di Dashboard
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="h-4 w-4 mr-2" />
+                                Sembunyikan dari Dashboard
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => {
+                              setDeleteProjectId(project.id);
+                              setDeleteProjectTitle(project.title);
+                            }}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Hapus Project
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
               );
@@ -206,6 +335,14 @@ export function ClientProjectTaskSection({ clientId, client, canEdit }: ClientPr
           </div>
         )}
       </div>
+
+      <DeleteConfirmDialog
+        open={!!deleteProjectId}
+        onOpenChange={(open) => !open && setDeleteProjectId(null)}
+        onConfirm={() => deleteProjectId && handleDeleteProject(deleteProjectId)}
+        title="Hapus Project"
+        description={`Apakah Anda yakin ingin menghapus project "${deleteProjectTitle}"? Semua task terkait juga akan dihapus.`}
+      />
     </div>
   );
 }
