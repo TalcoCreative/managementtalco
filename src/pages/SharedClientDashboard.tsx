@@ -28,6 +28,7 @@ interface ClientDashboardData {
     title: string;
     status: string;
     deadline: string | null;
+    created_at: string;
     totalTasks: number;
     completedTasks: number;
     isDelayed: boolean;
@@ -421,7 +422,11 @@ export default function SharedClientDashboard() {
                                   <h3 className="font-medium">{project.title}</h3>
                                   {getProjectStatusBadge(project.status, project.isDelayed)}
                                 </div>
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    Dibuat: {format(new Date(project.created_at), "dd MMM yyyy")}
+                                  </span>
                                   <span>{project.completedTasks}/{project.totalTasks} task</span>
                                   {project.deadline && (
                                     <span>Deadline: {format(new Date(project.deadline), "dd MMM yyyy")}</span>
