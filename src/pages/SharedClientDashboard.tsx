@@ -40,6 +40,7 @@ interface ClientDashboardData {
     deadline: string | null;
     priority: string | null;
     project_id: string;
+    created_at: string;
   }>;
   analytics: {
     totalProjects: number;
@@ -451,25 +452,30 @@ export default function SharedClientDashboard() {
                                     new Date(task.deadline) < new Date() && 
                                     task.status !== "completed";
 
-                                  return (
-                                    <div 
-                                      key={task.id}
-                                      className={`flex items-center justify-between p-2 rounded-md bg-background border ${
-                                        isOverdue ? "border-destructive/50" : ""
-                                      }`}
-                                    >
-                                      <div className="space-y-0.5">
-                                        <p className="text-sm font-medium">{task.title}</p>
-                                        {task.deadline && (
-                                          <p className={`text-xs ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
-                                            {isOverdue && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-                                            {format(new Date(task.deadline), "dd MMM yyyy")}
-                                          </p>
-                                        )}
-                                      </div>
-                                      {getStatusBadge(task.status, isOverdue)}
-                                    </div>
-                                  );
+                                    return (
+                                     <div 
+                                       key={task.id}
+                                       className={`flex items-center justify-between p-2 rounded-md bg-background border ${
+                                         isOverdue ? "border-destructive/50" : ""
+                                       }`}
+                                     >
+                                       <div className="space-y-0.5">
+                                         <p className="text-sm font-medium">{task.title}</p>
+                                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                           {task.created_at && (
+                                             <span>Dibuat: {format(new Date(task.created_at), "dd MMM yyyy")}</span>
+                                           )}
+                                           {task.deadline && (
+                                             <span className={isOverdue ? "text-destructive" : ""}>
+                                               {isOverdue && <AlertTriangle className="h-3 w-3 inline mr-1" />}
+                                               Deadline: {format(new Date(task.deadline), "dd MMM yyyy")}
+                                             </span>
+                                           )}
+                                         </div>
+                                       </div>
+                                       {getStatusBadge(task.status, isOverdue)}
+                                     </div>
+                                   );
                                 })}
                               </div>
                             ) : (
