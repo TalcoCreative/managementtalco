@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Clock } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
@@ -18,6 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Projects() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -111,6 +117,26 @@ export default function Projects() {
     }
   };
 
+  const handleToggleVisibility = async (projectId: string, currentHidden: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ hidden_from_dashboard: !currentHidden })
+        .eq("id", projectId);
+
+      if (error) throw error;
+
+      toast.success(
+        !currentHidden
+          ? "Project disembunyikan dari client dashboard"
+          : "Project ditampilkan di client dashboard"
+      );
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    } catch (error: any) {
+      toast.error("Gagal mengubah visibility");
+    }
+  };
+
 
   const handleDelete = async (reason: string) => {
     if (!deleteProject) return;
@@ -191,20 +217,48 @@ export default function Projects() {
               projects.map((project: any) => (
                 <Card
                   key={project.id}
-                  className="cursor-pointer hover:shadow-lg transition-shadow relative group"
+                  className={`cursor-pointer hover:shadow-lg transition-shadow relative group ${
+                    project.hidden_from_dashboard ? "opacity-60" : ""
+                  }`}
                   onClick={() => setSelectedProjectId(project.id)}
                 >
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteProject({ id: project.id, title: project.title });
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={project.hidden_from_dashboard ? "secondary" : "outline"}
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleVisibility(project.id, project.hidden_from_dashboard || false);
+                            }}
+                          >
+                            {project.hidden_from_dashboard ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {project.hidden_from_dashboard
+                            ? "Tampilkan di Client Dashboard"
+                            : "Sembunyikan dari Client Dashboard"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteProject({ id: project.id, title: project.title });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <CardContent className="p-6">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
