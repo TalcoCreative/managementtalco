@@ -137,6 +137,22 @@ export default function Projects() {
     }
   };
 
+  const handleStatusChange = async (projectId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ status: newStatus })
+        .eq("id", projectId);
+
+      if (error) throw error;
+
+      toast.success("Status project diperbarui");
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    } catch (error: any) {
+      toast.error("Gagal mengubah status");
+    }
+  };
+
 
   const handleDelete = async (reason: string) => {
     if (!deleteProject) return;
@@ -263,9 +279,23 @@ export default function Projects() {
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-lg flex-1">{project.title}</h3>
-                        <Badge className={getStatusColor(project.status)}>
-                          {project.status.replace("_", " ")}
-                        </Badge>
+                        <Select
+                          value={project.status}
+                          onValueChange={(value) => handleStatusChange(project.id, value)}
+                        >
+                          <SelectTrigger 
+                            className={`w-32 h-7 text-xs ${getStatusColor(project.status)} text-white border-0`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent onClick={(e) => e.stopPropagation()}>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="on_hold">On Hold</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {project.description && (

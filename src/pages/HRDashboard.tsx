@@ -16,7 +16,7 @@ import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { ATTENDANCE_COLUMNS } from "@/lib/excel-utils";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users } from "lucide-react";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -162,13 +162,41 @@ export default function HRDashboard() {
     },
   });
 
+  // Fetch letters created per user
+  const { data: letters } = useQuery({
+    queryKey: ["hr-letters", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("letters")
+        .select("id, created_by")
+        .gte("created_at", `${startDate}T00:00:00`)
+        .lte("created_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch KOL database entries
+  const { data: kolEntries } = useQuery({
+    queryKey: ["hr-kol-entries", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kol_database")
+        .select("id, created_by")
+        .gte("created_at", `${startDate}T00:00:00`)
+        .lte("created_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch prospects count
   const { data: prospects } = useQuery({
     queryKey: ["hr-prospects", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("prospects")
-        .select("id, status")
+        .select("id, status, created_by")
         .gte("created_at", `${startDate}T00:00:00`)
         .lte("created_at", `${endDate}T23:59:59`);
       if (error) throw error;
@@ -206,10 +234,21 @@ export default function HRDashboard() {
     enabled: !!selectedUser?.id,
   });
 
-  // Calculate per-user task statistics
-  const userTaskStats = profiles?.map(profile => {
+  // Calculate per-user task statistics with activity scores
+  const userActivityStats = profiles?.map(profile => {
     const tasksCreated = tasks?.filter(t => t.created_by === profile.id) || [];
     const tasksAssigned = tasks?.filter(t => t.assigned_to === profile.id) || [];
+    const userLetters = letters?.filter(l => l.created_by === profile.id) || [];
+    const userProspects = prospects?.filter(p => p.created_by === profile.id) || [];
+    const userKol = kolEntries?.filter(k => k.created_by === profile.id) || [];
+    
+    // Activity score calculation
+    const activityScore = 
+      tasksCreated.length * 1 + 
+      tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length * 2 +
+      userLetters.length * 3 +
+      userProspects.length * 5 +
+      userKol.length * 3;
     
     return {
       ...profile,
@@ -217,8 +256,15 @@ export default function HRDashboard() {
       tasksAssignedCount: tasksAssigned.length,
       completedCount: tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length,
       inProgressCount: tasksAssigned.filter(t => t.status === 'in_progress').length,
+      lettersCount: userLetters.length,
+      prospectsCount: userProspects.length,
+      kolCount: userKol.length,
+      activityScore,
     };
-  }) || [];
+  })?.sort((a, b) => b.activityScore - a.activityScore) || [];
+
+  // Legacy stats for backwards compatibility
+  const userTaskStats = userActivityStats;
 
   // Calculate statistics
   const stats = {
@@ -228,6 +274,8 @@ export default function HRDashboard() {
     completedTasks: tasks?.filter(t => t.status === 'done' || t.status === 'completed').length || 0,
     totalProspects: prospects?.length || 0,
     activeProspects: prospects?.filter(p => p.status !== 'closed_won' && p.status !== 'closed_lost').length || 0,
+    totalLetters: letters?.length || 0,
+    totalKol: kolEntries?.length || 0,
   };
 
   const calculateWorkHours = (clockIn: string | null, clockOut: string | null) => {
@@ -452,8 +500,12 @@ export default function HRDashboard() {
         {/* Deletion Notifications */}
         <DeletionNotifications />
 
-        <Tabs defaultValue="leave-approval" className="space-y-4">
-          <TabsList>
+        <Tabs defaultValue="activity-score" className="space-y-4">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="activity-score">
+              <Star className="h-4 w-4 mr-2" />
+              Activity Score
+            </TabsTrigger>
             <TabsTrigger value="leave-approval" className="relative">
               <CalendarOff className="h-4 w-4 mr-2" />
               Leave Approval
@@ -463,8 +515,8 @@ export default function HRDashboard() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="overview">Task Overview per Person</TabsTrigger>
-            <TabsTrigger value="shootings">Shooting Schedules</TabsTrigger>
+            <TabsTrigger value="overview">Task Overview</TabsTrigger>
+            <TabsTrigger value="shootings">Shooting</TabsTrigger>
             <TabsTrigger value="attendance">Attendance</TabsTrigger>
             <TabsTrigger value="all-tasks">All Tasks</TabsTrigger>
             <TabsTrigger value="disciplinary">
@@ -472,6 +524,115 @@ export default function HRDashboard() {
               Disciplinary
             </TabsTrigger>
           </TabsList>
+
+          {/* Activity Score Tab */}
+          <TabsContent value="activity-score">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Activity Score per Employee ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Skor: Task Created (×1) + Task Completed (×2) + Letters (×3) + KOL Database (×3) + Prospects (×5)
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead>Employee</TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            Letters
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Users className="h-3 w-3" />
+                            Prospects
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Database className="h-3 w-3" />
+                            KOL
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-center">Tasks Created</TableHead>
+                        <TableHead className="text-center">Tasks Completed</TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Star className="h-3 w-3 text-yellow-500" />
+                            Total Score
+                          </div>
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userActivityStats.map((user, index) => (
+                        <TableRow key={user.id} className={index < 3 ? "bg-yellow-500/5" : ""}>
+                          <TableCell className="font-medium">
+                            {index < 3 ? (
+                              <Badge className={
+                                index === 0 ? "bg-yellow-500" : 
+                                index === 1 ? "bg-gray-400" : "bg-amber-700"
+                              }>
+                                {index + 1}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">{index + 1}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">{user.full_name}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-blue-500/10">
+                              <FileText className="h-3 w-3 mr-1" />
+                              {user.lettersCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-green-500/10">
+                              <Users className="h-3 w-3 mr-1" />
+                              {user.prospectsCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-purple-500/10">
+                              <Database className="h-3 w-3 mr-1" />
+                              {user.kolCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-primary/10">
+                              {user.tasksCreatedCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className="bg-green-500">{user.completedCount}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={`${
+                              index === 0 ? "bg-yellow-500" : 
+                              index === 1 ? "bg-gray-400" : 
+                              index === 2 ? "bg-amber-700" : 
+                              "bg-primary"
+                            }`}>
+                              <Star className="h-3 w-3 mr-1" />
+                              {user.activityScore}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Leave Approval Tab */}
           <TabsContent value="leave-approval" className="space-y-4">
