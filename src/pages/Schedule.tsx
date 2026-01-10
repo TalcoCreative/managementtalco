@@ -59,7 +59,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meetings")
-        .select("*, clients(name), projects(title), pic:profiles!meetings_pic_id_fkey(full_name)")
+        .select("*, clients(name), projects(title), created_by_profile:profiles!fk_meetings_created_by(full_name)")
         .order("meeting_date", { ascending: true });
       if (error) throw error;
       return data;
@@ -618,7 +618,7 @@ export default function Schedule() {
                             <TableHead>Date</TableHead>
                             <TableHead>Time</TableHead>
                             <TableHead>Mode</TableHead>
-                            <TableHead>PIC</TableHead>
+                            <TableHead>Created By</TableHead>
                             <TableHead>Status</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -637,7 +637,7 @@ export default function Schedule() {
                               <TableCell>{format(new Date(meeting.meeting_date), "dd MMM yyyy")}</TableCell>
                               <TableCell>{meeting.start_time} - {meeting.end_time}</TableCell>
                               <TableCell className="capitalize">{meeting.mode}</TableCell>
-                              <TableCell>{meeting.pic?.full_name || '-'}</TableCell>
+                              <TableCell>{meeting.created_by_profile?.full_name || '-'}</TableCell>
                               <TableCell>
                                 <Badge className={getStatusColor(meeting.status)}>{meeting.status}</Badge>
                               </TableCell>
