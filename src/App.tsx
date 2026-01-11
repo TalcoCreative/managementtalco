@@ -34,6 +34,9 @@ import SharedProject from "./pages/SharedProject";
 import SharedShooting from "./pages/SharedShooting";
 import SharedMeeting from "./pages/SharedMeeting";
 import SocialMedia from "./pages/SocialMedia";
+import SocialMediaModule from "./pages/SocialMediaModule";
+import SocialMediaSettings from "./pages/SocialMediaSettings";
+import SharedSocialMedia from "./pages/SharedSocialMedia";
 import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
 import SharedShortUrl from "./pages/SharedShortUrl";
@@ -72,7 +75,9 @@ const App = () => (
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-          <Route path="/social-media" element={<ProtectedRoute><SocialMedia /></ProtectedRoute>} />
+          <Route path="/social-media" element={<ProtectedRoute><SocialMediaModule /></ProtectedRoute>} />
+          <Route path="/social-media/settings" element={<ProtectedRoute><SocialMediaSettings /></ProtectedRoute>} />
+          <Route path="/social-media/client/:slug" element={<SharedSocialMedia />} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
