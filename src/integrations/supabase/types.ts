@@ -830,6 +830,7 @@ export type Database = {
           phone: string | null
           pic_contact: string | null
           pic_name: string | null
+          social_media_slug: string | null
           start_date: string | null
           status: string | null
         }
@@ -845,6 +846,7 @@ export type Database = {
           phone?: string | null
           pic_contact?: string | null
           pic_name?: string | null
+          social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
         }
@@ -860,6 +862,7 @@ export type Database = {
           phone?: string | null
           pic_contact?: string | null
           pic_name?: string | null
+          social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
         }
@@ -3395,8 +3398,10 @@ export type Database = {
           content_type: string
           created_at: string
           error_message: string | null
+          external_id: string | null
           hashtags: string | null
           id: string
+          live_post_url: string | null
           media_urls: string[] | null
           platform: string
           post_id: string | null
@@ -3406,6 +3411,7 @@ export type Database = {
           scheduled_at: string | null
           staff_id: string
           status: string
+          synced_at: string | null
           updated_at: string
         }
         Insert: {
@@ -3414,8 +3420,10 @@ export type Database = {
           content_type: string
           created_at?: string
           error_message?: string | null
+          external_id?: string | null
           hashtags?: string | null
           id?: string
+          live_post_url?: string | null
           media_urls?: string[] | null
           platform: string
           post_id?: string | null
@@ -3425,6 +3433,7 @@ export type Database = {
           scheduled_at?: string | null
           staff_id: string
           status?: string
+          synced_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -3433,8 +3442,10 @@ export type Database = {
           content_type?: string
           created_at?: string
           error_message?: string | null
+          external_id?: string | null
           hashtags?: string | null
           id?: string
+          live_post_url?: string | null
           media_urls?: string[] | null
           platform?: string
           post_id?: string | null
@@ -3444,6 +3455,7 @@ export type Database = {
           scheduled_at?: string | null
           staff_id?: string
           status?: string
+          synced_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3462,6 +3474,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      social_media_settings: {
+        Row: {
+          api_secret_encrypted: string | null
+          created_at: string
+          id: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_secret_encrypted?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_secret_encrypted?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       task_activities: {
         Row: {
