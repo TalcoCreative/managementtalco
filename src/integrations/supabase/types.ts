@@ -3345,40 +3345,52 @@ export type Database = {
         Row: {
           comments: number | null
           created_at: string
+          engagement_rate: number | null
           fetched_at: string
           id: string
+          impressions: number | null
           likes: number | null
           platform: string
+          post_clicks: number | null
           post_id: string | null
           reach: number | null
           saves: number | null
           shares: number | null
+          video_views: number | null
           views: number | null
         }
         Insert: {
           comments?: number | null
           created_at?: string
+          engagement_rate?: number | null
           fetched_at?: string
           id?: string
+          impressions?: number | null
           likes?: number | null
           platform: string
+          post_clicks?: number | null
           post_id?: string | null
           reach?: number | null
           saves?: number | null
           shares?: number | null
+          video_views?: number | null
           views?: number | null
         }
         Update: {
           comments?: number | null
           created_at?: string
+          engagement_rate?: number | null
           fetched_at?: string
           id?: string
+          impressions?: number | null
           likes?: number | null
           platform?: string
+          post_clicks?: number | null
           post_id?: string | null
           reach?: number | null
           saves?: number | null
           shares?: number | null
+          video_views?: number | null
           views?: number | null
         }
         Relationships: [
@@ -3408,7 +3420,10 @@ export type Database = {
           post_url: string | null
           posted_at: string | null
           project_id: string | null
+          publish_at: string | null
           scheduled_at: string | null
+          socialbu_account_id: number | null
+          socialbu_post_id: number | null
           staff_id: string
           status: string
           synced_at: string | null
@@ -3430,7 +3445,10 @@ export type Database = {
           post_url?: string | null
           posted_at?: string | null
           project_id?: string | null
+          publish_at?: string | null
           scheduled_at?: string | null
+          socialbu_account_id?: number | null
+          socialbu_post_id?: number | null
           staff_id: string
           status?: string
           synced_at?: string | null
@@ -3452,7 +3470,10 @@ export type Database = {
           post_url?: string | null
           posted_at?: string | null
           project_id?: string | null
+          publish_at?: string | null
           scheduled_at?: string | null
+          socialbu_account_id?: number | null
+          socialbu_post_id?: number | null
           staff_id?: string
           status?: string
           synced_at?: string | null
@@ -3502,6 +3523,45 @@ export type Database = {
           last_sync_at?: string | null
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      socialbu_accounts: {
+        Row: {
+          account_name: string | null
+          account_type: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          platform: string
+          profile_image_url: string | null
+          socialbu_account_id: number
+          synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_type?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform: string
+          profile_image_url?: string | null
+          socialbu_account_id: number
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_type?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          platform?: string
+          profile_image_url?: string | null
+          socialbu_account_id?: number
+          synced_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

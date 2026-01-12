@@ -39,21 +39,20 @@ serve(async (req) => {
       );
     }
 
-    const apiSecret = settings.api_secret_encrypted;
+    // Use auth_token for API calls (from login flow)
+    const authToken = settings.auth_token || settings.api_secret_encrypted;
 
     // Call SocialBu API to get posts
-    // Note: This is a placeholder - actual SocialBu API endpoints may differ
-    // You'll need to adjust based on SocialBu's actual API documentation
     console.log('Syncing posts from SocialBu...');
 
     let syncedCount = 0;
     
     try {
-      // Example API call - adjust endpoint and parameters based on SocialBu docs
-      const response = await fetch('https://api.socialbu.com/v2/posts', {
+      // Fetch posts from SocialBu API
+      const response = await fetch('https://socialbu.com/api/v1/posts?type[]=published&type[]=scheduled', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${apiSecret}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
       });

@@ -23,3 +23,21 @@ verify_jwt = false
 
 [functions.shared-meeting]
 verify_jwt = false
+
+[functions.sync-socialbu]
+verify_jwt = false
+
+[functions.socialbu-post]
+verify_jwt = false
+
+[functions.socialbu-accounts]
+verify_jwt = false
+
+[functions.socialbu-analytics]
+verify_jwt = false
+
+[functions.socialbu-media]
+verify_jwt = false
+
+[functions.shared-client-dashboard]
+verify_jwt = false
