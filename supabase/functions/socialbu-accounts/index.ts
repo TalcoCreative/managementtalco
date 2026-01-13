@@ -45,14 +45,17 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json().catch(() => ({} as any));
-    const { action, email, password, provider } = body ?? {};
+    const { action, api_key, provider } = body ?? {};
 
     if (!action) return json(400, { error: "Missing action" });
 
     console.log("SocialBu accounts action:", action, "user:", user.id);
 
-    // Get settings for this user (latest row)
-    const { data: settings, error: settingsError } = await supabaseAdmin
+    // Get settings - try user-specific first, then fallback to global settings
+    let settings: any = null;
+    
+    // First try to get user-specific settings
+    const { data: userSettings, error: userSettingsError } = await supabaseAdmin
       .from("social_media_settings")
       .select("*")
       .eq("user_id", user.id)
@@ -60,41 +63,39 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (settingsError) {
-      console.error("socialbu-accounts: failed to fetch settings", settingsError);
-      return json(500, { error: "Failed to load settings" });
+    if (!userSettingsError && userSettings) {
+      settings = userSettings;
+    } else {
+      // Fallback: get any settings with api_secret_encrypted (global/shared settings)
+      const { data: globalSettings, error: globalError } = await supabaseAdmin
+        .from("social_media_settings")
+        .select("*")
+        .not("api_secret_encrypted", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!globalError && globalSettings) {
+        settings = globalSettings;
+      }
     }
 
+    // Get the API token (prioritize api_secret_encrypted over auth_token)
+    const apiToken = settings?.api_secret_encrypted || settings?.auth_token;
+
     switch (action) {
-      case "login": {
-        if (!email?.trim() || !password?.trim()) {
-          return json(400, { error: "Email and password are required" });
+      case "save-api-key": {
+        if (!api_key?.trim()) {
+          return json(400, { error: "API key is required" });
         }
 
-        // Authenticate with SocialBu to get access token
-        const response = await fetch(`${SOCIALBU_API_BASE}/auth/get_token`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("SocialBu login error:", response.status, errorText);
-          return json(401, { error: "Login failed. Please check your credentials." });
-        }
-
-        const data = await response.json();
-        console.log("SocialBu login successful for:", data.email);
-
-        // Save auth token to settings scoped to this user
+        // Save API key to settings for this user
         const { error: upsertError } = await supabaseAdmin
           .from("social_media_settings")
           .upsert(
             {
               user_id: user.id,
-              auth_token: data.authToken,
-              user_email: data.email,
+              api_secret_encrypted: api_key,
               is_connected: true,
               updated_at: new Date().toISOString(),
               updated_by: user.id,
@@ -103,43 +104,19 @@ serve(async (req) => {
           );
 
         if (upsertError) {
-          console.error("socialbu-accounts: failed to save settings", upsertError);
-          return json(500, { error: "Failed to save login" });
+          console.error("socialbu-accounts: failed to save API key", upsertError);
+          return json(500, { error: "Failed to save API key" });
         }
 
-        return json(200, {
-          success: true,
-          user: { id: data.id, name: data.name, email: data.email },
-        });
+        return json(200, { success: true, message: "API key saved successfully" });
       }
 
       case "logout": {
-        if (!settings?.auth_token) {
-          // Heal inconsistent state if needed
-          if (settings?.is_connected) {
-            await supabaseAdmin
-              .from("social_media_settings")
-              .update({
-                is_connected: false,
-                user_email: null,
-                updated_at: new Date().toISOString(),
-                updated_by: user.id,
-              })
-              .eq("user_id", user.id);
-          }
-          return json(400, { error: "Not logged in" });
-        }
-
-        // Logout from SocialBu (best-effort)
-        await fetch(`${SOCIALBU_API_BASE}/auth/logout`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${settings.auth_token}` },
-        }).catch(() => null);
-
-        // Clear auth token
+        // Clear API token
         const { error: logoutError } = await supabaseAdmin
           .from("social_media_settings")
           .update({
+            api_secret_encrypted: null,
             auth_token: null,
             user_email: null,
             is_connected: false,
@@ -149,88 +126,114 @@ serve(async (req) => {
           .eq("user_id", user.id);
 
         if (logoutError) {
-          console.error("socialbu-accounts: failed to clear settings", logoutError);
-          return json(500, { error: "Failed to logout" });
+          // Try updating by settings id if user_id fails
+          if (settings?.id) {
+            await supabaseAdmin
+              .from("social_media_settings")
+              .update({
+                api_secret_encrypted: null,
+                auth_token: null,
+                user_email: null,
+                is_connected: false,
+                updated_at: new Date().toISOString(),
+                updated_by: user.id,
+              })
+              .eq("id", settings.id);
+          }
         }
 
         return json(200, { success: true });
       }
 
       case "fetch-accounts": {
-        if (!settings?.auth_token) {
-          // If DB says connected but token is missing, auto-fix it.
-          if (settings?.is_connected) {
-            await supabaseAdmin
-              .from("social_media_settings")
-              .update({
-                is_connected: false,
-                user_email: null,
-                updated_at: new Date().toISOString(),
-                updated_by: user.id,
-              })
-              .eq("user_id", user.id);
-          }
-          return json(401, { error: "Not logged in" });
+        if (!apiToken) {
+          console.log("No API token found. Settings:", {
+            hasSettings: !!settings,
+            hasApiSecret: !!settings?.api_secret_encrypted,
+            hasAuthToken: !!settings?.auth_token,
+            isConnected: settings?.is_connected
+          });
+          return json(401, { error: "No API key configured. Please add your SocialBu API key in settings." });
         }
 
-        // Fetch connected accounts from SocialBu
+        console.log("Fetching accounts with API token (first 20 chars):", apiToken.substring(0, 20) + "...");
+
+        // Fetch connected accounts from SocialBu using Bearer token
         const response = await fetch(`${SOCIALBU_API_BASE}/accounts`, {
           method: "GET",
-          headers: { Authorization: `Bearer ${settings.auth_token}` },
+          headers: { 
+            "Authorization": `Bearer ${apiToken}`,
+            "Accept": "application/json",
+          },
         });
+
+        console.log("SocialBu API response status:", response.status);
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => "");
           console.error("SocialBu fetch accounts error:", response.status, errorText);
 
-          // Token may have expired/revoked; don't keep the UI stuck in a connected state.
+          // Token may have expired/revoked
           if (response.status === 401 || response.status === 403) {
-            await supabaseAdmin
-              .from("social_media_settings")
-              .update({
-                auth_token: null,
-                is_connected: false,
-                updated_at: new Date().toISOString(),
-                updated_by: user.id,
-              })
-              .eq("user_id", user.id);
+            // Don't clear the token, just return error
+            return json(response.status, { 
+              error: "API key is invalid or expired. Please update your SocialBu API key.",
+              needs_reauth: true 
+            });
           }
 
-          return json(response.status, { error: "Failed to fetch accounts" });
+          return json(response.status, { error: "Failed to fetch accounts from SocialBu" });
         }
 
         const data = await response.json();
-        const accounts = data.items || [];
+        console.log("SocialBu API response data:", JSON.stringify(data).substring(0, 500));
+        
+        // Handle different response formats
+        const accounts = data.items || data.data || data.accounts || (Array.isArray(data) ? data : []);
 
         console.log(`Found ${accounts.length} SocialBu accounts`);
 
         // Sync accounts to our database
         for (const account of accounts) {
+          const platform = (account.type || account.provider || account.platform || "unknown").toLowerCase();
+          const accountName = account.name || account.username || account.account_name || `${platform} account`;
+          
           const { error: upsertAccountError } = await supabaseAdmin
             .from("socialbu_accounts")
             .upsert(
               {
-                socialbu_account_id: account.id,
-                platform: account.type?.toLowerCase() || account.provider?.toLowerCase() || "unknown",
-                account_name: account.name || account.username,
-                account_type: account.type,
-                profile_image_url: account.picture || account.avatar,
-                is_active: account.connected !== false,
+                socialbu_account_id: String(account.id),
+                platform: platform,
+                account_name: accountName,
+                account_type: account.type || account.account_type,
+                profile_image_url: account.picture || account.avatar || account.profile_image_url,
+                is_active: account.connected !== false && account.active !== false,
                 synced_at: new Date().toISOString(),
               },
               { onConflict: "socialbu_account_id" }
             );
 
           if (upsertAccountError) {
-            console.error("socialbu-accounts: failed to upsert account", upsertAccountError);
+            console.error("socialbu-accounts: failed to upsert account", account.id, upsertAccountError);
           }
         }
 
-        return json(200, { success: true, accounts });
+        // Update last sync time
+        if (settings?.id) {
+          await supabaseAdmin
+            .from("social_media_settings")
+            .update({
+              last_sync_at: new Date().toISOString(),
+              is_connected: true,
+            })
+            .eq("id", settings.id);
+        }
+
+        return json(200, { success: true, accounts, count: accounts.length });
       }
 
       case "connect-account": {
-        if (!settings?.auth_token) return json(401, { error: "Not logged in" });
+        if (!apiToken) return json(401, { error: "No API key configured" });
         if (!provider?.trim()) return json(400, { error: "Missing provider" });
 
         console.log("Connecting account for provider:", provider);
@@ -239,8 +242,9 @@ serve(async (req) => {
         const response = await fetch(`${SOCIALBU_API_BASE}/accounts`, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${settings.auth_token}`,
+            "Authorization": `Bearer ${apiToken}`,
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
           body: JSON.stringify({ provider }),
         });
@@ -253,6 +257,18 @@ serve(async (req) => {
 
         const data = await response.json();
         return json(200, { success: true, connect_url: data.connect_url || data.url });
+      }
+
+      case "check-connection": {
+        // Check if we have a valid API token
+        const hasToken = !!apiToken;
+        const isConnected = settings?.is_connected && hasToken;
+
+        return json(200, {
+          is_connected: isConnected,
+          has_api_key: hasToken,
+          last_sync_at: settings?.last_sync_at,
+        });
       }
 
       default:
