@@ -73,10 +73,14 @@ export function SocialMediaPostForm() {
   const { data: settings } = useQuery({
     queryKey: ["social-media-settings"],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from("social_media_settings")
         .select("*")
-        .limit(1)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data as (typeof data & { auth_token?: string }) | null;

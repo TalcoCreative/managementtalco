@@ -54,12 +54,17 @@ export default function SocialMediaSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["social-media-settings"],
     queryFn: async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return null;
+
       const { data, error } = await supabase
         .from("social_media_settings")
         .select("*")
-        .limit(1)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
+
       // Cast to include new columns that may not be in types yet
       return data as (typeof data & { auth_token?: string; user_email?: string }) | null;
     },
