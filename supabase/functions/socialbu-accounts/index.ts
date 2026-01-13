@@ -18,7 +18,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, email, password } = await req.json();
+    const body = await req.json();
+    const { action, email, password, provider } = body;
+
+    console.log('SocialBu accounts action:', action);
 
     // Get settings
     const { data: settings } = await supabase
@@ -165,7 +168,8 @@ serve(async (req) => {
           );
         }
 
-        const { provider } = await req.json();
+        // Provider is already in the body from the initial parse
+        console.log('Connecting account for provider:', provider);
 
         // Get connect URL from SocialBu
         const response = await fetch(`${SOCIALBU_API_BASE}/accounts`, {
@@ -178,6 +182,8 @@ serve(async (req) => {
         });
 
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('SocialBu connect account error:', response.status, errorText);
           return new Response(
             JSON.stringify({ error: 'Failed to get connect URL' }),
             { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -186,7 +192,7 @@ serve(async (req) => {
 
         const data = await response.json();
         return new Response(
-          JSON.stringify({ success: true, connect_url: data.connect_url }),
+          JSON.stringify({ success: true, connect_url: data.connect_url || data.url }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
