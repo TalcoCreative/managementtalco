@@ -44,29 +44,38 @@ const platformConfig = {
 export default function SocialMediaSettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
 
-  // Fetch current settings
-  const { data: settings, isLoading } = useQuery({
+  // Fetch current settings and connection status
+  const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
     queryKey: ["social-media-settings"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (!user) return null;
 
+      // Check connection status via edge function
+      const { data: connectionData } = await supabase.functions.invoke("socialbu-accounts", {
+        body: { action: "check-connection" },
+      });
+
+      // Also fetch from DB for additional info
       const { data, error } = await supabase
         .from("social_media_settings")
         .select("*")
-        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
-      if (error) throw error;
 
-      // Cast to include new columns that may not be in types yet
-      return data as (typeof data & { auth_token?: string; user_email?: string }) | null;
+      return {
+        ...(data || {}),
+        is_connected: connectionData?.is_connected || false,
+        has_api_key: connectionData?.has_api_key || false,
+        last_sync_at: connectionData?.last_sync_at || data?.last_sync_at,
+      };
     },
   });
 
@@ -84,33 +93,32 @@ export default function SocialMediaSettings() {
     },
   });
 
-  // Login to SocialBu
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      toast.error("Masukkan email dan password");
+  // Save API Key
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast.error("Masukkan API Key SocialBu");
       return;
     }
 
-    setIsLoggingIn(true);
+    setIsSavingApiKey(true);
     try {
       const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "login", email, password },
+        body: { action: "save-api-key", api_key: apiKey },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success(`Login berhasil! Selamat datang, ${data.user?.name}`);
-      setEmail("");
-      setPassword("");
-      queryClient.invalidateQueries({ queryKey: ["social-media-settings"] });
+      toast.success("API Key berhasil disimpan!");
+      setApiKey("");
+      refetchSettings();
       
-      // Fetch accounts after login
+      // Fetch accounts after saving API key
       await fetchSocialBuAccounts();
     } catch (error: any) {
-      toast.error(error.message || "Login gagal");
+      toast.error(error.message || "Gagal menyimpan API Key");
     } finally {
-      setIsLoggingIn(false);
+      setIsSavingApiKey(false);
     }
   };
 
@@ -265,58 +273,49 @@ export default function SocialMediaSettings() {
 
                 <Separator />
 
-                {/* Login Form */}
+                {/* API Key Form */}
                 {!settings?.is_connected ? (
                   <div className="space-y-4">
                     <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
                       <h4 className="font-medium text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Login dengan Akun SocialBu
+                        <Link2 className="h-4 w-4" />
+                        Hubungkan dengan API Key
                       </h4>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Gunakan email dan password akun SocialBu Anda untuk menghubungkan.
+                        Dapatkan API Key dari <a href="https://socialbu.com/app/settings/developer" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">SocialBu Developer Settings</a>, 
+                        lalu paste di bawah ini.
                       </p>
                     </div>
 
                     <div className="grid gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="email@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="apiKey">API Key / Access Token</Label>
                         <div className="relative">
                           <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Password SocialBu"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            id="apiKey"
+                            type={showApiKey ? "text" : "password"}
+                            placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOi..."
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
                           />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             className="absolute right-0 top-0 h-full"
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowApiKey(!showApiKey)}
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                       </div>
-                      <Button onClick={handleLogin} disabled={isLoggingIn}>
-                        {isLoggingIn ? (
+                      <Button onClick={handleSaveApiKey} disabled={isSavingApiKey}>
+                        {isSavingApiKey ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
-                          <LogIn className="h-4 w-4 mr-2" />
+                          <Link2 className="h-4 w-4 mr-2" />
                         )}
-                        Login ke SocialBu
+                        Simpan API Key
                       </Button>
                     </div>
                   </div>
