@@ -3499,30 +3499,36 @@ export type Database = {
       social_media_settings: {
         Row: {
           api_secret_encrypted: string | null
+          auth_token: string | null
           created_at: string
           id: string
           is_connected: boolean | null
           last_sync_at: string | null
           updated_at: string
           updated_by: string | null
+          user_email: string | null
         }
         Insert: {
           api_secret_encrypted?: string | null
+          auth_token?: string | null
           created_at?: string
           id?: string
           is_connected?: boolean | null
           last_sync_at?: string | null
           updated_at?: string
           updated_by?: string | null
+          user_email?: string | null
         }
         Update: {
           api_secret_encrypted?: string | null
+          auth_token?: string | null
           created_at?: string
           id?: string
           is_connected?: boolean | null
           last_sync_at?: string | null
           updated_at?: string
           updated_by?: string | null
+          user_email?: string | null
         }
         Relationships: []
       }
