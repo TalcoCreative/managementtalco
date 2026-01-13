@@ -3507,6 +3507,7 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           user_email: string | null
+          user_id: string | null
         }
         Insert: {
           api_secret_encrypted?: string | null
@@ -3518,6 +3519,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           user_email?: string | null
+          user_id?: string | null
         }
         Update: {
           api_secret_encrypted?: string | null
@@ -3529,8 +3531,17 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           user_email?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "social_media_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       socialbu_accounts: {
         Row: {
