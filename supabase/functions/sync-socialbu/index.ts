@@ -21,6 +21,8 @@ serve(async (req) => {
     const { data: settings, error: settingsError } = await supabase
       .from('social_media_settings')
       .select('*')
+      .not('api_secret_encrypted', 'is', null)
+      .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -29,9 +31,9 @@ serve(async (req) => {
       throw new Error('Failed to fetch settings');
     }
 
-    if (!settings?.api_secret_encrypted || !settings?.is_connected) {
+    if (!settings?.api_secret_encrypted) {
       return new Response(
-        JSON.stringify({ error: 'SocialBu not connected' }),
+        JSON.stringify({ error: 'SocialBu not connected - no API key found' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -39,83 +41,104 @@ serve(async (req) => {
       );
     }
 
-    // Use auth_token for API calls (from login flow)
-    const authToken = settings.auth_token || settings.api_secret_encrypted;
+    // Use api_secret_encrypted as the API token
+    const authToken = settings.api_secret_encrypted;
 
-    // Call SocialBu API to get posts
     console.log('Syncing posts from SocialBu...');
+    console.log('API Token (first 30 chars):', authToken.substring(0, 30) + '...');
 
     let syncedCount = 0;
     
     try {
-      // Fetch posts from SocialBu API
-      const response = await fetch('https://socialbu.com/api/v1/posts?type[]=published&type[]=scheduled', {
+      // According to SocialBu API, we need to fetch posts without query params first
+      // Then filter by status if needed
+      // API endpoint: GET /api/v1/posts
+      const response = await fetch('https://socialbu.com/api/v1/posts', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('SocialBu API response status:', response.status);
+
       if (!response.ok) {
-        console.log('SocialBu API response not OK:', response.status);
-        // If the API returns an error, we'll log it but not fail the whole sync
-        // This allows for graceful handling when API is not available or credentials are invalid
+        const errorText = await response.text();
+        console.log('SocialBu API error response:', errorText);
         
-        return new Response(
-          JSON.stringify({ 
-            synced: 0, 
-            message: 'Unable to connect to SocialBu API. Please check your API secret.' 
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-
-      const data = await response.json();
-      const posts = data.posts || data.data || [];
-
-      console.log(`Found ${posts.length} posts from SocialBu`);
-
-      // Process each post
-      for (const post of posts) {
-        const externalId = post.id?.toString() || post.post_id?.toString();
+        // Try alternative endpoint format
+        console.log('Trying alternative endpoint...');
         
-        if (!externalId) continue;
+        const altResponse = await fetch('https://socialbu.com/api/v1/scheduled-posts', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'application/json',
+          },
+        });
 
-        const postData = {
-          external_id: externalId,
-          platform: post.platform?.toLowerCase() || post.network?.toLowerCase() || 'unknown',
-          caption: post.content || post.caption || post.text || '',
-          media_urls: post.media_urls || post.images || [],
-          scheduled_at: post.scheduled_time || post.schedule_time || null,
-          posted_at: post.published_time || post.posted_at || null,
-          status: mapSocialBuStatus(post.status || post.state),
-          post_url: post.post_url || post.link || null,
-          live_post_url: post.post_url || post.link || null,
-          synced_at: new Date().toISOString(),
-        };
+        console.log('Alternative endpoint status:', altResponse.status);
 
-        // Upsert the post
-        const { error: upsertError } = await supabase
-          .from('social_media_posts')
-          .upsert(postData, { 
-            onConflict: 'external_id',
-            ignoreDuplicates: false 
+        if (!altResponse.ok) {
+          const altErrorText = await altResponse.text();
+          console.log('Alternative endpoint error:', altErrorText);
+          
+          // Try fetching post history
+          const historyResponse = await fetch('https://socialbu.com/api/v1/history', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Accept': 'application/json',
+            },
           });
 
-        if (upsertError) {
-          console.error(`Error upserting post ${externalId}:`, upsertError);
+          console.log('History endpoint status:', historyResponse.status);
+
+          if (!historyResponse.ok) {
+            return new Response(
+              JSON.stringify({ 
+                synced: 0, 
+                message: 'Unable to fetch posts. Please check your API key and ensure it has the required permissions.',
+                debug: {
+                  posts_status: response.status,
+                  scheduled_status: altResponse.status,
+                  history_status: historyResponse.status,
+                }
+              }),
+              { 
+                status: 200, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
+          }
+
+          const historyData = await historyResponse.json();
+          console.log('History data keys:', Object.keys(historyData));
+          const historyPosts = historyData.items || historyData.data || historyData.posts || [];
+          
+          syncedCount = await processPosts(supabase, historyPosts);
         } else {
-          syncedCount++;
+          const altData = await altResponse.json();
+          console.log('Alternative data keys:', Object.keys(altData));
+          const altPosts = altData.items || altData.data || altData.posts || [];
+          
+          syncedCount = await processPosts(supabase, altPosts);
         }
+      } else {
+        const data = await response.json();
+        console.log('Response data keys:', Object.keys(data));
+        console.log('Response data sample:', JSON.stringify(data).substring(0, 500));
+        
+        const posts = data.items || data.data || data.posts || (Array.isArray(data) ? data : []);
+        console.log(`Found ${posts.length} posts from SocialBu`);
+
+        syncedCount = await processPosts(supabase, posts);
       }
 
     } catch (apiError) {
       console.error('Error calling SocialBu API:', apiError);
-      // Return partial success if some posts were synced
     }
 
     // Update last sync time
@@ -147,6 +170,63 @@ serve(async (req) => {
   }
 });
 
+async function processPosts(supabase: any, posts: any[]): Promise<number> {
+  let syncedCount = 0;
+
+  for (const post of posts) {
+    const externalId = post.id?.toString() || post.post_id?.toString();
+    
+    if (!externalId) continue;
+
+    // Determine platform from various possible fields
+    let platform = 'unknown';
+    if (post.platform) {
+      platform = post.platform.toLowerCase();
+    } else if (post.network) {
+      platform = post.network.toLowerCase();
+    } else if (post.account?.type) {
+      platform = post.account.type.toLowerCase();
+    } else if (post.accounts && post.accounts.length > 0) {
+      platform = post.accounts[0].type?.toLowerCase() || 'unknown';
+    }
+
+    const postData = {
+      external_id: externalId,
+      platform: platform,
+      caption: post.content || post.caption || post.text || post.message || '',
+      media_urls: post.media_urls || post.images || post.media || [],
+      scheduled_at: post.scheduled_time || post.schedule_time || post.scheduled_at || null,
+      posted_at: post.published_time || post.posted_at || post.published_at || post.sent_at || null,
+      status: mapSocialBuStatus(post.status || post.state),
+      post_url: post.post_url || post.link || post.url || null,
+      live_post_url: post.post_url || post.link || post.url || null,
+      synced_at: new Date().toISOString(),
+    };
+
+    console.log(`Processing post ${externalId}:`, {
+      platform,
+      status: postData.status,
+      hasCaption: !!postData.caption,
+    });
+
+    // Upsert the post
+    const { error: upsertError } = await supabase
+      .from('social_media_posts')
+      .upsert(postData, { 
+        onConflict: 'external_id',
+        ignoreDuplicates: false 
+      });
+
+    if (upsertError) {
+      console.error(`Error upserting post ${externalId}:`, upsertError);
+    } else {
+      syncedCount++;
+    }
+  }
+
+  return syncedCount;
+}
+
 // Map SocialBu status to our status
 function mapSocialBuStatus(status: string): string {
   const statusMap: Record<string, string> = {
@@ -157,6 +237,8 @@ function mapSocialBuStatus(status: string): string {
     'published': 'posted',
     'posted': 'posted',
     'sent': 'posted',
+    'completed': 'posted',
+    'success': 'posted',
     'failed': 'failed',
     'error': 'failed',
     'rejected': 'failed',

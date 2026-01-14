@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Phone, Mail, Building2, MapPin, Send, Trash2, History, Edit2, Save, X } from "lucide-react";
+import { Phone, Mail, Building2, MapPin, Send, Trash2, History, Edit2, Save, X, Flame, Snowflake, Thermometer } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500" },
@@ -43,6 +43,12 @@ const SOURCE_OPTIONS = [
   { value: "event", label: "Event" },
   { value: "cold_call", label: "Cold Call" },
   { value: "other", label: "Other" },
+];
+
+const TEMPERATURE_OPTIONS = [
+  { value: "cold", label: "Cold", color: "bg-blue-400", icon: Snowflake },
+  { value: "warm", label: "Warm", color: "bg-yellow-400", icon: Thermometer },
+  { value: "hot", label: "Hot", color: "bg-red-500", icon: Flame },
 ];
 
 interface ProspectDetailDialogProps {
@@ -65,6 +71,7 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
     product_service: prospect.product_service || "",
     source: prospect.source,
     pic_id: prospect.pic_id || "",
+    temperature: prospect.temperature || "warm",
   });
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
@@ -150,6 +157,7 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
           product_service: editData.product_service || null,
           source: editData.source,
           pic_id: editData.pic_id || null,
+          temperature: editData.temperature,
         })
         .eq("id", prospect.id);
 
@@ -222,6 +230,7 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
                     product_service: prospect.product_service || "",
                     source: prospect.source,
                     pic_id: prospect.pic_id || "",
+                    temperature: prospect.temperature || "warm",
                   });
                 }
                 setIsEditing(!isEditing);

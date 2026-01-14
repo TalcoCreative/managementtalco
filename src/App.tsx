@@ -20,6 +20,7 @@ import Leave from "./pages/Leave";
 import Finance from "./pages/Finance";
 import MyReimbursement from "./pages/MyReimbursement";
 import Prospects from "./pages/Prospects";
+import ProspectHistory from "./pages/ProspectHistory";
 import Performance from "./pages/Performance";
 import Recruitment from "./pages/Recruitment";
 import Meeting from "./pages/Meeting";
@@ -66,6 +67,7 @@ const App = () => (
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
           <Route path="/my-reimbursement" element={<ProtectedRoute><MyReimbursement /></ProtectedRoute>} />
           <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
+          <Route path="/prospects/history" element={<ProtectedRoute><ProspectHistory /></ProtectedRoute>} />
           <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
           <Route path="/recruitment" element={<ProtectedRoute><Recruitment /></ProtectedRoute>} />
           <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
