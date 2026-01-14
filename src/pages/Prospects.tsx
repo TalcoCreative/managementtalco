@@ -1,14 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Phone, Mail, Building2, MapPin, MessageSquare } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, MapPin, ArrowUpDown, History, Flame, Snowflake, Thermometer } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
@@ -35,12 +36,24 @@ const SOURCE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+const TEMPERATURE_OPTIONS = [
+  { value: "cold", label: "Cold", color: "bg-blue-400", icon: Snowflake },
+  { value: "warm", label: "Warm", color: "bg-yellow-400", icon: Thermometer },
+  { value: "hot", label: "Hot", color: "bg-red-500", icon: Flame },
+];
+
+type SortField = "contact_name" | "company" | "location" | "source" | "product_service" | "pic" | "status" | "temperature" | "created_at";
+type SortDirection = "asc" | "desc";
+
 export default function Prospects() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<any>(null);
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
   const { data: prospects, isLoading } = useQuery({
     queryKey: ["prospects", statusFilter],
@@ -88,6 +101,17 @@ export default function Prospects() {
         });
 
       if (historyError) throw historyError;
+
+      // Log activity
+      await supabase.from("prospect_activity_logs" as any).insert({
+        prospect_id: id,
+        action: "status_change",
+        field_name: "status",
+        old_value: oldStatus,
+        new_value: status,
+        description: `Status changed from ${oldStatus} to ${status}`,
+        created_by: session.session.user.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prospects"] });
@@ -99,17 +123,126 @@ export default function Prospects() {
     },
   });
 
-  const filteredProspects = prospects?.filter((prospect) =>
-    prospect.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prospect.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    prospect.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const updateTemperatureMutation = useMutation({
+    mutationFn: async ({ id, temperature, oldTemperature }: { id: string; temperature: string; oldTemperature: string }) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("prospects" as any)
+        .update({ temperature })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Log activity
+      await supabase.from("prospect_activity_logs" as any).insert({
+        prospect_id: id,
+        action: "temperature_change",
+        field_name: "temperature",
+        old_value: oldTemperature,
+        new_value: temperature,
+        description: `Temperature changed from ${oldTemperature} to ${temperature}`,
+        created_by: session.session.user.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      toast.success("Temperature updated");
+    },
+    onError: (error) => {
+      toast.error("Failed to update temperature");
+      console.error(error);
+    },
+  });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortedProspects = () => {
+    if (!prospects) return [];
+    
+    const filtered = prospects.filter((prospect) =>
+      prospect.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prospect.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      prospect.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return filtered.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "contact_name":
+          aValue = a.contact_name?.toLowerCase() || "";
+          bValue = b.contact_name?.toLowerCase() || "";
+          break;
+        case "company":
+          aValue = a.company?.toLowerCase() || "";
+          bValue = b.company?.toLowerCase() || "";
+          break;
+        case "location":
+          aValue = a.location?.toLowerCase() || "";
+          bValue = b.location?.toLowerCase() || "";
+          break;
+        case "source":
+          aValue = a.source?.toLowerCase() || "";
+          bValue = b.source?.toLowerCase() || "";
+          break;
+        case "product_service":
+          aValue = a.product_service?.toLowerCase() || "";
+          bValue = b.product_service?.toLowerCase() || "";
+          break;
+        case "pic":
+          aValue = a.pic?.full_name?.toLowerCase() || "";
+          bValue = b.pic?.full_name?.toLowerCase() || "";
+          break;
+        case "status":
+          aValue = a.status?.toLowerCase() || "";
+          bValue = b.status?.toLowerCase() || "";
+          break;
+        case "temperature":
+          aValue = a.temperature?.toLowerCase() || "warm";
+          bValue = b.temperature?.toLowerCase() || "warm";
+          break;
+        case "created_at":
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  };
+
+  const sortedProspects = getSortedProspects();
 
   const getStatusBadge = (status: string) => {
     const statusOption = STATUS_OPTIONS.find((s) => s.value === status);
     return (
       <Badge className={`${statusOption?.color} text-white`}>
         {statusOption?.label || status}
+      </Badge>
+    );
+  };
+
+  const getTemperatureBadge = (temperature: string) => {
+    const tempOption = TEMPERATURE_OPTIONS.find((t) => t.value === temperature) || TEMPERATURE_OPTIONS[1];
+    const Icon = tempOption.icon;
+    return (
+      <Badge className={`${tempOption.color} text-white flex items-center gap-1`}>
+        <Icon className="h-3 w-3" />
+        {tempOption.label}
       </Badge>
     );
   };
@@ -134,6 +267,7 @@ export default function Prospects() {
     product_service: p.product_service || '',
     needs: p.needs || '',
     status: p.status,
+    temperature: p.temperature || 'warm',
   })) || [];
 
   const handleImportProspects = async (data: any[]) => {
@@ -156,12 +290,25 @@ export default function Prospects() {
         product_service: row.product_service || null,
         needs: row.needs || null,
         status: row.status || 'new',
+        temperature: row.temperature || 'warm',
         created_by: session.session.user.id,
       });
     }
     
     queryClient.invalidateQueries({ queryKey: ["prospects"] });
   };
+
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-muted/50 select-none"
+      onClick={() => handleSort(field)}
+    >
+      <div className="flex items-center gap-1">
+        {children}
+        <ArrowUpDown className={`h-3 w-3 ${sortField === field ? 'text-primary' : 'text-muted-foreground'}`} />
+      </div>
+    </TableHead>
+  );
 
   return (
     <AppLayout>
@@ -172,6 +319,10 @@ export default function Prospects() {
             <p className="text-muted-foreground">Manage your sales leads and prospects</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/prospects/history")}>
+              <History className="h-4 w-4 mr-2" />
+              History Log
+            </Button>
             <ExcelActions
               data={exportData}
               columns={PROSPECT_COLUMNS}
@@ -236,31 +387,32 @@ export default function Prospects() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Product/Service</TableHead>
-                  <TableHead>PIC</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <SortableHeader field="contact_name">Contact</SortableHeader>
+                  <SortableHeader field="company">Company</SortableHeader>
+                  <SortableHeader field="location">Location</SortableHeader>
+                  <SortableHeader field="source">Source</SortableHeader>
+                  <SortableHeader field="product_service">Product/Service</SortableHeader>
+                  <SortableHeader field="pic">PIC</SortableHeader>
+                  <SortableHeader field="temperature">Temp</SortableHeader>
+                  <SortableHeader field="status">Status</SortableHeader>
+                  <SortableHeader field="created_at">Created</SortableHeader>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading...
                     </TableCell>
                   </TableRow>
-                ) : filteredProspects?.length === 0 ? (
+                ) : sortedProspects?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No prospects found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredProspects?.map((prospect) => (
+                  sortedProspects?.map((prospect) => (
                     <TableRow 
                       key={prospect.id} 
                       className="cursor-pointer hover:bg-muted/50"
@@ -304,6 +456,32 @@ export default function Prospects() {
                       <TableCell>{getSourceLabel(prospect.source)}</TableCell>
                       <TableCell>{prospect.product_service}</TableCell>
                       <TableCell>{prospect.pic?.full_name || "-"}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={prospect.temperature || "warm"}
+                          onValueChange={(value) =>
+                            updateTemperatureMutation.mutate({
+                              id: prospect.id,
+                              temperature: value,
+                              oldTemperature: prospect.temperature || "warm",
+                            })
+                          }
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            {getTemperatureBadge(prospect.temperature || "warm")}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TEMPERATURE_OPTIONS.map((temp) => (
+                              <SelectItem key={temp.value} value={temp.value}>
+                                <div className="flex items-center gap-1">
+                                  <temp.icon className="h-3 w-3" />
+                                  {temp.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={prospect.status}

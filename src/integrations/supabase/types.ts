@@ -2746,6 +2746,57 @@ export type Database = {
           },
         ]
       }
+      prospect_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string
+          description: string | null
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          prospect_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          prospect_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          prospect_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospect_activity_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospect_activity_logs_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospect_comments: {
         Row: {
           author_id: string
@@ -2842,6 +2893,7 @@ export type Database = {
           product_service: string | null
           source: string
           status: string
+          temperature: string | null
           updated_at: string
         }
         Insert: {
@@ -2858,6 +2910,7 @@ export type Database = {
           product_service?: string | null
           source: string
           status?: string
+          temperature?: string | null
           updated_at?: string
         }
         Update: {
@@ -2874,6 +2927,7 @@ export type Database = {
           product_service?: string | null
           source?: string
           status?: string
+          temperature?: string | null
           updated_at?: string
         }
         Relationships: [
