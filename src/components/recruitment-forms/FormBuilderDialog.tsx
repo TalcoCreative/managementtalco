@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -42,6 +42,7 @@ import {
   ToggleLeft 
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface FormBuilderDialogProps {
   formId: string | null;
@@ -82,6 +83,9 @@ export function FormBuilderDialog({
   const queryClient = useQueryClient();
   const [fields, setFields] = useState<FormField[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragNodeRef = useRef<HTMLDivElement | null>(null);
 
   const { data: form } = useQuery({
     queryKey: ["recruitment-form", formId],
@@ -205,6 +209,59 @@ export function FormBuilderDialog({
     setHasChanges(true);
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    setDraggedIndex(index);
+    dragNodeRef.current = e.target as HTMLDivElement;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+    
+    // Add dragging class after a small delay to prevent visual glitch
+    setTimeout(() => {
+      if (dragNodeRef.current) {
+        dragNodeRef.current.classList.add("opacity-50");
+      }
+    }, 0);
+  };
+
+  const handleDragEnd = () => {
+    if (dragNodeRef.current) {
+      dragNodeRef.current.classList.remove("opacity-50");
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    dragNodeRef.current = null;
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newFields = [...fields];
+    const [draggedField] = newFields.splice(draggedIndex, 1);
+    newFields.splice(targetIndex, 0, draggedField);
+    
+    setFields(newFields);
+    setHasChanges(true);
+    setDragOverIndex(null);
+  };
+
   const getFieldIcon = (type: string) => {
     const fieldType = FIELD_TYPES.find(f => f.value === type);
     return fieldType?.icon || Type;
@@ -259,112 +316,125 @@ export function FormBuilderDialog({
                   </CardContent>
                 </Card>
               ) : (
-                <Accordion type="single" collapsible className="space-y-2">
+                <div className="space-y-2">
                   {fields.map((field, index) => {
                     const FieldIcon = getFieldIcon(field.field_type);
                     return (
-                      <AccordionItem
+                      <div
                         key={index}
-                        value={`field-${index}`}
-                        className="border rounded-lg"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, index)}
+                        className={cn(
+                          "border rounded-lg transition-all duration-200",
+                          draggedIndex === index && "opacity-50",
+                          dragOverIndex === index && draggedIndex !== index && "border-primary border-2 bg-primary/5"
+                        )}
                       >
-                        <AccordionTrigger className="px-4 hover:no-underline">
-                          <div className="flex items-center gap-3 flex-1">
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                            <FieldIcon className="h-4 w-4" />
-                            <span className="font-medium">{field.label}</span>
-                            {field.is_required && (
-                              <span className="text-xs text-destructive">*</span>
-                            )}
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-4">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Label</Label>
-                              <Input
-                                value={field.label}
-                                onChange={(e) => updateField(index, { label: e.target.value })}
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Placeholder</Label>
-                              <Input
-                                value={field.placeholder || ""}
-                                onChange={(e) => updateField(index, { placeholder: e.target.value })}
-                                placeholder="Teks placeholder..."
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Helper Text</Label>
-                              <Input
-                                value={field.helper_text || ""}
-                                onChange={(e) => updateField(index, { helper_text: e.target.value })}
-                                placeholder="Teks bantuan..."
-                              />
-                            </div>
-
-                            {(field.field_type === "multiple_choice" || field.field_type === "dropdown") && (
-                              <div className="space-y-2">
-                                <Label>Opsi (satu per baris)</Label>
-                                <textarea
-                                  className="w-full min-h-[100px] p-2 border rounded-md text-sm"
-                                  value={(field.options || []).join("\n")}
-                                  onChange={(e) =>
-                                    updateField(index, {
-                                      options: e.target.value.split("\n").filter(Boolean),
-                                    })
-                                  }
-                                  placeholder="Opsi 1&#10;Opsi 2&#10;Opsi 3"
-                                />
+                        <Accordion type="single" collapsible>
+                          <AccordionItem value={`field-${index}`} className="border-0">
+                            <AccordionTrigger className="px-4 hover:no-underline">
+                              <div className="flex items-center gap-3 flex-1">
+                                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                                <FieldIcon className="h-4 w-4" />
+                                <span className="font-medium">{field.label}</span>
+                                {field.is_required && (
+                                  <span className="text-xs text-destructive">*</span>
+                                )}
                               </div>
-                            )}
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4">
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label>Label</Label>
+                                  <Input
+                                    value={field.label}
+                                    onChange={(e) => updateField(index, { label: e.target.value })}
+                                  />
+                                </div>
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={field.is_required}
-                                  onCheckedChange={(checked) =>
-                                    updateField(index, { is_required: checked })
-                                  }
-                                />
-                                <Label>Wajib diisi</Label>
-                              </div>
+                                <div className="space-y-2">
+                                  <Label>Placeholder</Label>
+                                  <Input
+                                    value={field.placeholder || ""}
+                                    onChange={(e) => updateField(index, { placeholder: e.target.value })}
+                                    placeholder="Teks placeholder..."
+                                  />
+                                </div>
 
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => moveField(index, "up")}
-                                  disabled={index === 0}
-                                >
-                                  ↑
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => moveField(index, "down")}
-                                  disabled={index === fields.length - 1}
-                                >
-                                  ↓
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => removeField(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="space-y-2">
+                                  <Label>Helper Text</Label>
+                                  <Input
+                                    value={field.helper_text || ""}
+                                    onChange={(e) => updateField(index, { helper_text: e.target.value })}
+                                    placeholder="Teks bantuan..."
+                                  />
+                                </div>
+
+                                {(field.field_type === "multiple_choice" || field.field_type === "dropdown") && (
+                                  <div className="space-y-2">
+                                    <Label>Opsi (satu per baris)</Label>
+                                    <textarea
+                                      className="w-full min-h-[100px] p-2 border rounded-md text-sm"
+                                      value={(field.options || []).join("\n")}
+                                      onChange={(e) =>
+                                        updateField(index, {
+                                          options: e.target.value.split("\n").filter(Boolean),
+                                        })
+                                      }
+                                      placeholder="Opsi 1&#10;Opsi 2&#10;Opsi 3"
+                                    />
+                                  </div>
+                                )}
+
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Switch
+                                      checked={field.is_required}
+                                      onCheckedChange={(checked) =>
+                                        updateField(index, { is_required: checked })
+                                      }
+                                    />
+                                    <Label>Wajib diisi</Label>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => moveField(index, "up")}
+                                      disabled={index === 0}
+                                    >
+                                      ↑
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => moveField(index, "down")}
+                                      disabled={index === fields.length - 1}
+                                    >
+                                      ↓
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => removeField(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      </div>
                     );
                   })}
-                </Accordion>
+                </div>
               )}
             </div>
           </ScrollArea>
