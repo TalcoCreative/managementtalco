@@ -120,22 +120,33 @@ export default function PublicApplyForm() {
       const cvUrl = cvField ? uploadedFiles[cvField.id] : null;
 
       // Create candidate record
+      const candidatePayload = {
+        full_name: fullName,
+        email: email,
+        phone: phone,
+        position: form.position,
+        division: "General",
+        cv_url: cvUrl,
+        source_form_id: form.id,
+        created_by: form.created_by,
+      };
+
       const { data: candidate, error: candidateError } = await supabase
         .from("candidates")
-        .insert({
-          full_name: fullName,
-          email: email,
-          phone: phone,
-          position: form.position,
-          division: "General",
-          cv_url: cvUrl,
-          source_form_id: form.id,
-          created_by: form.created_by,
-        })
+        .insert(candidatePayload)
         .select()
         .single();
 
-      if (candidateError) throw candidateError;
+      if (candidateError) {
+        console.error("[PublicApplyForm] Candidate insert blocked", {
+          candidateError,
+          candidatePayload,
+          formId: form.id,
+          formSlug: form.slug,
+          formStatus: form.status,
+        });
+        throw candidateError;
+      }
 
       // Store form submission
       const { error: submissionError } = await supabase
@@ -146,7 +157,14 @@ export default function PublicApplyForm() {
           submission_data: submissionData,
         });
 
-      if (submissionError) throw submissionError;
+      if (submissionError) {
+        console.error("[PublicApplyForm] Submission insert failed", {
+          submissionError,
+          formId: form.id,
+          candidateId: candidate.id,
+        });
+        throw submissionError;
+      }
 
       return candidate;
     },
