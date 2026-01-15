@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.shared-client-dashboard]
 verify_jwt = false
+
+[functions.clockin-summary-email]
+verify_jwt = false
