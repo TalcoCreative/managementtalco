@@ -14,21 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark, Shield } from "lucide-react";
 import { format } from "date-fns";
-
-const allRoles = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "hr", label: "HR" },
-  { value: "graphic_designer", label: "Graphic Designer" },
-  { value: "socmed_admin", label: "Social Media Admin" },
-  { value: "copywriter", label: "Copywriter" },
-  { value: "video_editor", label: "Video Editor" },
-  { value: "finance", label: "Finance" },
-  { value: "accounting", label: "Accounting" },
-  { value: "marketing", label: "Marketing" },
-  { value: "photographer", label: "Photographer" },
-  { value: "director", label: "Director" },
-  { value: "project_manager", label: "Project Manager" },
-];
+import { useRoleOptions, getPositionColor, getRoleLabel } from "@/hooks/usePositions";
 
 interface EmployeeDetailDialogProps {
   open: boolean;
@@ -38,6 +24,7 @@ interface EmployeeDetailDialogProps {
 }
 
 export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: EmployeeDetailDialogProps) {
+  const { roleOptions, positions } = useRoleOptions();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
@@ -88,7 +75,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
     }
   }, [employee]);
 
-  const availableRoles = allRoles.filter(role => !currentRoles.includes(role.value));
+  const availableRoles = roleOptions.filter(role => !currentRoles.includes(role.value));
 
   const handleAddRole = async () => {
     if (!selectedRole) {
@@ -192,34 +179,16 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
   };
 
   const getRoleColor = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return "bg-primary";
-      case "hr":
-        return "bg-blue-500";
-      case "socmed_admin":
-        return "bg-yellow-500";
-      case "graphic_designer":
-        return "bg-purple-500";
-      case "copywriter":
-        return "bg-green-500";
-      case "video_editor":
-        return "bg-red-500";
-      case "finance":
-        return "bg-emerald-500";
-      case "accounting":
-        return "bg-cyan-500";
-      case "marketing":
-        return "bg-orange-500";
-      case "photographer":
-        return "bg-pink-500";
-      case "director":
-        return "bg-indigo-500";
-      case "project_manager":
-        return "bg-teal-500";
-      default:
-        return "bg-muted";
-    }
+    if (role === "super_admin") return "bg-primary";
+    const color = getPositionColor(positions, role);
+    // Convert hex to tailwind-like color class (fallback to inline style)
+    return "";
+  };
+
+  const getRoleStyle = (role: string) => {
+    if (role === "super_admin") return {};
+    const color = getPositionColor(positions, role);
+    return { backgroundColor: color };
   };
 
   if (!employee) return null;
@@ -275,8 +244,12 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
                   <div className="flex items-center gap-2 mt-1">
                     <div className="flex flex-wrap gap-2">
                       {currentRoles.map((role: string, index: number) => (
-                        <Badge key={index} className={getRoleColor(role)}>
-                          {role.replace(/_/g, " ")}
+                        <Badge 
+                          key={index} 
+                          className={getRoleColor(role)}
+                          style={getRoleStyle(role)}
+                        >
+                          {getRoleLabel(positions, role)}
                         </Badge>
                       ))}
                     </div>
@@ -322,8 +295,12 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 {currentRoles.map((role: string) => (
-                  <Badge key={role} className={`${getRoleColor(role)} flex items-center gap-1`}>
-                    {role.replace(/_/g, " ")}
+                  <Badge 
+                    key={role} 
+                    className={`${getRoleColor(role)} flex items-center gap-1`}
+                    style={getRoleStyle(role)}
+                  >
+                    {getRoleLabel(positions, role)}
                     {canEdit && (
                       <button
                         onClick={() => handleRemoveRole(role)}
