@@ -55,6 +55,9 @@ const navItems = [
   { title: "Asset", url: "/asset", icon: Package },
   { title: "Event", url: "/event", icon: PartyPopper },
   { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "KOL Database", url: "/kol-database", icon: Star },
+  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
+  { title: "Social Media", url: "/social-media", icon: Share2 },
 ];
 
 const hrItems = [
@@ -71,9 +74,6 @@ const financeItems = [
 
 const salesItems = [
   { title: "Prospects", url: "/prospects", icon: UserPlus },
-  { title: "KOL Database", url: "/kol-database", icon: Star },
-  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
-  { title: "Social Media", url: "/social-media", icon: Share2 },
 ];
 
 export function AppSidebar() {
