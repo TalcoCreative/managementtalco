@@ -111,7 +111,7 @@ export default function RecruitmentForms() {
   ) || [];
 
   const copyPublicUrl = (slug: string) => {
-    const url = `${window.location.origin}/apply/${slug}`;
+    const url = `https://ms.talco.id/apply/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success("Link form disalin!");
   };
