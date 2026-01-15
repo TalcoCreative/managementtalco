@@ -28,6 +28,7 @@ import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateD
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { CANDIDATE_COLUMNS } from "@/lib/excel-utils";
+import { usePositionOptions } from "@/hooks/usePositions";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
@@ -39,21 +40,8 @@ const STATUS_OPTIONS = [
   { value: "rejected", label: "Rejected", color: "bg-red-500" },
 ];
 
-const POSITION_OPTIONS = [
-  "Graphic Designer",
-  "Video Editor",
-  "Copywriter",
-  "Social Media Admin",
-  "Photographer",
-  "Director",
-  "Marketing",
-  "Sales",
-  "Finance",
-  "HR",
-  "Project Manager",
-];
-
 export default function Recruitment() {
+  const { positionOptions } = usePositionOptions();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [positionFilter, setPositionFilter] = useState<string>("all");
@@ -286,7 +274,7 @@ export default function Recruitment() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Posisi</SelectItem>
-              {POSITION_OPTIONS.map((position) => (
+              {positionOptions.map((position) => (
                 <SelectItem key={position} value={position}>
                   {position}
                 </SelectItem>

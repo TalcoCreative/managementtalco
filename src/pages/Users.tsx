@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User, Edit, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { Plus, User, Edit, Clock, CheckCircle, XCircle, Trash2, Briefcase } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { AddUserRoleDialog } from "@/components/users/AddUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
+import { ManagePositionsDialog } from "@/components/users/ManagePositionsDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { USER_COLUMNS } from "@/lib/excel-utils";
 import { format } from "date-fns";
@@ -24,6 +25,7 @@ export default function Users() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [positionsDialogOpen, setPositionsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -230,6 +232,12 @@ export default function Users() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Team Members</h1>
           <div className="flex gap-2">
+            {canManageUsers && (
+              <Button variant="outline" onClick={() => setPositionsDialogOpen(true)}>
+                <Briefcase className="mr-2 h-4 w-4" />
+                Kelola Posisi
+              </Button>
+            )}
             <ExcelActions
               data={users || []}
               columns={USER_COLUMNS}
@@ -368,6 +376,11 @@ export default function Users() {
           />
         </>
       )}
+
+      <ManagePositionsDialog
+        open={positionsDialogOpen}
+        onOpenChange={setPositionsDialogOpen}
+      />
     </AppLayout>
   );
 }
