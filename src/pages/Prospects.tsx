@@ -55,6 +55,38 @@ export default function Prospects() {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
+  // Check user roles for access control
+  const { data: userRoles, isLoading: rolesLoading } = useQuery({
+    queryKey: ["user-roles-prospects"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return [];
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.session.user.id);
+      if (error) throw error;
+      return data?.map(r => r.role) || [];
+    },
+  });
+
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
+
+  // Redirect if no access
+  if (!rolesLoading && !canAccessSales) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+            <p className="text-muted-foreground">You don't have permission to access this page.</p>
+            <Button className="mt-4" onClick={() => navigate("/")}>Go to Dashboard</Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   const { data: prospects, isLoading } = useQuery({
     queryKey: ["prospects", statusFilter],
     queryFn: async () => {

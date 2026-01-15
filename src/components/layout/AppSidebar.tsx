@@ -117,7 +117,7 @@ export function AppSidebar() {
                            userRoles?.includes('finance') || 
                            userRoles?.includes('accounting') || 
                            userRoles?.includes('hr');
-  const canAccessSales = true; // Open KOL Database & Campaign to all users
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
   const canAccessLetters = userRoles?.includes('super_admin') || 
                            userRoles?.includes('hr') || 
                            userRoles?.includes('finance') || 
