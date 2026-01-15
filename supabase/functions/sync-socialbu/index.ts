@@ -17,6 +17,35 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get user_id from request body or auth header
+    let userId: string | null = null;
+    
+    try {
+      const body = await req.json();
+      userId = body.user_id || null;
+    } catch {
+      // No body provided, try to get from auth
+    }
+
+    // If no user_id in body, try to get from Authorization header
+    if (!userId) {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      }
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'User ID required for sync' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Syncing for user:', userId);
+
     // Get the API secret from settings
     const { data: settings, error: settingsError } = await supabase
       .from('social_media_settings')
@@ -118,13 +147,13 @@ serve(async (req) => {
           console.log('History data keys:', Object.keys(historyData));
           const historyPosts = historyData.items || historyData.data || historyData.posts || [];
           
-          syncedCount = await processPosts(supabase, historyPosts);
+          syncedCount = await processPosts(supabase, historyPosts, userId);
         } else {
           const altData = await altResponse.json();
           console.log('Alternative data keys:', Object.keys(altData));
           const altPosts = altData.items || altData.data || altData.posts || [];
           
-          syncedCount = await processPosts(supabase, altPosts);
+          syncedCount = await processPosts(supabase, altPosts, userId);
         }
       } else {
         const data = await response.json();
@@ -134,7 +163,7 @@ serve(async (req) => {
         const posts = data.items || data.data || data.posts || (Array.isArray(data) ? data : []);
         console.log(`Found ${posts.length} posts from SocialBu`);
 
-        syncedCount = await processPosts(supabase, posts);
+        syncedCount = await processPosts(supabase, posts, userId);
       }
 
     } catch (apiError) {
@@ -170,7 +199,7 @@ serve(async (req) => {
   }
 });
 
-async function processPosts(supabase: any, posts: any[]): Promise<number> {
+async function processPosts(supabase: any, posts: any[], staffId: string): Promise<number> {
   let syncedCount = 0;
 
   for (const post of posts) {
@@ -190,11 +219,28 @@ async function processPosts(supabase: any, posts: any[]): Promise<number> {
       platform = post.accounts[0].type?.toLowerCase() || 'unknown';
     }
 
+    // Determine content type from media
+    let contentType = 'text';
+    const mediaUrls = post.media_urls || post.images || post.media || [];
+    if (mediaUrls.length > 0) {
+      const firstMedia = typeof mediaUrls[0] === 'string' ? mediaUrls[0] : mediaUrls[0]?.url || '';
+      if (firstMedia.includes('video') || firstMedia.endsWith('.mp4') || firstMedia.endsWith('.mov')) {
+        contentType = 'video';
+      } else if (firstMedia.includes('image') || firstMedia.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        contentType = 'image';
+      }
+    }
+    if (post.type) {
+      contentType = post.type.toLowerCase();
+    }
+
     const postData = {
       external_id: externalId,
+      staff_id: staffId,
       platform: platform,
+      content_type: contentType,
       caption: post.content || post.caption || post.text || post.message || '',
-      media_urls: post.media_urls || post.images || post.media || [],
+      media_urls: mediaUrls,
       scheduled_at: post.scheduled_time || post.schedule_time || post.scheduled_at || null,
       posted_at: post.published_time || post.posted_at || post.published_at || post.sent_at || null,
       status: mapSocialBuStatus(post.status || post.state),
@@ -205,6 +251,7 @@ async function processPosts(supabase: any, posts: any[]): Promise<number> {
 
     console.log(`Processing post ${externalId}:`, {
       platform,
+      contentType,
       status: postData.status,
       hasCaption: !!postData.caption,
     });
