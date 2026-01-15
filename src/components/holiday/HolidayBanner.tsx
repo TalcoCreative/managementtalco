@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calendar, Building2, Star } from "lucide-react";
+import { Calendar, Building2, Star, Home } from "lucide-react";
 import { format } from "date-fns";
 
 interface Holiday {
@@ -17,12 +17,14 @@ const holidayTypeLabels: Record<string, string> = {
   national: "Libur Nasional",
   office: "Libur Kantor",
   special: "Libur Khusus",
+  wfh: "WFH",
 };
 
 const holidayTypeIcons: Record<string, typeof Calendar> = {
   national: Calendar,
   office: Building2,
   special: Star,
+  wfh: Home,
 };
 
 const HolidayBanner = () => {
@@ -58,6 +60,7 @@ const HolidayBanner = () => {
           national: "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200",
           office: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200",
           special: "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-200",
+          wfh: "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200",
         };
 
         return (
