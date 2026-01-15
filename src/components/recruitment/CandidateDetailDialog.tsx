@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -149,6 +149,71 @@ export function CandidateDetailDialog({
     enabled: !!candidateId,
   });
 
+  // Latest form submission (jawaban dari form builder)
+  const { data: latestSubmission } = useQuery({
+    queryKey: ["candidate-form-submission", candidateId],
+    queryFn: async () => {
+      if (!candidateId) return null;
+      const { data, error } = await supabase
+        .from("recruitment_form_submissions")
+        .select("id, form_id, submission_data, submitted_at")
+        .eq("candidate_id", candidateId)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as null | {
+        id: string;
+        form_id: string;
+        submission_data: Record<string, any>;
+        submitted_at: string;
+      };
+    },
+    enabled: !!candidateId,
+  });
+
+  const { data: submissionFields } = useQuery({
+    queryKey: ["candidate-form-fields", latestSubmission?.form_id],
+    queryFn: async () => {
+      if (!latestSubmission?.form_id) return [];
+      const { data, error } = await supabase
+        .from("recruitment_form_fields")
+        .select("id, label, field_type, field_order")
+        .eq("form_id", latestSubmission.form_id)
+        .order("field_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{
+        id: string;
+        label: string;
+        field_type: string;
+        field_order: number;
+      }>;
+    },
+    enabled: !!latestSubmission?.form_id,
+  });
+
+  const answerItems = useMemo(() => {
+    if (!latestSubmission) return [];
+    const payload = (latestSubmission.submission_data || {}) as Record<string, any>;
+
+    // Jika fields tersedia, pakai label dari builder. Kalau tidak, fallback ke key JSON.
+    if (submissionFields && submissionFields.length > 0) {
+      return submissionFields.map((f) => ({
+        id: f.id,
+        label: f.label,
+        fieldType: f.field_type,
+        value: payload[f.id],
+      }));
+    }
+
+    return Object.entries(payload).map(([key, value]) => ({
+      id: key,
+      label: key,
+      fieldType: typeof value,
+      value,
+    }));
+  }, [latestSubmission, submissionFields]);
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ newStatus, oldStatus }: { newStatus: string; oldStatus: string }) => {
       const { data: session } = await supabase.auth.getSession();
@@ -276,8 +341,9 @@ export function CandidateDetailDialog({
         </DialogHeader>
 
         <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="info" className="text-xs sm:text-sm">Info</TabsTrigger>
+            <TabsTrigger value="answers" className="text-xs sm:text-sm">Jawaban</TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm">Riwayat</TabsTrigger>
             <TabsTrigger value="assessment" className="text-xs sm:text-sm">Penilaian</TabsTrigger>
             <TabsTrigger value="notes" className="text-xs sm:text-sm">Catatan</TabsTrigger>
@@ -400,9 +466,64 @@ export function CandidateDetailDialog({
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
+               </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="answers" className="mt-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Jawaban Form</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!latestSubmission ? (
+                    <p className="text-muted-foreground text-sm">Belum ada jawaban dari form builder.</p>
+                  ) : answerItems.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">Jawaban tidak ditemukan.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Submitted: {format(new Date(latestSubmission.submitted_at), "dd MMM yyyy HH:mm")}
+                      </p>
+                      {answerItems.map((item) => {
+                        const v = item.value;
+                        const isEmpty = v === undefined || v === null || v === "";
+                        const asText =
+                          typeof v === "string" || typeof v === "number" || typeof v === "boolean"
+                            ? String(v)
+                            : JSON.stringify(v);
+
+                        const isLink = typeof v === "string" && /^https?:\/\//i.test(v);
+
+                        return (
+                          <div key={item.id} className="rounded-lg border p-3">
+                            <p className="text-sm font-medium">{item.label}</p>
+                            <div className="mt-1 text-sm text-muted-foreground break-words">
+                              {isEmpty ? (
+                                <span>-</span>
+                              ) : isLink ? (
+                                <a
+                                  href={String(v)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline inline-flex items-center gap-1"
+                                >
+                                  Buka
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : (
+                                <span>{asText}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
+
 
             <TabsContent value="history" className="mt-4">
               <Card>
