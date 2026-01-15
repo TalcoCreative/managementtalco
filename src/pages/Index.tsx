@@ -7,9 +7,7 @@ import { ClockInOut } from "@/components/attendance/ClockInOut";
 import { ShootingNotifications } from "@/components/shooting/ShootingNotifications";
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvitationNotifications";
-import { TaskNotifications } from "@/components/notifications/TaskNotifications";
 import { AnnouncementNotifications } from "@/components/announcements/AnnouncementNotifications";
-import { MentionNotifications } from "@/components/notifications/MentionNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine, ChevronRight, AlertTriangle } from "lucide-react";
@@ -146,15 +144,9 @@ export default function Index() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
-            <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <MentionNotifications onTaskClick={(id) => setSelectedTaskId(id)} />
-            <TaskNotifications />
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
+          <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
         </div>
 
         <ClockInOut />
