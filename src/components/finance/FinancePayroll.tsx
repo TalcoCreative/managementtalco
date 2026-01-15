@@ -14,7 +14,7 @@ import { id as idLocale } from "date-fns/locale";
 import { Users, Edit, CheckCircle, Trash2, FileDown, Settings, Save } from "lucide-react";
 import { toast } from "sonner";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
-import { CompanySettingsDialog } from "./CompanySettingsDialog";
+import { PayrollPdfSettingsDialog } from "./PayrollPdfSettingsDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { PAYROLL_COLUMNS } from "@/lib/excel-utils";
 
@@ -341,14 +341,15 @@ export function FinancePayroll() {
           tjTransport: Number(profile?.tj_transport) || 0,
           tjInternet: Number(profile?.tj_internet) || 0,
           tjKpi: Number(profile?.tj_kpi) || 0,
+          reimburse: Number((payroll as any).reimburse) || 0,
+          bonus: Number((payroll as any).bonus) || 0,
+          potonganTerlambat: Number((payroll as any).potongan_terlambat) || 0,
+          potonganKasbon: Number((payroll as any).potongan_kasbon) || 0,
+          adjustmentLainnya: Number((payroll as any).adjustment_lainnya) || 0,
           totalGaji: Number(payroll.amount),
           payDate: payroll.pay_date || format(new Date(), "yyyy-MM-dd"),
         },
-        {
-          logoUrl: companySettings?.company_logo,
-          signatureUrl: companySettings?.hr_signature,
-          hrName: companySettings?.hr_name || "HR Manager",
-        }
+        companySettings || {}
       );
 
       toast.success("PDF berhasil di-download");
@@ -411,7 +412,7 @@ export function FinancePayroll() {
           />
           <Button variant="outline" size="sm" onClick={() => setSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
-            Pengaturan
+            Pengaturan PDF
           </Button>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger className="w-[180px]">
@@ -681,7 +682,7 @@ export function FinancePayroll() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <CompanySettingsDialog 
+      <PayrollPdfSettingsDialog 
         open={settingsDialogOpen} 
         onOpenChange={setSettingsDialogOpen} 
       />
