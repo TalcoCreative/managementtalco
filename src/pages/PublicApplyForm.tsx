@@ -120,7 +120,27 @@ export default function PublicApplyForm() {
       const cvUrl = cvField ? uploadedFiles[cvField.id] : null;
 
       // Create candidate record
+      // NOTE: For public (non-login) submissions we MUST NOT request returning rows,
+      // because candidates are not selectable by anon due to RLS.
+      const createUuid = () => {
+        if (typeof crypto === "undefined" || !crypto.getRandomValues) {
+          throw new Error("Browser tidak mendukung pembuatan ID aman");
+        }
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        // RFC4122 v4
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+      };
+
+      const candidateId = createUuid();
+
       const candidatePayload = {
+        id: candidateId,
         full_name: fullName,
         email: email,
         phone: phone,
@@ -131,11 +151,9 @@ export default function PublicApplyForm() {
         created_by: form.created_by,
       };
 
-      const { data: candidate, error: candidateError } = await supabase
+      const { error: candidateError } = await supabase
         .from("candidates")
-        .insert(candidatePayload)
-        .select()
-        .single();
+        .insert(candidatePayload);
 
       if (candidateError) {
         console.error("[PublicApplyForm] Candidate insert blocked", {
@@ -153,7 +171,7 @@ export default function PublicApplyForm() {
         .from("recruitment_form_submissions")
         .insert({
           form_id: form.id,
-          candidate_id: candidate.id,
+          candidate_id: candidateId,
           submission_data: submissionData,
         });
 
@@ -161,12 +179,12 @@ export default function PublicApplyForm() {
         console.error("[PublicApplyForm] Submission insert failed", {
           submissionError,
           formId: form.id,
-          candidateId: candidate.id,
+          candidateId,
         });
         throw submissionError;
       }
 
-      return candidate;
+      return { id: candidateId };
     },
     onSuccess: () => {
       setSubmitted(true);
