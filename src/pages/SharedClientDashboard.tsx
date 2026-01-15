@@ -77,12 +77,7 @@ export default function SharedClientDashboard() {
       if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
       params.set("sortBy", sortBy);
 
-      const { data: response, error } = await supabase.functions.invoke(
-        "shared-client-dashboard",
-        { body: null, headers: {}, method: "GET" }
-      );
-
-      // Use fetch directly for GET with params
+      // Use fetch directly for public access (no auth needed)
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(
         `${baseUrl}/functions/v1/shared-client-dashboard?${params.toString()}`,

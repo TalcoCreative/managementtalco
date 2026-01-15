@@ -15,17 +15,14 @@ interface ClientOverviewSectionProps {
   canEdit: boolean;
 }
 
-// Generate a unique slug from client name
+// Generate a clean slug from client name (no random suffix)
 const generateSlug = (clientName: string): string => {
-  const baseSlug = clientName
+  return clientName
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .trim();
-  
-  const randomSuffix = Math.random().toString(36).substring(2, 6);
-  return `${baseSlug}-${randomSuffix}`;
 };
 
 export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverviewSectionProps) {
@@ -76,7 +73,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
   };
 
   const handleCopyDashboardLink = () => {
-    const dashboardUrl = `https://ms.talco.id/${client.dashboard_slug}`;
+    const dashboardUrl = `https://managementtalco.lovable.app/clients/public/${client.dashboard_slug}`;
     navigator.clipboard.writeText(dashboardUrl);
     toast.success("Link dashboard berhasil disalin!");
   };
@@ -167,7 +164,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
           {client.dashboard_slug ? (
             <div className="flex items-center gap-2 flex-wrap">
               <code className="text-xs bg-muted px-2 py-1 rounded flex-1 min-w-0 truncate">
-                https://ms.talco.id/{client.dashboard_slug}
+                /clients/public/{client.dashboard_slug}
               </code>
               <Button variant="outline" size="sm" onClick={handleCopyDashboardLink}>
                 <Copy className="h-3 w-3 mr-1" />
@@ -176,7 +173,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => window.open(`/dashboard/${client.dashboard_slug}`, "_blank")}
+                onClick={() => window.open(`/clients/public/${client.dashboard_slug}`, "_blank")}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Open

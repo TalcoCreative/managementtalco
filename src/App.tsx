@@ -88,6 +88,7 @@ const App = () => (
           <Route path="/share/shooting/:token" element={<SharedShooting />} />
           <Route path="/share/meeting/:token" element={<SharedMeeting />} />
           <Route path="/dashboard/:slug" element={<SharedClientDashboard />} />
+          <Route path="/clients/public/:slug" element={<SharedClientDashboard />} />
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
