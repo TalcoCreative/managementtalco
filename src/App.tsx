@@ -15,6 +15,8 @@ import Users from "./pages/Users";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import HRDashboard from "./pages/HRDashboard";
+import HRAnalytics from "./pages/HRAnalytics";
+import EmployeeInsight from "./pages/EmployeeInsight";
 import ShootingSchedule from "./pages/ShootingSchedule";
 import Leave from "./pages/Leave";
 import Finance from "./pages/Finance";
@@ -63,6 +65,8 @@ const App = () => (
           <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/hr-dashboard" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
+          <Route path="/hr/analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
+          <Route path="/hr/employee/:id/insight" element={<ProtectedRoute><EmployeeInsight /></ProtectedRoute>} />
           <Route path="/shooting" element={<ProtectedRoute><ShootingSchedule /></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />

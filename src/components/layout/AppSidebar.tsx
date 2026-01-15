@@ -60,9 +60,12 @@ const navItems = [
   { title: "Social Media", url: "/social-media", icon: Share2 },
 ];
 
+import { BarChart2 } from "lucide-react";
+
 const hrItems = [
   { title: "Team", url: "/users", icon: Users },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
+  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2 },
   { title: "Performance", url: "/performance", icon: TrendingUp },
   { title: "Recruitment", url: "/recruitment", icon: UserSearch },
 ];
