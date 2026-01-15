@@ -52,7 +52,7 @@ export function EmbedCodeDialog({
 </iframe>`;
 
   const scriptCode = `<div id="talco-recruitment-form" data-form="${form.slug}"></div>
-<script src="${baseUrl}/embed.js" async></script>`;
+ <script src="${shortDomain}/embed.js" async></script>`;
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
