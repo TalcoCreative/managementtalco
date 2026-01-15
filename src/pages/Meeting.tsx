@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange, Lock } from "lucide-react";
+import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange, Lock, ArrowUpDown } from "lucide-react";
 import { format, parseISO, isToday, isFuture, isPast, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { id } from "date-fns/locale";
 import CreateMeetingDialog from "@/components/meeting/CreateMeetingDialog";
@@ -24,6 +24,12 @@ const Meeting = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [modeFilter, setModeFilter] = useState<string>("all");
+  
+  // Sort state
+  type SortField = "title" | "date" | "type" | "mode" | "participants" | "creator" | "status";
+  type SortDirection = "asc" | "desc";
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   
   // Date range filter for stats - default to current month
   const [statsDateFrom, setStatsDateFrom] = useState<Date>(startOfMonth(new Date()));
@@ -152,8 +158,26 @@ const Meeting = () => {
     return participants?.filter(p => p.meeting_id === meetingId).length || 0;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getStatusValue = (meeting: any): string => {
+    const meetingDate = parseISO(meeting.meeting_date);
+    if (meeting.status === "cancelled") return "dibatalkan";
+    if (meeting.status === "completed") return "selesai";
+    if (isToday(meetingDate)) return "hari_ini";
+    if (isFuture(meetingDate)) return "terjadwal";
+    return "lewat";
+  };
+
   const filteredMeetings = useMemo(() => {
-    return meetings?.filter(meeting => {
+    let result = meetings?.filter(meeting => {
       // Filter confidential meetings: only creator, participants, and super_admin can see
       if (meeting.is_confidential && currentUser?.id) {
         const isCreator = meeting.created_by === currentUser.id;
@@ -181,8 +205,41 @@ const Meeting = () => {
       }
       
       return matchesSearch && matchesType && matchesMode && matchesStatus;
+    }) || [];
+
+    // Sort the filtered results
+    result.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case "date":
+          comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time);
+          break;
+        case "type":
+          comparison = a.type.localeCompare(b.type);
+          break;
+        case "mode":
+          comparison = a.mode.localeCompare(b.mode);
+          break;
+        case "participants":
+          comparison = getParticipantCount(a.id) - getParticipantCount(b.id);
+          break;
+        case "creator":
+          comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || "");
+          break;
+        case "status":
+          comparison = getStatusValue(a).localeCompare(getStatusValue(b));
+          break;
+      }
+      
+      return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter, currentUser?.id, participants, isSuperAdmin]);
+
+    return result;
+  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter, currentUser?.id, participants, isSuperAdmin, sortField, sortDirection]);
 
   // Filter meetings by date range for stats
   const meetingsInRange = useMemo(() => {
@@ -407,13 +464,69 @@ const Meeting = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Judul</TableHead>
-                    <TableHead>Tanggal & Waktu</TableHead>
-                    <TableHead>Tipe</TableHead>
-                    <TableHead>Mode</TableHead>
-                    <TableHead>Partisipan</TableHead>
-                    <TableHead>Dibuat Oleh</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("title")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Judul
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "title" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("date")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Tanggal & Waktu
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "date" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("type")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Tipe
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "type" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("mode")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Mode
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "mode" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("participants")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Partisipan
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "participants" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("creator")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Dibuat Oleh
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "creator" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status
+                        <ArrowUpDown className={`h-4 w-4 ${sortField === "status" ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
