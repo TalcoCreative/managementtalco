@@ -416,6 +416,39 @@ export default function HRAnalytics() {
           </CardContent>
         </Card>
 
+        {/* Quick Employee Access */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Lihat Per Karyawan
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {filteredProfiles.map(profile => {
+                const roles = userRoles?.filter(r => r.user_id === profile.id).map(r => r.role) || [];
+                const roleLabel = roles.length > 0 ? getRoleLabel(positions, roles[0]) : "No Role";
+                return (
+                  <Button
+                    key={profile.id}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={() => handleViewEmployee(profile.id)}
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span>{profile.full_name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {roleLabel}
+                    </Badge>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* KPI Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-7">
           <Card>
