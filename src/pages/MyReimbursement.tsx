@@ -26,6 +26,7 @@ const REIMBURSEMENT_CATEGORIES = [
 ];
 
 const REQUEST_CATEGORIES = [
+  { value: "gaji", label: "Gaji / Kasbon" },
   { value: "training", label: "Pelatihan / Training" },
   { value: "equipment", label: "Equipment / Peralatan" },
   { value: "software", label: "Software / Tools" },
