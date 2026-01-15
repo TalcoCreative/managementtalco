@@ -10,6 +10,7 @@ import { FinanceRecurring } from "@/components/finance/FinanceRecurring";
 import { FinancePayroll } from "@/components/finance/FinancePayroll";
 import { FinanceReimbursements } from "@/components/finance/FinanceReimbursements";
 import { FinanceIncome } from "@/components/finance/FinanceIncome";
+import { FinanceInsights } from "@/components/finance/FinanceInsights";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -17,7 +18,8 @@ import {
   RefreshCw, 
   Users, 
   Receipt, 
-  ArrowUpCircle 
+  ArrowUpCircle,
+  Lightbulb,
 } from "lucide-react";
 
 export default function Finance() {
@@ -49,6 +51,7 @@ export default function Finance() {
   const canViewRecurring = isSuperAdmin || isFinance || isAccounting;
   const canViewPayroll = isSuperAdmin || isFinance || isHR;
   const canViewIncome = isSuperAdmin || isFinance || isAccounting;
+  const canViewInsights = isSuperAdmin || isFinance || isAccounting;
   // All users can view reimbursements (their own)
   const canViewReimbursements = true;
 
@@ -60,7 +63,7 @@ export default function Finance() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid gap-1">
+          <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid gap-1">
             {canViewDashboard && (
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
@@ -99,6 +102,12 @@ export default function Finance() {
               <TabsTrigger value="income" className="flex items-center gap-2">
                 <ArrowUpCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Income</span>
+              </TabsTrigger>
+            )}
+            {canViewInsights && (
+              <TabsTrigger value="insights" className="flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" />
+                <span className="hidden sm:inline">Insights</span>
               </TabsTrigger>
             )}
           </TabsList>
@@ -143,6 +152,12 @@ export default function Finance() {
           {canViewIncome && (
             <TabsContent value="income">
               <FinanceIncome />
+            </TabsContent>
+          )}
+
+          {canViewInsights && (
+            <TabsContent value="insights">
+              <FinanceInsights />
             </TabsContent>
           )}
         </Tabs>
