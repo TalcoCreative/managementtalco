@@ -198,11 +198,19 @@ export default function ContentBuilder() {
   const generatedPrompt = generatePrompt(formData);
 
   const handleCopyPrompt = () => {
+    if (!isFormValid) {
+      toast.error("Please fill in all required fields first");
+      return;
+    }
     navigator.clipboard.writeText(generatedPrompt);
     toast.success("Prompt copied to clipboard!");
   };
 
   const handleOpenChatGPT = () => {
+    if (!isFormValid) {
+      toast.error("Please fill in all required fields first");
+      return;
+    }
     const encodedPrompt = encodeURIComponent(generatedPrompt);
     const url = `https://chatgpt.com/?model=gpt-4&q=${encodedPrompt}`;
     window.open(url, "_blank");
@@ -455,7 +463,12 @@ export default function ContentBuilder() {
                 Copy Prompt
               </Button>
 
-              <Button onClick={handleOpenChatGPT} disabled={!isFormValid} className="flex-1">
+              <Button 
+                onClick={handleOpenChatGPT} 
+                disabled={!isFormValid} 
+                className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 font-semibold shadow-lg"
+                size="lg"
+              >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 🚀 Generate with ChatGPT
               </Button>
