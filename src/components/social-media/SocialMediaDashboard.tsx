@@ -16,8 +16,14 @@ import {
   FileText,
   TrendingUp,
   Users,
-  Calendar
+  Calendar,
+  Plus,
+  CalendarPlus
 } from "lucide-react";
+
+interface SocialMediaDashboardProps {
+  onCreatePost?: () => void;
+}
 
 const platformIcons = {
   instagram: Instagram,
@@ -41,7 +47,7 @@ const contentTypeLabels = {
   tiktok_video: "TikTok Video",
 };
 
-export function SocialMediaDashboard() {
+export function SocialMediaDashboard({ onCreatePost }: SocialMediaDashboardProps) {
   // Fetch posts with related data
   const { data: posts, isLoading } = useQuery({
     queryKey: ["social-media-posts"],
@@ -101,6 +107,18 @@ export function SocialMediaDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Action Buttons */}
+      <div className="flex gap-3">
+        <Button onClick={onCreatePost} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Buat Post Baru
+        </Button>
+        <Button variant="outline" onClick={onCreatePost} className="gap-2">
+          <CalendarPlus className="h-4 w-4" />
+          Jadwalkan Post
+        </Button>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
