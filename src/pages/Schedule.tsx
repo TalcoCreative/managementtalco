@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid } from "lucide-react";
+import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper } from "lucide-react";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -79,6 +79,33 @@ export default function Schedule() {
     },
   });
 
+  // Fetch holidays
+  const { data: holidays } = useQuery({
+    queryKey: ["holidays-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("holidays")
+        .select("*")
+        .eq("is_active", true)
+        .order("start_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Helper to check if a date falls within a holiday range
+  const getHolidaysForDate = (date: Date) => {
+    return holidays?.filter(holiday => {
+      const start = new Date(holiday.start_date);
+      const end = new Date(holiday.end_date);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      const checkDate = new Date(date);
+      checkDate.setHours(12, 0, 0, 0);
+      return checkDate >= start && checkDate <= end;
+    }) || [];
+  };
+
   const getDatesWithEvents = () => {
     const dates: Date[] = [];
     tasks?.forEach(task => {
@@ -92,6 +119,14 @@ export default function Schedule() {
     });
     shootings?.forEach(shooting => {
       if (shooting.scheduled_date) dates.push(new Date(shooting.scheduled_date));
+    });
+    // Add holiday dates
+    holidays?.forEach(holiday => {
+      const start = new Date(holiday.start_date);
+      const end = new Date(holiday.end_date);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d));
+      }
     });
     return dates;
   };
@@ -113,7 +148,9 @@ export default function Schedule() {
       shooting.scheduled_date && isSameDay(new Date(shooting.scheduled_date), date)
     ) || [];
 
-    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents };
+    const holidayEvents = getHolidaysForDate(date);
+
+    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, holidays: holidayEvents };
   };
 
   const getEventsForMonth = (date: Date) => {
@@ -144,12 +181,19 @@ export default function Schedule() {
       return isWithinInterval(d, { start, end });
     }) || [];
 
-    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents };
+    const holidayEvents = holidays?.filter(holiday => {
+      const holidayStart = parseISO(holiday.start_date);
+      const holidayEnd = parseISO(holiday.end_date);
+      // Include if any part of the holiday overlaps with the month
+      return (holidayStart <= end && holidayEnd >= start);
+    }) || [];
+
+    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, holidays: holidayEvents };
   };
 
-  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : { tasks: [], projects: [], meetings: [], shootings: [] };
+  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : { tasks: [], projects: [], meetings: [], shootings: [], holidays: [] };
   const monthEvents = getEventsForMonth(filterMonth);
-  const hasEvents = selectedEvents.tasks.length > 0 || selectedEvents.projects.length > 0 || selectedEvents.meetings.length > 0 || selectedEvents.shootings.length > 0;
+  const hasEvents = selectedEvents.tasks.length > 0 || selectedEvents.projects.length > 0 || selectedEvents.meetings.length > 0 || selectedEvents.shootings.length > 0 || selectedEvents.holidays.length > 0;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -370,6 +414,38 @@ export default function Schedule() {
                         ))}
                       </div>
                     )}
+
+                    {/* Holidays */}
+                    {selectedEvents.holidays.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                          <PartyPopper className="h-4 w-4" />
+                          Holidays ({selectedEvents.holidays.length})
+                        </h3>
+                        {selectedEvents.holidays.map((holiday: any) => (
+                          <div
+                            key={holiday.id}
+                            className="p-3 rounded-lg border bg-orange-500/10 border-orange-500/30"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <h4 className="font-medium">{holiday.name}</h4>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
+                                   holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                </p>
+                                {holiday.description && (
+                                  <p className="text-xs text-muted-foreground">{holiday.description}</p>
+                                )}
+                              </div>
+                              <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                {holiday.holiday_type}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
@@ -411,9 +487,9 @@ export default function Schedule() {
             </Card>
 
             <Tabs defaultValue="all" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="all">
-                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length})
+                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.holidays.length})
                 </TabsTrigger>
                 <TabsTrigger value="shootings">
                   <Video className="h-4 w-4 mr-1" />
@@ -430,6 +506,10 @@ export default function Schedule() {
                 <TabsTrigger value="projects">
                   <FolderOpen className="h-4 w-4 mr-1" />
                   Projects ({monthEvents.projects.length})
+                </TabsTrigger>
+                <TabsTrigger value="holidays">
+                  <PartyPopper className="h-4 w-4 mr-1" />
+                  Holidays ({monthEvents.holidays.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -536,6 +616,36 @@ export default function Schedule() {
                                     <p className="text-xs text-muted-foreground">Deadline: {format(new Date(project.deadline), "dd MMM yyyy")}</p>
                                   </div>
                                   <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Holidays Section */}
+                        {monthEvents.holidays.length > 0 && (
+                          <div>
+                            <h3 className="font-semibold flex items-center gap-2 mb-2">
+                              <PartyPopper className="h-4 w-4" /> Holidays
+                            </h3>
+                            {monthEvents.holidays.map((holiday: any) => (
+                              <div
+                                key={holiday.id}
+                                className="p-3 border rounded-lg mb-2 bg-orange-500/10 border-orange-500/30"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <p className="font-medium">{holiday.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
+                                       holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {format(new Date(holiday.start_date), "dd MMM yyyy")}
+                                      {holiday.start_date !== holiday.end_date && ` - ${format(new Date(holiday.end_date), "dd MMM yyyy")}`}
+                                    </p>
+                                  </div>
+                                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">{holiday.holiday_type}</Badge>
                                 </div>
                               </div>
                             ))}
@@ -738,6 +848,49 @@ export default function Schedule() {
                               <TableCell>
                                 <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
                               </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Holidays Tab */}
+              <TabsContent value="holidays">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PartyPopper className="h-5 w-5" />
+                      Holidays - {format(filterMonth, "MMMM yyyy")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>End Date</TableHead>
+                            <TableHead>Description</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {monthEvents.holidays.map((holiday: any) => (
+                            <TableRow key={holiday.id}>
+                              <TableCell className="font-medium">{holiday.name}</TableCell>
+                              <TableCell>
+                                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">
+                                  {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
+                                   holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{format(new Date(holiday.start_date), "dd MMM yyyy")}</TableCell>
+                              <TableCell>{format(new Date(holiday.end_date), "dd MMM yyyy")}</TableCell>
+                              <TableCell>{holiday.description || '-'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
