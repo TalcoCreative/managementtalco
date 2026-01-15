@@ -73,8 +73,8 @@ const defaultSettings: PdfSettings = {
   pdf_giver_role: "Human Resources",
   pdf_receiver_role: "Karyawan",
   pdf_show_signature: true,
-  pdf_logo_width: 35,
-  pdf_logo_height: 35,
+  pdf_logo_width: 40,  // mm - larger default for better visibility
+  pdf_logo_height: 40,
   pdf_primary_color: "41,128,185",
   pdf_header_font_size: 18,
   pdf_body_font_size: 10,
