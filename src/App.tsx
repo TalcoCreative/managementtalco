@@ -26,6 +26,8 @@ import ProspectHistory from "./pages/ProspectHistory";
 import SalesDashboard from "./pages/SalesDashboard";
 import Performance from "./pages/Performance";
 import Recruitment from "./pages/Recruitment";
+import RecruitmentForms from "./pages/RecruitmentForms";
+import PublicApplyForm from "./pages/PublicApplyForm";
 import Meeting from "./pages/Meeting";
 import Asset from "./pages/Asset";
 import Letters from "./pages/Letters";
@@ -76,6 +78,8 @@ const App = () => (
           <Route path="/sales/dashboard" element={<ProtectedRoute><SalesDashboard /></ProtectedRoute>} />
           <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
           <Route path="/recruitment" element={<ProtectedRoute><Recruitment /></ProtectedRoute>} />
+          <Route path="/recruitment/forms" element={<ProtectedRoute><RecruitmentForms /></ProtectedRoute>} />
+          <Route path="/apply/:slug" element={<PublicApplyForm />} />
           <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
           <Route path="/asset" element={<ProtectedRoute><Asset /></ProtectedRoute>} />
           <Route path="/letters" element={<ProtectedRoute><Letters /></ProtectedRoute>} />
