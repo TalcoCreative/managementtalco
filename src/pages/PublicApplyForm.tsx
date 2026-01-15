@@ -109,7 +109,12 @@ export default function PublicApplyForm() {
       const submissionData = { ...formValues, ...uploadedFiles };
 
       // Extract candidate info from submission
-      const nameField = fields.find(f => f.field_type === "short_text" && f.label.toLowerCase().includes("nama"));
+      // Support both Indonesian and English name labels, fallback to first short_text field
+      const nameField = fields.find(f => {
+        if (f.field_type !== "short_text") return false;
+        const label = f.label.toLowerCase();
+        return label.includes("nama") || label.includes("name");
+      }) || fields.find(f => f.field_type === "short_text" && f.field_order === 0);
       const emailField = fields.find(f => f.field_type === "email");
       const phoneField = fields.find(f => f.field_type === "phone");
       const cvField = fields.find(f => f.field_type === "file" && f.label.toLowerCase().includes("cv"));
