@@ -37,9 +37,11 @@ import { HRAutoClockoutChart } from "@/components/hr-analytics/HRAutoClockoutCha
 import { HRMonthComparisonChart } from "@/components/hr-analytics/HRMonthComparisonChart";
 import { HRRiskPanel } from "@/components/hr-analytics/HRRiskPanel";
 import { HRProductivityRanking } from "@/components/hr-analytics/HRProductivityRanking";
+import { usePositions, getRoleLabel } from "@/hooks/usePositions";
 
 export default function HRAnalytics() {
   const navigate = useNavigate();
+  const { data: positions } = usePositions();
   const now = new Date();
   
   // Filters
@@ -320,7 +322,7 @@ export default function HRAnalytics() {
                   <SelectContent>
                     <SelectItem value="all">Semua Role</SelectItem>
                     {uniqueRoles.map(role => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
+                      <SelectItem key={role} value={role}>{getRoleLabel(positions, role)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
