@@ -193,47 +193,80 @@ export default function HRAnalytics() {
     });
   }, [profiles, userRoles, roleFilter]);
 
+  // Get filtered user IDs based on role filter
+  const filteredUserIds = useMemo(() => {
+    return new Set(filteredProfiles.map(p => p.id));
+  }, [filteredProfiles]);
+
   // Calculate KPIs
   const kpis = useMemo(() => {
     const totalEmployees = filteredProfiles.length;
     
-    // Work hours
-    const totalWorkMinutes = attendance?.reduce((sum, a) => {
+    // Filter attendance by filtered users
+    const filteredAttendance = attendance?.filter(a => filteredUserIds.has(a.user_id)) || [];
+    const filteredCompareAttendance = compareAttendance?.filter(a => filteredUserIds.has(a.user_id)) || [];
+    
+    // Work hours (filtered)
+    const totalWorkMinutes = filteredAttendance.reduce((sum, a) => {
       return sum + calculateWorkMinutes(a.clock_in, a.clock_out, a.total_break_minutes || 0);
-    }, 0) || 0;
+    }, 0);
     const totalWorkHours = Math.round(totalWorkMinutes / 60 * 10) / 10;
     const avgWorkHoursPerEmployee = totalEmployees > 0 ? Math.round(totalWorkHours / totalEmployees * 10) / 10 : 0;
 
-    // Activities count
-    const taskCount = tasks?.length || 0;
-    const meetingCount = meetings?.length || 0;
-    const shootingCount = shootings?.length || 0;
-    const eventCount = events?.length || 0;
+    // Filter tasks by assignees
+    const filteredTasks = tasks?.filter(t => {
+      const assigneeIds = t.task_assignees?.map((a: any) => a.user_id) || [];
+      return assigneeIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(t.created_by);
+    }) || [];
+
+    // Filter meetings by participants
+    const filteredMeetings = meetings?.filter(m => {
+      const participantIds = m.meeting_participants?.map((p: any) => p.user_id) || [];
+      return participantIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(m.created_by);
+    }) || [];
+
+    // Filter shootings by crew
+    const filteredShootings = shootings?.filter(s => {
+      const crewIds = s.shooting_crew?.map((c: any) => c.user_id) || [];
+      return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(s.requested_by);
+    }) || [];
+
+    // Filter events by crew
+    const filteredEvents = events?.filter(e => {
+      const crewIds = e.event_crew?.map((c: any) => c.user_id) || [];
+      return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(e.created_by);
+    }) || [];
+
+    // Activities count (filtered)
+    const taskCount = filteredTasks.length;
+    const meetingCount = filteredMeetings.length;
+    const shootingCount = filteredShootings.length;
+    const eventCount = filteredEvents.length;
     const totalActivities = taskCount + meetingCount + shootingCount + eventCount;
 
-    // Overdue tasks
-    const overdueTaskCount = tasks?.filter(t => {
+    // Overdue tasks (filtered)
+    const overdueTaskCount = filteredTasks.filter(t => {
       if (!t.deadline) return false;
       if (t.status === 'done' || t.status === 'completed') return false;
       return new Date(t.deadline) < new Date();
-    }).length || 0;
+    }).length;
 
-    // Auto clock-out count
-    const autoClockoutCount = attendance?.filter(a => 
+    // Auto clock-out count (filtered)
+    const autoClockoutCount = filteredAttendance.filter(a => 
       a.notes?.includes('[AUTO CLOCK-OUT')
-    ).length || 0;
+    ).length;
 
     // Average productivity (activities per employee)
     const avgProductivity = totalEmployees > 0 ? Math.round(totalActivities / totalEmployees * 10) / 10 : 0;
 
-    // Compare period calculations
-    const compareTotalMinutes = compareAttendance?.reduce((sum, a) => {
+    // Compare period calculations (filtered)
+    const compareTotalMinutes = filteredCompareAttendance.reduce((sum, a) => {
       return sum + calculateWorkMinutes(a.clock_in, a.clock_out, a.total_break_minutes || 0);
-    }, 0) || 0;
+    }, 0);
     const compareTotalHours = Math.round(compareTotalMinutes / 60 * 10) / 10;
-    const compareAutoClockout = compareAttendance?.filter(a => 
+    const compareAutoClockout = filteredCompareAttendance.filter(a => 
       a.notes?.includes('[AUTO CLOCK-OUT')
-    ).length || 0;
+    ).length;
 
     // Calculate changes
     const workHoursChange = compareTotalHours > 0 
@@ -258,7 +291,7 @@ export default function HRAnalytics() {
       workHoursChange,
       autoClockoutChange,
     };
-  }, [filteredProfiles, attendance, tasks, meetings, shootings, events, compareAttendance]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
