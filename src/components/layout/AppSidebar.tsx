@@ -73,6 +73,7 @@ const financeItems = [
 ];
 
 const salesItems = [
+  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp },
   { title: "Prospects", url: "/prospects", icon: UserPlus },
 ];
 
