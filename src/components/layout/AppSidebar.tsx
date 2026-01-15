@@ -24,6 +24,8 @@ import {
   Crown,
   Share2,
   Mail,
+  Scale,
+  PieChart,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -74,6 +76,8 @@ const hrItems = [
 
 const financeItems = [
   { title: "Finance", url: "/finance", icon: Wallet },
+  { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart },
+  { title: "Neraca", url: "/finance/neraca", icon: Scale },
   { title: "Performance", url: "/performance", icon: TrendingUp },
 ];
 

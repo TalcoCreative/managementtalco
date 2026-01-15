@@ -20,6 +20,8 @@ import EmployeeInsight from "./pages/EmployeeInsight";
 import ShootingSchedule from "./pages/ShootingSchedule";
 import Leave from "./pages/Leave";
 import Finance from "./pages/Finance";
+import IncomeStatementPage from "./pages/IncomeStatementPage";
+import BalanceSheetPage from "./pages/BalanceSheetPage";
 import MyReimbursement from "./pages/MyReimbursement";
 import Prospects from "./pages/Prospects";
 import ProspectHistory from "./pages/ProspectHistory";
@@ -73,6 +75,8 @@ const App = () => (
           <Route path="/shooting" element={<ProtectedRoute><ShootingSchedule /></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
+          <Route path="/finance/laporan-laba-rugi" element={<ProtectedRoute><IncomeStatementPage /></ProtectedRoute>} />
+          <Route path="/finance/neraca" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
           <Route path="/my-reimbursement" element={<ProtectedRoute><MyReimbursement /></ProtectedRoute>} />
           <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
           <Route path="/prospects/history" element={<ProtectedRoute><ProspectHistory /></ProtectedRoute>} />
