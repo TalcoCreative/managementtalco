@@ -51,6 +51,7 @@ import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
 import SharedShortUrl from "./pages/SharedShortUrl";
 import SharedClientDashboard from "./pages/SharedClientDashboard";
+import Holiday from "./pages/Holiday";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
           <Route path="/hr-dashboard" element={<ProtectedRoute><HRDashboard /></ProtectedRoute>} />
           <Route path="/hr/analytics" element={<ProtectedRoute><HRAnalytics /></ProtectedRoute>} />
           <Route path="/hr/employee/:id/insight" element={<ProtectedRoute><EmployeeInsight /></ProtectedRoute>} />
+          <Route path="/hr/holiday" element={<ProtectedRoute><Holiday /></ProtectedRoute>} />
           <Route path="/shooting" element={<ProtectedRoute><ShootingSchedule /></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Leave /></ProtectedRoute>} />
           <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />

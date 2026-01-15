@@ -9,6 +9,7 @@ import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvitationNotifications";
 import { AnnouncementNotifications } from "@/components/announcements/AnnouncementNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
+import HolidayBanner from "@/components/holiday/HolidayBanner";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderKanban, ArrowDownToLine, ArrowUpFromLine, ChevronRight, AlertTriangle } from "lucide-react";
 import { isPast, parseISO } from "date-fns";
@@ -148,6 +149,8 @@ export default function Index() {
           <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
           <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
         </div>
+
+        <HolidayBanner />
 
         <ClockInOut />
 
