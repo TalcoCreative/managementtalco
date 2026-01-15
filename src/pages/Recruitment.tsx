@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Users, UserCheck, Clock, XCircle } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Search, Users, UserCheck, Clock, XCircle, BarChart3 } from "lucide-react";
+import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
@@ -42,11 +43,16 @@ const STATUS_OPTIONS = [
 
 export default function Recruitment() {
   const { positionOptions } = usePositionOptions();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "all");
   const [positionFilter, setPositionFilter] = useState<string>("all");
+  const [hrPicFilter, setHrPicFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
+    searchParams.get("candidate") || null
+  );
   const queryClient = useQueryClient();
 
   const { data: candidates, isLoading } = useQuery({
@@ -61,6 +67,22 @@ export default function Recruitment() {
         .order("applied_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch HR users for filter
+  const { data: hrUsers = [] } = useQuery({
+    queryKey: ["hr-users-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select(`
+          user_id,
+          profiles!inner(id, full_name)
+        `)
+        .in("role", ["hr", "super_admin"]);
+      if (error) throw error;
+      return data?.map((r: any) => r.profiles) || [];
     },
   });
 
@@ -105,9 +127,10 @@ export default function Recruitment() {
         candidate.position.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || candidate.status === statusFilter;
       const matchesPosition = positionFilter === "all" || candidate.position === positionFilter;
-      return matchesSearch && matchesStatus && matchesPosition;
+      const matchesHrPic = hrPicFilter === "all" || candidate.hr_pic_id === hrPicFilter;
+      return matchesSearch && matchesStatus && matchesPosition && matchesHrPic;
     });
-  }, [candidates, searchQuery, statusFilter, positionFilter]);
+  }, [candidates, searchQuery, statusFilter, positionFilter, hrPicFilter]);
 
   // Dashboard stats
   const stats = useMemo(() => {
@@ -191,6 +214,10 @@ export default function Recruitment() {
             <p className="text-muted-foreground text-sm sm:text-base">Database kandidat karyawan</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => navigate("/recruitment/dashboard")} className="h-12 sm:h-10">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Dashboard
+            </Button>
             <ExcelActions
               data={exportData}
               columns={CANDIDATE_COLUMNS}
@@ -281,6 +308,19 @@ export default function Recruitment() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={hrPicFilter} onValueChange={setHrPicFilter}>
+            <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-10">
+              <SelectValue placeholder="Filter HR PIC" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua HR</SelectItem>
+              {hrUsers.map((u: any) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.full_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}
@@ -292,66 +332,78 @@ export default function Recruitment() {
                   <TableHead className="min-w-[150px]">Nama</TableHead>
                   <TableHead className="min-w-[120px]">Posisi</TableHead>
                   <TableHead className="min-w-[140px]">Status</TableHead>
-                  <TableHead className="min-w-[120px]">HR PIC</TableHead>
-                  <TableHead className="min-w-[100px]">Tanggal Apply</TableHead>
+                  <TableHead className="min-w-[100px]">HR PIC</TableHead>
+                  <TableHead className="min-w-[80px]">Lama Proses</TableHead>
+                  <TableHead className="min-w-[100px]">Apply</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredCandidates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Tidak ada kandidat ditemukan
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCandidates.map((candidate) => (
-                    <TableRow
-                      key={candidate.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedCandidateId(candidate.id)}
-                    >
-                      <TableCell className="font-medium">
-                        <div>
-                          <p className="font-semibold">{candidate.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{candidate.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{candidate.position}</TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Select
-                          value={candidate.status}
-                          onValueChange={(value) =>
-                            updateStatusMutation.mutate({
-                              candidateId: candidate.id,
-                              newStatus: value,
-                              oldStatus: candidate.status,
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-[140px] h-8">
-                            <SelectValue>{getStatusBadge(candidate.status)}</SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STATUS_OPTIONS.map((status) => (
-                              <SelectItem key={status.value} value={status.value}>
-                                {status.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>{candidate.hr_pic?.full_name || "-"}</TableCell>
-                      <TableCell>
-                        {format(new Date(candidate.applied_at), "dd MMM yyyy")}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredCandidates.map((candidate) => {
+                    const daysInProcess = differenceInDays(new Date(), new Date(candidate.applied_at));
+                    const isStuck = !["hired", "rejected"].includes(candidate.status) && 
+                      differenceInDays(new Date(), new Date(candidate.updated_at)) > 7;
+                    
+                    return (
+                      <TableRow
+                        key={candidate.id}
+                        className={`cursor-pointer hover:bg-muted/50 ${isStuck ? "bg-yellow-50 dark:bg-yellow-900/10" : ""}`}
+                        onClick={() => setSelectedCandidateId(candidate.id)}
+                      >
+                        <TableCell className="font-medium">
+                          <div>
+                            <p className="font-semibold">{candidate.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{candidate.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{candidate.position}</TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            value={candidate.status}
+                            onValueChange={(value) =>
+                              updateStatusMutation.mutate({
+                                candidateId: candidate.id,
+                                newStatus: value,
+                                oldStatus: candidate.status,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-[140px] h-8">
+                              <SelectValue>{getStatusBadge(candidate.status)}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_OPTIONS.map((status) => (
+                                <SelectItem key={status.value} value={status.value}>
+                                  {status.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>{candidate.hr_pic?.full_name || "-"}</TableCell>
+                        <TableCell>
+                          <span className={daysInProcess > 14 ? "text-orange-600 font-medium" : ""}>
+                            {daysInProcess} hari
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(candidate.applied_at), "dd MMM")}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

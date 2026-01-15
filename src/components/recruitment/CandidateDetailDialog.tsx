@@ -77,6 +77,22 @@ export function CandidateDetailDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Fetch HR users for PIC assignment
+  const { data: hrUsers = [] } = useQuery({
+    queryKey: ["hr-users-for-pic"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select(`
+          user_id,
+          profiles!inner(id, full_name)
+        `)
+        .in("role", ["hr", "super_admin"]);
+      if (error) throw error;
+      return data?.map((r: any) => r.profiles) || [];
+    },
+  });
+
   const { data: candidate } = useQuery({
     queryKey: ["candidate", candidateId],
     queryFn: async () => {
@@ -293,6 +309,44 @@ export function CandidateDetailDialog({
     },
   });
 
+  const updateHrPicMutation = useMutation({
+    mutationFn: async (newPicId: string | null) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session || !candidateId) throw new Error("Not authenticated");
+
+      const oldPicId = candidate?.hr_pic_id;
+      const oldPicName = candidate?.hr_pic?.full_name || "Tidak ada";
+
+      const { error: updateError } = await supabase
+        .from("candidates")
+        .update({ hr_pic_id: newPicId })
+        .eq("id", candidateId);
+      if (updateError) throw updateError;
+
+      // Find new PIC name
+      const newPicUser = hrUsers.find((u: any) => u.id === newPicId);
+      const newPicName = newPicUser?.full_name || "Tidak ada";
+
+      // Log to status history as a note
+      await supabase.from("candidate_status_history").insert({
+        candidate_id: candidateId,
+        old_status: candidate?.status as any,
+        new_status: candidate?.status as any,
+        changed_by: session.session.user.id,
+        notes: `HR PIC diubah dari ${oldPicName} ke ${newPicName}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["candidate", candidateId] });
+      queryClient.invalidateQueries({ queryKey: ["candidate-status-history", candidateId] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+      toast.success("HR PIC berhasil diubah");
+    },
+    onError: (error) => {
+      toast.error("Gagal mengubah HR PIC: " + error.message);
+    },
+  });
+
   const handleDeleteCandidate = async () => {
     if (!candidateId) return;
     setDeleting(true);
@@ -425,12 +479,38 @@ export function CandidateDetailDialog({
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>Apply: {format(new Date(candidate.applied_at), "dd MMMM yyyy")}</span>
                   </div>
-                  {candidate.hr_pic && (
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>HR PIC: {candidate.hr_pic.full_name}</span>
-                    </div>
-                  )}
+                </CardContent>
+              </Card>
+
+              {/* HR PIC Assignment */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">HR PIC</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select
+                    value={candidate.hr_pic_id || "none"}
+                    onValueChange={(value) =>
+                      updateHrPicMutation.mutate(value === "none" ? null : value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Pilih HR PIC">
+                        {candidate.hr_pic?.full_name || "Belum ada PIC"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tidak ada PIC</SelectItem>
+                      {hrUsers.map((u: any) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Perubahan PIC akan tercatat di riwayat
+                  </p>
                 </CardContent>
               </Card>
 
