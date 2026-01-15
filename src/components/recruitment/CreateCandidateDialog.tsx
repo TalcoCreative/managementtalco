@@ -18,25 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { usePositions } from "@/hooks/usePositions";
 
 interface CreateCandidateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const POSITION_OPTIONS = [
-  "Graphic Designer",
-  "Video Editor",
-  "Copywriter",
-  "Social Media Admin",
-  "Photographer",
-  "Director",
-  "Marketing",
-  "Sales",
-  "Finance",
-  "HR",
-  "Project Manager",
-];
 
 const DIVISION_OPTIONS = [
   "Creative",
@@ -50,6 +37,7 @@ const DIVISION_OPTIONS = [
 
 export function CreateCandidateDialog({ open, onOpenChange }: CreateCandidateDialogProps) {
   const queryClient = useQueryClient();
+  const { data: positions } = usePositions();
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -195,9 +183,9 @@ export function CreateCandidateDialog({ open, onOpenChange }: CreateCandidateDia
                   <SelectValue placeholder="Pilih posisi" />
                 </SelectTrigger>
                 <SelectContent>
-                  {POSITION_OPTIONS.map((pos) => (
-                    <SelectItem key={pos} value={pos}>
-                      {pos}
+                  {positions?.map((pos) => (
+                    <SelectItem key={pos.id} value={pos.name}>
+                      {pos.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

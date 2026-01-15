@@ -19,25 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { usePositions } from "@/hooks/usePositions";
 
 interface CreateRecruitmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const POSITION_OPTIONS = [
-  "Graphic Designer",
-  "Video Editor",
-  "Copywriter",
-  "Social Media Admin",
-  "Photographer",
-  "Director",
-  "Marketing",
-  "Sales",
-  "Finance",
-  "HR",
-  "Project Manager",
-];
 
 function generateSlug(name: string): string {
   return name
@@ -53,6 +40,7 @@ export function CreateRecruitmentFormDialog({
   onOpenChange,
 }: CreateRecruitmentFormDialogProps) {
   const queryClient = useQueryClient();
+  const { data: positions } = usePositions();
   const [formData, setFormData] = useState({
     name: "",
     position: "",
@@ -155,9 +143,9 @@ export function CreateRecruitmentFormDialog({
                 <SelectValue placeholder="Pilih posisi" />
               </SelectTrigger>
               <SelectContent>
-                {POSITION_OPTIONS.map((position) => (
-                  <SelectItem key={position} value={position}>
-                    {position}
+                {positions?.map((pos) => (
+                  <SelectItem key={pos.id} value={pos.name}>
+                    {pos.name}
                   </SelectItem>
                 ))}
               </SelectContent>
