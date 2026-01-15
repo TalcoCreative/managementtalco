@@ -109,14 +109,35 @@ export function getPositionColor(positions: Position[] | undefined, roleName: st
   return position?.color || "#6366f1";
 }
 
+// Mapping untuk role enum lama ke nama position baru
+const ROLE_LABEL_MAP: Record<string, string> = {
+  super_admin: "Super Admin",
+  hr: "HR",
+  graphic_designer: "Graphic Designer",
+  socmed_admin: "Social Media Admin",
+  copywriter: "Copywriter",
+  video_editor: "Video Editor",
+  finance: "Finance",
+  accounting: "Accounting",
+  marketing: "Marketing",
+  photographer: "Photographer",
+  director: "Director",
+  project_manager: "Project Manager",
+  sales: "Sales",
+};
+
 // Helper function untuk mendapatkan label dari role value
 export function getRoleLabel(positions: Position[] | undefined, roleValue: string): string {
-  if (roleValue === "super_admin") return "Super Admin";
-  if (!positions) return roleValue;
+  // Check mapping langsung dulu
+  if (ROLE_LABEL_MAP[roleValue]) return ROLE_LABEL_MAP[roleValue];
   
+  if (!positions) return roleValue.replace(/_/g, " ");
+  
+  // Cari di positions table
   const position = positions.find(
-    (p) => p.name.toLowerCase().replace(/\s+/g, "_") === roleValue
+    (p) => p.name.toLowerCase().replace(/\s+/g, "_") === roleValue ||
+           p.name.toLowerCase() === roleValue.toLowerCase()
   );
   
-  return position?.name || roleValue;
+  return position?.name || roleValue.replace(/_/g, " ");
 }
