@@ -468,6 +468,7 @@ export type Database = {
           phone: string
           portfolio_url: string | null
           position: string
+          source_form_id: string | null
           status: Database["public"]["Enums"]["recruitment_status"]
           updated_at: string
         }
@@ -485,6 +486,7 @@ export type Database = {
           phone: string
           portfolio_url?: string | null
           position: string
+          source_form_id?: string | null
           status?: Database["public"]["Enums"]["recruitment_status"]
           updated_at?: string
         }
@@ -502,6 +504,7 @@ export type Database = {
           phone?: string
           portfolio_url?: string | null
           position?: string
+          source_form_id?: string | null
           status?: Database["public"]["Enums"]["recruitment_status"]
           updated_at?: string
         }
@@ -511,6 +514,13 @@ export type Database = {
             columns: ["hr_pic_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidates_source_form_id_fkey"
+            columns: ["source_form_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_forms"
             referencedColumns: ["id"]
           },
         ]
@@ -2941,6 +2951,136 @@ export type Database = {
           {
             foreignKeyName: "prospects_pic_id_fkey"
             columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_form_fields: {
+        Row: {
+          created_at: string
+          field_order: number
+          field_type: string
+          form_id: string
+          helper_text: string | null
+          id: string
+          is_required: boolean
+          label: string
+          options: Json | null
+          placeholder: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_order?: number
+          field_type: string
+          form_id: string
+          helper_text?: string | null
+          id?: string
+          is_required?: boolean
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_order?: number
+          field_type?: string
+          form_id?: string
+          helper_text?: string | null
+          id?: string
+          is_required?: boolean
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_form_submissions: {
+        Row: {
+          candidate_id: string | null
+          form_id: string
+          id: string
+          submission_data: Json
+          submitted_at: string
+        }
+        Insert: {
+          candidate_id?: string | null
+          form_id: string
+          id?: string
+          submission_data: Json
+          submitted_at?: string
+        }
+        Update: {
+          candidate_id?: string | null
+          form_id?: string
+          id?: string
+          submission_data?: Json
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_form_submissions_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruitment_form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "recruitment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recruitment_forms: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          position: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          position: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          position?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruitment_forms_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
