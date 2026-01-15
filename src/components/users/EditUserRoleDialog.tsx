@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useRoleOptions } from "@/hooks/usePositions";
 
 interface EditUserRoleDialogProps {
   open: boolean;
@@ -20,21 +21,6 @@ interface EditUserRoleDialogProps {
   currentRole?: string;
 }
 
-const roles = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "hr", label: "HR" },
-  { value: "graphic_designer", label: "Graphic Designer" },
-  { value: "socmed_admin", label: "Social Media Admin" },
-  { value: "copywriter", label: "Copywriter" },
-  { value: "video_editor", label: "Video Editor" },
-  { value: "finance", label: "Finance" },
-  { value: "accounting", label: "Accounting" },
-  { value: "marketing", label: "Marketing" },
-  { value: "photographer", label: "Photographer" },
-  { value: "director", label: "Director" },
-  { value: "project_manager", label: "Project Manager" },
-];
-
 export function EditUserRoleDialog({
   open,
   onOpenChange,
@@ -42,6 +28,7 @@ export function EditUserRoleDialog({
   userName,
   currentRole,
 }: EditUserRoleDialogProps) {
+  const { roleOptions } = useRoleOptions();
   const [role, setRole] = useState(currentRole || "");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -102,7 +89,7 @@ export function EditUserRoleDialog({
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((r) => (
+                {roleOptions.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>

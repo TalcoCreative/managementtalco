@@ -36,18 +36,8 @@ interface ManagePositionsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const DEPARTMENTS = [
-  "Creative",
-  "Marketing",
-  "Sales",
-  "Finance",
-  "Human Resources",
-  "Operations",
-  "Executive",
-  "IT",
-  "Legal",
-  "Customer Service",
-];
+import { DEPARTMENTS } from "@/hooks/usePositions";
+
 
 const COLORS = [
   { value: "#ef4444", label: "Merah" },

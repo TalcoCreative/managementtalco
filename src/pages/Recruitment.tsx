@@ -275,8 +275,8 @@ export default function Recruitment() {
             <SelectContent>
               <SelectItem value="all">Semua Posisi</SelectItem>
               {positionOptions.map((position) => (
-                <SelectItem key={position} value={position}>
-                  {position}
+                <SelectItem key={position.value} value={position.value}>
+                  {position.label}
                 </SelectItem>
               ))}
             </SelectContent>

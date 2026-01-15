@@ -7,28 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRoleOptions } from "@/hooks/usePositions";
 
 interface CreateUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const roles = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "hr", label: "HR" },
-  { value: "graphic_designer", label: "Graphic Designer" },
-  { value: "socmed_admin", label: "Social Media Admin" },
-  { value: "copywriter", label: "Copywriter" },
-  { value: "video_editor", label: "Video Editor" },
-  { value: "finance", label: "Finance" },
-  { value: "accounting", label: "Accounting" },
-  { value: "marketing", label: "Marketing" },
-  { value: "photographer", label: "Photographer" },
-  { value: "director", label: "Director" },
-  { value: "project_manager", label: "Project Manager" },
-];
-
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+  const { roleOptions } = useRoleOptions();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -109,7 +96,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((r) => (
+                {roleOptions.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>

@@ -17,8 +17,10 @@ import { ExcelActions } from "@/components/shared/ExcelActions";
 import { USER_COLUMNS } from "@/lib/excel-utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { usePositions, getPositionColor, getRoleLabel } from "@/hooks/usePositions";
 
 export default function Users() {
+  const { data: positions } = usePositions();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -110,34 +112,14 @@ export default function Users() {
   }, [userRoles, canManageUsers, navigate]);
 
   const getRoleColor = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return "bg-primary";
-      case "hr":
-        return "bg-blue-500";
-      case "socmed_admin":
-        return "bg-yellow-500";
-      case "graphic_designer":
-        return "bg-purple-500";
-      case "copywriter":
-        return "bg-green-500";
-      case "video_editor":
-        return "bg-red-500";
-      case "finance":
-        return "bg-emerald-500";
-      case "accounting":
-        return "bg-cyan-500";
-      case "marketing":
-        return "bg-orange-500";
-      case "photographer":
-        return "bg-pink-500";
-      case "director":
-        return "bg-indigo-500";
-      case "project_manager":
-        return "bg-teal-500";
-      default:
-        return "bg-muted";
-    }
+    if (role === "super_admin") return "bg-primary";
+    return "";
+  };
+
+  const getRoleStyle = (role: string) => {
+    if (role === "super_admin") return {};
+    const color = getPositionColor(positions, role);
+    return { backgroundColor: color };
   };
 
   const getAttendanceStatus = (userId: string) => {
@@ -303,8 +285,12 @@ export default function Users() {
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
                         {user.user_roles?.map((ur: any, index: number) => (
-                          <Badge key={index} className={getRoleColor(ur.role)}>
-                            {ur.role.replace(/_/g, " ")}
+                          <Badge 
+                            key={index} 
+                            className={getRoleColor(ur.role)}
+                            style={getRoleStyle(ur.role)}
+                          >
+                            {getRoleLabel(positions, ur.role)}
                           </Badge>
                         ))}
                         {(!user.user_roles || user.user_roles.length === 0) && (
