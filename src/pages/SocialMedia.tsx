@@ -41,7 +41,7 @@ export default function SocialMedia() {
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-6">
-            <SocialMediaDashboard />
+            <SocialMediaDashboard onCreatePost={() => setActiveTab("post")} />
           </TabsContent>
 
           <TabsContent value="post" className="mt-6">
