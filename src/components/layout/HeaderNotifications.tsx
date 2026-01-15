@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, Check, X, AtSign, ClipboardList, MessageSquare } from "lucide-react";
+import { Bell, Check, X, AtSign, ClipboardList, MessageSquare, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,26 +13,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface UnifiedNotification {
   id: string;
-  type: 'task' | 'mention';
+  type: 'task' | 'mention' | 'candidate';
   title: string;
   message: string;
   createdAt: string;
   createdBy: string | null;
   icon: string;
   taskId?: string;
+  candidateId?: string;
   originalData: any;
 }
 
 interface HeaderNotificationsProps {
   onTaskClick?: (taskId: string) => void;
+  onCandidateClick?: (candidateId: string) => void;
 }
 
-export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
+export function HeaderNotifications({ onTaskClick, onCandidateClick }: HeaderNotificationsProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -94,6 +98,28 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
     refetchInterval: 30000,
   });
 
+  // Fetch candidate notifications (for HR/super_admin)
+  const { data: candidateNotifications = [] } = useQuery({
+    queryKey: ["header-candidate-notifications", currentUser],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const { data, error } = await supabase
+        .from("candidate_notifications")
+        .select(`
+          *,
+          candidates(id, full_name, position)
+        `)
+        .eq("user_id", currentUser)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentUser,
+    refetchInterval: 30000,
+  });
+
   // Combine and transform notifications
   const unifiedNotifications: UnifiedNotification[] = [
     ...taskNotifications.map((n: any) => ({
@@ -118,11 +144,24 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
       taskId: m.task_id,
       originalData: m,
     })),
+    ...candidateNotifications.map((c: any) => ({
+      id: c.id,
+      type: 'candidate' as const,
+      title: c.candidates?.full_name || 'Kandidat Baru',
+      message: c.message,
+      createdAt: c.created_at,
+      createdBy: null,
+      icon: '👤',
+      candidateId: c.candidate_id,
+      originalData: c,
+    })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const totalUnread = unifiedNotifications.length;
   const taskCount = taskNotifications.length;
   const mentionCount = mentions.length;
+  const candidateCount = candidateNotifications.length;
+
 
   const markTaskNotificationAsRead = async (notificationId: string) => {
     try {
@@ -148,17 +187,34 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
     }
   };
 
+  const markCandidateNotificationAsRead = async (notificationId: string) => {
+    try {
+      await supabase
+        .from("candidate_notifications")
+        .update({ is_read: true })
+        .eq("id", notificationId);
+      queryClient.invalidateQueries({ queryKey: ["header-candidate-notifications"] });
+    } catch (error) {
+      console.error("Failed to mark candidate notification as read", error);
+    }
+  };
+
   const handleMarkAsRead = async (notification: UnifiedNotification) => {
     if (notification.type === 'task') {
       await markTaskNotificationAsRead(notification.id);
-    } else {
+    } else if (notification.type === 'mention') {
       await markMentionAsRead(notification.id);
+    } else if (notification.type === 'candidate') {
+      await markCandidateNotificationAsRead(notification.id);
     }
   };
 
   const handleNotificationClick = async (notification: UnifiedNotification) => {
     await handleMarkAsRead(notification);
-    if (notification.taskId && onTaskClick) {
+    if (notification.type === 'candidate' && notification.candidateId) {
+      navigate('/recruitment');
+      setOpen(false);
+    } else if (notification.taskId && onTaskClick) {
       onTaskClick(notification.taskId);
       setOpen(false);
     }
@@ -181,13 +237,22 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
         .eq("mentioned_user_id", currentUser)
         .eq("is_read", false);
 
+      // Mark all candidate notifications as read
+      await supabase
+        .from("candidate_notifications")
+        .update({ is_read: true })
+        .eq("user_id", currentUser)
+        .eq("is_read", false);
+
       queryClient.invalidateQueries({ queryKey: ["header-task-notifications"] });
       queryClient.invalidateQueries({ queryKey: ["header-mentions"] });
+      queryClient.invalidateQueries({ queryKey: ["header-candidate-notifications"] });
       toast.success("Semua notifikasi telah ditandai dibaca");
     } catch (error) {
       console.error("Failed to mark all as read", error);
     }
   };
+
 
   const renderNotificationList = (notifications: UnifiedNotification[]) => (
     <div className="divide-y">
@@ -257,7 +322,7 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
           )}
         </div>
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-9">
+          <TabsList className="w-full grid grid-cols-4 h-9">
             <TabsTrigger value="all" className="text-xs">
               Semua {totalUnread > 0 && `(${totalUnread})`}
             </TabsTrigger>
@@ -269,6 +334,10 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
               <AtSign className="h-3 w-3 mr-1" />
               {mentionCount > 0 && `(${mentionCount})`}
             </TabsTrigger>
+            <TabsTrigger value="candidates" className="text-xs">
+              <Users className="h-3 w-3 mr-1" />
+              {candidateCount > 0 && `(${candidateCount})`}
+            </TabsTrigger>
           </TabsList>
           <ScrollArea className="h-[350px]">
             <TabsContent value="all" className="m-0">
@@ -279,6 +348,9 @@ export function HeaderNotifications({ onTaskClick }: HeaderNotificationsProps) {
             </TabsContent>
             <TabsContent value="mentions" className="m-0">
               {renderNotificationList(unifiedNotifications.filter(n => n.type === 'mention'))}
+            </TabsContent>
+            <TabsContent value="candidates" className="m-0">
+              {renderNotificationList(unifiedNotifications.filter(n => n.type === 'candidate'))}
             </TabsContent>
           </ScrollArea>
         </Tabs>
