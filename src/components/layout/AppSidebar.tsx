@@ -26,6 +26,7 @@ import {
   Mail,
   Scale,
   PieChart,
+  Sparkles,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +60,11 @@ const navItems = [
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "KOL Database", url: "/kol-database", icon: Star },
   { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
+];
+
+const socialMediaItems = [
   { title: "Social Media", url: "/social-media", icon: Share2 },
+  { title: "Content Builder", url: "/content-builder", icon: Sparkles },
 ];
 
 import { BarChart2 } from "lucide-react";
@@ -206,6 +211,26 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
+            Social Media
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="px-2 space-y-0.5">
+              {socialMediaItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} className={navLinkClass}>
+                      <item.icon className="h-4 w-4" />
+                      {!isCollapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

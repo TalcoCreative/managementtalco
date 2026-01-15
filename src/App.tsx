@@ -46,6 +46,7 @@ import SocialMedia from "./pages/SocialMedia";
 import SocialMediaModule from "./pages/SocialMediaModule";
 import SocialMediaSettings from "./pages/SocialMediaSettings";
 import SharedSocialMedia from "./pages/SharedSocialMedia";
+import ContentBuilder from "./pages/ContentBuilder";
 import EmailSettings from "./pages/EmailSettings";
 import NotFound from "./pages/NotFound";
 import SharedShortUrl from "./pages/SharedShortUrl";
@@ -96,6 +97,7 @@ const App = () => (
           <Route path="/social-media" element={<ProtectedRoute><SocialMediaModule /></ProtectedRoute>} />
           <Route path="/social-media/settings" element={<ProtectedRoute><SocialMediaSettings /></ProtectedRoute>} />
           <Route path="/social-media/client/:slug" element={<SharedSocialMedia />} />
+          <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
