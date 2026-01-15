@@ -68,6 +68,7 @@ const hrItems = [
   { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2 },
   { title: "Performance", url: "/performance", icon: TrendingUp },
   { title: "Recruitment", url: "/recruitment", icon: UserSearch },
+  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3 },
   { title: "Form Builder", url: "/recruitment/forms", icon: FileText },
 ];
 
