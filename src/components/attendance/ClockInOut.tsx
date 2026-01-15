@@ -292,6 +292,20 @@ export function ClockInOut() {
       setNotes("");
       setPhotoClockIn(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+
+      // Send clock-in summary email (non-blocking)
+      supabase.functions.invoke("clockin-summary-email", {
+        body: { user_id: session.session.user.id },
+      }).then((result) => {
+        if (result.data?.success) {
+          console.log("Clock-in summary email sent");
+        } else {
+          console.log("Clock-in summary email skipped:", result.data?.error);
+        }
+      }).catch((err) => {
+        console.error("Failed to send clock-in summary email:", err);
+      });
+
     } catch (error: any) {
       toast.error(error.message || "Gagal clock in");
     } finally {
