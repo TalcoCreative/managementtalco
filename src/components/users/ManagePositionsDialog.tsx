@@ -271,7 +271,7 @@ export function ManagePositionsDialog({
           )}
 
           {/* Positions List */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0 max-h-[400px]">
             <Table>
               <TableHeader>
                 <TableRow>
