@@ -68,8 +68,8 @@ export function FinanceInsights() {
           clients:client_id(id, name),
           projects:project_id(id, title)
         `)
-        .gte("paid_at", format(startDate, "yyyy-MM-dd"))
-        .lte("paid_at", format(endDate, "yyyy-MM-dd"))
+        .gte("created_at", format(startDate, "yyyy-MM-dd"))
+        .lte("created_at", format(endDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
       if (error) throw error;
       return data || [];

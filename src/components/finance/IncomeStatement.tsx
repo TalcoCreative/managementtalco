@@ -87,15 +87,15 @@ export function IncomeStatement() {
     enabled: compareMode,
   });
 
-  // Fetch expenses data
+  // Fetch expenses data - use created_at for date filtering since paid_at might be null initially
   const { data: expenses, isLoading: expensesLoading } = useQuery({
     queryKey: ["income-statement-expenses", selectedYear, selectedMonth, selectedClient, selectedProject],
     queryFn: async () => {
       let query = supabase
         .from("expenses")
         .select("*")
-        .gte("paid_at", format(startDate, "yyyy-MM-dd"))
-        .lte("paid_at", format(endDate, "yyyy-MM-dd"))
+        .gte("created_at", format(startDate, "yyyy-MM-dd"))
+        .lte("created_at", format(endDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
 
       if (selectedClient !== "all") {
@@ -120,8 +120,8 @@ export function IncomeStatement() {
       let query = supabase
         .from("expenses")
         .select("*")
-        .gte("paid_at", format(prevStartDate, "yyyy-MM-dd"))
-        .lte("paid_at", format(prevEndDate, "yyyy-MM-dd"))
+        .gte("created_at", format(prevStartDate, "yyyy-MM-dd"))
+        .lte("created_at", format(prevEndDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
 
       if (selectedClient !== "all") {
