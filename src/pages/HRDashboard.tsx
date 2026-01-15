@@ -57,6 +57,7 @@ export default function HRDashboard() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [selectedLeaveRequest, setSelectedLeaveRequest] = useState<any>(null);
+  const [autoClockoutLoading, setAutoClockoutLoading] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch all profiles
@@ -375,6 +376,34 @@ export default function HRDashboard() {
     }
     
     queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+  };
+
+  const handleAutoClockout = async () => {
+    setAutoClockoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-clockout-midnight");
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.success) {
+        const count = data.results?.length || 0;
+        if (count > 0) {
+          toast.success(`Berhasil auto clock-out ${count} attendance yang lupa clock-out!`);
+          queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+        } else {
+          toast.info("Tidak ada attendance yang perlu di-auto clock-out");
+        }
+      } else {
+        throw new Error(data?.error || "Auto clock-out gagal");
+      }
+    } catch (error: any) {
+      console.error("Auto clock-out error:", error);
+      toast.error(error.message || "Gagal melakukan auto clock-out");
+    } finally {
+      setAutoClockoutLoading(false);
+    }
   };
 
   return (
@@ -852,8 +881,18 @@ export default function HRDashboard() {
           {/* Attendance Tab */}
           <TabsContent value="attendance">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Recent Attendance</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleAutoClockout}
+                  disabled={autoClockoutLoading}
+                  className="gap-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  {autoClockoutLoading ? "Processing..." : "Auto Clock-Out yang Lupa"}
+                </Button>
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px]">
@@ -879,15 +918,20 @@ export default function HRDashboard() {
                             {record.clock_in ? format(new Date(record.clock_in), 'HH:mm') : '-'}
                           </TableCell>
                           <TableCell>
-                            {record.clock_out ? format(new Date(record.clock_out), 'HH:mm') : '-'}
+                            <div className="flex items-center gap-2">
+                              {record.clock_out ? format(new Date(record.clock_out), 'HH:mm') : '-'}
+                              {record.notes?.includes('[AUTO CLOCK-OUT') && (
+                                <Badge variant="destructive" className="text-xs">Lupa!</Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
                               {calculateWorkHours(record.clock_in, record.clock_out)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {record.notes || '-'}
+                          <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {record.notes?.replace('[AUTO CLOCK-OUT - LUPA CLOCK OUT]', '').trim() || '-'}
                           </TableCell>
                         </TableRow>
                       ))}

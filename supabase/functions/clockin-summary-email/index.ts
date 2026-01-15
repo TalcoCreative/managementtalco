@@ -80,6 +80,17 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log("Fetching tasks for user. Yesterday:", yesterdayStr, "Today:", todayStr);
 
+    // Check if user forgot to clock out yesterday (has auto clock-out)
+    const { data: yesterdayAttendance } = await supabase
+      .from("attendance")
+      .select("id, clock_out, notes")
+      .eq("user_id", user_id)
+      .eq("date", yesterdayStr)
+      .maybeSingle();
+
+    const forgotToClockOut = yesterdayAttendance?.notes?.includes("[AUTO CLOCK-OUT") || 
+                             yesterdayAttendance?.notes?.includes("[Auto clock-out");
+
     // Fetch completed tasks yesterday
     const { data: completedTasks } = await supabase
       .from("tasks")
@@ -313,7 +324,7 @@ serve(async (req: Request): Promise<Response> => {
     console.log(`Found ${completedItems.length} completed items, ${incompleteItems.length} incomplete items`);
 
     // Build email HTML
-    const emailHtml = buildSummaryEmail(firstName, completedItems, incompleteItems, todayStr);
+    const emailHtml = buildSummaryEmail(firstName, completedItems, incompleteItems, todayStr, forgotToClockOut);
 
     // Get email settings
     const { data: settings } = await supabase
@@ -384,7 +395,8 @@ function buildSummaryEmail(
   firstName: string,
   completedItems: TaskItem[],
   incompleteItems: TaskItem[],
-  todayStr: string
+  todayStr: string,
+  forgotToClockOut: boolean = false
 ): string {
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "-";
@@ -514,6 +526,17 @@ function buildSummaryEmail(
         <div style="text-align: center; margin-bottom: 24px;">
           <h1 style="color: #2563eb; margin: 0; font-size: 24px;">Talco System</h1>
         </div>
+        
+        ${forgotToClockOut ? `
+        <div style="background-color: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; padding: 16px; margin-bottom: 24px; text-align: center;">
+          <p style="margin: 0; color: #dc2626; font-weight: bold; font-size: 16px;">
+            ⚠️ KEMARIN KAMU LUPA CLOCK-OUT! ⚠️
+          </p>
+          <p style="margin: 8px 0 0 0; color: #b91c1c; font-size: 14px;">
+            Jangan diulangi lagi ya, nanti dimarahin HR! 😅
+          </p>
+        </div>
+        ` : ''}
         
         <p style="font-size: 18px; color: #333;">Halo ${firstName} 👋</p>
         
