@@ -69,11 +69,12 @@ export const sendEmailNotification = async ({
 };
 
 // Helper to get user email by profile ID
+// Note: Some profiles have email in 'email' column, others in 'user_id' column
 export const getUserEmailById = async (profileId: string): Promise<{ email: string | null; name: string }> => {
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("email, full_name")
+      .select("email, full_name, user_id")
       .eq("id", profileId)
       .single();
 
@@ -81,7 +82,13 @@ export const getUserEmailById = async (profileId: string): Promise<{ email: stri
       return { email: null, name: "" };
     }
 
-    return { email: data.email, name: data.full_name };
+    // Use email column first, fallback to user_id if it looks like an email
+    let userEmail = data.email;
+    if (!userEmail && data.user_id && data.user_id.includes("@")) {
+      userEmail = data.user_id;
+    }
+
+    return { email: userEmail, name: data.full_name };
   } catch {
     return { email: null, name: "" };
   }
