@@ -52,6 +52,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [saving, setSaving] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -458,6 +460,45 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       queryClient.invalidateQueries({ queryKey: ["task-attachments", taskId] });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete attachment");
+    }
+  };
+
+  const handleEditComment = async (commentId: string) => {
+    if (!editCommentContent.trim()) return;
+    
+    try {
+      const { error } = await supabase
+        .from("comments")
+        .update({ content: editCommentContent })
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      toast.success("Comment updated!");
+      setEditingCommentId(null);
+      setEditCommentContent("");
+      queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update comment");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      // Delete mentions first
+      await supabase.from("comment_mentions").delete().eq("comment_id", commentId);
+      
+      const { error } = await supabase
+        .from("comments")
+        .delete()
+        .eq("id", commentId);
+
+      if (error) throw error;
+
+      toast.success("Comment deleted!");
+      queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete comment");
     }
   };
 
@@ -878,13 +919,59 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                             <Badge variant="outline" className="text-xs">External</Badge>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(commentItem.created_at), "PPp")}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(commentItem.created_at), "PPp")}
+                          </span>
+                          {commentItem.type === 'employee' && currentUser === commentItem.author_id && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => {
+                                  setEditingCommentId(commentItem.id);
+                                  setEditCommentContent(commentItem.content);
+                                }}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteComment(commentItem.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {renderCommentWithMentions(commentItem.content)}
-                      </p>
+                      {editingCommentId === commentItem.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editCommentContent}
+                            onChange={(e) => setEditCommentContent(e.target.value)}
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleEditComment(commentItem.id)}>
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => {
+                              setEditingCommentId(null);
+                              setEditCommentContent("");
+                            }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">
+                          {renderCommentWithMentions(commentItem.content)}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -7,6 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +43,7 @@ import {
   History,
   MessageSquare,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -63,6 +74,8 @@ export function CandidateDetailDialog({
   const [assessmentType, setAssessmentType] = useState<string>("hr");
   const [assessmentRating, setAssessmentRating] = useState<number>(3);
   const [assessmentNotes, setAssessmentNotes] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: candidate } = useQuery({
     queryKey: ["candidate", candidateId],
@@ -215,6 +228,34 @@ export function CandidateDetailDialog({
     },
   });
 
+  const handleDeleteCandidate = async () => {
+    if (!candidateId) return;
+    setDeleting(true);
+    try {
+      // Delete related data first
+      await supabase.from("candidate_notes").delete().eq("candidate_id", candidateId);
+      await supabase.from("candidate_assessments").delete().eq("candidate_id", candidateId);
+      await supabase.from("candidate_status_history").delete().eq("candidate_id", candidateId);
+
+      const { error } = await supabase
+        .from("candidates")
+        .delete()
+        .eq("id", candidateId);
+
+      if (error) throw error;
+
+      toast.success("Kandidat dihapus");
+      setDeleteDialogOpen(false);
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+    } catch (error: any) {
+      toast.error("Gagal menghapus kandidat");
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusOption = STATUS_OPTIONS.find((s) => s.value === status);
     return (
@@ -227,6 +268,7 @@ export function CandidateDetailDialog({
   if (!candidate) return null;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -552,7 +594,42 @@ export function CandidateDetailDialog({
             </TabsContent>
           </ScrollArea>
         </Tabs>
+
+        {/* Delete Button */}
+        <div className="flex justify-end pt-4 border-t">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Hapus Kandidat
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus Kandidat?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus kandidat "{candidate.full_name}"? 
+            Semua data termasuk notes, assessments, dan history akan dihapus. Tindakan ini tidak dapat dibatalkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteCandidate}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleting ? "Menghapus..." : "Hapus"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

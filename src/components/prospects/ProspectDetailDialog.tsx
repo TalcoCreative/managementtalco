@@ -22,6 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Phone, Mail, Building2, MapPin, Send, Trash2, History, Edit2, Save, X, Flame, Snowflake, Thermometer } from "lucide-react";
@@ -61,6 +71,8 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editData, setEditData] = useState({
     contact_name: prospect.contact_name,
     email: prospect.email || "",
@@ -206,7 +218,35 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
     addCommentMutation.mutate();
   };
 
+  const handleDeleteProspect = async () => {
+    setDeleting(true);
+    try {
+      // Delete related data first
+      await supabase.from("prospect_comments" as any).delete().eq("prospect_id", prospect.id);
+      await supabase.from("prospect_status_history" as any).delete().eq("prospect_id", prospect.id);
+      await supabase.from("prospect_activity_logs" as any).delete().eq("prospect_id", prospect.id);
+
+      const { error } = await supabase
+        .from("prospects" as any)
+        .delete()
+        .eq("id", prospect.id);
+
+      if (error) throw error;
+
+      toast.success("Prospect deleted");
+      setDeleteDialogOpen(false);
+      onOpenChange(false);
+      queryClient.invalidateQueries({ queryKey: ["prospects"] });
+    } catch (error: any) {
+      toast.error("Failed to delete prospect");
+      console.error(error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
@@ -526,7 +566,42 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
             </ScrollArea>
           </TabsContent>
         </Tabs>
+
+        {/* Delete Button */}
+        <div className="flex justify-end pt-4 border-t">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Prospect
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus Prospect?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus prospect "{prospect.contact_name}"? 
+            Semua data termasuk comments dan history akan dihapus. Tindakan ini tidak dapat dibatalkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteProspect}
+            disabled={deleting}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleting ? "Menghapus..." : "Hapus"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
