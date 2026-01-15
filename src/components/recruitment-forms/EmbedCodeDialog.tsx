@@ -42,10 +42,9 @@ export function EmbedCodeDialog({
   const shortDomain = "https://ms.talco.id";
   const publicUrl = `${shortDomain}/apply/${form.slug}`;
   const baseUrl = window.location.origin;
-  const fullUrl = `${baseUrl}/apply/${form.slug}`;
   
   const iframeCode = `<iframe 
-  src="${fullUrl}" 
+  src="${publicUrl}"
   width="100%" 
   height="800" 
   frameborder="0" 
