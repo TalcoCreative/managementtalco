@@ -288,6 +288,12 @@ export default function Prospects() {
     return acc;
   }, {} as Record<string, number>) || {};
 
+  const temperatureCounts = prospects?.reduce((acc, p) => {
+    const temp = p.temperature || "warm";
+    acc[temp] = (acc[temp] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>) || {};
+
   // Export data for Excel
   const exportData = prospects?.map(p => ({
     contact_name: p.contact_name,
@@ -385,6 +391,28 @@ export default function Prospects() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Temperature Summary Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          {TEMPERATURE_OPTIONS.map((temp) => {
+            const Icon = temp.icon;
+            return (
+              <Card key={temp.value} className="transition-all hover:shadow-md">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full ${temp.color} flex items-center justify-center`}>
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{temp.label}</p>
+                      <p className="text-2xl font-bold">{temperatureCounts[temp.value] || 0}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Filters */}
