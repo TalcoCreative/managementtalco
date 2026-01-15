@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper } from "lucide-react";
+import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper, Home } from "lucide-react";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +15,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const getHolidayTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    national: 'Libur Nasional',
+    office: 'Libur Kantor',
+    special: 'Libur Khusus',
+    wfh: 'WFH',
+  };
+  return labels[type] || type;
+};
+
+const getHolidayTypeStyle = (type: string) => {
+  const styles: Record<string, string> = {
+    national: 'bg-red-500/10 text-red-600 border-red-500/30',
+    office: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    special: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+    wfh: 'bg-green-500/10 text-green-600 border-green-500/30',
+  };
+  return styles[type] || 'bg-orange-500/10 text-orange-600 border-orange-500/30';
+};
 
 export default function Schedule() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -425,21 +445,20 @@ export default function Schedule() {
                         {selectedEvents.holidays.map((holiday: any) => (
                           <div
                             key={holiday.id}
-                            className="p-3 rounded-lg border bg-orange-500/10 border-orange-500/30"
+                            className={`p-3 rounded-lg border ${getHolidayTypeStyle(holiday.holiday_type)}`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
                                 <h4 className="font-medium">{holiday.name}</h4>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
-                                   holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                  {getHolidayTypeLabel(holiday.holiday_type)}
                                 </p>
                                 {holiday.description && (
                                   <p className="text-xs text-muted-foreground">{holiday.description}</p>
                                 )}
                               </div>
-                              <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">
-                                {holiday.holiday_type}
+                              <Badge className={getHolidayTypeStyle(holiday.holiday_type)}>
+                                {getHolidayTypeLabel(holiday.holiday_type)}
                               </Badge>
                             </div>
                           </div>
@@ -631,21 +650,20 @@ export default function Schedule() {
                             {monthEvents.holidays.map((holiday: any) => (
                               <div
                                 key={holiday.id}
-                                className="p-3 border rounded-lg mb-2 bg-orange-500/10 border-orange-500/30"
+                                className={`p-3 border rounded-lg mb-2 ${getHolidayTypeStyle(holiday.holiday_type)}`}
                               >
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <p className="font-medium">{holiday.name}</p>
                                     <p className="text-sm text-muted-foreground">
-                                      {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
-                                       holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                      {getHolidayTypeLabel(holiday.holiday_type)}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                       {format(new Date(holiday.start_date), "dd MMM yyyy")}
                                       {holiday.start_date !== holiday.end_date && ` - ${format(new Date(holiday.end_date), "dd MMM yyyy")}`}
                                     </p>
                                   </div>
-                                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">{holiday.holiday_type}</Badge>
+                                  <Badge className={getHolidayTypeStyle(holiday.holiday_type)}>{getHolidayTypeLabel(holiday.holiday_type)}</Badge>
                                 </div>
                               </div>
                             ))}
@@ -883,9 +901,8 @@ export default function Schedule() {
                             <TableRow key={holiday.id}>
                               <TableCell className="font-medium">{holiday.name}</TableCell>
                               <TableCell>
-                                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30">
-                                  {holiday.holiday_type === 'national' ? 'Libur Nasional' : 
-                                   holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus'}
+                                <Badge className={getHolidayTypeStyle(holiday.holiday_type)}>
+                                  {getHolidayTypeLabel(holiday.holiday_type)}
                                 </Badge>
                               </TableCell>
                               <TableCell>{format(new Date(holiday.start_date), "dd MMM yyyy")}</TableCell>

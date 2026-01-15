@@ -35,7 +35,7 @@ import {
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { id } from "date-fns/locale";
-import { Plus, Pencil, Calendar, Building2, Star } from "lucide-react";
+import { Plus, Pencil, Calendar, Building2, Star, Home } from "lucide-react";
 
 interface Holiday {
   id: string;
@@ -62,12 +62,14 @@ const holidayTypeLabels: Record<string, string> = {
   national: "Libur Nasional",
   office: "Libur Kantor",
   special: "Libur Khusus",
+  wfh: "WFH",
 };
 
 const holidayTypeIcons: Record<string, typeof Calendar> = {
   national: Calendar,
   office: Building2,
   special: Star,
+  wfh: Home,
 };
 
 const Holiday = () => {
@@ -243,6 +245,7 @@ const Holiday = () => {
       national: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
       office: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
       special: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      wfh: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     };
 
     return (
@@ -403,6 +406,7 @@ const Holiday = () => {
                   <SelectItem value="national">Libur Nasional</SelectItem>
                   <SelectItem value="office">Libur Kantor</SelectItem>
                   <SelectItem value="special">Libur Khusus</SelectItem>
+                  <SelectItem value="wfh">WFH (Work From Home)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

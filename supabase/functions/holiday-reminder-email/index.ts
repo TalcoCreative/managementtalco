@@ -79,7 +79,8 @@ const handler = async (req: Request): Promise<Response> => {
     for (const holiday of holidays) {
       const holidayTypeLabel = 
         holiday.holiday_type === 'national' ? 'Libur Nasional' :
-        holiday.holiday_type === 'office' ? 'Libur Kantor' : 'Libur Khusus';
+        holiday.holiday_type === 'office' ? 'Libur Kantor' : 
+        holiday.holiday_type === 'wfh' ? 'WFH (Work From Home)' : 'Libur Khusus';
 
       const startDate = new Date(holiday.start_date);
       const endDate = new Date(holiday.end_date);
