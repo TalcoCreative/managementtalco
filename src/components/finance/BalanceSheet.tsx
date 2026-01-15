@@ -77,8 +77,8 @@ export function BalanceSheet() {
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
-        .gte("paid_at", format(yearStartDate, "yyyy-MM-dd"))
-        .lte("paid_at", format(asOfDate, "yyyy-MM-dd"))
+        .gte("created_at", format(yearStartDate, "yyyy-MM-dd"))
+        .lte("created_at", format(asOfDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
       if (error) throw error;
       return data || [];

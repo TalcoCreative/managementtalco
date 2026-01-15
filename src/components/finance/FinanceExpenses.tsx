@@ -106,28 +106,11 @@ export function FinanceExpenses() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const mapCategoryToDb = (category: string): string => {
-        switch (category) {
-          case "operasional":
-          case "marketing_growth":
-          case "it_tools":
-          case "administrasi_legal":
-          case "finance":
-            return "operational";
-          case "project":
-            return "project";
-          case "sdm_hr":
-            return "payroll";
-          case "lainnya":
-          default:
-            return "other";
-        }
-      };
-
-      const dbCategory = mapCategoryToDb(formData.category);
+      // Store original category for proper reporting
+      // No mapping needed - store as-is for income statement & balance sheet
 
       const { error } = await supabase.from("expenses").insert({
-        category: dbCategory,
+        category: formData.category,
         sub_category: formData.sub_category,
         project_id: formData.project_id || null,
         client_id: formData.client_id || null,
@@ -196,6 +179,10 @@ export function FinanceExpenses() {
       toast.success("Expense marked as paid and added to ledger");
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      // Invalidate financial reports
+      queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark expense as paid");
     }

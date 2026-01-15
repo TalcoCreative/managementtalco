@@ -157,6 +157,10 @@ export function FinanceIncome() {
       toast.success("Income marked as received and added to ledger");
       queryClient.invalidateQueries({ queryKey: ["finance-income"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      // Invalidate financial reports
+      queryClient.invalidateQueries({ queryKey: ["income-statement-income"] });
+      queryClient.invalidateQueries({ queryKey: ["balance-sheet-income"] });
+      queryClient.invalidateQueries({ queryKey: ["insights-income"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to mark income as received");
     }

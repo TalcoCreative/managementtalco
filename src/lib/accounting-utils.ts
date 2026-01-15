@@ -138,10 +138,10 @@ export const getExpenseGroup = (category: string, subCategory?: string | null): 
     return "hpp";
   }
   
-  // Map categories to groups
+  // Map categories to groups (support both new and legacy category values)
   const categoryGroupMap: Record<string, ExpenseGroup> = {
+    // New category values
     sdm_hr: "sdm",
-    payroll: "sdm",
     marketing_growth: "marketing",
     it_tools: "it",
     administrasi_legal: "administrasi",
@@ -149,6 +149,10 @@ export const getExpenseGroup = (category: string, subCategory?: string | null): 
     finance: "administrasi",
     reimburse: "other",
     lainnya: "other",
+    // Legacy category values (for backward compatibility)
+    payroll: "sdm",
+    operational: "administrasi",
+    other: "other",
   };
   
   return categoryGroupMap[category] || "other";
