@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.auto-clockout-midnight]
 verify_jwt = false
+
+[functions.holiday-reminder-email]
+verify_jwt = false
