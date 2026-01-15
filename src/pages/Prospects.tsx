@@ -50,6 +50,7 @@ export default function Prospects() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [temperatureFilter, setTemperatureFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<any>(null);
   const [sortField, setSortField] = useState<SortField>("created_at");
@@ -200,11 +201,16 @@ export default function Prospects() {
   const getSortedProspects = () => {
     if (!prospects) return [];
     
-    const filtered = prospects.filter((prospect) =>
-      prospect.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prospect.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prospect.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = prospects.filter((prospect) => {
+      const matchesSearch = prospect.contact_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prospect.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prospect.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesTemperature = temperatureFilter === "all" || 
+        (prospect.temperature || "warm") === temperatureFilter;
+      
+      return matchesSearch && matchesTemperature;
+    });
 
     return filtered.sort((a, b) => {
       let aValue: any;
@@ -398,7 +404,13 @@ export default function Prospects() {
           {TEMPERATURE_OPTIONS.map((temp) => {
             const Icon = temp.icon;
             return (
-              <Card key={temp.value} className="transition-all hover:shadow-md">
+              <Card 
+                key={temp.value} 
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  temperatureFilter === temp.value ? 'ring-2 ring-primary' : ''
+                }`}
+                onClick={() => setTemperatureFilter(temperatureFilter === temp.value ? "all" : temp.value)}
+              >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full ${temp.color} flex items-center justify-center`}>
