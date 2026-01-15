@@ -54,7 +54,7 @@ interface PdfSettings {
   orientation: "portrait" | "landscape";
 }
 
-// Default settings
+// Default settings - logo size in mm for PDF
 const defaultPdfSettings: PdfSettings = {
   companyName: "TALCO CREATIVE INDONESIA",
   companyTagline: "Creative Agency & Digital Marketing Solutions",
@@ -69,8 +69,8 @@ const defaultPdfSettings: PdfSettings = {
   giverRole: "Human Resources",
   receiverRole: "Karyawan",
   showSignature: true,
-  logoWidth: 35,
-  logoHeight: 35,
+  logoWidth: 40,  // Larger default for better visibility
+  logoHeight: 40,
   primaryColor: [41, 128, 185],
   headerFontSize: 18,
   bodyFontSize: 10,

@@ -57,6 +57,9 @@ interface PdfSettings {
   pdf_orientation: string;
 }
 
+// Preview scale factor: how many pixels per mm for accurate preview
+const PDF_PREVIEW_SCALE = 2.5; // 2.5px per mm gives good visual match
+
 const defaultSettings: PdfSettings = {
   pdf_company_name: "TALCO CREATIVE INDONESIA",
   pdf_company_tagline: "Creative Agency & Digital Marketing Solutions",
@@ -667,35 +670,35 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
             {/* Preview Tab */}
             <TabsContent value="preview" className="px-1">
               <div className="border rounded-lg p-4 bg-white">
-                <div className="max-w-md mx-auto space-y-4">
-                  {/* Header Preview */}
+              <div className="max-w-md mx-auto space-y-4">
+                  {/* Header Preview - scaled to match PDF proportions */}
                   <div className="flex items-start gap-3">
                     {settings.company_logo ? (
                       <img 
                         src={settings.company_logo} 
                         alt="Logo" 
-                        className="object-contain"
+                        className="object-contain flex-shrink-0"
                         style={{ 
-                          width: `${settings.pdf_logo_width * 2}px`, 
-                          height: `${settings.pdf_logo_height * 2}px` 
+                          width: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
+                          height: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
                         }}
                       />
                     ) : (
                       <div 
-                        className="bg-muted flex items-center justify-center text-xs text-muted-foreground"
+                        className="bg-muted flex items-center justify-center text-xs text-muted-foreground flex-shrink-0"
                         style={{ 
-                          width: `${settings.pdf_logo_width * 2}px`, 
-                          height: `${settings.pdf_logo_height * 2}px` 
+                          width: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
+                          height: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
                         }}
                       >
                         Logo
                       </div>
                     )}
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h2 
-                        className="font-bold"
+                        className="font-bold truncate"
                         style={{ 
-                          fontSize: `${settings.pdf_header_font_size}px`,
+                          fontSize: `${Math.max(14, settings.pdf_header_font_size * 0.9)}px`,
                           color: parseColor(settings.pdf_primary_color)
                         }}
                       >
