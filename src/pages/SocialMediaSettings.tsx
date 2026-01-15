@@ -184,8 +184,17 @@ export default function SocialMediaSettings() {
 
     setIsSyncing(true);
     try {
+      // Get current user ID
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+
+      if (!userId) {
+        toast.error("User tidak terautentikasi");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("sync-socialbu", {
-        body: { action: "sync" },
+        body: { action: "sync", user_id: userId },
       });
 
       if (error) throw error;
