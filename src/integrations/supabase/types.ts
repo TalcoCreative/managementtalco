@@ -321,6 +321,47 @@ export type Database = {
           },
         ]
       }
+      balance_sheet_items: {
+        Row: {
+          account_id: string
+          amount: number
+          as_of_date: string
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          as_of_date: string
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          as_of_date?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_sheet_items_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_assessments: {
         Row: {
           assessment_type: string
@@ -556,6 +597,50 @@ export type Database = {
             columns: ["source_form_id"]
             isOneToOne: false
             referencedRelation: "recruitment_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chart_of_accounts: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_id: string | null
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_id?: string | null
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_id?: string | null
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chart_of_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -2133,8 +2218,51 @@ export type Database = {
           },
         ]
       }
+      ledger_account_mappings: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          id: string
+          is_debit: boolean
+          ledger_entry_id: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          is_debit?: boolean
+          ledger_entry_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          is_debit?: boolean
+          ledger_entry_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_account_mappings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_account_mappings_ledger_entry_id_fkey"
+            columns: ["ledger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ledger_entries: {
         Row: {
+          account_id: string | null
           amount: number
           client_id: string | null
           created_at: string
@@ -2149,6 +2277,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           client_id?: string | null
           created_at?: string
@@ -2163,6 +2292,7 @@ export type Database = {
           type: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           client_id?: string | null
           created_at?: string
@@ -2177,6 +2307,13 @@ export type Database = {
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ledger_entries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "chart_of_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ledger_entries_client_id_fkey"
             columns: ["client_id"]
@@ -4240,6 +4377,13 @@ export type Database = {
       }
     }
     Enums: {
+      account_type:
+        | "asset"
+        | "liability"
+        | "equity"
+        | "revenue"
+        | "hpp"
+        | "expense"
       app_role:
         | "super_admin"
         | "hr"
@@ -4389,6 +4533,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: [
+        "asset",
+        "liability",
+        "equity",
+        "revenue",
+        "hpp",
+        "expense",
+      ],
       app_role: [
         "super_admin",
         "hr",
