@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isPast, parseISO } from "date-fns";
+import { isPast, parseISO, parse, isAfter } from "date-fns";
 
 export interface VirtualTask {
   id: string;
@@ -130,10 +130,27 @@ export function useVirtualTasks(userId?: string) {
       }
     });
 
-    // Auto-complete status if past shooting date
-    const shootingDate = shooting.scheduled_date ? parseISO(shooting.scheduled_date) : null;
+    // Auto-complete status if past shooting date AND time
+    const now = new Date();
+    let shootingDateTime: Date | null = null;
+    
+    if (shooting.scheduled_date) {
+      const dateStr = shooting.scheduled_date;
+      if (shooting.scheduled_time) {
+        // Combine date and time
+        shootingDateTime = parse(
+          `${dateStr} ${shooting.scheduled_time}`,
+          'yyyy-MM-dd HH:mm:ss',
+          new Date()
+        );
+      } else {
+        // Just use date at end of day
+        shootingDateTime = parseISO(`${dateStr}T23:59:59`);
+      }
+    }
+    
     let status = shooting.status;
-    if (shootingDate && isPast(shootingDate) && status !== 'cancelled' && status !== 'rejected') {
+    if (shootingDateTime && isAfter(now, shootingDateTime) && status !== 'cancelled' && status !== 'rejected') {
       status = 'completed';
     }
 
