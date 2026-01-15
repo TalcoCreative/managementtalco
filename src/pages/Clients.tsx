@@ -96,18 +96,7 @@ export default function Clients() {
 
   const isSuperAdmin = userRole === "super_admin";
 
-  // Only super_admin can access /clients
-  if (!loadingRole && !isSuperAdmin) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Anda tidak memiliki akses ke halaman ini</p>
-          <p className="text-sm text-muted-foreground mt-1">Hanya Super Admin yang dapat mengakses Client Management</p>
-        </div>
-      </AppLayout>
-    );
-  }
+  // All authenticated users can access /clients
 
   const handleDelete = async (reason: string) => {
     if (!deleteClient) return;

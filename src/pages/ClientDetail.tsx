@@ -70,20 +70,7 @@ export default function ClientDetail() {
   const canEditSensitive = isSuperAdmin;
   const canView = isSuperAdmin;
 
-  // Only super_admin can access client detail
-  if (!loadingRole && !isSuperAdmin) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">Anda tidak memiliki akses ke halaman ini</p>
-          <Button variant="link" onClick={() => navigate("/")}>
-            Kembali ke dashboard
-          </Button>
-        </div>
-      </AppLayout>
-    );
-  }
+  // All authenticated users can access client detail (with limited sections)
 
   const toggleSection = (section: string) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
