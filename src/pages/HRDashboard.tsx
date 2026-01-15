@@ -242,13 +242,13 @@ export default function HRDashboard() {
     const userProspects = prospects?.filter(p => p.created_by === profile.id) || [];
     const userKol = kolEntries?.filter(k => k.created_by === profile.id) || [];
     
-    // Activity score calculation
+    // Activity score calculation (all ×1)
     const activityScore = 
       tasksCreated.length * 1 + 
-      tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length * 2 +
-      userLetters.length * 3 +
-      userProspects.length * 5 +
-      userKol.length * 3;
+      tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length * 1 +
+      userLetters.length * 1 +
+      userProspects.length * 1 +
+      userKol.length * 1;
     
     return {
       ...profile,
@@ -534,7 +534,7 @@ export default function HRDashboard() {
                   Activity Score per Employee ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Skor: Task Created (×1) + Task Completed (×2) + Letters (×3) + KOL Database (×3) + Prospects (×5)
+                  Skor: Task Created (×1) + Task Completed (×1) + Letters (×1) + KOL Database (×1) + Prospects (×1)
                 </p>
               </CardHeader>
               <CardContent>
