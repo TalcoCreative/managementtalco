@@ -16,6 +16,7 @@ interface TaskItem {
   deadline?: string;
   status?: string;
   project?: string;
+  isOverdue?: boolean;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -71,14 +72,18 @@ serve(async (req: Request): Promise<Response> => {
     const userName = profile.full_name || "User";
     const firstName = userName.split(" ")[0];
 
-    // Get yesterday's date
-    const today = new Date();
-    const yesterday = new Date(today);
+    // Get today's date in Jakarta timezone (UTC+7)
+    const now = new Date();
+    const jakartaOffset = 7 * 60; // UTC+7 in minutes
+    const jakartaTime = new Date(now.getTime() + (jakartaOffset + now.getTimezoneOffset()) * 60000);
+    const todayStr = jakartaTime.toISOString().split("T")[0];
+    
+    // Yesterday for clock-out check
+    const yesterday = new Date(jakartaTime);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];
-    const todayStr = today.toISOString().split("T")[0];
 
-    console.log("Fetching tasks for user. Yesterday:", yesterdayStr, "Today:", todayStr);
+    console.log("Fetching tasks for today:", todayStr);
 
     // Check if user forgot to clock out yesterday (has auto clock-out)
     const { data: yesterdayAttendance } = await supabase
@@ -91,16 +96,7 @@ serve(async (req: Request): Promise<Response> => {
     const forgotToClockOut = yesterdayAttendance?.notes?.includes("[AUTO CLOCK-OUT") || 
                              yesterdayAttendance?.notes?.includes("[Auto clock-out");
 
-    // Fetch completed tasks yesterday
-    const { data: completedTasks } = await supabase
-      .from("tasks")
-      .select("title, status, deadline, updated_at, projects(title)")
-      .or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`)
-      .in("status", ["done", "completed"])
-      .gte("updated_at", `${yesterdayStr}T00:00:00`)
-      .lt("updated_at", `${todayStr}T00:00:00`);
-
-    // Also check task_assignees for multi-assignee tasks
+    // Get task assignees for this user (multi-assignee support)
     const { data: assignedTaskIds } = await supabase
       .from("task_assignees")
       .select("task_id")
@@ -108,36 +104,48 @@ serve(async (req: Request): Promise<Response> => {
 
     const assignedIds = assignedTaskIds?.map((t: any) => t.task_id) || [];
 
-    let additionalCompletedTasks: any[] = [];
-    if (assignedIds.length > 0) {
-      const { data: moreTasks } = await supabase
-        .from("tasks")
-        .select("title, status, deadline, updated_at, projects(title)")
-        .in("id", assignedIds)
-        .in("status", ["done", "completed"])
-        .gte("updated_at", `${yesterdayStr}T00:00:00`)
-        .lt("updated_at", `${todayStr}T00:00:00`);
-      additionalCompletedTasks = moreTasks || [];
-    }
-
-    // Fetch incomplete tasks
-    const { data: incompleteTasks } = await supabase
+    // ============ TODAY'S TASKS ============
+    // Fetch tasks with deadline TODAY that are NOT completed (assigned to user)
+    const { data: todayTasks } = await supabase
       .from("tasks")
-      .select("title, status, deadline, projects(title)")
-      .or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`)
-      .in("status", ["todo", "in_progress", "pending", "revise"]);
+      .select("id, title, status, deadline, projects(title)")
+      .eq("deadline", todayStr)
+      .not("status", "in", '("done","completed","cancelled")')
+      .or(`assigned_to.eq.${user_id}`);
 
-    let additionalIncompleteTasks: any[] = [];
+    // Also fetch from task_assignees
+    let additionalTodayTasks: any[] = [];
     if (assignedIds.length > 0) {
       const { data: moreTasks } = await supabase
         .from("tasks")
-        .select("title, status, deadline, projects(title)")
+        .select("id, title, status, deadline, projects(title)")
         .in("id", assignedIds)
-        .in("status", ["todo", "in_progress", "pending", "revise"]);
-      additionalIncompleteTasks = moreTasks || [];
+        .eq("deadline", todayStr)
+        .not("status", "in", '("done","completed","cancelled")');
+      additionalTodayTasks = moreTasks || [];
     }
 
-    // Fetch meetings
+    // ============ OVERDUE TASKS ============
+    // Fetch overdue tasks (deadline before today) that are still incomplete
+    const { data: overdueTasks } = await supabase
+      .from("tasks")
+      .select("id, title, status, deadline, projects(title)")
+      .lt("deadline", todayStr)
+      .not("status", "in", '("done","completed","cancelled")')
+      .or(`assigned_to.eq.${user_id}`);
+
+    let additionalOverdueTasks: any[] = [];
+    if (assignedIds.length > 0) {
+      const { data: moreTasks } = await supabase
+        .from("tasks")
+        .select("id, title, status, deadline, projects(title)")
+        .in("id", assignedIds)
+        .lt("deadline", todayStr)
+        .not("status", "in", '("done","completed","cancelled")');
+      additionalOverdueTasks = moreTasks || [];
+    }
+
+    // ============ TODAY'S MEETINGS ============
     const { data: userMeetings } = await supabase
       .from("meeting_participants")
       .select("meeting_id")
@@ -145,36 +153,24 @@ serve(async (req: Request): Promise<Response> => {
 
     const meetingIds = userMeetings?.map((m: any) => m.meeting_id) || [];
     
-    let incompleteMeetings: any[] = [];
-    let completedMeetings: any[] = [];
-    
+    let todayMeetings: any[] = [];
     if (meetingIds.length > 0) {
-      // Incomplete meetings
       const { data: meetings } = await supabase
         .from("meetings")
-        .select("title, status, meeting_date, projects(title)")
+        .select("title, status, meeting_date, meeting_time, projects(title)")
         .in("id", meetingIds)
-        .in("status", ["pending", "scheduled", "confirmed"]);
-      incompleteMeetings = meetings || [];
-
-      // Completed meetings yesterday
-      const { data: doneMeetings } = await supabase
-        .from("meetings")
-        .select("title, status, meeting_date, updated_at, projects(title)")
-        .in("id", meetingIds)
-        .eq("status", "completed")
-        .gte("updated_at", `${yesterdayStr}T00:00:00`)
-        .lt("updated_at", `${todayStr}T00:00:00`);
-      completedMeetings = doneMeetings || [];
+        .eq("meeting_date", todayStr)
+        .not("status", "in", '("completed","cancelled")');
+      todayMeetings = meetings || [];
     }
 
-    // Fetch shootings
+    // ============ TODAY'S SHOOTINGS ============
     const { data: userShootingsCrew } = await supabase
       .from("shooting_crew")
       .select("shooting_id")
       .eq("user_id", user_id);
 
-    const shootingIds = userShootingsCrew?.map((s: any) => s.shooting_id) || [];
+    const shootingCrewIds = userShootingsCrew?.map((s: any) => s.shooting_id) || [];
 
     // Also get shootings where user is director, runner, or requester
     const { data: directShootings } = await supabase
@@ -182,31 +178,20 @@ serve(async (req: Request): Promise<Response> => {
       .select("id")
       .or(`director.eq.${user_id},runner.eq.${user_id},requested_by.eq.${user_id}`);
     
-    const allShootingIds = [...new Set([...shootingIds, ...(directShootings?.map((s: any) => s.id) || [])])];
+    const allShootingIds = [...new Set([...shootingCrewIds, ...(directShootings?.map((s: any) => s.id) || [])])];
 
-    let incompleteShootings: any[] = [];
-    let completedShootings: any[] = [];
-
+    let todayShootings: any[] = [];
     if (allShootingIds.length > 0) {
-      // Incomplete shootings
       const { data: shootings } = await supabase
         .from("shooting_schedules")
         .select("title, status, scheduled_date, projects(title)")
         .in("id", allShootingIds)
-        .in("status", ["pending", "approved"]);
-      incompleteShootings = shootings || [];
-
-      // Completed shootings yesterday
-      const { data: doneShootings } = await supabase
-        .from("shooting_schedules")
-        .select("title, status, scheduled_date, projects(title)")
-        .in("id", allShootingIds)
-        .eq("status", "completed")
-        .eq("scheduled_date", yesterdayStr);
-      completedShootings = doneShootings || [];
+        .eq("scheduled_date", todayStr)
+        .not("status", "in", '("completed","cancelled","rejected")');
+      todayShootings = shootings || [];
     }
 
-    // Fetch events
+    // ============ TODAY'S EVENTS ============
     const { data: userEventsCrew } = await supabase
       .from("event_crew")
       .select("event_id")
@@ -222,109 +207,80 @@ serve(async (req: Request): Promise<Response> => {
     
     const allEventIds = [...new Set([...eventCrewIds, ...(directEvents?.map((e: any) => e.id) || [])])];
 
-    let incompleteEvents: any[] = [];
-    let completedEvents: any[] = [];
-
+    let todayEvents: any[] = [];
     if (allEventIds.length > 0) {
-      // Incomplete events
+      // Events that are happening today (start_date <= today <= end_date)
       const { data: events } = await supabase
         .from("events")
         .select("name, status, start_date, end_date, projects(title)")
         .in("id", allEventIds)
-        .in("status", ["pending", "in_progress", "planning", "preparation"]);
-      incompleteEvents = events || [];
-
-      // Completed events yesterday
-      const { data: doneEvents } = await supabase
-        .from("events")
-        .select("name, status, start_date, end_date, projects(title)")
-        .in("id", allEventIds)
-        .eq("status", "completed")
-        .eq("end_date", yesterdayStr);
-      completedEvents = doneEvents || [];
+        .lte("start_date", todayStr)
+        .gte("end_date", todayStr)
+        .not("status", "in", '("completed","cancelled")');
+      todayEvents = events || [];
     }
 
-    // Combine all completed items
-    const allCompletedTasks = [...(completedTasks || []), ...additionalCompletedTasks];
-    const uniqueCompleted = allCompletedTasks.filter((task, index, self) =>
-      index === self.findIndex((t) => t.title === task.title)
+    // ============ COMBINE ALL TODAY'S ITEMS ============
+    const allTodayTasks = [...(todayTasks || []), ...additionalTodayTasks];
+    const uniqueTodayTasks = allTodayTasks.filter((task, index, self) =>
+      index === self.findIndex((t) => t.id === task.id)
     );
 
-    const completedItems: TaskItem[] = [
-      ...uniqueCompleted.map((t: any) => ({
-        title: t.title,
-        type: 'task' as const,
-        project: t.projects?.title,
-      })),
-      ...completedMeetings.map((m: any) => ({
-        title: m.title,
-        type: 'meeting' as const,
-        deadline: m.meeting_date,
-        project: m.projects?.title,
-      })),
-      ...completedShootings.map((s: any) => ({
-        title: s.title,
-        type: 'shooting' as const,
-        deadline: s.scheduled_date,
-        project: s.projects?.title,
-      })),
-      ...completedEvents.map((e: any) => ({
-        title: e.name,
-        type: 'event' as const,
-        deadline: e.end_date,
-        project: e.projects?.title,
-      })),
-    ];
-
-    // Combine all incomplete items
-    const allIncompleteTasks = [...(incompleteTasks || []), ...additionalIncompleteTasks];
-    const uniqueIncomplete = allIncompleteTasks.filter((task, index, self) =>
-      index === self.findIndex((t) => t.title === task.title)
+    const allOverdueTasks = [...(overdueTasks || []), ...additionalOverdueTasks];
+    const uniqueOverdueTasks = allOverdueTasks.filter((task, index, self) =>
+      index === self.findIndex((t) => t.id === task.id)
     );
 
-    const incompleteItems: TaskItem[] = [
-      ...uniqueIncomplete.map((t: any) => ({
+    // Build items for TODAY
+    const todayItems: TaskItem[] = [
+      ...uniqueTodayTasks.map((t: any) => ({
         title: t.title,
         type: 'task' as const,
         deadline: t.deadline,
         status: t.status,
         project: t.projects?.title,
+        isOverdue: false,
       })),
-      ...incompleteMeetings.map((m: any) => ({
+      ...todayMeetings.map((m: any) => ({
         title: m.title,
         type: 'meeting' as const,
         deadline: m.meeting_date,
         status: m.status,
         project: m.projects?.title,
+        isOverdue: false,
       })),
-      ...incompleteShootings.map((s: any) => ({
+      ...todayShootings.map((s: any) => ({
         title: s.title,
         type: 'shooting' as const,
         deadline: s.scheduled_date,
         status: s.status,
         project: s.projects?.title,
+        isOverdue: false,
       })),
-      ...incompleteEvents.map((e: any) => ({
+      ...todayEvents.map((e: any) => ({
         title: e.name,
         type: 'event' as const,
         deadline: e.start_date,
         status: e.status,
         project: e.projects?.title,
+        isOverdue: false,
       })),
     ];
 
-    // Sort incomplete by deadline
-    incompleteItems.sort((a, b) => {
-      if (!a.deadline && !b.deadline) return 0;
-      if (!a.deadline) return 1;
-      if (!b.deadline) return -1;
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-    });
+    // Build items for OVERDUE
+    const overdueItems: TaskItem[] = uniqueOverdueTasks.map((t: any) => ({
+      title: t.title,
+      type: 'task' as const,
+      deadline: t.deadline,
+      status: t.status,
+      project: t.projects?.title,
+      isOverdue: true,
+    }));
 
-    console.log(`Found ${completedItems.length} completed items, ${incompleteItems.length} incomplete items`);
+    console.log(`Found ${todayItems.length} today items, ${overdueItems.length} overdue items`);
 
     // Build email HTML
-    const emailHtml = buildSummaryEmail(firstName, completedItems, incompleteItems, todayStr, forgotToClockOut);
+    const emailHtml = buildSummaryEmail(firstName, todayItems, overdueItems, todayStr, forgotToClockOut);
 
     // Get email settings
     const { data: settings } = await supabase
@@ -347,7 +303,7 @@ serve(async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: fromAddress,
         to: [userEmail],
-        subject: `Hi ${firstName}, ini ringkasan kerjaan kamu 👋`,
+        subject: `Hi ${firstName}, ini kerjaan kamu hari ini 👋`,
         html: emailHtml,
       }),
     });
@@ -357,7 +313,6 @@ serve(async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       console.error("Failed to send email:", emailResult);
-      // Don't throw - we don't want to block clock-in
       return new Response(
         JSON.stringify({ success: false, error: emailResult.message || "Email failed" }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -368,7 +323,7 @@ serve(async (req: Request): Promise<Response> => {
     await supabase.from("email_logs").insert({
       recipient_email: userEmail,
       recipient_name: userName,
-      subject: `Hi ${firstName}, ini ringkasan kerjaan kamu 👋`,
+      subject: `Hi ${firstName}, ini kerjaan kamu hari ini 👋`,
       body: emailHtml,
       notification_type: "clockin_summary",
       status: "sent",
@@ -383,7 +338,6 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error: any) {
     console.error("Error sending clock-in summary email:", error);
-    // Return success anyway - don't block clock-in
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -393,8 +347,8 @@ serve(async (req: Request): Promise<Response> => {
 
 function buildSummaryEmail(
   firstName: string,
-  completedItems: TaskItem[],
-  incompleteItems: TaskItem[],
+  todayItems: TaskItem[],
+  overdueItems: TaskItem[],
   todayStr: string,
   forgotToClockOut: boolean = false
 ): string {
@@ -430,53 +384,33 @@ function buildSummaryEmail(
       case 'in_progress': return '#3b82f6';
       case 'pending': return '#6b7280';
       case 'revise': return '#ef4444';
+      case 'approved': return '#16a34a';
       default: return '#6b7280';
     }
   };
 
-  const isOverdue = (deadline?: string) => {
-    if (!deadline) return false;
-    return new Date(deadline) < new Date(todayStr);
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'todo': return 'To Do';
+      case 'in_progress': return 'In Progress';
+      case 'pending': return 'Pending';
+      case 'revise': return 'Revise';
+      case 'approved': return 'Approved';
+      case 'scheduled': return 'Scheduled';
+      case 'confirmed': return 'Confirmed';
+      default: return status?.replace('_', ' ') || '-';
+    }
   };
 
-  let completedSection = '';
-  if (completedItems.length > 0) {
-    completedSection = `
+  // Today's work section
+  let todaySection = '';
+  if (todayItems.length > 0) {
+    todaySection = `
       <div style="margin-bottom: 24px;">
-        <h3 style="color: #16a34a; font-size: 16px; margin: 0 0 12px 0;">✅ Selesai Kemarin (${completedItems.length})</h3>
-        <div style="background-color: #f0fdf4; border-radius: 8px; padding: 12px;">
-          ${completedItems.map(item => `
-            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #dcfce7;">
-              <span style="margin-right: 8px;">${getTypeIcon(item.type)}</span>
-              <div>
-                <span style="color: #333; font-weight: 500;">${item.title}</span>
-                <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">(${getTypeLabel(item.type)})</span>
-                ${item.project ? `<span style="color: #9ca3af; font-size: 12px; display: block;">${item.project}</span>` : ''}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  } else {
-    completedSection = `
-      <div style="margin-bottom: 24px;">
-        <h3 style="color: #16a34a; font-size: 16px; margin: 0 0 12px 0;">✅ Selesai Kemarin</h3>
-        <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; text-align: center; color: #6b7280;">
-          Tidak ada pekerjaan yang selesai kemarin. Semangat hari ini! 💪
-        </div>
-      </div>
-    `;
-  }
-
-  let incompleteSection = '';
-  if (incompleteItems.length > 0) {
-    incompleteSection = `
-      <div style="margin-bottom: 24px;">
-        <h3 style="color: #f59e0b; font-size: 16px; margin: 0 0 12px 0;">📝 Belum Selesai (${incompleteItems.length})</h3>
-        <div style="background-color: #fffbeb; border-radius: 8px; padding: 12px;">
-          ${incompleteItems.map(item => `
-            <div style="padding: 10px 0; border-bottom: 1px solid #fef3c7;">
+        <h3 style="color: #2563eb; font-size: 16px; margin: 0 0 12px 0;">📌 Kerjaan Hari Ini (${todayItems.length})</h3>
+        <div style="background-color: #eff6ff; border-radius: 8px; padding: 12px;">
+          ${todayItems.map(item => `
+            <div style="padding: 10px 0; border-bottom: 1px solid #dbeafe;">
               <div style="display: flex; align-items: center;">
                 <span style="margin-right: 8px;">${getTypeIcon(item.type)}</span>
                 <div style="flex: 1;">
@@ -486,14 +420,9 @@ function buildSummaryEmail(
                 </div>
               </div>
               <div style="display: flex; gap: 12px; margin-top: 6px; margin-left: 28px;">
-                ${item.deadline ? `
-                  <span style="font-size: 12px; color: ${isOverdue(item.deadline) ? '#ef4444' : '#6b7280'};">
-                    📅 ${formatDate(item.deadline)} ${isOverdue(item.deadline) ? '⚠️ Overdue' : ''}
-                  </span>
-                ` : ''}
                 ${item.status ? `
                   <span style="font-size: 12px; padding: 2px 8px; border-radius: 12px; background-color: ${getStatusColor(item.status)}20; color: ${getStatusColor(item.status)};">
-                    ${item.status.replace('_', ' ')}
+                    ${getStatusLabel(item.status)}
                   </span>
                 ` : ''}
               </div>
@@ -503,11 +432,45 @@ function buildSummaryEmail(
       </div>
     `;
   } else {
-    incompleteSection = `
+    todaySection = `
       <div style="margin-bottom: 24px;">
-        <h3 style="color: #f59e0b; font-size: 16px; margin: 0 0 12px 0;">📝 Belum Selesai</h3>
+        <h3 style="color: #2563eb; font-size: 16px; margin: 0 0 12px 0;">📌 Kerjaan Hari Ini</h3>
         <div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px; text-align: center; color: #16a34a;">
-          🎉 Semua pekerjaan sudah selesai! Keren banget!
+          🎉 Tidak ada kerjaan yang di-assign untuk hari ini! Santai dulu~
+        </div>
+      </div>
+    `;
+  }
+
+  // Overdue section
+  let overdueSection = '';
+  if (overdueItems.length > 0) {
+    overdueSection = `
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: #ef4444; font-size: 16px; margin: 0 0 12px 0;">⚠️ Overdue - Harus Segera Dikerjakan (${overdueItems.length})</h3>
+        <div style="background-color: #fef2f2; border-radius: 8px; padding: 12px;">
+          ${overdueItems.map(item => `
+            <div style="padding: 10px 0; border-bottom: 1px solid #fecaca;">
+              <div style="display: flex; align-items: center;">
+                <span style="margin-right: 8px;">${getTypeIcon(item.type)}</span>
+                <div style="flex: 1;">
+                  <span style="color: #333; font-weight: 500;">${item.title}</span>
+                  <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">(${getTypeLabel(item.type)})</span>
+                  ${item.project ? `<span style="color: #9ca3af; font-size: 12px; display: block;">${item.project}</span>` : ''}
+                </div>
+              </div>
+              <div style="display: flex; gap: 12px; margin-top: 6px; margin-left: 28px;">
+                <span style="font-size: 12px; color: #ef4444;">
+                  📅 Deadline: ${formatDate(item.deadline)} (Overdue!)
+                </span>
+                ${item.status ? `
+                  <span style="font-size: 12px; padding: 2px 8px; border-radius: 12px; background-color: ${getStatusColor(item.status)}20; color: ${getStatusColor(item.status)};">
+                    ${getStatusLabel(item.status)}
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
     `;
@@ -519,7 +482,7 @@ function buildSummaryEmail(
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Ringkasan Kerjaan - Talco System</title>
+      <title>Kerjaan Hari Ini - Talco System</title>
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
       <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -541,11 +504,11 @@ function buildSummaryEmail(
         <p style="font-size: 18px; color: #333;">Halo ${firstName} 👋</p>
         
         <p style="color: #555; font-size: 16px;">
-          Selamat pagi! Ini ringkasan kerjaan kamu untuk hari ini:
+          Selamat pagi! Ini kerjaan yang harus kamu selesaikan hari ini (${formatDate(todayStr)}):
         </p>
         
-        ${completedSection}
-        ${incompleteSection}
+        ${overdueSection}
+        ${todaySection}
         
         <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; text-align: center; margin-top: 24px;">
           <p style="margin: 0; color: #1e40af; font-weight: 500;">
@@ -562,7 +525,7 @@ function buildSummaryEmail(
         
         <p style="color: #999; font-size: 12px; text-align: center; margin-top: 24px;">
           Email ini dikirim otomatis saat kamu clock-in.<br>
-          Dikirim 1x per hari untuk bantu kamu tracking kerjaan.
+          Hanya menampilkan kerjaan yang di-assign ke kamu untuk hari ini.
         </p>
       </div>
     </body>
