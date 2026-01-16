@@ -45,9 +45,15 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Convert empty strings to null for date fields
+      const dataToSave = {
+        ...form,
+        start_date: form.start_date || null,
+      };
+      
       const { error } = await supabase
         .from("clients")
-        .update(form)
+        .update(dataToSave)
         .eq("id", clientId);
 
       if (error) throw error;
