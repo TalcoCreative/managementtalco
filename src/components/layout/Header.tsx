@@ -94,15 +94,15 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
-      <SidebarTrigger />
+    <header className="flex h-14 sm:h-16 items-center justify-between border-b bg-card px-3 sm:px-6 gap-2 sticky top-0 z-40">
+      <SidebarTrigger className="flex-shrink-0" />
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {canManageAnnouncements && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" title="Pengumuman">
-                <Megaphone className="h-5 w-5" />
+              <Button variant="ghost" size="icon" title="Pengumuman" className="h-9 w-9 sm:h-10 sm:w-10">
+                <Megaphone className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -118,8 +118,8 @@ export function Header() {
         
         <HeaderNotifications onTaskClick={(taskId) => setSelectedTaskId(taskId)} />
 
-        <Button variant="ghost" size="icon" onClick={handleLogout}>
-          <LogOut className="h-5 w-5" />
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="h-9 w-9 sm:h-10 sm:w-10">
+          <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
       </div>
 
