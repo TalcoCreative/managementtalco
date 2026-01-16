@@ -66,8 +66,8 @@ export function AuditLogsTab() {
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["report-audit-logs", filterType, filterAction],
     queryFn: async () => {
-      let query = supabase
-        .from("report_audit_logs")
+      let query = (supabase
+        .from("report_audit_logs") as any)
         .select("*")
         .order("performed_at", { ascending: false })
         .limit(100);
