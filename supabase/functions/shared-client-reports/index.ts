@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // Fetch platform accounts for this client
     const { data: accounts, error: accountsError } = await supabase
       .from("platform_accounts")
-      .select("id, platform, account_name, account_id")
+      .select("id, platform, account_name")
       .eq("client_id", client.id)
       .order("platform");
 
