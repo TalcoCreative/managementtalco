@@ -214,6 +214,81 @@ export function ClientAnalyticsDashboard() {
     });
   }, [organicReports, selectedClient]);
 
+  // Per-platform monthly metrics data for comparison charts
+  const platformMetricsData = useMemo(() => {
+    if (!selectedClient) return {};
+
+    const result: Record<string, {
+      platform: string;
+      label: string;
+      data: Array<Record<string, unknown>>;
+      metrics: Array<{ key: string; label: string; color: string }>;
+    }> = {};
+
+    // Group reports by platform
+    const reportsByPlatform: Record<string, typeof organicReports> = {};
+    organicReports.forEach((report) => {
+      const platform = report.platform_accounts?.platform;
+      if (!platform) return;
+      if (!reportsByPlatform[platform]) {
+        reportsByPlatform[platform] = [];
+      }
+      reportsByPlatform[platform].push(report);
+    });
+
+    // Build chart data for each platform
+    Object.entries(reportsByPlatform).forEach(([platform, reports]) => {
+      const platformConfig = PLATFORM_METRICS[platform as keyof typeof PLATFORM_METRICS];
+      if (!platformConfig) return;
+
+      const monthlyData: Record<number, Record<string, number>> = {};
+
+      reports.forEach((report) => {
+        const month = report.report_month;
+        if (!monthlyData[month]) {
+          monthlyData[month] = {};
+        }
+
+        platformConfig.metrics.forEach((metric) => {
+          const value = report[metric.key] as number | null;
+          if (value !== null && value !== undefined) {
+            monthlyData[month][metric.key] = (monthlyData[month][metric.key] || 0) + value;
+          }
+        });
+      });
+
+      // Convert to chart format
+      const chartData = MONTHS.map((m) => ({
+        month: m.label.slice(0, 3),
+        monthNum: m.value,
+        ...monthlyData[m.value],
+      }));
+
+      // Filter metrics that have data
+      const metricsWithData = platformConfig.metrics.filter((metric) =>
+        chartData.some((d) => d[metric.key] !== undefined && d[metric.key] !== null)
+      );
+
+      if (metricsWithData.length > 0) {
+        result[platform] = {
+          platform,
+          label: platformConfig.label,
+          data: chartData,
+          metrics: metricsWithData.map((m, i) => ({
+            key: m.key,
+            label: m.label,
+            color: COLORS[i % COLORS.length],
+          })),
+        };
+      }
+    });
+
+    return result;
+  }, [organicReports, selectedClient]);
+
+  // Get available platforms with data
+  const availablePlatforms = Object.keys(platformMetricsData);
+
   // Summary stats for selected client
   const clientStats = useMemo(() => {
     const totalSpend = adsReports.reduce((sum, r) => sum + r.total_spend, 0);
@@ -450,6 +525,156 @@ export function ClientAnalyticsDashboard() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Per-Platform Metrics Comparison Charts */}
+      {availablePlatforms.length > 0 && (
+        <>
+          <Separator />
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Platform Metrics Comparison</h3>
+          </div>
+          <p className="text-sm text-muted-foreground -mt-4">
+            Comparing data bulan ke bulan per platform untuk melihat pertumbuhan
+          </p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {availablePlatforms.map((platform) => {
+              const platformData = platformMetricsData[platform];
+              if (!platformData) return null;
+
+              return (
+                <Card key={platform}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <PlatformIcon platform={platform} />
+                      {platformData.label} - Monthly Metrics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={platformData.data}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis dataKey="month" className="text-xs" />
+                          <YAxis
+                            tickFormatter={(v) => {
+                              if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+                              if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
+                              return v.toString();
+                            }}
+                            className="text-xs"
+                          />
+                          <Tooltip
+                            formatter={(value: number, name: string) => {
+                              const metric = platformData.metrics.find((m) => m.key === name);
+                              if (metric?.label.includes("%")) {
+                                return `${value}%`;
+                              }
+                              return formatNumber(value);
+                            }}
+                            labelFormatter={(label) => `${label} ${filterYear}`}
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Legend />
+                          {platformData.metrics.map((metric) => (
+                            <Line
+                              key={metric.key}
+                              type="monotone"
+                              dataKey={metric.key}
+                              name={metric.label}
+                              stroke={metric.color}
+                              strokeWidth={2}
+                              dot={{ fill: metric.color, r: 3 }}
+                              connectNulls
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* MoM Growth Table per Platform */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Month-over-Month Growth</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[350px]">
+                <div className="space-y-6">
+                  {availablePlatforms.map((platform) => {
+                    const platformData = platformMetricsData[platform];
+                    if (!platformData) return null;
+
+                    return (
+                      <div key={platform} className="space-y-2">
+                        <div className="flex items-center gap-2 font-medium">
+                          <PlatformIcon platform={platform} />
+                          {platformData.label}
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-2 min-w-[100px]">Metric</th>
+                                {MONTHS.slice(0, 12).map((m) => (
+                                  <th key={m.value} className="text-right py-2 px-2 min-w-[70px]">
+                                    {m.label.slice(0, 3)}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {platformData.metrics.map((metric) => (
+                                <tr key={metric.key} className="border-b">
+                                  <td className="py-2 px-2 font-medium text-muted-foreground">
+                                    {metric.label}
+                                  </td>
+                                  {platformData.data.map((d, i) => {
+                                    const value = d[metric.key] as number | undefined;
+                                    const prevValue = i > 0 ? (platformData.data[i - 1][metric.key] as number | undefined) : undefined;
+                                    const growth = value && prevValue ? ((value - prevValue) / prevValue) * 100 : null;
+
+                                    return (
+                                      <td key={i} className="text-right py-2 px-2">
+                                        <div className="flex flex-col items-end">
+                                          <span>{value ? formatNumber(value) : "-"}</span>
+                                          {growth !== null && (
+                                            <span
+                                              className={`text-xs ${
+                                                growth >= 0 ? "text-green-600" : "text-red-500"
+                                              }`}
+                                            >
+                                              {growth >= 0 ? "+" : ""}
+                                              {growth.toFixed(1)}%
+                                            </span>
+                                          )}
+                                        </div>
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Ads Section - Only show if has ads data */}
