@@ -1230,6 +1230,95 @@ export type Database = {
           },
         ]
       }
+      editorial_plans: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          id: string
+          period: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          period?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          period?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      editorial_slides: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          ep_id: string
+          id: string
+          published_at: string | null
+          slide_order: number
+          status: Database["public"]["Enums"]["ep_slide_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          ep_id: string
+          id?: string
+          published_at?: string | null
+          slide_order?: number
+          status?: Database["public"]["Enums"]["ep_slide_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          ep_id?: string
+          id?: string
+          published_at?: string | null
+          slide_order?: number
+          status?: Database["public"]["Enums"]["ep_slide_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editorial_slides_ep_id_fkey"
+            columns: ["ep_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           body: string | null
@@ -1315,6 +1404,96 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ep_activity_logs: {
+        Row: {
+          action: string
+          actor_name: string | null
+          created_at: string
+          details: Json | null
+          ep_id: string
+          id: string
+          slide_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          created_at?: string
+          details?: Json | null
+          ep_id: string
+          id?: string
+          slide_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          created_at?: string
+          details?: Json | null
+          ep_id?: string
+          id?: string
+          slide_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ep_activity_logs_ep_id_fkey"
+            columns: ["ep_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ep_activity_logs_slide_id_fkey"
+            columns: ["slide_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_slides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ep_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          ep_id: string
+          id: string
+          is_hidden: boolean
+          name: string
+          slide_id: string | null
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          ep_id: string
+          id?: string
+          is_hidden?: boolean
+          name: string
+          slide_id?: string | null
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          ep_id?: string
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          slide_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ep_comments_ep_id_fkey"
+            columns: ["ep_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ep_comments_slide_id_fkey"
+            columns: ["slide_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_slides"
             referencedColumns: ["id"]
           },
         ]
@@ -4061,6 +4240,47 @@ export type Database = {
           },
         ]
       }
+      slide_blocks: {
+        Row: {
+          block_order: number
+          block_type: Database["public"]["Enums"]["ep_block_type"]
+          content: Json
+          created_at: string
+          id: string
+          is_internal: boolean
+          slide_id: string
+          updated_at: string
+        }
+        Insert: {
+          block_order?: number
+          block_type: Database["public"]["Enums"]["ep_block_type"]
+          content?: Json
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          slide_id: string
+          updated_at?: string
+        }
+        Update: {
+          block_order?: number
+          block_type?: Database["public"]["Enums"]["ep_block_type"]
+          content?: Json
+          created_at?: string
+          id?: string
+          is_internal?: boolean
+          slide_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slide_blocks_slide_id_fkey"
+            columns: ["slide_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_slides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_media_accounts: {
         Row: {
           access_token: string | null
@@ -4753,6 +4973,22 @@ export type Database = {
         | "director"
         | "project_manager"
         | "sales"
+      ep_block_type:
+        | "content_meta"
+        | "image"
+        | "video"
+        | "status"
+        | "internal_notes"
+        | "external_notes"
+      ep_content_channel:
+        | "instagram"
+        | "tiktok"
+        | "twitter"
+        | "youtube"
+        | "linkedin"
+        | "other"
+      ep_content_format: "feed" | "carousel" | "reels" | "story"
+      ep_slide_status: "proposed" | "approved" | "published"
       recruitment_status:
         | "applied"
         | "screening_hr"
@@ -4911,6 +5147,24 @@ export const Constants = {
         "project_manager",
         "sales",
       ],
+      ep_block_type: [
+        "content_meta",
+        "image",
+        "video",
+        "status",
+        "internal_notes",
+        "external_notes",
+      ],
+      ep_content_channel: [
+        "instagram",
+        "tiktok",
+        "twitter",
+        "youtube",
+        "linkedin",
+        "other",
+      ],
+      ep_content_format: ["feed", "carousel", "reels", "story"],
+      ep_slide_status: ["proposed", "approved", "published"],
       recruitment_status: [
         "applied",
         "screening_hr",

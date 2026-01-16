@@ -53,6 +53,9 @@ import SharedShortUrl from "./pages/SharedShortUrl";
 import SharedClientDashboard from "./pages/SharedClientDashboard";
 import SharedClientReports from "./pages/SharedClientReports";
 import Holiday from "./pages/Holiday";
+import EditorialPlan from "./pages/EditorialPlan";
+import EditorialPlanEditor from "./pages/EditorialPlanEditor";
+import PublicEditorialPlan from "./pages/PublicEditorialPlan";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +104,9 @@ const App = () => (
           <Route path="/social-media/settings" element={<ProtectedRoute><SocialMediaSettings /></ProtectedRoute>} />
           <Route path="/social-media/client/:slug" element={<SharedSocialMedia />} />
           <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
+          <Route path="/editorial-plan" element={<ProtectedRoute><EditorialPlan /></ProtectedRoute>} />
+          <Route path="/ep/:clientSlug/:epSlug/edit" element={<ProtectedRoute><EditorialPlanEditor /></ProtectedRoute>} />
+          <Route path="/ep/:clientSlug/:epSlug" element={<PublicEditorialPlan />} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
