@@ -34,6 +34,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
     email: client.email || "",
     phone: client.phone || "",
     status: client.status || "active",
+    client_type: client.client_type || "client",
     industry: client.industry || "",
     pic_name: client.pic_name || "",
     pic_contact: client.pic_contact || "",
@@ -236,6 +237,18 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
               onChange={(e) => setForm({ ...form, industry: e.target.value })}
               placeholder="e.g. Technology, F&B, Fashion"
             />
+          </div>
+          <div>
+            <Label>Tipe</Label>
+            <Select value={form.client_type} onValueChange={(value) => setForm({ ...form, client_type: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="internal">Internal</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Status</Label>
