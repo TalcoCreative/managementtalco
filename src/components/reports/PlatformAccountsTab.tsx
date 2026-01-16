@@ -69,8 +69,8 @@ export function PlatformAccountsTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [filterClient, setFilterClient] = useState<string>("");
-  const [filterPlatform, setFilterPlatform] = useState<string>("");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterPlatform, setFilterPlatform] = useState<string>("all");
 
   const [formData, setFormData] = useState({
     client_id: "",
@@ -99,8 +99,8 @@ export function PlatformAccountsTab() {
   const deleteMutation = useDeletePlatformAccount();
 
   const filteredAccounts = accounts.filter((acc) => {
-    if (filterClient && acc.client_id !== filterClient) return false;
-    if (filterPlatform && acc.platform !== filterPlatform) return false;
+    if (filterClient !== "all" && acc.client_id !== filterClient) return false;
+    if (filterPlatform !== "all" && acc.platform !== filterPlatform) return false;
     return true;
   });
 
@@ -170,7 +170,7 @@ export function PlatformAccountsTab() {
               <SelectValue placeholder="Semua Client" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Client</SelectItem>
+              <SelectItem value="all">Semua Client</SelectItem>
               {clients.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -183,7 +183,7 @@ export function PlatformAccountsTab() {
               <SelectValue placeholder="Semua Platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Platform</SelectItem>
+              <SelectItem value="all">Semua Platform</SelectItem>
               {PLATFORMS.map((p) => (
                 <SelectItem key={p.value} value={p.value}>
                   {p.label}

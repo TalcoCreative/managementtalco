@@ -82,10 +82,10 @@ export function OrganicReportsTab() {
   const [selectedReport, setSelectedReport] = useState<MonthlyOrganicReport | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [filterClient, setFilterClient] = useState<string>("");
-  const [filterPlatform, setFilterPlatform] = useState<string>("");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterMonth, setFilterMonth] = useState<string>("");
+  const [filterMonth, setFilterMonth] = useState<string>("all");
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
     platform_account_id: "",
@@ -94,10 +94,10 @@ export function OrganicReportsTab() {
   });
 
   const { data: reports = [], isLoading } = useOrganicReports({
-    clientId: filterClient || undefined,
-    platform: filterPlatform || undefined,
+    clientId: filterClient !== "all" ? filterClient : undefined,
+    platform: filterPlatform !== "all" ? filterPlatform : undefined,
     year: filterYear ? parseInt(filterYear) : undefined,
-    month: filterMonth ? parseInt(filterMonth) : undefined,
+    month: filterMonth !== "all" ? parseInt(filterMonth) : undefined,
   });
 
   const { data: accounts = [] } = usePlatformAccounts();
@@ -222,7 +222,7 @@ export function OrganicReportsTab() {
               <SelectValue placeholder="Semua Client" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Client</SelectItem>
+              <SelectItem value="all">Semua Client</SelectItem>
               {clients.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -235,7 +235,7 @@ export function OrganicReportsTab() {
               <SelectValue placeholder="Semua Platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Platform</SelectItem>
+              <SelectItem value="all">Semua Platform</SelectItem>
               {PLATFORMS.map((p) => (
                 <SelectItem key={p.value} value={p.value}>
                   {p.label}
@@ -248,7 +248,7 @@ export function OrganicReportsTab() {
               <SelectValue placeholder="Tahun" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Tahun</SelectItem>
+              <SelectItem value="all">Semua Tahun</SelectItem>
               {years.map((y) => (
                 <SelectItem key={y} value={y.toString()}>
                   {y}
@@ -261,7 +261,7 @@ export function OrganicReportsTab() {
               <SelectValue placeholder="Semua Bulan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Bulan</SelectItem>
+              <SelectItem value="all">Semua Bulan</SelectItem>
               {MONTHS.map((m) => (
                 <SelectItem key={m.value} value={m.value.toString()}>
                   {m.label}
