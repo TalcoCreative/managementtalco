@@ -58,8 +58,8 @@ interface AuditLog {
 }
 
 export function AuditLogsTab() {
-  const [filterType, setFilterType] = useState<string>("");
-  const [filterAction, setFilterAction] = useState<string>("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterAction, setFilterAction] = useState<string>("all");
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -72,10 +72,10 @@ export function AuditLogsTab() {
         .order("performed_at", { ascending: false })
         .limit(100);
 
-      if (filterType) {
+      if (filterType && filterType !== "all") {
         query = query.eq("report_type", filterType);
       }
-      if (filterAction) {
+      if (filterAction && filterAction !== "all") {
         query = query.eq("action", filterAction);
       }
 
@@ -118,7 +118,7 @@ export function AuditLogsTab() {
               <SelectValue placeholder="Semua Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Type</SelectItem>
+              <SelectItem value="all">Semua Type</SelectItem>
               <SelectItem value="organic">Organic</SelectItem>
               <SelectItem value="ads">Ads</SelectItem>
             </SelectContent>
@@ -128,7 +128,7 @@ export function AuditLogsTab() {
               <SelectValue placeholder="Semua Action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Action</SelectItem>
+              <SelectItem value="all">Semua Action</SelectItem>
               <SelectItem value="create">Create</SelectItem>
               <SelectItem value="update">Update</SelectItem>
               <SelectItem value="delete">Delete</SelectItem>

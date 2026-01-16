@@ -85,10 +85,10 @@ export function AdsReportsTab() {
   const [selectedReport, setSelectedReport] = useState<MonthlyAdsReport | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [filterClient, setFilterClient] = useState<string>("");
-  const [filterPlatform, setFilterPlatform] = useState<string>("");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterMonth, setFilterMonth] = useState<string>("");
+  const [filterMonth, setFilterMonth] = useState<string>("all");
 
   const [formData, setFormData] = useState({
     client_id: "",
@@ -105,10 +105,10 @@ export function AdsReportsTab() {
   });
 
   const { data: reports = [], isLoading } = useAdsReports({
-    clientId: filterClient || undefined,
-    platform: filterPlatform || undefined,
+    clientId: filterClient !== "all" ? filterClient : undefined,
+    platform: filterPlatform !== "all" ? filterPlatform : undefined,
     year: filterYear ? parseInt(filterYear) : undefined,
-    month: filterMonth ? parseInt(filterMonth) : undefined,
+    month: filterMonth !== "all" ? parseInt(filterMonth) : undefined,
   });
 
   const { data: accounts = [] } = usePlatformAccounts();
@@ -191,7 +191,7 @@ export function AdsReportsTab() {
     const payload = {
       client_id: formData.client_id,
       platform: formData.platform as AdsPlatform,
-      platform_account_id: formData.platform_account_id || undefined,
+      platform_account_id: formData.platform_account_id && formData.platform_account_id !== "none" ? formData.platform_account_id : undefined,
       report_month: formData.report_month,
       report_year: formData.report_year,
       total_spend: formData.total_spend,
@@ -260,7 +260,7 @@ export function AdsReportsTab() {
               <SelectValue placeholder="Semua Client" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Client</SelectItem>
+              <SelectItem value="all">Semua Client</SelectItem>
               {clients.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -273,7 +273,7 @@ export function AdsReportsTab() {
               <SelectValue placeholder="Semua Platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Platform</SelectItem>
+              <SelectItem value="all">Semua Platform</SelectItem>
               {ADS_PLATFORMS.map((p) => (
                 <SelectItem key={p.value} value={p.value}>
                   {p.label}
@@ -286,7 +286,7 @@ export function AdsReportsTab() {
               <SelectValue placeholder="Tahun" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Tahun</SelectItem>
+              <SelectItem value="all">Semua Tahun</SelectItem>
               {years.map((y) => (
                 <SelectItem key={y} value={y.toString()}>
                   {y}
@@ -299,7 +299,7 @@ export function AdsReportsTab() {
               <SelectValue placeholder="Semua Bulan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Semua Bulan</SelectItem>
+              <SelectItem value="all">Semua Bulan</SelectItem>
               {MONTHS.map((m) => (
                 <SelectItem key={m.value} value={m.value.toString()}>
                   {m.label}
@@ -477,7 +477,7 @@ export function AdsReportsTab() {
                       <SelectValue placeholder="Pilih account (opsional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tidak ada</SelectItem>
+                      <SelectItem value="none">Tidak ada</SelectItem>
                       {filteredAccounts.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.account_name}

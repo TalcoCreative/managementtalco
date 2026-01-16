@@ -57,7 +57,7 @@ const COLORS = [
 
 export function ReportAnalytics() {
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterClient, setFilterClient] = useState<string>("");
+  const [filterClient, setFilterClient] = useState<string>("all");
   const [viewType, setViewType] = useState<"overview" | "growth" | "comparison">("overview");
 
   const { data: clients = [] } = useQuery({
@@ -74,12 +74,12 @@ export function ReportAnalytics() {
   });
 
   const { data: organicReports = [] } = useOrganicReports({
-    clientId: filterClient || undefined,
+    clientId: filterClient !== "all" ? filterClient : undefined,
     year: filterYear ? parseInt(filterYear) : undefined,
   });
 
   const { data: adsReports = [] } = useAdsReports({
-    clientId: filterClient || undefined,
+    clientId: filterClient !== "all" ? filterClient : undefined,
     year: filterYear ? parseInt(filterYear) : undefined,
   });
 
@@ -187,7 +187,7 @@ export function ReportAnalytics() {
             <SelectValue placeholder="Semua Client" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Semua Client</SelectItem>
+            <SelectItem value="all">Semua Client</SelectItem>
             {clients.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
