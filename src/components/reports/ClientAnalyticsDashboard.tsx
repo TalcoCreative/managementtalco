@@ -609,69 +609,67 @@ export function ClientAnalyticsDashboard() {
               <CardTitle className="text-base font-medium">Month-over-Month Growth</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[350px]">
-                <div className="space-y-6">
-                  {availablePlatforms.map((platform) => {
-                    const platformData = platformMetricsData[platform];
-                    if (!platformData) return null;
+              <div className="space-y-6">
+                {availablePlatforms.map((platform) => {
+                  const platformData = platformMetricsData[platform];
+                  if (!platformData) return null;
 
-                    return (
-                      <div key={platform} className="space-y-2">
-                        <div className="flex items-center gap-2 font-medium">
-                          <PlatformIcon platform={platform} />
-                          {platformData.label}
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b">
-                                <th className="text-left py-2 px-2 min-w-[100px]">Metric</th>
-                                {MONTHS.slice(0, 12).map((m) => (
-                                  <th key={m.value} className="text-right py-2 px-2 min-w-[70px]">
-                                    {m.label.slice(0, 3)}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {platformData.metrics.map((metric) => (
-                                <tr key={metric.key} className="border-b">
-                                  <td className="py-2 px-2 font-medium text-muted-foreground">
-                                    {metric.label}
-                                  </td>
-                                  {platformData.data.map((d, i) => {
-                                    const value = d[metric.key] as number | undefined;
-                                    const prevValue = i > 0 ? (platformData.data[i - 1][metric.key] as number | undefined) : undefined;
-                                    const growth = value && prevValue ? ((value - prevValue) / prevValue) * 100 : null;
-
-                                    return (
-                                      <td key={i} className="text-right py-2 px-2">
-                                        <div className="flex flex-col items-end">
-                                          <span>{value ? formatNumber(value) : "-"}</span>
-                                          {growth !== null && (
-                                            <span
-                                              className={`text-xs ${
-                                                growth >= 0 ? "text-green-600" : "text-red-500"
-                                              }`}
-                                            >
-                                              {growth >= 0 ? "+" : ""}
-                                              {growth.toFixed(1)}%
-                                            </span>
-                                          )}
-                                        </div>
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                  return (
+                    <div key={platform} className="space-y-2">
+                      <div className="flex items-center gap-2 font-medium">
+                        <PlatformIcon platform={platform} />
+                        {platformData.label}
                       </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 px-2 min-w-[100px]">Metric</th>
+                              {MONTHS.slice(0, 12).map((m) => (
+                                <th key={m.value} className="text-right py-2 px-2 min-w-[70px]">
+                                  {m.label.slice(0, 3)}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {platformData.metrics.map((metric) => (
+                              <tr key={metric.key} className="border-b">
+                                <td className="py-2 px-2 font-medium text-muted-foreground">
+                                  {metric.label}
+                                </td>
+                                {platformData.data.map((d, i) => {
+                                  const value = d[metric.key] as number | undefined;
+                                  const prevValue = i > 0 ? (platformData.data[i - 1][metric.key] as number | undefined) : undefined;
+                                  const growth = value && prevValue ? ((value - prevValue) / prevValue) * 100 : null;
+
+                                  return (
+                                    <td key={i} className="text-right py-2 px-2">
+                                      <div className="flex flex-col items-end">
+                                        <span>{value ? formatNumber(value) : "-"}</span>
+                                        {growth !== null && (
+                                          <span
+                                            className={`text-xs ${
+                                              growth >= 0 ? "text-green-600" : "text-red-500"
+                                            }`}
+                                          >
+                                            {growth >= 0 ? "+" : ""}
+                                            {growth.toFixed(1)}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </>
@@ -781,9 +779,9 @@ export function ClientAnalyticsDashboard() {
               <CardTitle className="text-base font-medium">Detail Ads Reports</CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[300px]">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-card">
+                  <thead>
                     <tr className="border-b">
                       <th className="text-left py-2 px-2">Bulan</th>
                       <th className="text-left py-2 px-2">Platform</th>
@@ -811,7 +809,7 @@ export function ClientAnalyticsDashboard() {
                     ))}
                   </tbody>
                 </table>
-              </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </>
@@ -829,9 +827,9 @@ export function ClientAnalyticsDashboard() {
           <CardTitle className="text-base font-medium">Data per Bulan {filterYear}</CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[400px]">
+          <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-card">
+              <thead>
                 <tr className="border-b">
                   <th className="text-left py-2 px-2">Bulan</th>
                   <th className="text-left py-2 px-2">Platform</th>
@@ -903,7 +901,7 @@ export function ClientAnalyticsDashboard() {
                 })}
               </tbody>
             </table>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
     </div>
