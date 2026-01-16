@@ -48,8 +48,11 @@ import {
   Youtube,
   Music2,
   MapPin,
+  Link,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -92,12 +95,32 @@ export function ClientAnalyticsDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, company, status")
+        .select("id, name, company, status, dashboard_slug")
         .order("name");
       if (error) throw error;
       return data;
     },
   });
+
+  const copyReportLink = (slug: string | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!slug) {
+      toast.error("Client ini belum memiliki slug untuk share link");
+      return;
+    }
+    const url = `https://ms.talco.id/reports/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link report berhasil disalin!");
+  };
+
+  const openReportLink = (slug: string | null, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!slug) {
+      toast.error("Client ini belum memiliki slug untuk share link");
+      return;
+    }
+    window.open(`https://ms.talco.id/reports/${slug}`, "_blank");
+  };
 
   const { data: accounts = [] } = usePlatformAccounts(selectedClient || undefined);
 
@@ -355,10 +378,34 @@ export function ClientAnalyticsDashboard() {
               onClick={() => setSelectedClient(client.id)}
             >
               <CardContent className="pt-4">
-                <h3 className="font-medium truncate">{client.name}</h3>
-                {client.company && (
-                  <p className="text-sm text-muted-foreground truncate">{client.company}</p>
-                )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{client.name}</h3>
+                    {client.company && (
+                      <p className="text-sm text-muted-foreground truncate">{client.company}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => copyReportLink(client.dashboard_slug, e)}
+                      title="Copy link report"
+                    >
+                      <Link className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => openReportLink(client.dashboard_slug, e)}
+                      title="Buka report"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
                 <Badge
                   variant={client.status === "active" ? "default" : "secondary"}
                   className="mt-2"
