@@ -145,9 +145,9 @@ export default function Index() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Talco Creative Indonesia</h1>
-          <p className="text-muted-foreground">Management System - Overview of your projects and tasks</p>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">Talco Creative Indonesia</h1>
+          <p className="text-muted-foreground text-sm sm:text-base truncate">Management System - Overview</p>
         </div>
 
         <HolidayBanner />
@@ -162,157 +162,157 @@ export default function Index() {
 
         {isHR && <DeletionNotifications />}
 
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Clients</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.clients || 0}</div>
+            <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.clients || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-              <FolderKanban className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Active Projects</CardTitle>
+              <FolderKanban className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.projects || 0}</div>
+            <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{stats?.projects || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tasks Assigned to Me</CardTitle>
-              <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Tasks to Me</CardTitle>
+              <ArrowDownToLine className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tasksAssignedToMe?.length || 0}</div>
+            <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{tasksAssignedToMe?.length || 0}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Tasks I Assigned</CardTitle>
-              <ArrowUpFromLine className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4 sm:pb-2">
+              <CardTitle className="text-xs sm:text-sm font-medium">Tasks I Gave</CardTitle>
+              <ArrowUpFromLine className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tasksAssignedByMe?.length || 0}</div>
+            <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+              <div className="text-xl sm:text-2xl font-bold">{tasksAssignedByMe?.length || 0}</div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowDownToLine className="h-5 w-5" />
-                Tasks Assigned to Me
+            <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <ArrowDownToLine className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Tasks Assigned to Me</span>
                 {tasksAssignedToMe && tasksAssignedToMe.length > 0 && (
-                  <Badge variant="secondary">{tasksAssignedToMe.length}</Badge>
+                  <Badge variant="secondary" className="flex-shrink-0">{tasksAssignedToMe.length}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
               {tasksAssignedToMe && tasksAssignedToMe.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3 max-h-[50vh] overflow-y-auto">
                   {tasksAssignedToMe.map((task: any) => (
                     <div 
                       key={task.id} 
-                      className={`p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
+                      className={`p-2.5 sm:p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
                       onClick={() => setSelectedTaskId(task.id)}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{task.title}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <p className="font-medium text-sm sm:text-base truncate">{task.title}</p>
                             {isTaskOverdue(task) && (
-                              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                              <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
                             {task.projects?.clients?.name} - {task.projects?.title}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
                             From: {task.created_by_profile?.full_name || "Unknown"}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(task.status)}>
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                          <Badge className={`${getStatusColor(task.status)} text-xs`}>
                             {statusLabels[task.status] || task.status}
                           </Badge>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
                         </div>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>Requested: {formatDate(task.requested_at)}</span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 sm:gap-4 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
+                        <span className="hidden sm:inline">Requested: {formatDate(task.requested_at)}</span>
                         <span className={isTaskOverdue(task) ? 'text-destructive font-medium' : ''}>
-                          Deadline: {formatDate(task.deadline)}
+                          Due: {formatDate(task.deadline)}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-4">No tasks assigned to you</p>
+                <p className="text-muted-foreground text-center py-4 text-sm">No tasks assigned to you</p>
               )}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowUpFromLine className="h-5 w-5" />
-                Tasks I Assigned to Others
+            <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-4">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <ArrowUpFromLine className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Tasks I Assigned</span>
                 {tasksAssignedByMe && tasksAssignedByMe.length > 0 && (
-                  <Badge variant="secondary">{tasksAssignedByMe.length}</Badge>
+                  <Badge variant="secondary" className="flex-shrink-0">{tasksAssignedByMe.length}</Badge>
                 )}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
               {tasksAssignedByMe && tasksAssignedByMe.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3 max-h-[50vh] overflow-y-auto">
                   {tasksAssignedByMe.map((task: any) => (
                     <div 
                       key={task.id} 
-                      className={`p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
+                      className={`p-2.5 sm:p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group ${isTaskOverdue(task) ? 'border-destructive/50 bg-destructive/5' : ''}`}
                       onClick={() => setSelectedTaskId(task.id)}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{task.title}</p>
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <p className="font-medium text-sm sm:text-base truncate">{task.title}</p>
                             {isTaskOverdue(task) && (
-                              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                              <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">
                             {task.projects?.clients?.name} - {task.projects?.title}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Assigned to: {task.assigned_profile?.full_name || "Unassigned"}
+                          <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
+                            To: {task.assigned_profile?.full_name || "Unassigned"}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={getStatusColor(task.status)}>
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                          <Badge className={`${getStatusColor(task.status)} text-xs`}>
                             {statusLabels[task.status] || task.status}
                           </Badge>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
                         </div>
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>Requested: {formatDate(task.requested_at)}</span>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 sm:gap-4 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
+                        <span className="hidden sm:inline">Requested: {formatDate(task.requested_at)}</span>
                         <span className={isTaskOverdue(task) ? 'text-destructive font-medium' : ''}>
-                          Deadline: {formatDate(task.deadline)}
+                          Due: {formatDate(task.deadline)}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-4">No tasks assigned by you</p>
+                <p className="text-muted-foreground text-center py-4 text-sm">No tasks assigned by you</p>
               )}
             </CardContent>
           </Card>

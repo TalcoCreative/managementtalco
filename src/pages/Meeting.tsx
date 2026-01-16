@@ -286,17 +286,18 @@ const Meeting = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Meeting Management</h1>
-            <p className="text-muted-foreground">Kelola jadwal meeting internal dan external</p>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold">Meeting Management</h1>
+            <p className="text-muted-foreground text-sm truncate">Kelola jadwal meeting</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <MeetingNotifications onMeetingClick={setSelectedMeeting} />
-            <Button onClick={() => setShowCreateDialog(true)}>
+            <Button onClick={() => setShowCreateDialog(true)} className="h-10 sm:h-9">
               <Plus className="w-4 h-4 mr-2" />
-              Buat Meeting
+              <span className="hidden sm:inline">Buat Meeting</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -358,7 +359,7 @@ const Meeting = () => {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Meeting</CardTitle>

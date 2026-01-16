@@ -57,60 +57,62 @@ export default function Finance() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Finance Center</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Finance Center</h1>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-8 lg:w-auto lg:inline-grid gap-1">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-4 lg:grid-cols-8 gap-1 h-auto p-1">
             {canViewDashboard && (
-              <TabsTrigger value="dashboard" className="flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
+              <TabsTrigger value="dashboard" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <LayoutDashboard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Dashboard</span>
               </TabsTrigger>
             )}
             {canViewLedger && (
-              <TabsTrigger value="ledger" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">Ledger</span>
+              <TabsTrigger value="ledger" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Ledger</span>
               </TabsTrigger>
             )}
             {canViewExpenses && (
-              <TabsTrigger value="expenses" className="flex items-center gap-2">
-                <ArrowDownCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Expenses</span>
+              <TabsTrigger value="expenses" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <ArrowDownCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Expenses</span>
               </TabsTrigger>
             )}
             {canViewRecurring && (
-              <TabsTrigger value="recurring" className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">Recurring</span>
+              <TabsTrigger value="recurring" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Recurring</span>
               </TabsTrigger>
             )}
             {canViewPayroll && (
-              <TabsTrigger value="payroll" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Payroll</span>
+              <TabsTrigger value="payroll" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Payroll</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="reimbursements" className="flex items-center gap-2">
-              <Receipt className="h-4 w-4" />
-              <span className="hidden sm:inline">Reimburse</span>
+            <TabsTrigger value="reimbursements" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+              <Receipt className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Reimburse</span>
             </TabsTrigger>
             {canViewIncome && (
-              <TabsTrigger value="income" className="flex items-center gap-2">
-                <ArrowUpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Income</span>
+              <TabsTrigger value="income" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <ArrowUpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Income</span>
               </TabsTrigger>
             )}
             {canViewInsights && (
-              <TabsTrigger value="insights" className="flex items-center gap-2">
-                <Lightbulb className="h-4 w-4" />
-                <span className="hidden sm:inline">Insights</span>
+              <TabsTrigger value="insights" className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm whitespace-nowrap">
+                <Lightbulb className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span>Insights</span>
               </TabsTrigger>
             )}
           </TabsList>
+          </div>
 
           {canViewDashboard && (
             <TabsContent value="dashboard">

@@ -139,12 +139,12 @@ export default function Clients() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold">Clients</h1>
-          <div className="flex items-center gap-3">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Clients</h1>
+          <div className="flex items-center gap-2 sm:gap-3">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[120px] sm:w-[150px] h-10 sm:h-9">
                 <SelectValue placeholder="Filter type" />
               </SelectTrigger>
               <SelectContent>
@@ -154,24 +154,25 @@ export default function Clients() {
               </SelectContent>
             </Select>
             {isSuperAdmin && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
+              <Button onClick={() => setCreateDialogOpen(true)} className="h-10 sm:h-9">
                 <Plus className="mr-2 h-4 w-4" />
-                New Client
+                <span className="hidden sm:inline">New Client</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             )}
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
-                <CardHeader className="h-32 bg-muted" />
+                <CardHeader className="h-24 sm:h-32 bg-muted" />
               </Card>
             ))}
           </div>
         ) : filteredClients && filteredClients.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredClients.map((client) => (
               <Card
                 key={client.id}

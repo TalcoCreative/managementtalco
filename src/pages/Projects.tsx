@@ -199,12 +199,12 @@ export default function Projects() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <div className="flex items-center gap-4">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Projects</h1>
+          <div className="flex items-center gap-2 sm:gap-4">
             <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-[140px] sm:w-48 h-10 sm:h-9">
                 <SelectValue placeholder="Filter by client" />
               </SelectTrigger>
               <SelectContent>
@@ -216,9 +216,10 @@ export default function Projects() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button onClick={() => setCreateDialogOpen(true)} className="h-10 sm:h-9">
               <Plus className="mr-2 h-4 w-4" />
-              New Project
+              <span className="hidden sm:inline">New Project</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -228,7 +229,7 @@ export default function Projects() {
             <p className="text-muted-foreground">Loading projects...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {projects && projects.length > 0 ? (
               projects.map((project: any) => (
                 <Card
@@ -275,16 +276,16 @@ export default function Projects() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-lg flex-1">{project.title}</h3>
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                        <h3 className="font-semibold text-base sm:text-lg flex-1 line-clamp-2">{project.title}</h3>
                         <Select
                           value={project.status}
                           onValueChange={(value) => handleStatusChange(project.id, value)}
                         >
                           <SelectTrigger 
-                            className={`w-32 h-7 text-xs ${getStatusColor(project.status)} text-white border-0`}
+                            className={`w-full sm:w-32 h-8 sm:h-7 text-xs ${getStatusColor(project.status)} text-white border-0`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SelectValue />
