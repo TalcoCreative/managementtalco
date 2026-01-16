@@ -102,13 +102,14 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
-  // Fetch all clients
+  // Fetch all clients (only external clients for resource calculation)
   const { data: clients } = useQuery({
     queryKey: ["ceo-clients"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, company");
+        .select("id, name, company, client_type")
+        .eq("client_type", "client"); // Only external clients
       if (error) throw error;
       return data || [];
     },

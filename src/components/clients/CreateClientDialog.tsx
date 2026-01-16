@@ -33,6 +33,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
   const [status, setStatus] = useState("active");
+  const [clientType, setClientType] = useState("client");
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
@@ -53,6 +54,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
         phone,
         company,
         status,
+        client_type: clientType,
         dashboard_slug: dashboardSlug,
         created_by: session.session.user.id,
       });
@@ -76,6 +78,7 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
     setPhone("");
     setCompany("");
     setStatus("active");
+    setClientType("client");
   };
 
   return (
@@ -119,17 +122,32 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
               onChange={(e) => setCompany(e.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="clientType">Tipe</Label>
+              <Select value={clientType} onValueChange={setClientType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="internal">Internal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Creating..." : "Create Client"}

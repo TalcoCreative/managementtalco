@@ -5,17 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Building2, Trash2, FolderOpen, CheckCircle2 } from "lucide-react";
+import { Plus, Building2, Trash2, FolderOpen, CheckCircle2, Home } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CreateClientDialog } from "@/components/clients/CreateClientDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Clients() {
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteClient, setDeleteClient] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const queryClient = useQueryClient();
 
   const { data: clients, isLoading } = useQuery({
@@ -28,6 +30,12 @@ export default function Clients() {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Filter clients based on type
+  const filteredClients = clients?.filter(client => {
+    if (typeFilter === "all") return true;
+    return client.client_type === typeFilter;
   });
 
   // Fetch projects count for each client
@@ -132,14 +140,26 @@ export default function Clients() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-bold">Clients</h1>
-          {isSuperAdmin && (
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Client
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filter type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="internal">Internal</SelectItem>
+              </SelectContent>
+            </Select>
+            {isSuperAdmin && (
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Client
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (
@@ -150,9 +170,9 @@ export default function Clients() {
               </Card>
             ))}
           </div>
-        ) : clients && clients.length > 0 ? (
+        ) : filteredClients && filteredClients.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {clients.map((client) => (
+            {filteredClients.map((client) => (
               <Card
                 key={client.id}
                 className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 relative group"
@@ -174,8 +194,12 @@ export default function Clients() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg bg-gradient-primary p-2">
-                        <Building2 className="h-5 w-5 text-primary-foreground" />
+                      <div className={`rounded-lg p-2 ${client.client_type === 'internal' ? 'bg-blue-500/20' : 'bg-gradient-primary'}`}>
+                        {client.client_type === 'internal' ? (
+                          <Home className="h-5 w-5 text-blue-500" />
+                        ) : (
+                          <Building2 className="h-5 w-5 text-primary-foreground" />
+                        )}
                       </div>
                       <div>
                         <CardTitle className="text-lg">{client.name}</CardTitle>
@@ -184,12 +208,19 @@ export default function Clients() {
                         )}
                       </div>
                     </div>
-                    <Badge 
-                      variant={client.status === "active" ? "default" : client.status === "upcoming" ? "outline" : "secondary"}
-                      className={client.status === "upcoming" ? "border-primary text-primary" : ""}
-                    >
-                      {client.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      {client.client_type === 'internal' && (
+                        <Badge variant="outline" className="border-blue-500 text-blue-500 text-xs">
+                          Internal
+                        </Badge>
+                      )}
+                      <Badge 
+                        variant={client.status === "active" ? "default" : client.status === "upcoming" ? "outline" : "secondary"}
+                        className={client.status === "upcoming" ? "border-primary text-primary" : ""}
+                      >
+                        {client.status}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
