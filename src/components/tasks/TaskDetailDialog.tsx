@@ -9,19 +9,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check } from "lucide-react";
+import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
 import { MentionInput, extractMentions, renderCommentWithMentions } from "@/components/tasks/MentionInput";
+import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -46,7 +40,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editAssignedTo, setEditAssignedTo] = useState<string>("");
+  const [editAssignees, setEditAssignees] = useState<string[]>([]);
   const [editDeadline, setEditDeadline] = useState<string>("");
   const [editTableData, setEditTableData] = useState<TableData | null>(null);
   const [saving, setSaving] = useState(false);
@@ -88,7 +82,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           *,
           projects(title, clients(name)),
           profiles:profiles!fk_tasks_assigned_to_profiles(full_name),
-          created_by_profile:profiles!fk_tasks_created_by_profiles(full_name)
+          created_by_profile:profiles!fk_tasks_created_by_profiles(full_name),
+          task_assignees(user_id, profiles:profiles!task_assignees_user_id_fkey(id, full_name))
         `)
         .eq("id", taskId)
         .maybeSingle();
@@ -98,12 +93,22 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     enabled: !!taskId,
   });
 
+  // Get all assignees from task_assignees table
+  const taskAssigneeIds = (task?.task_assignees || []).map((ta: any) => ta.user_id);
+  const taskAssigneeNames = (task?.task_assignees || [])
+    .map((ta: any) => ta.profiles?.full_name)
+    .filter(Boolean);
+
   // Reset edit state when task changes
   useEffect(() => {
     if (task) {
       setEditTitle(task.title || "");
       setEditDescription(task.description || "");
-      setEditAssignedTo(task.assigned_to || "");
+      // Initialize from task_assignees or fallback to assigned_to
+      const assignees = taskAssigneeIds.length > 0 
+        ? taskAssigneeIds 
+        : (task.assigned_to ? [task.assigned_to] : []);
+      setEditAssignees(assignees);
       setEditDeadline(task.deadline || "");
       setEditTableData(task.table_data || null);
       setIsEditing(false);
@@ -168,18 +173,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     
     setSaving(true);
     try {
-      // Check if assignee is being changed
-      const isNewAssignee = editAssignedTo && editAssignedTo !== task?.assigned_to;
+      // Get current assignees from task_assignees
+      const currentAssigneeIds = taskAssigneeIds;
+      
+      // Find new assignees (added)
+      const newAssignees = editAssignees.filter(id => !currentAssigneeIds.includes(id));
+      // Find removed assignees
+      const removedAssignees = currentAssigneeIds.filter((id: string) => !editAssignees.includes(id));
+
+      // Use first assignee for backward compatibility
+      const primaryAssignee = editAssignees.length > 0 ? editAssignees[0] : null;
 
       const { error } = await supabase
         .from("tasks")
         .update({
           title: editTitle,
           description: editDescription,
-          assigned_to: editAssignedTo || null,
+          assigned_to: primaryAssignee,
           deadline: editDeadline || null,
           table_data: editTableData as any,
-          assigned_at: editAssignedTo ? new Date().toISOString() : null,
+          assigned_at: primaryAssignee ? new Date().toISOString() : null,
           title_edited_at: editTitle !== task?.title ? new Date().toISOString() : task?.title_edited_at,
           description_edited_at: editDescription !== task?.description ? new Date().toISOString() : task?.description_edited_at,
         })
@@ -187,22 +200,21 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       if (error) throw error;
 
-      // Send email notification if assignee changed (async, non-blocking)
-      if (isNewAssignee) {
-        const { data: session } = await supabase.auth.getSession();
-        const { data: creatorProfile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", session.session?.user.id)
-          .single();
+      // Update task_assignees table - remove old, add new
+      if (removedAssignees.length > 0) {
+        await supabase.from("task_assignees").delete().eq("task_id", taskId).in("user_id", removedAssignees);
+      }
+      if (newAssignees.length > 0) {
+        await supabase.from("task_assignees").insert(newAssignees.map((userId: string) => ({ task_id: taskId, user_id: userId })));
+      }
 
-        sendTaskAssignmentEmail(editAssignedTo, {
-          id: taskId,
-          title: editTitle,
-          description: editDescription,
-          deadline: editDeadline,
-          creatorName: creatorProfile?.full_name || "Someone",
-        }).catch(err => console.error("Email notification failed:", err));
+      // Send email to new assignees
+      if (newAssignees.length > 0) {
+        const { data: session } = await supabase.auth.getSession();
+        const { data: creatorProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+        for (const assigneeId of newAssignees) {
+          sendTaskAssignmentEmail(assigneeId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: creatorProfile?.full_name || "Someone" }).catch(console.error);
+        }
       }
 
       toast.success("Task berhasil diupdate");
@@ -587,7 +599,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         setIsEditing(false);
                         setEditTitle(task.title || "");
                         setEditDescription(task.description || "");
-                        setEditAssignedTo(task.assigned_to || "");
+                        // Reset assignees from task_assignees or fallback
+                        const assignees = taskAssigneeIds.length > 0 
+                          ? taskAssigneeIds 
+                          : (task.assigned_to ? [task.assigned_to] : []);
+                        setEditAssignees(assignees);
                         setEditDeadline(task.deadline || "");
                         setEditTableData(task.table_data || null);
                       }}
@@ -678,24 +694,23 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 )}
                 
                 <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground">Assigned To</p>
                     {isEditing ? (
-                      <Select value={editAssignedTo} onValueChange={setEditAssignedTo}>
-                        <SelectTrigger className="h-8 mt-1">
-                          <SelectValue placeholder="Select user" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {users?.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.full_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <MultiUserSelect
+                        users={users || []}
+                        selectedUserIds={editAssignees}
+                        onChange={setEditAssignees}
+                        placeholder="Select assignees"
+                        className="mt-1"
+                      />
                     ) : (
-                      <p className="font-medium">{task.profiles?.full_name || "-"}</p>
+                      <p className="font-medium">
+                        {taskAssigneeNames.length > 0 
+                          ? taskAssigneeNames.join(", ") 
+                          : (task.profiles?.full_name || "-")}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -856,7 +871,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(attachment.file_url, '_blank')}
+                            onClick={() => {
+                              const url = attachment.file_url;
+                              // Ensure proper URL handling - don't let router intercept
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.target = '_blank';
+                              link.rel = 'noopener noreferrer';
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
                           >
                             <Download className="h-4 w-4" />
                           </Button>

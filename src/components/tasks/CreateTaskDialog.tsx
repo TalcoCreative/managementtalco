@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Upload, X, Link as LinkIcon, Paperclip } from "lucide-react";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 
 interface TableData {
@@ -42,11 +43,11 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     title: "",
     priority: "medium",
     project_id: "",
-    assigned_to: "",
     deadline: "",
     link: "",
     notes: "",
   });
+  const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData>({
     headers: ["No", "Item", "Keterangan", "Status"],
     rows: [["1", "", "", ""]],
@@ -122,13 +123,16 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      // Use first assignee for backward compatibility in assigned_to column
+      const primaryAssignee = assignedUsers.length > 0 ? assignedUsers[0] : null;
+
       const { data: taskData, error } = await supabase.from("tasks").insert({
         title: formData.title.trim(),
         table_data: tableData as any,
         description: formData.notes.trim() || null,
         priority: formData.priority,
         project_id: formData.project_id,
-        assigned_to: formData.assigned_to || null,
+        assigned_to: primaryAssignee,
         deadline: formData.deadline || null,
         link: formData.link.trim() || null,
         created_by: session.session.user.id,
@@ -143,6 +147,15 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         await uploadFiles(taskData.id, session.session.user.id);
       }
 
+      // Insert all assignees into task_assignees table
+      if (taskData && assignedUsers.length > 0) {
+        const assigneeInserts = assignedUsers.map(userId => ({
+          task_id: taskData.id,
+          user_id: userId,
+        }));
+        await supabase.from("task_assignees").insert(assigneeInserts);
+      }
+
       // Log task creation as activity
       await supabase.from("task_activities").insert({
         user_id: session.session.user.id,
@@ -151,22 +164,25 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         task_title: formData.title.trim(),
       });
 
-      // Send email notification to assignee (async, non-blocking)
-      if (formData.assigned_to && taskData) {
+      // Send email notification to all assignees (async, non-blocking)
+      if (assignedUsers.length > 0 && taskData) {
         const { data: creatorProfile } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("id", session.session.user.id)
           .single();
         
-        sendTaskAssignmentEmail(formData.assigned_to, {
-          id: taskData.id,
-          title: formData.title.trim(),
-          description: formData.notes?.trim(),
-          deadline: formData.deadline,
-          priority: formData.priority,
-          creatorName: creatorProfile?.full_name || "Someone",
-        }).catch(err => console.error("Email notification failed:", err));
+        // Send email to each assignee
+        for (const assigneeId of assignedUsers) {
+          sendTaskAssignmentEmail(assigneeId, {
+            id: taskData.id,
+            title: formData.title.trim(),
+            description: formData.notes?.trim(),
+            deadline: formData.deadline,
+            priority: formData.priority,
+            creatorName: creatorProfile?.full_name || "Someone",
+          }).catch(err => console.error("Email notification failed:", err));
+        }
       }
 
       toast.success("Task created successfully!");
@@ -175,17 +191,18 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         title: "",
         priority: "medium",
         project_id: "",
-        assigned_to: "",
         deadline: "",
         link: "",
         notes: "",
       });
+      setAssignedUsers([]);
       setTableData({
         headers: ["No", "Item", "Keterangan", "Status"],
         rows: [["1", "", "", ""]],
       });
       setFiles([]);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -264,22 +281,13 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="assigned_to">Assign To</Label>
-              <Select
-                value={formData.assigned_to}
-                onValueChange={(value) => setFormData({ ...formData, assigned_to: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users?.filter((user) => user.status !== 'non_active').map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Assign To</Label>
+              <MultiUserSelect
+                users={users || []}
+                selectedUserIds={assignedUsers}
+                onChange={setAssignedUsers}
+                placeholder="Select assignees"
+              />
             </div>
           </div>
 
