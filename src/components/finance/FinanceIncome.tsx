@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Plus, ArrowUpCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
@@ -18,7 +19,9 @@ import { toast } from "sonner";
 export function FinanceIncome() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
@@ -186,6 +189,40 @@ export function FinanceIncome() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    try {
+      const { error } = await supabase
+        .from("income")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      toast.success(`${selectedIds.length} income berhasil dihapus`);
+      setBulkDeleteDialogOpen(false);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["finance-income"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus income");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredIncome?.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredIncome?.map(i => i.id) || []);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -350,6 +387,15 @@ export function FinanceIncome() {
               />
             </div>
           </div>
+          {selectedIds.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus {selectedIds.length} item
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -359,6 +405,12 @@ export function FinanceIncome() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox 
+                      checked={selectedIds.length === filteredIncome.length && filteredIncome.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Source</TableHead>
                   <TableHead>Client/Project</TableHead>
@@ -371,6 +423,12 @@ export function FinanceIncome() {
               <TableBody>
                 {filteredIncome.map((income) => (
                   <TableRow key={income.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.includes(income.id)}
+                        onCheckedChange={() => toggleSelect(income.id)}
+                      />
+                    </TableCell>
                     <TableCell>{format(new Date(income.date), "dd MMM yyyy")}</TableCell>
                     <TableCell className="font-medium">
                       {income.source}
@@ -450,6 +508,27 @@ export function FinanceIncome() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedIds.length} Income</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus {selectedIds.length} income yang dipilih? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus {selectedIds.length} Item
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { Plus, ArrowDownCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,9 @@ import { EXPENSE_COLUMNS } from "@/lib/excel-utils";
 export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
@@ -206,6 +209,40 @@ export function FinanceExpenses() {
     } catch (error: any) {
       toast.error(error.message || "Failed to delete expense");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .delete()
+        .in("id", selectedIds);
+
+      if (error) throw error;
+
+      toast.success(`${selectedIds.length} expense berhasil dihapus`);
+      setBulkDeleteDialogOpen(false);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus expense");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredExpenses?.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredExpenses?.map(e => e.id) || []);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const formatCurrency = (value: number) => {
@@ -441,6 +478,15 @@ export function FinanceExpenses() {
               />
             </div>
           </div>
+          {selectedIds.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus {selectedIds.length} item
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -450,6 +496,12 @@ export function FinanceExpenses() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox 
+                      checked={selectedIds.length === filteredExpenses.length && filteredExpenses.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Description</TableHead>
@@ -462,6 +514,12 @@ export function FinanceExpenses() {
               <TableBody>
                 {filteredExpenses.map((expense) => (
                   <TableRow key={expense.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedIds.includes(expense.id)}
+                        onCheckedChange={() => toggleSelect(expense.id)}
+                      />
+                    </TableCell>
                     <TableCell>{format(new Date(expense.created_at), "dd MMM yyyy")}</TableCell>
                     <TableCell>
                       <div className="space-y-1">
@@ -546,6 +604,27 @@ export function FinanceExpenses() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedIds.length} Expense</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus {selectedIds.length} expense yang dipilih? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus {selectedIds.length} Item
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
