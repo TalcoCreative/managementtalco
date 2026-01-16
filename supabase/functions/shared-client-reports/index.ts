@@ -66,12 +66,12 @@ Deno.serve(async (req) => {
 
     // Fetch organic reports for this client
     const { data: organicReports, error: organicError } = await supabase
-      .from("organic_reports")
+      .from("monthly_organic_reports")
       .select(`
         *,
-        platform_accounts(id, platform, account_name)
+        platform_accounts!inner(id, platform, account_name)
       `)
-      .eq("client_id", client.id)
+      .eq("platform_accounts.client_id", client.id)
       .eq("report_year", parseInt(year))
       .order("report_month", { ascending: true });
 
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
 
     // Fetch ads reports for this client
     const { data: adsReports, error: adsError } = await supabase
-      .from("ads_reports")
+      .from("monthly_ads_reports")
       .select("*")
       .eq("client_id", client.id)
       .eq("report_year", parseInt(year))
