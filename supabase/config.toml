@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.holiday-reminder-email]
 verify_jwt = false
+
+[functions.shared-client-reports]
+verify_jwt = false
