@@ -55,6 +55,8 @@ const COLORS = [
   "hsl(180, 50%, 45%)",
 ];
 
+// This component is now legacy - replaced by ClientAnalyticsDashboard
+// Keeping for backward compatibility
 export function ReportAnalytics() {
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterClient, setFilterClient] = useState<string>("all");
