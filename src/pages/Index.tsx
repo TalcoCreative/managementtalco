@@ -81,7 +81,7 @@ export default function Index() {
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [clientsRes, projectsRes, tasksRes] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }),
+        supabase.from("clients").select("id", { count: "exact", head: true }).eq("client_type", "client"),
         supabase.from("projects").select("id", { count: "exact", head: true }),
         supabase.from("tasks").select("id", { count: "exact", head: true }),
       ]);
