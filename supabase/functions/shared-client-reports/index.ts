@@ -64,20 +64,27 @@ Deno.serve(async (req) => {
       return json({ error: "Failed to fetch accounts" }, 500);
     }
 
-    // Fetch organic reports for this client
-    const { data: organicReports, error: organicError } = await supabase
-      .from("monthly_organic_reports")
-      .select(`
-        *,
-        platform_accounts!inner(id, platform, account_name)
-      `)
-      .eq("platform_accounts.client_id", client.id)
-      .eq("report_year", parseInt(year))
-      .order("report_month", { ascending: true });
+    // Get account IDs for this client to filter organic reports
+    const accountIds = (accounts || []).map((a: { id: string }) => a.id);
 
-    if (organicError) {
-      console.error("Error fetching organic reports:", organicError);
-      return json({ error: "Failed to fetch organic reports" }, 500);
+    // Fetch organic reports for this client's platform accounts
+    let organicReports: unknown[] = [];
+    if (accountIds.length > 0) {
+      const { data: orgData, error: organicError } = await supabase
+        .from("monthly_organic_reports")
+        .select(`
+          *,
+          platform_accounts(id, platform, account_name)
+        `)
+        .in("platform_account_id", accountIds)
+        .eq("report_year", parseInt(year))
+        .order("report_month", { ascending: true });
+
+      if (organicError) {
+        console.error("Error fetching organic reports:", organicError);
+        return json({ error: "Failed to fetch organic reports" }, 500);
+      }
+      organicReports = orgData || [];
     }
 
     // Fetch ads reports for this client

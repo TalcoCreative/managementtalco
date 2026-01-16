@@ -125,10 +125,16 @@ export default function SharedClientReports() {
     queryKey: ["shared-client-reports", slug, filterYear],
     queryFn: async () => {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const params = new URLSearchParams({ slug: slug || "", year: filterYear });
       const res = await fetch(
         `${baseUrl}/functions/v1/shared-client-reports?${params.toString()}`,
-        { headers: { "Content-Type": "application/json" } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": anonKey,
+          },
+        }
       );
       if (!res.ok) {
         const errData = await res.json();
