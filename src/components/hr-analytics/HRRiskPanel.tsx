@@ -1,8 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, Clock, Activity, Eye, ArrowRight } from "lucide-react";
+import { AlertTriangle, Clock, Activity, Eye } from "lucide-react";
 import { useMemo } from "react";
 import { parseISO, differenceInMinutes } from "date-fns";
 
@@ -120,30 +119,28 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
                   <Clock className="h-4 w-4 text-amber-500" />
                   Sering Lupa Clock-out
                 </h4>
-                <ScrollArea className="h-[120px]">
-                  <div className="space-y-2">
-                    {insights.highAutoClockout.slice(0, 5).map(item => (
-                      <div 
-                        key={item.profile.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{item.profile.full_name}</p>
-                          <Badge variant="secondary" className="text-xs">
-                            {item.count}x auto clock-out
-                          </Badge>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onViewEmployee(item.profile.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                <div className="space-y-2">
+                  {insights.highAutoClockout.map(item => (
+                    <div 
+                      key={item.profile.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{item.profile.full_name}</p>
+                        <Badge variant="secondary" className="text-xs">
+                          {item.count}x auto clock-out
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onViewEmployee(item.profile.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -154,30 +151,28 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
                   <Clock className="h-4 w-4 text-blue-500" />
                   Jam Tinggi, Aktivitas Rendah
                 </h4>
-                <ScrollArea className="h-[120px]">
-                  <div className="space-y-2">
-                    {insights.highHoursLowActivity.slice(0, 5).map(item => (
-                      <div 
-                        key={item.profile.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{item.profile.full_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.hours}h kerja, {item.activities} aktivitas
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onViewEmployee(item.profile.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                <div className="space-y-2">
+                  {insights.highHoursLowActivity.map(item => (
+                    <div 
+                      key={item.profile.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{item.profile.full_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.hours}h kerja, {item.activities} aktivitas
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onViewEmployee(item.profile.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -188,30 +183,28 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
                   <Activity className="h-4 w-4 text-green-500" />
                   Aktivitas Tinggi, Jam Rendah
                 </h4>
-                <ScrollArea className="h-[120px]">
-                  <div className="space-y-2">
-                    {insights.lowHoursHighActivity.slice(0, 5).map(item => (
-                      <div 
-                        key={item.profile.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{item.profile.full_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.hours}h kerja, {item.activities} aktivitas
-                          </p>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onViewEmployee(item.profile.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                <div className="space-y-2">
+                  {insights.lowHoursHighActivity.map(item => (
+                    <div 
+                      key={item.profile.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{item.profile.full_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.hours}h kerja, {item.activities} aktivitas
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onViewEmployee(item.profile.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -222,30 +215,28 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                   Task Overdue Terbanyak
                 </h4>
-                <ScrollArea className="h-[120px]">
-                  <div className="space-y-2">
-                    {insights.highOverdue.slice(0, 5).map(item => (
-                      <div 
-                        key={item.profile.id}
-                        className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{item.profile.full_name}</p>
-                          <Badge variant="destructive" className="text-xs">
-                            {item.count} task overdue
-                          </Badge>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onViewEmployee(item.profile.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                <div className="space-y-2">
+                  {insights.highOverdue.map(item => (
+                    <div 
+                      key={item.profile.id}
+                      className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{item.profile.full_name}</p>
+                        <Badge variant="destructive" className="text-xs">
+                          {item.count} task overdue
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => onViewEmployee(item.profile.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
