@@ -15,8 +15,8 @@ export const usePlatformAccounts = (clientId?: string) => {
   return useQuery({
     queryKey: ["platform-accounts", clientId],
     queryFn: async () => {
-      let query = supabase
-        .from("platform_accounts")
+      let query = (supabase
+        .from("platform_accounts") as any)
         .select("*, clients(name)")
         .order("created_at", { ascending: false });
 
@@ -45,8 +45,8 @@ export const useCreatePlatformAccount = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
-        .from("platform_accounts")
+      const { data, error } = await (supabase
+        .from("platform_accounts") as any)
         .insert({
           ...account,
           created_by: user.user.id,
@@ -75,8 +75,8 @@ export const useUpdatePlatformAccount = () => {
       id,
       ...updates
     }: Partial<PlatformAccount> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("platform_accounts")
+      const { data, error } = await (supabase
+        .from("platform_accounts") as any)
         .update(updates)
         .eq("id", id)
         .select()
@@ -100,8 +100,8 @@ export const useDeletePlatformAccount = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("platform_accounts")
+      const { error } = await (supabase
+        .from("platform_accounts") as any)
         .delete()
         .eq("id", id);
 
@@ -127,8 +127,8 @@ export const useOrganicReports = (filters?: {
   return useQuery({
     queryKey: ["organic-reports", filters],
     queryFn: async () => {
-      let query = supabase
-        .from("monthly_organic_reports")
+      let query = (supabase
+        .from("monthly_organic_reports") as any)
         .select("*, platform_accounts(*, clients(name))")
         .order("report_year", { ascending: false })
         .order("report_month", { ascending: false });
@@ -293,8 +293,8 @@ export const useAdsReports = (filters?: {
   return useQuery({
     queryKey: ["ads-reports", filters],
     queryFn: async () => {
-      let query = supabase
-        .from("monthly_ads_reports")
+      let query = (supabase
+        .from("monthly_ads_reports") as any)
         .select("*, clients(name), platform_accounts(*)")
         .order("report_year", { ascending: false })
         .order("report_month", { ascending: false });
@@ -347,8 +347,8 @@ export const useCreateAdsReport = () => {
       const cpc = report.cpc ?? (report.clicks > 0 ? report.total_spend / report.clicks : 0);
       const cost_per_result = report.cost_per_result ?? (report.results > 0 ? report.total_spend / report.results : 0);
 
-      const { data, error } = await supabase
-        .from("monthly_ads_reports")
+      const { data, error } = await (supabase
+        .from("monthly_ads_reports") as any)
         .insert({
           ...report,
           cpm,
@@ -367,7 +367,7 @@ export const useCreateAdsReport = () => {
       }
 
       // Log audit
-      await supabase.from("report_audit_logs").insert({
+      await (supabase.from("report_audit_logs") as any).insert({
         report_type: "ads",
         report_id: data.id,
         action: "create",
@@ -469,8 +469,8 @@ export const useReportAuditLogs = (reportId?: string, reportType?: "organic" | "
   return useQuery({
     queryKey: ["report-audit-logs", reportId, reportType],
     queryFn: async () => {
-      let query = supabase
-        .from("report_audit_logs")
+      let query = (supabase
+        .from("report_audit_logs") as any)
         .select("*")
         .order("performed_at", { ascending: false });
 
@@ -511,8 +511,8 @@ export const useLockReport = () => {
           ? "monthly_organic_reports"
           : "monthly_ads_reports";
 
-      const { data, error } = await supabase
-        .from(table)
+      const { data, error } = await (supabase
+        .from(table) as any)
         .update({
           is_locked: lock,
           locked_at: lock ? new Date().toISOString() : null,
@@ -525,7 +525,7 @@ export const useLockReport = () => {
       if (error) throw error;
 
       // Log audit
-      await supabase.from("report_audit_logs").insert({
+      await (supabase.from("report_audit_logs") as any).insert({
         report_type: reportType,
         report_id: id,
         action: lock ? "lock" : "unlock",
