@@ -252,7 +252,7 @@ export default function EditorialPlanEditor() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(`/ep/${getClientSlug()}/${ep.slug}`, "_blank")}
+              onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}
             >
               <Eye className="h-4 w-4 mr-2" />
               Preview

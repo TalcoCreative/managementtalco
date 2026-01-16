@@ -131,7 +131,7 @@ export default function EditorialPlan() {
 
   const handleCopyLink = async (plan: EditorialPlan) => {
     const clientSlug = plan.clients?.name.toLowerCase().replace(/\s+/g, "-") || "client";
-    const url = `${window.location.origin}/ep/${clientSlug}/${plan.slug}`;
+    const url = `https://ms.talco.id/ep/${clientSlug}/${plan.slug}`;
     await navigator.clipboard.writeText(url);
     toast.success("Link copied!");
   };
@@ -247,7 +247,7 @@ export default function EditorialPlan() {
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation();
-                          window.open(`/ep/${getClientSlug(plan)}/${plan.slug}`, "_blank");
+                          window.open(`https://ms.talco.id/ep/${getClientSlug(plan)}/${plan.slug}`, "_blank");
                         }}>
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Lihat Preview
