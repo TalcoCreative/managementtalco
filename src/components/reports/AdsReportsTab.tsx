@@ -427,7 +427,6 @@ export function AdsReportsTab() {
                     onValueChange={(v) =>
                       setFormData({ ...formData, client_id: v, platform_account_id: "" })
                     }
-                    disabled={isEditing}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih client" />
@@ -449,7 +448,6 @@ export function AdsReportsTab() {
                     onValueChange={(v) =>
                       setFormData({ ...formData, platform: v as AdsPlatform })
                     }
-                    disabled={isEditing}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih platform" />
@@ -495,7 +493,6 @@ export function AdsReportsTab() {
                       onValueChange={(v) =>
                         setFormData({ ...formData, report_month: parseInt(v) })
                       }
-                      disabled={isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -516,7 +513,6 @@ export function AdsReportsTab() {
                       onValueChange={(v) =>
                         setFormData({ ...formData, report_year: parseInt(v) })
                       }
-                      disabled={isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
