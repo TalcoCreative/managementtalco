@@ -65,6 +65,7 @@ const navItems = [
 
 const socialMediaItems = [
   { title: "Social Media", url: "/social-media", icon: Share2 },
+  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText },
   { title: "Content Builder", url: "/content-builder", icon: Sparkles },
 ];
 
