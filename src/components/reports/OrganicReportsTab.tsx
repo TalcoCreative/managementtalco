@@ -393,7 +393,6 @@ export function OrganicReportsTab() {
                     onValueChange={(v) =>
                       setFormData({ ...formData, platform_account_id: v })
                     }
-                    disabled={isEditing}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih account" />
@@ -418,7 +417,6 @@ export function OrganicReportsTab() {
                       onValueChange={(v) =>
                         setFormData({ ...formData, report_month: parseInt(v) })
                       }
-                      disabled={isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -439,7 +437,6 @@ export function OrganicReportsTab() {
                       onValueChange={(v) =>
                         setFormData({ ...formData, report_year: parseInt(v) })
                       }
-                      disabled={isEditing}
                     >
                       <SelectTrigger>
                         <SelectValue />
