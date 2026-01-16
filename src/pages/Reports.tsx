@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformAccountsTab } from "@/components/reports/PlatformAccountsTab";
 import { OrganicReportsTab } from "@/components/reports/OrganicReportsTab";
 import { AdsReportsTab } from "@/components/reports/AdsReportsTab";
-import { ReportAnalytics } from "@/components/reports/ReportAnalytics";
+import { ClientAnalyticsDashboard } from "@/components/reports/ClientAnalyticsDashboard";
 import { AuditLogsTab } from "@/components/reports/AuditLogsTab";
 import {
   BarChart3,
@@ -12,10 +12,11 @@ import {
   FileText,
   DollarSign,
   History,
+  Building2,
 } from "lucide-react";
 
 export default function Reports() {
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [activeTab, setActiveTab] = useState("client-analytics");
 
   return (
     <AppLayout>
@@ -31,9 +32,9 @@ export default function Reports() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="flex flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
+            <TabsTrigger value="client-analytics" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Client Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="accounts" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -53,8 +54,8 @@ export default function Reports() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="analytics" className="mt-4">
-            <ReportAnalytics />
+          <TabsContent value="client-analytics" className="mt-4">
+            <ClientAnalyticsDashboard />
           </TabsContent>
 
           <TabsContent value="accounts" className="mt-4">
