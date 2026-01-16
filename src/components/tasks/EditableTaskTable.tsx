@@ -138,20 +138,22 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto border rounded-lg">
-        <table ref={tableRef} className="text-sm" style={{ tableLayout: 'fixed', minWidth: 'max-content' }}>
-          <colgroup>
-            {columnWidths.map((width, idx) => (
-              <col key={idx} style={{ width: `${width}px`, minWidth: `${MIN_COL_WIDTH}px` }} />
-            ))}
-            {!readOnly && <col style={{ width: '40px' }} />}
-          </colgroup>
+        <table ref={tableRef} className="w-full text-sm" style={{ tableLayout: readOnly ? 'auto' : 'fixed', minWidth: readOnly ? undefined : 'max-content' }}>
+          {!readOnly && (
+            <colgroup>
+              {columnWidths.map((width, idx) => (
+                <col key={idx} style={{ width: `${width}px`, minWidth: `${MIN_COL_WIDTH}px` }} />
+              ))}
+              <col style={{ width: '40px' }} />
+            </colgroup>
+          )}
           <thead>
             <tr className="bg-muted/50">
               {tableData.headers.map((header, idx) => (
                 <th 
                   key={idx} 
-                  className="p-2 border-b border-r last:border-r-0 text-left relative group"
-                  style={{ width: `${columnWidths[idx]}px` }}
+                  className={`p-2 border-b border-r last:border-r-0 text-left relative group ${idx === 0 ? 'w-12' : ''}`}
+                  style={!readOnly ? { width: `${columnWidths[idx]}px` } : undefined}
                 >
                   {idx === 0 ? (
                     <span className="font-medium text-muted-foreground block">No</span>
@@ -166,7 +168,7 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
                     />
                   )}
                   {/* Resize handle */}
-                  {idx < tableData.headers.length - 1 && (
+                  {!readOnly && idx < tableData.headers.length - 1 && (
                     <div
                       className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
                       style={{ transform: 'translateX(50%)' }}
@@ -184,8 +186,8 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
                 {row.map((cell, colIdx) => (
                   <td 
                     key={colIdx} 
-                    className="p-2 border-b border-r last:border-r-0 align-top"
-                    style={{ width: `${columnWidths[colIdx]}px` }}
+                    className={`p-2 border-b border-r last:border-r-0 align-top ${colIdx === 0 ? 'w-12' : ''}`}
+                    style={!readOnly ? { width: `${columnWidths[colIdx]}px` } : undefined}
                   >
                     {colIdx === 0 ? (
                       <span className="text-muted-foreground block text-center">{cell}</span>
