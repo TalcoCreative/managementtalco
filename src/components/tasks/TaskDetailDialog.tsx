@@ -867,13 +867,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
-                        {attachment.file_url && (
+                        {(attachment.file_url || attachment.file_name) && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              const url = attachment.file_url;
-                              // Ensure proper URL handling - don't let router intercept
+                              // Handle swapped data - check which field contains the actual URL
+                              let url = attachment.file_url || '';
+                              const fileName = attachment.file_name || '';
+                              
+                              // If file_url doesn't look like a URL but file_name does, swap them
+                              if (!url.startsWith('http') && fileName.startsWith('http')) {
+                                url = fileName;
+                              }
+                              
+                              // Ensure URL has protocol
+                              if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                                url = 'https://' + url;
+                              }
+                              
+                              // Open link properly
                               const link = document.createElement('a');
                               link.href = url;
                               link.target = '_blank';
