@@ -2772,6 +2772,242 @@ export type Database = {
           },
         ]
       }
+      monthly_ads_reports: {
+        Row: {
+          clicks: number
+          client_id: string
+          cost_per_result: number | null
+          cpc: number | null
+          cpm: number | null
+          created_at: string
+          created_by: string
+          id: string
+          impressions: number
+          is_locked: boolean
+          locked_at: string | null
+          locked_by: string | null
+          objective: string
+          platform: string
+          platform_account_id: string | null
+          reach: number
+          report_month: number
+          report_year: number
+          results: number
+          total_spend: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          clicks?: number
+          client_id: string
+          cost_per_result?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string
+          created_by: string
+          id?: string
+          impressions?: number
+          is_locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          objective: string
+          platform: string
+          platform_account_id?: string | null
+          reach?: number
+          report_month: number
+          report_year: number
+          results?: number
+          total_spend: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          clicks?: number
+          client_id?: string
+          cost_per_result?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          impressions?: number
+          is_locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          objective?: string
+          platform?: string
+          platform_account_id?: string | null
+          reach?: number
+          report_month?: number
+          report_year?: number
+          results?: number
+          total_spend?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_ads_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_ads_reports_platform_account_id_fkey"
+            columns: ["platform_account_id"]
+            isOneToOne: false
+            referencedRelation: "platform_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_organic_reports: {
+        Row: {
+          created_at: string
+          created_by: string
+          fb_content_interactions: number | null
+          fb_followers: number | null
+          fb_impressions: number | null
+          fb_page_views: number | null
+          fb_reach: number | null
+          gb_direction_requests: number | null
+          gb_negative_reviews: number | null
+          gb_phone_calls: number | null
+          gb_positive_reviews: number | null
+          gb_profile_interactions: number | null
+          gb_profile_views: number | null
+          id: string
+          ig_content_interactions: number | null
+          ig_followers: number | null
+          ig_impressions: number | null
+          ig_profile_visits: number | null
+          ig_reach: number | null
+          ig_website_clicks: number | null
+          is_locked: boolean
+          li_engagement_rate: number | null
+          li_followers: number | null
+          li_impressions: number | null
+          li_page_views: number | null
+          li_unique_visitors: number | null
+          locked_at: string | null
+          locked_by: string | null
+          platform_account_id: string
+          report_month: number
+          report_year: number
+          tt_comments: number | null
+          tt_followers: number | null
+          tt_likes: number | null
+          tt_profile_views: number | null
+          tt_shares: number | null
+          tt_video_views: number | null
+          updated_at: string
+          updated_by: string | null
+          yt_impressions: number | null
+          yt_subscribers: number | null
+          yt_views: number | null
+          yt_watch_time: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          fb_content_interactions?: number | null
+          fb_followers?: number | null
+          fb_impressions?: number | null
+          fb_page_views?: number | null
+          fb_reach?: number | null
+          gb_direction_requests?: number | null
+          gb_negative_reviews?: number | null
+          gb_phone_calls?: number | null
+          gb_positive_reviews?: number | null
+          gb_profile_interactions?: number | null
+          gb_profile_views?: number | null
+          id?: string
+          ig_content_interactions?: number | null
+          ig_followers?: number | null
+          ig_impressions?: number | null
+          ig_profile_visits?: number | null
+          ig_reach?: number | null
+          ig_website_clicks?: number | null
+          is_locked?: boolean
+          li_engagement_rate?: number | null
+          li_followers?: number | null
+          li_impressions?: number | null
+          li_page_views?: number | null
+          li_unique_visitors?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          platform_account_id: string
+          report_month: number
+          report_year: number
+          tt_comments?: number | null
+          tt_followers?: number | null
+          tt_likes?: number | null
+          tt_profile_views?: number | null
+          tt_shares?: number | null
+          tt_video_views?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          yt_impressions?: number | null
+          yt_subscribers?: number | null
+          yt_views?: number | null
+          yt_watch_time?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          fb_content_interactions?: number | null
+          fb_followers?: number | null
+          fb_impressions?: number | null
+          fb_page_views?: number | null
+          fb_reach?: number | null
+          gb_direction_requests?: number | null
+          gb_negative_reviews?: number | null
+          gb_phone_calls?: number | null
+          gb_positive_reviews?: number | null
+          gb_profile_interactions?: number | null
+          gb_profile_views?: number | null
+          id?: string
+          ig_content_interactions?: number | null
+          ig_followers?: number | null
+          ig_impressions?: number | null
+          ig_profile_visits?: number | null
+          ig_reach?: number | null
+          ig_website_clicks?: number | null
+          is_locked?: boolean
+          li_engagement_rate?: number | null
+          li_followers?: number | null
+          li_impressions?: number | null
+          li_page_views?: number | null
+          li_unique_visitors?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          platform_account_id?: string
+          report_month?: number
+          report_year?: number
+          tt_comments?: number | null
+          tt_followers?: number | null
+          tt_likes?: number | null
+          tt_profile_views?: number | null
+          tt_shares?: number | null
+          tt_video_views?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          yt_impressions?: number | null
+          yt_subscribers?: number | null
+          yt_views?: number | null
+          yt_watch_time?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_organic_reports_platform_account_id_fkey"
+            columns: ["platform_account_id"]
+            isOneToOne: false
+            referencedRelation: "platform_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll: {
         Row: {
           adjustment_lainnya: number | null
@@ -2840,6 +3076,50 @@ export type Database = {
             columns: ["ledger_entry_id"]
             isOneToOne: false
             referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_accounts: {
+        Row: {
+          account_name: string
+          client_id: string
+          created_at: string
+          created_by: string
+          id: string
+          platform: string
+          status: string
+          updated_at: string
+          username_url: string | null
+        }
+        Insert: {
+          account_name: string
+          client_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          platform: string
+          status?: string
+          updated_at?: string
+          username_url?: string | null
+        }
+        Update: {
+          account_name?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          platform?: string
+          status?: string
+          updated_at?: string
+          username_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -3492,6 +3772,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      report_audit_logs: {
+        Row: {
+          action: string
+          id: string
+          new_values: Json | null
+          performed_at: string
+          performed_by: string
+          previous_values: Json | null
+          report_id: string
+          report_type: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          new_values?: Json | null
+          performed_at?: string
+          performed_by: string
+          previous_values?: Json | null
+          report_id: string
+          report_type: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          new_values?: Json | null
+          performed_at?: string
+          performed_by?: string
+          previous_values?: Json | null
+          report_id?: string
+          report_type?: string
+        }
+        Relationships: []
       }
       scheduled_posts: {
         Row: {
