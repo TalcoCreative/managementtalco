@@ -280,7 +280,7 @@ export default function CEODashboard() {
 
   // Calculate resource data
   const clientResourceData = useMemo(() => {
-    if (!profiles || !clients || !tasks || !meetings || !shootings || !events) {
+    if (!profiles || !clients) {
       return [];
     }
 
@@ -306,7 +306,7 @@ export default function CEODashboard() {
     };
 
     // Process tasks
-    tasks.forEach((task) => {
+    (tasks || []).forEach((task) => {
       if (!task.assigned_to) return;
       const clientId = (task.project as any)?.client_id;
       if (!clientId) return;
@@ -323,7 +323,7 @@ export default function CEODashboard() {
     });
 
     // Process meetings
-    meetings.forEach((meeting) => {
+    (meetings || []).forEach((meeting) => {
       const clientId = meeting.client_id;
       if (!clientId) return;
       
@@ -343,7 +343,7 @@ export default function CEODashboard() {
     });
 
     // Process shootings
-    shootings.forEach((shooting) => {
+    (shootings || []).forEach((shooting) => {
       const clientId = shooting.client_id;
       if (!clientId) return;
       
@@ -363,7 +363,7 @@ export default function CEODashboard() {
     });
 
     // Process events
-    events.forEach((event) => {
+    (events || []).forEach((event) => {
       const clientId = event.client_id;
       if (!clientId) return;
       
