@@ -38,6 +38,8 @@ interface ClientResourceData {
   totalActivities: number;
   workloadPercentage: number;
   estimatedCost: number;
+  adsSpend: number;
+  totalCost: number; // estimatedCost + adsSpend
   taskCount: number;
   meetingCount: number;
   shootingCount: number;
@@ -218,6 +220,44 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
+  // Fetch ads reports for date range (using year/month)
+  const { data: adsReports } = useQuery({
+    queryKey: ["ceo-ads-reports", formattedDateRange],
+    queryFn: async () => {
+      const startDate = new Date(formattedDateRange.start);
+      const endDate = new Date(formattedDateRange.end);
+      
+      const { data, error } = await (supabase
+        .from("monthly_ads_reports") as any)
+        .select("client_id, total_spend, report_month, report_year")
+        .gte("report_year", startDate.getFullYear())
+        .lte("report_year", endDate.getFullYear());
+      
+      if (error) throw error;
+      
+      // Filter by month range
+      return (data || []).filter((report: any) => {
+        const reportDate = new Date(report.report_year, report.report_month - 1, 1);
+        return reportDate >= startDate && reportDate <= endDate;
+      });
+    },
+    enabled: isSuperAdmin,
+  });
+
+  // Calculate ads spend per client
+  const clientAdsSpendMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (!adsReports) return map;
+    
+    adsReports.forEach((report: any) => {
+      if (!map[report.client_id]) {
+        map[report.client_id] = 0;
+      }
+      map[report.client_id] += report.total_spend || 0;
+    });
+    return map;
+  }, [adsReports]);
+
   // Calculate resource data
   const clientResourceData = useMemo(() => {
     if (!profiles || !clients || !tasks || !meetings || !shootings || !events) {
@@ -225,7 +265,7 @@ export default function CEODashboard() {
     }
 
     // Create a map for employee activities
-    const employeeActivities: Map<string, { 
+    const employeeActivities: Map<string, {
       total: number; 
       byClient: Map<string, { count: number; taskCount: number; meetingCount: number; shootingCount: number; eventCount: number }> 
     }> = new Map();
@@ -346,6 +386,7 @@ export default function CEODashboard() {
     const clientDataMap = new Map<string, ClientResourceData>();
 
     clients.forEach((client) => {
+      const adsSpend = clientAdsSpendMap[client.id] || 0;
       const data: ClientResourceData = {
         clientId: client.id,
         clientName: client.name,
@@ -353,6 +394,8 @@ export default function CEODashboard() {
         totalActivities: 0,
         workloadPercentage: 0,
         estimatedCost: 0,
+        adsSpend: adsSpend,
+        totalCost: 0,
         taskCount: 0,
         meetingCount: 0,
         shootingCount: 0,
@@ -394,22 +437,26 @@ export default function CEODashboard() {
         });
       });
 
+      // Calculate total cost (resource + ads)
+      data.totalCost = data.estimatedCost + data.adsSpend;
+
       if (totalCompanyActivities > 0) {
         data.workloadPercentage = (data.totalActivities / totalCompanyActivities) * 100;
       }
 
-      if (data.totalActivities > 0) {
+      // Include client if has activities OR has ads spend
+      if (data.totalActivities > 0 || data.adsSpend > 0) {
         clientDataMap.set(client.id, data);
       }
     });
 
-    // Sort by estimated cost descending
+    // Sort by total cost descending
     const sortedData = Array.from(clientDataMap.values()).sort(
-      (a, b) => b.estimatedCost - a.estimatedCost
+      (a, b) => b.totalCost - a.totalCost
     );
 
     return sortedData;
-  }, [profiles, clients, tasks, meetings, shootings, events]);
+  }, [profiles, clients, tasks, meetings, shootings, events, clientAdsSpendMap]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -433,10 +480,12 @@ export default function CEODashboard() {
     return clientResourceData.reduce(
       (acc, client) => {
         acc.totalActivities += client.totalActivities;
-        acc.totalCost += client.estimatedCost;
+        acc.totalResourceCost += client.estimatedCost;
+        acc.totalAdsSpend += client.adsSpend;
+        acc.totalCost += client.totalCost;
         return acc;
       },
-      { totalActivities: 0, totalCost: 0 }
+      { totalActivities: 0, totalResourceCost: 0, totalAdsSpend: 0, totalCost: 0 }
     );
   }, [clientResourceData]);
 
@@ -543,7 +592,7 @@ export default function CEODashboard() {
 
         {/* Summary Cards */}
         {!selectedClient && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Klien Aktif</CardTitle>
@@ -563,26 +612,39 @@ export default function CEODashboard() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Aktivitas</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Est. Resource Cost</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totals.totalActivities}</div>
+                <div className="text-2xl font-bold">{formatCurrency(totals.totalResourceCost)}</div>
                 <p className="text-xs text-muted-foreground">
-                  Task, Meeting, Shooting, Event
+                  Estimasi biaya SDM
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Est. Resource Cost</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Ads Spend</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(totals.totalAdsSpend)}</div>
+                <p className="text-xs text-muted-foreground">
+                  Biaya iklan digital
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totals.totalCost)}</div>
+                <div className="text-2xl font-bold text-primary">{formatCurrency(totals.totalCost)}</div>
                 <p className="text-xs text-muted-foreground">
-                  Estimasi biaya SDM bulan ini
+                  Resource + Ads
                 </p>
               </CardContent>
             </Card>
@@ -593,7 +655,7 @@ export default function CEODashboard() {
         {selectedClient && (
           <div className="space-y-6">
             {/* Client Summary */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">Total Aktivitas</CardTitle>
@@ -620,7 +682,7 @@ export default function CEODashboard() {
                   <CardTitle className="text-sm font-medium">Est. Biaya SDM</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-2xl font-bold">
                     {formatCurrency(selectedClient.estimatedCost)}
                   </div>
                 </CardContent>
@@ -628,11 +690,22 @@ export default function CEODashboard() {
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Jumlah Karyawan</CardTitle>
+                  <CardTitle className="text-sm font-medium">Ads Spend</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {selectedClient.employeeBreakdown.length}
+                    {formatCurrency(selectedClient.adsSpend)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">
+                    {formatCurrency(selectedClient.totalCost)}
                   </div>
                 </CardContent>
               </Card>
@@ -752,9 +825,10 @@ export default function CEODashboard() {
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Client</TableHead>
-                      <TableHead className="text-center">Total Workload %</TableHead>
-                      <TableHead className="text-center">Total Activities</TableHead>
-                      <TableHead className="text-right">Est. Resource Cost</TableHead>
+                      <TableHead className="text-center">Workload %</TableHead>
+                      <TableHead className="text-right">Resource Cost</TableHead>
+                      <TableHead className="text-right">Ads Spend</TableHead>
+                      <TableHead className="text-right">Total Cost</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -784,26 +858,27 @@ export default function CEODashboard() {
                             <div className="flex items-center justify-center gap-2">
                               <Progress 
                                 value={client.workloadPercentage} 
-                                className="w-20 h-2" 
+                                className="w-16 h-2" 
                               />
                               <span className="text-sm font-medium w-12">
                                 {client.workloadPercentage.toFixed(1)}%
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-sm">
-                              <span className="text-blue-500">{client.taskCount}T</span>
-                              <span className="text-muted-foreground">/</span>
-                              <span className="text-green-500">{client.meetingCount}M</span>
-                              <span className="text-muted-foreground">/</span>
-                              <span className="text-purple-500">{client.shootingCount}S</span>
-                              <span className="text-muted-foreground">/</span>
-                              <span className="text-orange-500">{client.eventCount}E</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
+                          <TableCell className="text-right">
                             {formatCurrency(client.estimatedCost)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {client.adsSpend > 0 ? (
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                {formatCurrency(client.adsSpend)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-primary">
+                            {formatCurrency(client.totalCost)}
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-center">
