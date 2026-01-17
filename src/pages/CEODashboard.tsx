@@ -227,18 +227,38 @@ export default function CEODashboard() {
       const startDate = new Date(formattedDateRange.start);
       const endDate = new Date(formattedDateRange.end);
       
+      const startYear = startDate.getFullYear();
+      const endYear = endDate.getFullYear();
+      const startMonth = startDate.getMonth() + 1; // 1-indexed
+      const endMonth = endDate.getMonth() + 1; // 1-indexed
+      
       const { data, error } = await (supabase
         .from("monthly_ads_reports") as any)
         .select("client_id, total_spend, report_month, report_year")
-        .gte("report_year", startDate.getFullYear())
-        .lte("report_year", endDate.getFullYear());
+        .gte("report_year", startYear)
+        .lte("report_year", endYear);
       
       if (error) throw error;
       
-      // Filter by month range
+      // Filter by month range considering year boundaries
       return (data || []).filter((report: any) => {
-        const reportDate = new Date(report.report_year, report.report_month - 1, 1);
-        return reportDate >= startDate && reportDate <= endDate;
+        const reportYear = report.report_year;
+        const reportMonth = report.report_month;
+        
+        // If same year for start and end
+        if (startYear === endYear) {
+          return reportYear === startYear && reportMonth >= startMonth && reportMonth <= endMonth;
+        }
+        
+        // If different years
+        if (reportYear === startYear) {
+          return reportMonth >= startMonth;
+        }
+        if (reportYear === endYear) {
+          return reportMonth <= endMonth;
+        }
+        // Years in between
+        return reportYear > startYear && reportYear < endYear;
       });
     },
     enabled: isSuperAdmin,
