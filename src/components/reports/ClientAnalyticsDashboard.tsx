@@ -86,9 +86,12 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
   }
 };
 
+const currentMonth = new Date().getMonth() + 1;
+
 export function ClientAnalyticsDashboard() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
+  const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-for-analytics"],
@@ -101,6 +104,24 @@ export function ClientAnalyticsDashboard() {
       return data;
     },
   });
+
+  // Fetch all ads reports for the selected month/year (for client list view)
+  const { data: allAdsReports = [] } = useAdsReports({
+    year: parseInt(filterYear),
+    month: parseInt(filterMonth),
+  });
+
+  // Calculate spend per client for the selected month
+  const clientSpendMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    allAdsReports.forEach((report) => {
+      if (!map[report.client_id]) {
+        map[report.client_id] = 0;
+      }
+      map[report.client_id] += report.total_spend;
+    });
+    return map;
+  }, [allAdsReports]);
 
   const copyReportLink = (slug: string | null, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -365,56 +386,101 @@ export function ClientAnalyticsDashboard() {
   if (!selectedClient) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Building2 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Pilih Client untuk Analytics</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Building2 className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Pilih Client untuk Analytics</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select value={filterMonth} onValueChange={setFilterMonth}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m) => (
+                  <SelectItem key={m.value} value={m.value.toString()}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterYear} onValueChange={setFilterYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((y) => (
+                  <SelectItem key={y} value={y.toString()}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {clients.map((client) => (
-            <Card
-              key={client.id}
-              className="cursor-pointer hover:border-primary transition-colors"
-              onClick={() => setSelectedClient(client.id)}
-            >
-              <CardContent className="pt-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{client.name}</h3>
-                    {client.company && (
-                      <p className="text-sm text-muted-foreground truncate">{client.company}</p>
+          {clients.map((client) => {
+            const clientSpend = clientSpendMap[client.id] || 0;
+            return (
+              <Card
+                key={client.id}
+                className="cursor-pointer hover:border-primary transition-colors"
+                onClick={() => setSelectedClient(client.id)}
+              >
+                <CardContent className="pt-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{client.name}</h3>
+                      {client.company && (
+                        <p className="text-sm text-muted-foreground truncate">{client.company}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => copyReportLink(client.dashboard_slug, e)}
+                        title="Copy link report"
+                      >
+                        <Link className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => openReportLink(client.dashboard_slug, e)}
+                        title="Buka report"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <Badge
+                      variant={client.status === "active" ? "default" : "secondary"}
+                    >
+                      {client.status}
+                    </Badge>
+                    {clientSpend > 0 && (
+                      <div className="flex items-center gap-1 text-sm">
+                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-medium text-primary">
+                          {formatCurrencyIDR(clientSpend)}
+                        </span>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={(e) => copyReportLink(client.dashboard_slug, e)}
-                      title="Copy link report"
-                    >
-                      <Link className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={(e) => openReportLink(client.dashboard_slug, e)}
-                      title="Buka report"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <Badge
-                  variant={client.status === "active" ? "default" : "secondary"}
-                  className="mt-2"
-                >
-                  {client.status}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
+                  {clientSpend === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Belum ada spend di {getMonthLabel(parseInt(filterMonth))}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {clients.length === 0 && (
