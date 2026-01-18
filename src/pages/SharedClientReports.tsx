@@ -390,7 +390,7 @@ export default function SharedClientReports() {
         </Card>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
@@ -434,6 +434,17 @@ export default function SharedClientReports() {
                   </div>
                   <p className="text-xl md:text-2xl font-bold mt-2">
                     {formatNumber(clientStats.totalClicks)}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Total Leads</span>
+                  </div>
+                  <p className="text-xl md:text-2xl font-bold mt-2">
+                    {formatNumber(clientStats.totalResults)}
                   </p>
                 </CardContent>
               </Card>
