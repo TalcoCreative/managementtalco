@@ -92,6 +92,8 @@ export function ClientAnalyticsDashboard() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
+  const [filterStartMonth, setFilterStartMonth] = useState<string>("1");
+  const [filterEndMonth, setFilterEndMonth] = useState<string>("12");
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-for-analytics"],
@@ -155,13 +157,25 @@ export function ClientAnalyticsDashboard() {
     year: parseInt(filterYear),
   });
 
+  // Filter reports by month range
+  const startMonth = parseInt(filterStartMonth);
+  const endMonth = parseInt(filterEndMonth);
+  
+  const filteredOrganicReports = useMemo(() => {
+    return organicReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
+  }, [organicReports, startMonth, endMonth]);
+
+  const filteredAdsReports = useMemo(() => {
+    return adsReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
+  }, [adsReports, startMonth, endMonth]);
+
   // Monthly organic trend data
   const monthlyOrganicData = useMemo(() => {
     if (!selectedClient) return [];
 
     const dataByMonth: Record<number, Record<string, number>> = {};
 
-    organicReports.forEach((report) => {
+    filteredOrganicReports.forEach((report) => {
       const month = report.report_month;
       if (!dataByMonth[month]) {
         dataByMonth[month] = {};
@@ -183,12 +197,12 @@ export function ClientAnalyticsDashboard() {
       });
     });
 
-    return MONTHS.map((m) => ({
+    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
       month: m.label.slice(0, 3),
       monthNum: m.value,
       ...dataByMonth[m.value],
     }));
-  }, [organicReports, selectedClient]);
+  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
 
   // Monthly ads trend data
   const monthlyAdsData = useMemo(() => {
@@ -196,7 +210,7 @@ export function ClientAnalyticsDashboard() {
 
     const dataByMonth: Record<number, { spend: number; impressions: number; clicks: number; results: number }> = {};
 
-    adsReports.forEach((report) => {
+    filteredAdsReports.forEach((report) => {
       const month = report.report_month;
       if (!dataByMonth[month]) {
         dataByMonth[month] = { spend: 0, impressions: 0, clicks: 0, results: 0 };
@@ -207,7 +221,7 @@ export function ClientAnalyticsDashboard() {
       dataByMonth[month].results += report.results;
     });
 
-    return MONTHS.map((m) => ({
+    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
       month: m.label.slice(0, 3),
       monthNum: m.value,
       spend: dataByMonth[m.value]?.spend || 0,
@@ -215,7 +229,7 @@ export function ClientAnalyticsDashboard() {
       clicks: dataByMonth[m.value]?.clicks || 0,
       results: dataByMonth[m.value]?.results || 0,
     }));
-  }, [adsReports, selectedClient]);
+  }, [filteredAdsReports, selectedClient, startMonth, endMonth]);
 
   // Calculate follower growth per platform
   const followerGrowthData = useMemo(() => {
@@ -223,7 +237,7 @@ export function ClientAnalyticsDashboard() {
 
     const platformData: Record<string, Record<number, number>> = {};
 
-    organicReports.forEach((report) => {
+    filteredOrganicReports.forEach((report) => {
       const platform = report.platform_accounts?.platform;
       if (!platform) return;
 
@@ -249,14 +263,14 @@ export function ClientAnalyticsDashboard() {
       }
     });
 
-    return MONTHS.map((m) => {
+    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => {
       const row: Record<string, unknown> = { month: m.label.slice(0, 3), monthNum: m.value };
       Object.keys(platformData).forEach((platform) => {
         row[platform] = platformData[platform][m.value] || null;
       });
       return row;
     });
-  }, [organicReports, selectedClient]);
+  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
 
   // Per-platform monthly metrics data for comparison charts
   const platformMetricsData = useMemo(() => {
@@ -270,8 +284,8 @@ export function ClientAnalyticsDashboard() {
     }> = {};
 
     // Group reports by platform
-    const reportsByPlatform: Record<string, typeof organicReports> = {};
-    organicReports.forEach((report) => {
+    const reportsByPlatform: Record<string, typeof filteredOrganicReports> = {};
+    filteredOrganicReports.forEach((report) => {
       const platform = report.platform_accounts?.platform;
       if (!platform) return;
       if (!reportsByPlatform[platform]) {
@@ -301,8 +315,8 @@ export function ClientAnalyticsDashboard() {
         });
       });
 
-      // Convert to chart format
-      const chartData = MONTHS.map((m) => ({
+      // Convert to chart format - filtered by month range
+      const chartData = MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
         month: m.label.slice(0, 3),
         monthNum: m.value,
         ...monthlyData[m.value],
@@ -328,21 +342,21 @@ export function ClientAnalyticsDashboard() {
     });
 
     return result;
-  }, [organicReports, selectedClient]);
+  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
 
   // Get available platforms with data
   const availablePlatforms = Object.keys(platformMetricsData);
 
   // Summary stats for selected client
   const clientStats = useMemo(() => {
-    const totalSpend = adsReports.reduce((sum, r) => sum + r.total_spend, 0);
-    const totalImpressions = adsReports.reduce((sum, r) => sum + r.impressions, 0);
-    const totalClicks = adsReports.reduce((sum, r) => sum + r.clicks, 0);
-    const totalResults = adsReports.filter(r => r.objective === 'leads').reduce((sum, r) => sum + r.results, 0);
+    const totalSpend = filteredAdsReports.reduce((sum, r) => sum + r.total_spend, 0);
+    const totalImpressions = filteredAdsReports.reduce((sum, r) => sum + r.impressions, 0);
+    const totalClicks = filteredAdsReports.reduce((sum, r) => sum + r.clicks, 0);
+    const totalResults = filteredAdsReports.filter(r => r.objective === 'leads').reduce((sum, r) => sum + r.results, 0);
 
-    // Get latest follower counts
+    // Get latest follower counts within the filtered range
     const latestFollowers: Record<string, number> = {};
-    organicReports.forEach((r) => {
+    filteredOrganicReports.forEach((r) => {
       const platform = r.platform_accounts?.platform;
       if (!platform) return;
 
@@ -372,12 +386,12 @@ export function ClientAnalyticsDashboard() {
       totalResults,
       totalFollowers,
       accountsCount: accounts.length,
-      hasAds: adsReports.length > 0,
+      hasAds: filteredAdsReports.length > 0,
     };
-  }, [organicReports, adsReports, accounts]);
+  }, [filteredOrganicReports, filteredAdsReports, accounts]);
 
   const selectedClientData = clients.find((c) => c.id === selectedClient);
-  const hasAdsData = adsReports.length > 0;
+  const hasAdsData = filteredAdsReports.length > 0;
   const followerPlatforms = Object.keys(
     followerGrowthData[0] || {}
   ).filter((k) => k !== "month" && k !== "monthNum");
@@ -508,18 +522,45 @@ export function ClientAnalyticsDashboard() {
             )}
           </div>
         </div>
-        <Select value={filterYear} onValueChange={setFilterYear}>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Tahun" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((y) => (
-              <SelectItem key={y} value={y.toString()}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filterYear} onValueChange={setFilterYear}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Tahun" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStartMonth} onValueChange={setFilterStartMonth}>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue placeholder="Dari" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m) => (
+                <SelectItem key={m.value} value={m.value.toString()}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">-</span>
+          <Select value={filterEndMonth} onValueChange={setFilterEndMonth}>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue placeholder="Sampai" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((m) => (
+                <SelectItem key={m.value} value={m.value.toString()}>
+                  {m.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Platform Accounts */}
