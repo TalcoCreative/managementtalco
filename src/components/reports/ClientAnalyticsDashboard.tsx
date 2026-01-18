@@ -53,6 +53,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { MonthYearPicker } from "./MonthYearPicker";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -90,10 +93,11 @@ const currentMonth = new Date().getMonth() + 1;
 
 export function ClientAnalyticsDashboard() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
-  const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
-  const [filterStartMonth, setFilterStartMonth] = useState<string>("1");
-  const [filterEndMonth, setFilterEndMonth] = useState<string>("12");
+  
+  // Date range filter state
+  const [startDate, setStartDate] = useState<Date>(new Date(currentYear, 0, 1)); // Jan 1 of current year
+  const [endDate, setEndDate] = useState<Date>(new Date()); // Current date
 
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-for-analytics"],
@@ -109,7 +113,7 @@ export function ClientAnalyticsDashboard() {
 
   // Fetch all ads reports for the selected month/year (for client list view)
   const { data: allAdsReports = [] } = useAdsReports({
-    year: parseInt(filterYear),
+    year: startDate.getFullYear(),
     month: parseInt(filterMonth),
   });
 
@@ -147,29 +151,89 @@ export function ClientAnalyticsDashboard() {
 
   const { data: accounts = [] } = usePlatformAccounts(selectedClient || undefined);
 
-  const { data: organicReports = [] } = useOrganicReports({
+  // Fetch reports for all years that might be in the date range
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  
+  const { data: organicReportsStartYear = [] } = useOrganicReports({
     clientId: selectedClient || undefined,
-    year: parseInt(filterYear),
+    year: startYear,
   });
 
-  const { data: adsReports = [] } = useAdsReports({
+  const { data: organicReportsEndYear = [] } = useOrganicReports({
     clientId: selectedClient || undefined,
-    year: parseInt(filterYear),
+    year: endYear,
   });
 
-  // Filter reports by month range
-  const startMonth = parseInt(filterStartMonth);
-  const endMonth = parseInt(filterEndMonth);
+  const { data: adsReportsStartYear = [] } = useAdsReports({
+    clientId: selectedClient || undefined,
+    year: startYear,
+  });
+
+  const { data: adsReportsEndYear = [] } = useAdsReports({
+    clientId: selectedClient || undefined,
+    year: endYear,
+  });
+
+  // Combine reports from both years and remove duplicates
+  const organicReports = useMemo(() => {
+    if (startYear === endYear) return organicReportsStartYear;
+    const combined = [...organicReportsStartYear, ...organicReportsEndYear];
+    const unique = combined.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i);
+    return unique;
+  }, [organicReportsStartYear, organicReportsEndYear, startYear, endYear]);
+
+  const adsReports = useMemo(() => {
+    if (startYear === endYear) return adsReportsStartYear;
+    const combined = [...adsReportsStartYear, ...adsReportsEndYear];
+    const unique = combined.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i);
+    return unique;
+  }, [adsReportsStartYear, adsReportsEndYear, startYear, endYear]);
+
+  // Filter reports by date range
+  const startMonth = startDate.getMonth() + 1;
+  const endMonth = endDate.getMonth() + 1;
   
   const filteredOrganicReports = useMemo(() => {
-    return organicReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
-  }, [organicReports, startMonth, endMonth]);
+    return organicReports.filter(r => {
+      const reportDate = new Date(r.report_year, r.report_month - 1, 1);
+      return reportDate >= new Date(startDate.getFullYear(), startDate.getMonth(), 1) &&
+             reportDate <= new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    });
+  }, [organicReports, startDate, endDate]);
 
   const filteredAdsReports = useMemo(() => {
-    return adsReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
-  }, [adsReports, startMonth, endMonth]);
+    return adsReports.filter(r => {
+      const reportDate = new Date(r.report_year, r.report_month - 1, 1);
+      return reportDate >= new Date(startDate.getFullYear(), startDate.getMonth(), 1) &&
+             reportDate <= new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    });
+  }, [adsReports, startDate, endDate]);
 
-  // Monthly organic trend data
+  // Period label for charts
+  const periodLabel = useMemo(() => {
+    const startStr = format(startDate, "MMM yyyy", { locale: localeId });
+    const endStr = format(endDate, "MMM yyyy", { locale: localeId });
+    if (startStr === endStr) return startStr;
+    return `${startStr} - ${endStr}`;
+  }, [startDate, endDate]);
+
+  // Generate month labels for charts based on date range
+  const chartMonths = useMemo(() => {
+    const months: Array<{ value: number; label: string; year: number }> = [];
+    let current = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    
+    while (current <= end) {
+      months.push({
+        value: current.getMonth() + 1,
+        label: format(current, "MMM yy", { locale: localeId }),
+        year: current.getFullYear()
+      });
+      current.setMonth(current.getMonth() + 1);
+    }
+    return months;
+  }, [startDate, endDate]);
   const monthlyOrganicData = useMemo(() => {
     if (!selectedClient) return [];
 
@@ -418,7 +482,7 @@ export function ClientAnalyticsDashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterYear} onValueChange={setFilterYear}>
+            <Select value={startDate.getFullYear().toString()} onValueChange={(y) => setStartDate(new Date(parseInt(y), startDate.getMonth(), 1))}>
               <SelectTrigger className="w-[100px]">
                 <SelectValue placeholder="Tahun" />
               </SelectTrigger>
@@ -523,43 +587,19 @@ export function ClientAnalyticsDashboard() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={filterYear} onValueChange={setFilterYear}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="Tahun" />
-            </SelectTrigger>
-            <SelectContent>
-              {years.map((y) => (
-                <SelectItem key={y} value={y.toString()}>
-                  {y}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterStartMonth} onValueChange={setFilterStartMonth}>
-            <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="Dari" />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((m) => (
-                <SelectItem key={m.value} value={m.value.toString()}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MonthYearPicker 
+            value={startDate} 
+            onChange={setStartDate} 
+            placeholder="Dari"
+            className="w-[130px]"
+          />
           <span className="text-sm text-muted-foreground">-</span>
-          <Select value={filterEndMonth} onValueChange={setFilterEndMonth}>
-            <SelectTrigger className="w-[110px]">
-              <SelectValue placeholder="Sampai" />
-            </SelectTrigger>
-            <SelectContent>
-              {MONTHS.map((m) => (
-                <SelectItem key={m.value} value={m.value.toString()}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MonthYearPicker 
+            value={endDate} 
+            onChange={setEndDate} 
+            placeholder="Sampai"
+            className="w-[130px]"
+          />
         </div>
       </div>
 
@@ -652,7 +692,7 @@ export function ClientAnalyticsDashboard() {
       {followerPlatforms.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-medium">Pertumbuhan Followers {filterYear}</CardTitle>
+            <CardTitle className="text-base font-medium">Pertumbuhan Followers ({periodLabel})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -739,7 +779,7 @@ export function ClientAnalyticsDashboard() {
                               }
                               return formatNumber(value);
                             }}
-                            labelFormatter={(label) => `${label} ${filterYear}`}
+                            labelFormatter={(label) => label}
                             contentStyle={{
                               backgroundColor: "hsl(var(--card))",
                               border: "1px solid hsl(var(--border))",
@@ -852,7 +892,7 @@ export function ClientAnalyticsDashboard() {
           {/* Monthly Ads Spend */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-medium">Ads Spend Trend {filterYear}</CardTitle>
+              <CardTitle className="text-base font-medium">Ads Spend Trend ({periodLabel})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -890,7 +930,7 @@ export function ClientAnalyticsDashboard() {
           {/* Ads Metrics Comparison */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-medium">Ads Metrics {filterYear}</CardTitle>
+              <CardTitle className="text-base font-medium">Ads Metrics ({periodLabel})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
