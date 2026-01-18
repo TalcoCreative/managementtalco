@@ -338,7 +338,7 @@ export function ClientAnalyticsDashboard() {
     const totalSpend = adsReports.reduce((sum, r) => sum + r.total_spend, 0);
     const totalImpressions = adsReports.reduce((sum, r) => sum + r.impressions, 0);
     const totalClicks = adsReports.reduce((sum, r) => sum + r.clicks, 0);
-    const totalResults = adsReports.reduce((sum, r) => sum + r.results, 0);
+    const totalResults = adsReports.filter(r => r.objective === 'leads').reduce((sum, r) => sum + r.results, 0);
 
     // Get latest follower counts
     const latestFollowers: Record<string, number> = {};
