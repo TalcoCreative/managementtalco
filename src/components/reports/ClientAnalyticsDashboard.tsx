@@ -237,12 +237,13 @@ export function ClientAnalyticsDashboard() {
   const monthlyOrganicData = useMemo(() => {
     if (!selectedClient) return [];
 
-    const dataByMonth: Record<number, Record<string, number>> = {};
+    // Use composite key "year-month" to handle cross-year data
+    const dataByKey: Record<string, Record<string, number>> = {};
 
     filteredOrganicReports.forEach((report) => {
-      const month = report.report_month;
-      if (!dataByMonth[month]) {
-        dataByMonth[month] = {};
+      const key = `${report.report_year}-${report.report_month}`;
+      if (!dataByKey[key]) {
+        dataByKey[key] = {};
       }
 
       // Get platform from the platform_accounts relation
@@ -255,51 +256,60 @@ export function ClientAnalyticsDashboard() {
       platformMetrics.metrics.forEach((metric) => {
         const value = report[metric.key] as number | null;
         if (value !== null && value !== undefined) {
-          const key = `${platform}_${metric.key}`;
-          dataByMonth[month][key] = (dataByMonth[month][key] || 0) + value;
+          const metricKey = `${platform}_${metric.key}`;
+          dataByKey[key][metricKey] = (dataByKey[key][metricKey] || 0) + value;
         }
       });
     });
 
-    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
-      month: m.label.slice(0, 3),
-      monthNum: m.value,
-      ...dataByMonth[m.value],
-    }));
-  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
+    return chartMonths.map((m) => {
+      const key = `${m.year}-${m.value}`;
+      return {
+        month: m.label,
+        monthNum: m.value,
+        year: m.year,
+        ...dataByKey[key],
+      };
+    });
+  }, [filteredOrganicReports, selectedClient, chartMonths]);
 
   // Monthly ads trend data
   const monthlyAdsData = useMemo(() => {
     if (!selectedClient) return [];
 
-    const dataByMonth: Record<number, { spend: number; impressions: number; clicks: number; results: number }> = {};
+    const dataByKey: Record<string, { spend: number; impressions: number; clicks: number; results: number }> = {};
 
     filteredAdsReports.forEach((report) => {
-      const month = report.report_month;
-      if (!dataByMonth[month]) {
-        dataByMonth[month] = { spend: 0, impressions: 0, clicks: 0, results: 0 };
+      const key = `${report.report_year}-${report.report_month}`;
+      if (!dataByKey[key]) {
+        dataByKey[key] = { spend: 0, impressions: 0, clicks: 0, results: 0 };
       }
-      dataByMonth[month].spend += report.total_spend;
-      dataByMonth[month].impressions += report.impressions;
-      dataByMonth[month].clicks += report.clicks;
-      dataByMonth[month].results += report.results;
+      dataByKey[key].spend += report.total_spend;
+      dataByKey[key].impressions += report.impressions;
+      dataByKey[key].clicks += report.clicks;
+      dataByKey[key].results += report.results;
     });
 
-    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
-      month: m.label.slice(0, 3),
-      monthNum: m.value,
-      spend: dataByMonth[m.value]?.spend || 0,
-      impressions: dataByMonth[m.value]?.impressions || 0,
-      clicks: dataByMonth[m.value]?.clicks || 0,
-      results: dataByMonth[m.value]?.results || 0,
-    }));
-  }, [filteredAdsReports, selectedClient, startMonth, endMonth]);
+    return chartMonths.map((m) => {
+      const key = `${m.year}-${m.value}`;
+      return {
+        month: m.label,
+        monthNum: m.value,
+        year: m.year,
+        spend: dataByKey[key]?.spend || 0,
+        impressions: dataByKey[key]?.impressions || 0,
+        clicks: dataByKey[key]?.clicks || 0,
+        results: dataByKey[key]?.results || 0,
+      };
+    });
+  }, [filteredAdsReports, selectedClient, chartMonths]);
 
   // Calculate follower growth per platform
   const followerGrowthData = useMemo(() => {
     if (!selectedClient) return [];
 
-    const platformData: Record<string, Record<number, number>> = {};
+    // Use composite key "year-month" for cross-year support
+    const platformData: Record<string, Record<string, number>> = {};
 
     filteredOrganicReports.forEach((report) => {
       const platform = report.platform_accounts?.platform;
@@ -321,20 +331,22 @@ export function ClientAnalyticsDashboard() {
         if (!platformData[platform]) {
           platformData[platform] = {};
         }
+        const key = `${report.report_year}-${report.report_month}`;
         // Accumulate if multiple accounts
-        platformData[platform][report.report_month] =
-          (platformData[platform][report.report_month] || 0) + value;
+        platformData[platform][key] =
+          (platformData[platform][key] || 0) + value;
       }
     });
 
-    return MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => {
-      const row: Record<string, unknown> = { month: m.label.slice(0, 3), monthNum: m.value };
+    return chartMonths.map((m) => {
+      const key = `${m.year}-${m.value}`;
+      const row: Record<string, unknown> = { month: m.label, monthNum: m.value, year: m.year };
       Object.keys(platformData).forEach((platform) => {
-        row[platform] = platformData[platform][m.value] || null;
+        row[platform] = platformData[platform][key] || null;
       });
       return row;
     });
-  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
+  }, [filteredOrganicReports, selectedClient, chartMonths]);
 
   // Per-platform monthly metrics data for comparison charts
   const platformMetricsData = useMemo(() => {
@@ -363,28 +375,33 @@ export function ClientAnalyticsDashboard() {
       const platformConfig = PLATFORM_METRICS[platform as keyof typeof PLATFORM_METRICS];
       if (!platformConfig) return;
 
-      const monthlyData: Record<number, Record<string, number>> = {};
+      // Use composite key for cross-year support
+      const monthlyData: Record<string, Record<string, number>> = {};
 
       reports.forEach((report) => {
-        const month = report.report_month;
-        if (!monthlyData[month]) {
-          monthlyData[month] = {};
+        const key = `${report.report_year}-${report.report_month}`;
+        if (!monthlyData[key]) {
+          monthlyData[key] = {};
         }
 
         platformConfig.metrics.forEach((metric) => {
           const value = report[metric.key] as number | null;
           if (value !== null && value !== undefined) {
-            monthlyData[month][metric.key] = (monthlyData[month][metric.key] || 0) + value;
+            monthlyData[key][metric.key] = (monthlyData[key][metric.key] || 0) + value;
           }
         });
       });
 
-      // Convert to chart format - filtered by month range
-      const chartData = MONTHS.filter(m => m.value >= startMonth && m.value <= endMonth).map((m) => ({
-        month: m.label.slice(0, 3),
-        monthNum: m.value,
-        ...monthlyData[m.value],
-      }));
+      // Convert to chart format using chartMonths
+      const chartData = chartMonths.map((m) => {
+        const key = `${m.year}-${m.value}`;
+        return {
+          month: m.label,
+          monthNum: m.value,
+          year: m.year,
+          ...monthlyData[key],
+        };
+      });
 
       // Filter metrics that have data
       const metricsWithData = platformConfig.metrics.filter((metric) =>
@@ -406,7 +423,7 @@ export function ClientAnalyticsDashboard() {
     });
 
     return result;
-  }, [filteredOrganicReports, selectedClient, startMonth, endMonth]);
+  }, [filteredOrganicReports, selectedClient, chartMonths]);
 
   // Get available platforms with data
   const availablePlatforms = Object.keys(platformMetricsData);
