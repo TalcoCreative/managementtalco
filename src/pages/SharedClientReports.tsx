@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 import {
   MONTHS,
   PLATFORM_METRICS,
@@ -10,13 +12,6 @@ import {
   getPlatformLabel,
 } from "@/lib/report-constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -47,6 +42,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
+import { MonthYearPicker } from "@/components/reports/MonthYearPicker";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
@@ -121,16 +117,21 @@ interface ReportsData {
 
 export default function SharedClientReports() {
   const { slug } = useParams<{ slug: string }>();
-  const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
-  const [filterStartMonth, setFilterStartMonth] = useState<string>("1");
-  const [filterEndMonth, setFilterEndMonth] = useState<string>("12");
+  
+  // Date range filter state
+  const [startDate, setStartDate] = useState<Date>(new Date(currentYear, 0, 1)); // Jan 1 of current year
+  const [endDate, setEndDate] = useState<Date>(new Date()); // Current date
 
-  const { data, isLoading, error } = useQuery<ReportsData>({
-    queryKey: ["shared-client-reports", slug, filterYear],
+  // Fetch reports for both years in the range
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+
+  const { data: dataStartYear, isLoading: loadingStart, error: errorStart } = useQuery<ReportsData>({
+    queryKey: ["shared-client-reports", slug, startYear],
     queryFn: async () => {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const params = new URLSearchParams({ slug: slug || "", year: filterYear });
+      const params = new URLSearchParams({ slug: slug || "", year: startYear.toString() });
       const res = await fetch(
         `${baseUrl}/functions/v1/shared-client-reports?${params.toString()}`,
         {
@@ -149,22 +150,87 @@ export default function SharedClientReports() {
     enabled: !!slug,
   });
 
+  const { data: dataEndYear, isLoading: loadingEnd } = useQuery<ReportsData>({
+    queryKey: ["shared-client-reports", slug, endYear],
+    queryFn: async () => {
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const params = new URLSearchParams({ slug: slug || "", year: endYear.toString() });
+      const res = await fetch(
+        `${baseUrl}/functions/v1/shared-client-reports?${params.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": anonKey,
+          },
+        }
+      );
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to fetch reports");
+      }
+      return res.json();
+    },
+    enabled: !!slug && startYear !== endYear,
+  });
+
+  // Combine data from both years
+  const data = useMemo(() => {
+    if (!dataStartYear) return null;
+    if (startYear === endYear) return dataStartYear;
+    if (!dataEndYear) return dataStartYear;
+    
+    // Combine reports from both years
+    const combinedOrganic = [...dataStartYear.organicReports, ...dataEndYear.organicReports];
+    const combinedAds = [...dataStartYear.adsReports, ...dataEndYear.adsReports];
+    
+    // Remove duplicates
+    const uniqueOrganic = combinedOrganic.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i);
+    const uniqueAds = combinedAds.filter((r, i, arr) => arr.findIndex(x => x.id === r.id) === i);
+    
+    return {
+      ...dataStartYear,
+      organicReports: uniqueOrganic,
+      adsReports: uniqueAds,
+    };
+  }, [dataStartYear, dataEndYear, startYear, endYear]);
+
+  const isLoading = loadingStart || (startYear !== endYear && loadingEnd);
+  const error = errorStart;
+
   // Compute metrics same as ClientAnalyticsDashboard
   const organicReports = data?.organicReports || [];
   const adsReports = data?.adsReports || [];
   const accounts = data?.accounts || [];
 
-  // Filter reports by month range
-  const startMonth = parseInt(filterStartMonth);
-  const endMonth = parseInt(filterEndMonth);
-  
+  // Filter reports by date range
   const filteredOrganicReports = useMemo(() => {
-    return organicReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
-  }, [organicReports, startMonth, endMonth]);
+    return organicReports.filter(r => {
+      const reportDate = new Date(r.report_year, r.report_month - 1, 1);
+      return reportDate >= new Date(startDate.getFullYear(), startDate.getMonth(), 1) &&
+             reportDate <= new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    });
+  }, [organicReports, startDate, endDate]);
 
   const filteredAdsReports = useMemo(() => {
-    return adsReports.filter(r => r.report_month >= startMonth && r.report_month <= endMonth);
-  }, [adsReports, startMonth, endMonth]);
+    return adsReports.filter(r => {
+      const reportDate = new Date(r.report_year, r.report_month - 1, 1);
+      return reportDate >= new Date(startDate.getFullYear(), startDate.getMonth(), 1) &&
+             reportDate <= new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    });
+  }, [adsReports, startDate, endDate]);
+
+  // Period label for charts
+  const periodLabel = useMemo(() => {
+    const startStr = format(startDate, "MMM yyyy", { locale: localeId });
+    const endStr = format(endDate, "MMM yyyy", { locale: localeId });
+    if (startStr === endStr) return startStr;
+    return `${startStr} - ${endStr}`;
+  }, [startDate, endDate]);
+
+  // Generate filtered month range for charts
+  const startMonth = startDate.getMonth() + 1;
+  const endMonth = endDate.getMonth() + 1;
 
   const followerGrowthData = useMemo(() => {
     const platformData: Record<string, Record<number, number>> = {};
@@ -366,43 +432,19 @@ export default function SharedClientReports() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={filterYear} onValueChange={setFilterYear}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Tahun" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStartMonth} onValueChange={setFilterStartMonth}>
-              <SelectTrigger className="w-[110px]">
-                <SelectValue placeholder="Dari" />
-              </SelectTrigger>
-              <SelectContent>
-                {MONTHS.map((m) => (
-                  <SelectItem key={m.value} value={m.value.toString()}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MonthYearPicker 
+              value={startDate} 
+              onChange={setStartDate} 
+              placeholder="Dari"
+              className="w-[130px]"
+            />
             <span className="text-sm text-muted-foreground">-</span>
-            <Select value={filterEndMonth} onValueChange={setFilterEndMonth}>
-              <SelectTrigger className="w-[110px]">
-                <SelectValue placeholder="Sampai" />
-              </SelectTrigger>
-              <SelectContent>
-                {MONTHS.map((m) => (
-                  <SelectItem key={m.value} value={m.value.toString()}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MonthYearPicker 
+              value={endDate} 
+              onChange={setEndDate} 
+              placeholder="Sampai"
+              className="w-[130px]"
+            />
           </div>
         </div>
 
@@ -497,7 +539,7 @@ export default function SharedClientReports() {
         {followerPlatforms.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-medium">Pertumbuhan Followers {filterYear}</CardTitle>
+              <CardTitle className="text-base font-medium">Pertumbuhan Followers ({periodLabel})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -581,7 +623,7 @@ export default function SharedClientReports() {
                                 }
                                 return formatNumber(value);
                               }}
-                              labelFormatter={(label) => `${label} ${filterYear}`}
+                              labelFormatter={(label) => label}
                               contentStyle={{
                                 backgroundColor: "hsl(var(--card))",
                                 border: "1px solid hsl(var(--border))",
@@ -693,7 +735,7 @@ export default function SharedClientReports() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Ads Spend Trend {filterYear}</CardTitle>
+                <CardTitle className="text-base font-medium">Ads Spend Trend ({periodLabel})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -730,7 +772,7 @@ export default function SharedClientReports() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Ads Metrics {filterYear}</CardTitle>
+                <CardTitle className="text-base font-medium">Ads Metrics ({periodLabel})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
