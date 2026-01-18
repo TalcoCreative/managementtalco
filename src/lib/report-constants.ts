@@ -27,6 +27,18 @@ export const ADS_OBJECTIVES = [
   { value: 'video_views', label: 'Video Views' },
 ] as const;
 
+export const LEAD_CATEGORIES = [
+  { value: 'form_submission', label: 'Form Submission' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'phone_call', label: 'Phone Call' },
+  { value: 'email', label: 'Email' },
+  { value: 'dm', label: 'Direct Message' },
+  { value: 'website_click', label: 'Website Click' },
+  { value: 'other', label: 'Lainnya' },
+] as const;
+
+export type LeadCategory = typeof LEAD_CATEGORIES[number]['value'];
+
 export const MONTHS = [
   { value: 1, label: 'Januari' },
   { value: 2, label: 'Februari' },
@@ -158,6 +170,7 @@ export interface MonthlyAdsReport {
   clicks: number;
   results: number;
   objective: AdsObjective;
+  lead_category: LeadCategory | null;
   cpm: number | null;
   cpc: number | null;
   cost_per_result: number | null;
@@ -194,4 +207,9 @@ export const getPlatformLabel = (platform: string): string => {
   return PLATFORMS.find((p) => p.value === platform)?.label || 
          ADS_PLATFORMS.find((p) => p.value === platform)?.label || 
          platform;
+};
+
+export const getLeadCategoryLabel = (category: string | null): string => {
+  if (!category) return '-';
+  return LEAD_CATEGORIES.find((c) => c.value === category)?.label || category;
 };

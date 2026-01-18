@@ -7,7 +7,8 @@ import type {
   MonthlyAdsReport,
   Platform,
   AdsPlatform,
-  AdsObjective 
+  AdsObjective,
+  LeadCategory 
 } from "@/lib/report-constants";
 
 // Platform Accounts
@@ -335,6 +336,7 @@ export const useCreateAdsReport = () => {
       clicks: number;
       results: number;
       objective: AdsObjective;
+      lead_category?: LeadCategory;
       cpm?: number;
       cpc?: number;
       cost_per_result?: number;
