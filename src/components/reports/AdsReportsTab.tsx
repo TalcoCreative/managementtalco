@@ -12,13 +12,16 @@ import {
 import {
   ADS_PLATFORMS,
   ADS_OBJECTIVES,
+  LEAD_CATEGORIES,
   MONTHS,
   getMonthLabel,
   formatCurrencyIDR,
   formatNumber,
   getPlatformLabel,
+  getLeadCategoryLabel,
   type AdsPlatform,
   type AdsObjective,
+  type LeadCategory,
   type MonthlyAdsReport,
 } from "@/lib/report-constants";
 import { Button } from "@/components/ui/button";
@@ -102,6 +105,7 @@ export function AdsReportsTab() {
     clicks: 0,
     results: 0,
     objective: "" as AdsObjective | "",
+    lead_category: "" as LeadCategory | "",
   });
 
   const { data: reports = [], isLoading } = useAdsReports({
@@ -150,6 +154,7 @@ export function AdsReportsTab() {
       clicks: 0,
       results: 0,
       objective: "",
+      lead_category: "",
     });
     setDialogOpen(true);
   };
@@ -169,6 +174,7 @@ export function AdsReportsTab() {
       clicks: report.clicks,
       results: report.results,
       objective: report.objective,
+      lead_category: report.lead_category || "",
     });
     setDialogOpen(true);
   };
@@ -200,6 +206,7 @@ export function AdsReportsTab() {
       clicks: formData.clicks,
       results: formData.results,
       objective: formData.objective as AdsObjective,
+      lead_category: formData.lead_category && (formData.lead_category as string) !== "none" ? formData.lead_category as LeadCategory : undefined,
     };
 
     if (isEditing && selectedReport) {
@@ -318,6 +325,7 @@ export function AdsReportsTab() {
                 <TableHead>Client</TableHead>
                 <TableHead>Platform</TableHead>
                 <TableHead>Objective</TableHead>
+                <TableHead>Kategori Leads</TableHead>
                 <TableHead className="text-right">Spend</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -326,13 +334,13 @@ export function AdsReportsTab() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </TableCell>
                 </TableRow>
               ) : reports.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Belum ada ads report
                   </TableCell>
                 </TableRow>
@@ -345,6 +353,7 @@ export function AdsReportsTab() {
                     <TableCell>{report.clients?.name || "-"}</TableCell>
                     <TableCell>{getPlatformLabel(report.platform)}</TableCell>
                     <TableCell className="capitalize">{report.objective}</TableCell>
+                    <TableCell>{getLeadCategoryLabel(report.lead_category)}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrencyIDR(report.total_spend)}
                     </TableCell>
@@ -549,6 +558,28 @@ export function AdsReportsTab() {
                   </Select>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Kategori Leads</Label>
+                  <Select
+                    value={formData.lead_category}
+                    onValueChange={(v) =>
+                      setFormData({ ...formData, lead_category: v as LeadCategory })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih kategori (opsional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tidak ada</SelectItem>
+                      {LEAD_CATEGORIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-4 pt-4 border-t">
                   <h4 className="font-medium">Ads Metrics</h4>
                   <div className="space-y-2">
@@ -684,6 +715,10 @@ export function AdsReportsTab() {
                   <div>
                     <span className="text-muted-foreground">Objective:</span>
                     <p className="font-medium capitalize">{selectedReport.objective}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Kategori Leads:</span>
+                    <p className="font-medium">{getLeadCategoryLabel(selectedReport.lead_category)}</p>
                   </div>
                 </div>
 

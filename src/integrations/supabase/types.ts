@@ -2963,6 +2963,7 @@ export type Database = {
           id: string
           impressions: number
           is_locked: boolean
+          lead_category: string | null
           locked_at: string | null
           locked_by: string | null
           objective: string
@@ -2987,6 +2988,7 @@ export type Database = {
           id?: string
           impressions?: number
           is_locked?: boolean
+          lead_category?: string | null
           locked_at?: string | null
           locked_by?: string | null
           objective: string
@@ -3011,6 +3013,7 @@ export type Database = {
           id?: string
           impressions?: number
           is_locked?: boolean
+          lead_category?: string | null
           locked_at?: string | null
           locked_by?: string | null
           objective?: string

@@ -97,6 +97,8 @@ interface AdsReport {
   impressions: number;
   clicks: number;
   results: number;
+  objective: string;
+  lead_category: string | null;
   cpm?: number;
   cpc?: number;
   cost_per_result?: number;
