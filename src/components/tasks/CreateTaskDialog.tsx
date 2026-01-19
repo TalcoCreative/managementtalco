@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, X, Link as LinkIcon, Paperclip } from "lucide-react";
+import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink } from "lucide-react";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
@@ -17,6 +17,11 @@ import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notificat
 interface TableData {
   headers: string[];
   rows: string[][];
+}
+
+interface LinkAttachment {
+  name: string;
+  url: string;
 }
 
 const taskSchema = z.object({
@@ -53,6 +58,10 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     rows: [["1", "", "", ""]],
   });
   const [files, setFiles] = useState<File[]>([]);
+  const [linkAttachments, setLinkAttachments] = useState<LinkAttachment[]>([]);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [newLinkName, setNewLinkName] = useState("");
+  const [newLinkUrl, setNewLinkUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -70,6 +79,29 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addLinkAttachment = () => {
+    if (!newLinkName.trim() || !newLinkUrl.trim()) {
+      toast.error("Please enter both link name and URL");
+      return;
+    }
+    
+    try {
+      new URL(newLinkUrl);
+    } catch {
+      toast.error("Please enter a valid URL");
+      return;
+    }
+    
+    setLinkAttachments(prev => [...prev, { name: newLinkName.trim(), url: newLinkUrl.trim() }]);
+    setNewLinkName("");
+    setNewLinkUrl("");
+    setShowLinkInput(false);
+  };
+
+  const removeLinkAttachment = (index: number) => {
+    setLinkAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadFiles = async (taskId: string, userId: string) => {
@@ -103,8 +135,19 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     const results = await Promise.all(uploadPromises);
     const validAttachments = results.filter(r => r !== null);
 
-    if (validAttachments.length > 0) {
-      await supabase.from('task_attachments').insert(validAttachments);
+    // Add link attachments
+    const linkAttachmentData = linkAttachments.map(link => ({
+      task_id: taskId,
+      uploaded_by: userId,
+      file_name: link.name,
+      file_url: link.url,
+      file_type: 'link',
+    }));
+
+    const allAttachments = [...validAttachments, ...linkAttachmentData];
+
+    if (allAttachments.length > 0) {
+      await supabase.from('task_attachments').insert(allAttachments);
     }
   };
 
@@ -142,8 +185,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
       if (error) throw error;
 
-      // Upload attachments if any
-      if (files.length > 0 && taskData) {
+      // Upload attachments and links if any
+      if ((files.length > 0 || linkAttachments.length > 0) && taskData) {
         await uploadFiles(taskData.id, session.session.user.id);
       }
 
@@ -201,6 +244,10 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         rows: [["1", "", "", ""]],
       });
       setFiles([]);
+      setLinkAttachments([]);
+      setShowLinkInput(false);
+      setNewLinkName("");
+      setNewLinkUrl("");
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
     } catch (error: any) {
@@ -343,6 +390,26 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                 Attachments
               </div>
             </Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Files
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowLinkInput(!showLinkInput)}
+                className="flex-1"
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Add Link
+              </Button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -350,15 +417,30 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
               onChange={handleFileSelect}
               className="hidden"
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Files (Max 10MB each)
-            </Button>
+
+            {showLinkInput && (
+              <div className="space-y-2 p-3 border rounded-md bg-muted/50">
+                <Input
+                  placeholder="Link name"
+                  value={newLinkName}
+                  onChange={(e) => setNewLinkName(e.target.value)}
+                />
+                <Input
+                  type="url"
+                  placeholder="https://example.com"
+                  value={newLinkUrl}
+                  onChange={(e) => setNewLinkUrl(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={addLinkAttachment}>
+                    Add
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowLinkInput(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {files.length > 0 && (
               <div className="space-y-2 mt-2">
@@ -376,6 +458,30 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                       variant="ghost"
                       size="sm"
                       onClick={() => removeFile(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {linkAttachments.length > 0 && (
+              <div className="space-y-2 mt-2">
+                {linkAttachments.map((link, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-muted rounded-md"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm truncate">{link.name}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeLinkAttachment(index)}
                     >
                       <X className="h-4 w-4" />
                     </Button>
