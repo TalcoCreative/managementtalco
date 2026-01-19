@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -20,32 +20,12 @@ const DEFAULT_TABLE: TableData = {
   rows: [["1", "", "", ""]],
 };
 
-const MIN_COL_WIDTH = 60;
-const DEFAULT_COL_WIDTHS = [50, 150, 200, 100]; // No, Item, Keterangan, Status
-
 export function EditableTaskTable({ data, onChange, readOnly = false }: EditableTaskTableProps) {
   const [tableData, setTableData] = useState<TableData>(data || DEFAULT_TABLE);
-  const [columnWidths, setColumnWidths] = useState<number[]>(() => {
-    const colCount = (data || DEFAULT_TABLE).headers.length;
-    return DEFAULT_COL_WIDTHS.slice(0, colCount);
-  });
-  
-  // Resize state
-  const [resizingCol, setResizingCol] = useState<number | null>(null);
-  const resizeStartX = useRef(0);
-  const resizeStartWidth = useRef(0);
-  const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
     if (data) {
       setTableData(data);
-      // Adjust column widths if headers changed
-      if (data.headers.length !== columnWidths.length) {
-        const newWidths = data.headers.map((_, idx) => 
-          columnWidths[idx] || DEFAULT_COL_WIDTHS[idx] || 120
-        );
-        setColumnWidths(newWidths);
-      }
     }
   }, [data]);
 
@@ -93,70 +73,26 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
     updateAndNotify({ ...tableData, rows: newRows });
   };
 
-  // Resize handlers
-  const handleResizeStart = useCallback((e: React.MouseEvent, colIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setResizingCol(colIndex);
-    resizeStartX.current = e.clientX;
-    resizeStartWidth.current = columnWidths[colIndex] || 100;
-  }, [columnWidths]);
-
-  const handleResizeMove = useCallback((e: MouseEvent) => {
-    if (resizingCol === null) return;
-    
-    const delta = e.clientX - resizeStartX.current;
-    const newWidth = Math.max(MIN_COL_WIDTH, resizeStartWidth.current + delta);
-    
-    setColumnWidths(prev => {
-      const updated = [...prev];
-      updated[resizingCol] = newWidth;
-      return updated;
-    });
-  }, [resizingCol]);
-
-  const handleResizeEnd = useCallback(() => {
-    setResizingCol(null);
-  }, []);
-
-  useEffect(() => {
-    if (resizingCol !== null) {
-      document.addEventListener('mousemove', handleResizeMove);
-      document.addEventListener('mouseup', handleResizeEnd);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-      
-      return () => {
-        document.removeEventListener('mousemove', handleResizeMove);
-        document.removeEventListener('mouseup', handleResizeEnd);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-      };
-    }
-  }, [resizingCol, handleResizeMove, handleResizeEnd]);
-
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto border rounded-lg">
-        <table ref={tableRef} className="w-full text-sm" style={{ tableLayout: readOnly ? 'auto' : 'fixed', minWidth: readOnly ? undefined : 'max-content' }}>
-          {!readOnly && (
-            <colgroup>
-              {columnWidths.map((width, idx) => (
-                <col key={idx} style={{ width: `${width}px`, minWidth: `${MIN_COL_WIDTH}px` }} />
-              ))}
-              <col style={{ width: '40px' }} />
-            </colgroup>
-          )}
+      <div className="border rounded-lg overflow-hidden">
+        <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+          <colgroup>
+            <col className="w-10" />
+            {tableData.headers.slice(1).map((_, idx) => (
+              <col key={idx} />
+            ))}
+            {!readOnly && <col className="w-10" />}
+          </colgroup>
           <thead>
             <tr className="bg-muted/50">
               {tableData.headers.map((header, idx) => (
                 <th 
                   key={idx} 
-                  className={`p-2 border-b border-r last:border-r-0 text-left relative group ${idx === 0 ? 'w-12' : ''}`}
-                  style={!readOnly ? { width: `${columnWidths[idx]}px` } : undefined}
+                  className={`p-2 border-b border-r last:border-r-0 text-left ${idx === 0 ? 'w-10 text-center' : ''}`}
                 >
                   {idx === 0 ? (
-                    <span className="font-medium text-muted-foreground block">No</span>
+                    <span className="font-medium text-muted-foreground">No</span>
                   ) : readOnly ? (
                     <span className="font-medium">{header || `Kolom ${idx + 1}`}</span>
                   ) : (
@@ -165,14 +101,6 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
                       onChange={(e) => handleHeaderChange(idx, e.target.value)}
                       placeholder={`Kolom ${idx + 1}`}
                       className="h-8 text-sm font-medium bg-transparent border-0 p-0 focus-visible:ring-0"
-                    />
-                  )}
-                  {/* Resize handle */}
-                  {!readOnly && idx < tableData.headers.length - 1 && (
-                    <div
-                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
-                      style={{ transform: 'translateX(50%)' }}
-                      onMouseDown={(e) => handleResizeStart(e, idx)}
                     />
                   )}
                 </th>
@@ -186,8 +114,7 @@ export function EditableTaskTable({ data, onChange, readOnly = false }: Editable
                 {row.map((cell, colIdx) => (
                   <td 
                     key={colIdx} 
-                    className={`p-2 border-b border-r last:border-r-0 align-top ${colIdx === 0 ? 'w-12' : ''}`}
-                    style={!readOnly ? { width: `${columnWidths[colIdx]}px` } : undefined}
+                    className={`p-2 border-b border-r last:border-r-0 align-top ${colIdx === 0 ? 'w-10 text-center' : ''}`}
                   >
                     {colIdx === 0 ? (
                       <span className="text-muted-foreground block text-center">{cell}</span>
