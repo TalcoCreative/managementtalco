@@ -211,6 +211,21 @@ export default function Tasks() {
     queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
   };
 
+  const handleProjectChange = async (taskId: string, newProjectId: string) => {
+    const { error } = await supabase
+      .from("tasks")
+      .update({ project_id: newProjectId })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("Error updating task project:", error);
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+    queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
@@ -416,11 +431,25 @@ export default function Tasks() {
                         {task.projects.clients.name}
                       </p>
                     )}
-                    {task.projects && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        Project: {task.projects.title}
-                      </p>
-                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={task.project_id || ""}
+                        onValueChange={(newProjectId) => handleProjectChange(task.id, newProjectId)}
+                      >
+                        <SelectTrigger className="h-7 text-xs">
+                          <SelectValue placeholder="Select project">
+                            {task.projects ? `Project: ${task.projects.title}` : "Select project"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects?.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              {project.title} {project.clients && `(${project.clients.name})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     {task.deadline && (
                       <p className={`text-xs ${isTaskOverdue(task) ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                       Due: {new Date(task.deadline).toLocaleDateString()}
