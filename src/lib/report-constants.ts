@@ -10,6 +10,7 @@ export const PLATFORMS = [
 ] as const;
 
 export const ADS_PLATFORMS = [
+  { value: 'meta', label: 'Meta Ads' },
   { value: 'instagram', label: 'Instagram Ads' },
   { value: 'facebook', label: 'Facebook Ads' },
   { value: 'linkedin', label: 'LinkedIn Ads' },
