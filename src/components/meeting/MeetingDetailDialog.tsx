@@ -61,6 +61,9 @@ const MeetingDetailDialog = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditParticipants, setShowEditParticipants] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [editExternalParticipants, setEditExternalParticipants] = useState<{id?: string; name: string; company: string; email: string}[]>([]);
+  const [showEditEndTime, setShowEditEndTime] = useState(false);
+  const [editEndTime, setEditEndTime] = useState("");
   const queryClient = useQueryClient();
 
   // Fetch current user
@@ -267,6 +270,14 @@ const MeetingDetailDialog = ({
     // Initialize selected participants from current participants
     const currentParticipantIds = participants?.map(p => p.user_id) || [];
     setSelectedParticipants(currentParticipantIds);
+    // Initialize external participants
+    const currentExternal = externalParticipants?.map(p => ({
+      id: p.id,
+      name: p.name,
+      company: p.company || "",
+      email: p.email || "",
+    })) || [];
+    setEditExternalParticipants(currentExternal.length > 0 ? currentExternal : []);
     setShowEditParticipants(true);
   };
 
@@ -276,6 +287,22 @@ const MeetingDetailDialog = ({
         ? prev.filter(id => id !== profileId)
         : [...prev, profileId]
     );
+  };
+
+  const handleAddExternalParticipant = () => {
+    setEditExternalParticipants(prev => [...prev, { name: "", company: "", email: "" }]);
+  };
+
+  const handleRemoveExternalParticipant = (index: number) => {
+    setEditExternalParticipants(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateExternalParticipant = (index: number, field: "name" | "company" | "email", value: string) => {
+    setEditExternalParticipants(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const handleSaveParticipants = async () => {
@@ -332,12 +359,83 @@ const MeetingDetailDialog = ({
           .in("user_id", toRemove);
       }
       
+      // Handle external participants
+      const currentExternalIds = externalParticipants?.map(p => p.id) || [];
+      const editExternalIds = editExternalParticipants.filter(p => p.id).map(p => p.id!);
+      
+      // Remove deleted external participants
+      const externalToRemove = currentExternalIds.filter(id => !editExternalIds.includes(id));
+      if (externalToRemove.length > 0) {
+        await supabase
+          .from("meeting_external_participants")
+          .delete()
+          .in("id", externalToRemove);
+      }
+      
+      // Update existing and add new external participants
+      for (const ext of editExternalParticipants) {
+        if (!ext.name.trim()) continue; // Skip empty entries
+        
+        if (ext.id) {
+          // Update existing
+          await supabase
+            .from("meeting_external_participants")
+            .update({
+              name: ext.name,
+              company: ext.company || null,
+              email: ext.email || null,
+            })
+            .eq("id", ext.id);
+        } else {
+          // Insert new
+          await supabase
+            .from("meeting_external_participants")
+            .insert({
+              meeting_id: meeting.id,
+              name: ext.name,
+              company: ext.company || null,
+              email: ext.email || null,
+            });
+        }
+      }
+      
       toast.success("Peserta meeting berhasil diperbarui");
       setShowEditParticipants(false);
       refetchParticipants();
-      queryClient.invalidateQueries({ queryKey: ["meeting-notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["meeting-external-participants", meeting.id] });
+      onUpdate();
     } catch (error: any) {
       toast.error(error.message || "Gagal memperbarui peserta");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartEditEndTime = () => {
+    setEditEndTime(meeting.end_time?.slice(0, 5) || "");
+    setShowEditEndTime(true);
+  };
+
+  const handleSaveEndTime = async () => {
+    if (!editEndTime) {
+      toast.error("Mohon isi jam berakhir");
+      return;
+    }
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from("meetings")
+        .update({ end_time: editEndTime })
+        .eq("id", meeting.id);
+      
+      if (error) throw error;
+      
+      toast.success("Jam berakhir meeting berhasil diperbarui");
+      setShowEditEndTime(false);
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal memperbarui jam berakhir");
     } finally {
       setIsUpdating(false);
     }
@@ -597,12 +695,37 @@ const MeetingDetailDialog = ({
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                <span>
-                  {meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}
-                  <span className="text-muted-foreground text-sm ml-2">
-                    ({hours > 0 ? `${hours} jam ` : ""}{minutes > 0 ? `${minutes} menit` : ""})
-                  </span>
-                </span>
+                {showEditEndTime ? (
+                  <div className="flex items-center gap-2">
+                    <span>{meeting.start_time.slice(0, 5)} -</span>
+                    <Input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      className="w-28 h-8"
+                    />
+                    <Button size="sm" variant="ghost" onClick={handleSaveEndTime} disabled={isUpdating}>
+                      <Save className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowEditEndTime(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <span>
+                      {meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}
+                      <span className="text-muted-foreground text-sm ml-2">
+                        ({hours > 0 ? `${hours} jam ` : ""}{minutes > 0 ? `${minutes} menit` : ""})
+                      </span>
+                    </span>
+                    {canEdit && (
+                      <Button size="sm" variant="ghost" onClick={handleStartEditEndTime} className="h-6 px-2">
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {meeting.mode === "online" ? (
@@ -733,7 +856,7 @@ const MeetingDetailDialog = ({
 
               <TabsContent value="participants" className="mt-4 space-y-4">
                 {/* Edit Participants Button */}
-                {canEdit && !showEditParticipants && meeting.status !== "completed" && meeting.status !== "cancelled" && (
+                {canEdit && !showEditParticipants && meeting.status !== "cancelled" && (
                   <Button variant="outline" size="sm" onClick={handleStartEditParticipants}>
                     <Pencil className="w-4 h-4 mr-2" />
                     Edit Peserta
@@ -743,29 +866,92 @@ const MeetingDetailDialog = ({
                 {/* Edit Participants Form */}
                 {showEditParticipants && (
                   <div className="p-4 border rounded-lg space-y-4 bg-muted/50">
-                    <Label className="text-base font-medium">Edit Peserta Internal</Label>
-                    <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-background">
-                      {allProfiles?.filter(p => p.id !== meeting.created_by).map((profile) => (
-                        <div key={profile.id} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`edit-${profile.id}`}
-                            checked={selectedParticipants.includes(profile.id)}
-                            onCheckedChange={() => handleParticipantToggle(profile.id)}
-                          />
-                          <label htmlFor={`edit-${profile.id}`} className="text-sm cursor-pointer flex-1">
-                            {profile.full_name}
-                            <span className="text-muted-foreground ml-1">({profile.email})</span>
-                          </label>
-                        </div>
-                      ))}
+                    {/* Internal Participants */}
+                    <div>
+                      <Label className="text-base font-medium">Peserta Internal</Label>
+                      <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2 bg-background mt-2">
+                        {allProfiles?.filter(p => p.id !== meeting.created_by).map((profile) => (
+                          <div key={profile.id} className="flex items-center gap-2">
+                            <Checkbox
+                              id={`edit-${profile.id}`}
+                              checked={selectedParticipants.includes(profile.id)}
+                              onCheckedChange={() => handleParticipantToggle(profile.id)}
+                            />
+                            <label htmlFor={`edit-${profile.id}`} className="text-sm cursor-pointer flex-1">
+                              {profile.full_name}
+                              <span className="text-muted-foreground ml-1">({profile.email})</span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {selectedParticipants.length} peserta internal dipilih
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedParticipants.length} peserta dipilih
-                    </p>
-                    <div className="flex gap-2">
+
+                    {/* External Participants */}
+                    <div>
+                      <Label className="text-base font-medium">Peserta External</Label>
+                      <div className="space-y-3 mt-2">
+                        {editExternalParticipants.map((ext, index) => (
+                          <div key={index} className="p-3 border rounded-lg bg-background space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Peserta External #{index + 1}</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleRemoveExternalParticipant(index)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-xs">Nama *</Label>
+                                <Input
+                                  value={ext.name}
+                                  onChange={(e) => handleUpdateExternalParticipant(index, "name", e.target.value)}
+                                  placeholder="Nama"
+                                  className="h-8"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Perusahaan</Label>
+                                <Input
+                                  value={ext.company}
+                                  onChange={(e) => handleUpdateExternalParticipant(index, "company", e.target.value)}
+                                  placeholder="Perusahaan"
+                                  className="h-8"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Email</Label>
+                                <Input
+                                  value={ext.email}
+                                  onChange={(e) => handleUpdateExternalParticipant(index, "email", e.target.value)}
+                                  placeholder="Email"
+                                  className="h-8"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddExternalParticipant}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Tambah Peserta External
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t">
                       <Button onClick={handleSaveParticipants} disabled={isUpdating} size="sm">
                         <Save className="w-4 h-4 mr-2" />
-                        Simpan
+                        Simpan Semua
                       </Button>
                       <Button 
                         variant="outline" 
