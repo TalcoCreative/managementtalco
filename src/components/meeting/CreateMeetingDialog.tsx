@@ -139,10 +139,15 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentUser?.id) {
-      toast.error("User tidak ditemukan");
+    // Re-fetch current user to ensure we have the latest auth state
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user?.id) {
+      toast.error("User tidak ditemukan. Silakan login kembali.");
       return;
     }
+    
+    const userId = user.id;
 
     if (!formData.title || !formData.meeting_date || !formData.start_time || !formData.end_time) {
       toast.error("Mohon lengkapi data meeting");
@@ -178,7 +183,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
           project_id: formData.project_id || null,
           task_id: formData.task_id || null,
           notes: formData.notes || null,
-          created_by: currentUser.id,
+          created_by: userId,
           is_confidential: formData.is_confidential,
         })
         .select()
@@ -214,7 +219,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
         const { data: creatorProfile } = await supabase
           .from("profiles")
           .select("full_name")
-          .eq("id", currentUser.id)
+          .eq("id", userId)
           .single();
 
         const participantNames = profiles
