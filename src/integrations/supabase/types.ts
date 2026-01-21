@@ -4243,6 +4243,45 @@ export type Database = {
           },
         ]
       }
+      shooting_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          shooting_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          shooting_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          shooting_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shooting_tasks_shooting_id_fkey"
+            columns: ["shooting_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shooting_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       slide_blocks: {
         Row: {
           block_order: number
