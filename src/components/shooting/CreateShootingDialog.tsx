@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Search } from "lucide-react";
 import { z } from "zod";
 import { sendShootingAssignmentEmail } from "@/lib/email-notifications";
 
@@ -28,6 +29,13 @@ interface Freelancer {
   name: string;
   cost: number;
   role: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  deadline: string | null;
 }
 
 export function CreateShootingDialog() {
@@ -48,6 +56,8 @@ export function CreateShootingDialog() {
   const [selectedAdditional, setSelectedAdditional] = useState<string[]>([]);
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [newFreelancer, setNewFreelancer] = useState<Freelancer>({ name: "", cost: 0, role: "camper" });
+  const [selectedRelatedTasks, setSelectedRelatedTasks] = useState<Task[]>([]);
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
   const { data: users } = useQuery({
@@ -88,6 +98,25 @@ export function CreateShootingDialog() {
       return data;
     },
     enabled: !!formData.client_id,
+  });
+
+  const { data: availableTasks } = useQuery({
+    queryKey: ["available-tasks-for-shooting", taskSearchQuery],
+    queryFn: async () => {
+      let query = supabase
+        .from("tasks")
+        .select("id, title, status, deadline")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (taskSearchQuery.trim()) {
+        query = query.ilike("title", `%${taskSearchQuery.trim()}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Task[];
+    },
   });
 
   const addFreelancer = () => {
@@ -202,6 +231,21 @@ export function CreateShootingDialog() {
         if (freelancerError) throw freelancerError;
       }
 
+      // Add related tasks
+      if (selectedRelatedTasks.length > 0) {
+        const taskRelations = selectedRelatedTasks.map(task => ({
+          shooting_id: shooting.id,
+          task_id: task.id,
+          created_by: session.session.user.id,
+        }));
+
+        const { error: tasksError } = await supabase
+          .from("shooting_tasks")
+          .insert(taskRelations);
+
+        if (tasksError) throw tasksError;
+      }
+
       // Create notifications only for involved users
       const notifyUsers = new Set([
         ...selectedCampers,
@@ -270,11 +314,14 @@ export function CreateShootingDialog() {
       setSelectedCampers([]);
       setSelectedAdditional([]);
       setFreelancers([]);
+      setSelectedRelatedTasks([]);
+      setTaskSearchQuery("");
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-crew"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-notifications"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["shooting-tasks"] });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -523,6 +570,83 @@ export function CreateShootingDialog() {
                     <Plus className="h-4 w-4 mr-1" />
                     Add Freelancer
                   </Button>
+                </div>
+              </div>
+
+              {/* Related Tasks Section */}
+              <div className="space-y-2">
+                <Label>Related Tasks (Optional)</Label>
+                <div className="border rounded-md p-4 space-y-3">
+                  {selectedRelatedTasks.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedRelatedTasks.map((task) => {
+                        const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== "done";
+                        return (
+                          <Badge
+                            key={task.id}
+                            variant="secondary"
+                            className={`flex items-center gap-1 ${
+                              isOverdue ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" :
+                              task.status === "done" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                              task.status === "in_progress" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
+                              ""
+                            }`}
+                          >
+                            <span className="max-w-[150px] truncate">{task.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRelatedTasks(prev => prev.filter(t => t.id !== task.id))}
+                              className="ml-1 hover:bg-black/10 rounded-full p-0.5"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search tasks..."
+                      value={taskSearchQuery}
+                      onChange={(e) => setTaskSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {taskSearchQuery && availableTasks && availableTasks.length > 0 && (
+                    <div className="border rounded-md max-h-32 overflow-y-auto">
+                      {availableTasks
+                        .filter(task => !selectedRelatedTasks.some(t => t.id === task.id))
+                        .map((task) => {
+                          const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== "done";
+                          return (
+                            <button
+                              key={task.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedRelatedTasks(prev => [...prev, task]);
+                                setTaskSearchQuery("");
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-muted flex items-center justify-between text-sm"
+                            >
+                              <span className="truncate flex-1">{task.title}</span>
+                              <Badge
+                                variant="outline"
+                                className={`ml-2 text-xs ${
+                                  isOverdue ? "border-red-500 text-red-600" :
+                                  task.status === "done" ? "border-green-500 text-green-600" :
+                                  task.status === "in_progress" ? "border-blue-500 text-blue-600" :
+                                  ""
+                                }`}
+                              >
+                                {task.status}
+                              </Badge>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               </div>
 
