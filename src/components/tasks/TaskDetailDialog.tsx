@@ -16,6 +16,8 @@ import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
 import { MentionInput, extractMentions, renderCommentWithMentions } from "@/components/tasks/MentionInput";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
+import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
+import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -48,6 +50,8 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [copied, setCopied] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
+  const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
+  const [shootingDetailOpen, setShootingDetailOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -762,6 +766,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 )}
               </div>
 
+              {/* Related Shooting Section */}
+              {taskId && (
+                <RelatedShootingSection
+                  taskId={taskId}
+                  onShootingClick={(shootingId) => {
+                    setSelectedShootingId(shootingId);
+                    setShootingDetailOpen(true);
+                  }}
+                />
+              )}
+
               {/* Attachments Section */}
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1026,6 +1041,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         description={`Apakah Anda yakin ingin menghapus task "${task.title}"? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={handleDelete}
         loading={deleting}
+      />
+
+      <ShootingDetailDialog
+        shootingId={selectedShootingId}
+        open={shootingDetailOpen}
+        onOpenChange={setShootingDetailOpen}
       />
     </>
   );

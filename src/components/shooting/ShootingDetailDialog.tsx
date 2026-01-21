@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { MapPin, Users, DollarSign, Building2, Check, X, Pencil, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { EditShootingDialog } from "./EditShootingDialog";
+import { RelatedTasksSection } from "./RelatedTasksSection";
+import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 
 interface ShootingDetailDialogProps {
   shootingId: string | null;
@@ -20,6 +22,8 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
   const [editOpen, setEditOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskDetailOpen, setTaskDetailOpen] = useState(false);
 
   const generateShareToken = () => {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -328,6 +332,17 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
             </div>
           )}
 
+          {/* Related Tasks */}
+          <div className="pt-4 border-t">
+            <RelatedTasksSection
+              shootingId={shootingId!}
+              onTaskClick={(taskId) => {
+                setSelectedTaskId(taskId);
+                setTaskDetailOpen(true);
+              }}
+            />
+          </div>
+
           {/* Approve/Reject buttons */}
           {canApprove && shooting.status === 'pending' && (
             <div className="flex gap-2 pt-2 border-t">
@@ -353,6 +368,12 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
         queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
         queryClient.invalidateQueries({ queryKey: ["shooting-crew", shootingId] });
       }}
+    />
+
+    <TaskDetailDialog
+      taskId={selectedTaskId}
+      open={taskDetailOpen}
+      onOpenChange={setTaskDetailOpen}
     />
   </>
   );
