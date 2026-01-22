@@ -28,6 +28,7 @@ export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkPaidDialogOpen, setBulkPaidDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -228,6 +229,71 @@ export function FinanceExpenses() {
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus expense");
+    }
+  };
+
+  const handleBulkMarkPaid = async () => {
+    if (selectedIds.length === 0) return;
+    
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Get selected pending expenses
+      const pendingExpenses = filteredExpenses?.filter(
+        e => selectedIds.includes(e.id) && e.status === "pending"
+      ) || [];
+
+      if (pendingExpenses.length === 0) {
+        toast.error("Tidak ada expense pending yang dipilih");
+        return;
+      }
+
+      // Process each expense
+      for (const expense of pendingExpenses) {
+        // Create ledger entry
+        const { data: ledgerEntry, error: ledgerError } = await supabase
+          .from("ledger_entries")
+          .insert({
+            date: format(new Date(), "yyyy-MM-dd"),
+            type: "expense",
+            sub_type: expense.category || "other",
+            sub_category: expense.sub_category || null,
+            project_id: expense.project_id || null,
+            client_id: expense.client_id || null,
+            amount: expense.amount,
+            source: "manual",
+            notes: expense.description,
+            created_by: session.session.user.id,
+          })
+          .select()
+          .single();
+
+        if (ledgerError) throw ledgerError;
+
+        // Update expense status
+        const { error: updateError } = await supabase
+          .from("expenses")
+          .update({ 
+            status: "paid", 
+            paid_at: new Date().toISOString(),
+            ledger_entry_id: ledgerEntry.id 
+          })
+          .eq("id", expense.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast.success(`${pendingExpenses.length} expense berhasil ditandai sebagai paid`);
+      setBulkPaidDialogOpen(false);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "Gagal mark as paid");
     }
   };
 
@@ -479,13 +545,22 @@ export function FinanceExpenses() {
             </div>
           </div>
           {selectedIds.length > 0 && (
-            <Button 
-              variant="destructive" 
-              onClick={() => setBulkDeleteDialogOpen(true)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Hapus {selectedIds.length} item
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setBulkPaidDialogOpen(true)}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Mark Paid ({selectedIds.filter(id => filteredExpenses?.find(e => e.id === id && e.status === "pending")).length})
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Hapus {selectedIds.length} item
+              </Button>
+            </div>
           )}
         </div>
 
@@ -625,6 +700,24 @@ export function FinanceExpenses() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Hapus {selectedIds.length} Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkPaidDialogOpen} onOpenChange={setBulkPaidDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tandai {selectedIds.filter(id => filteredExpenses?.find(e => e.id === id && e.status === "pending")).length} expense pending sebagai paid? 
+              Ini akan membuat entry di ledger.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkMarkPaid}>
+              Mark as Paid
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
