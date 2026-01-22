@@ -158,6 +158,10 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      // Ensure null values for optional fields (not undefined or string "undefined")
+      const projectId = reimburse.project_id && reimburse.project_id !== "undefined" ? reimburse.project_id : null;
+      const clientId = reimburse.client_id && reimburse.client_id !== "undefined" ? reimburse.client_id : null;
+
       // Create ledger entry with valid sub_type for constraint
       const { data: ledgerEntry, error: ledgerError } = await supabase
         .from("ledger_entries")
@@ -165,9 +169,9 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
           sub_type: "reimburse",
-          sub_category: reimburse.request_from,
-          project_id: reimburse.project_id,
-          client_id: reimburse.client_id,
+          sub_category: reimburse.request_from || null,
+          project_id: projectId,
+          client_id: clientId,
           amount: reimburse.amount,
           source: "reimburse",
           notes: reimburse.notes || `Reimbursement - ${reimburse.request_from}`,
@@ -183,9 +187,9 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
         .from("expenses")
         .insert({
           category: "reimburse",
-          sub_category: reimburse.request_from,
-          project_id: reimburse.project_id,
-          client_id: reimburse.client_id,
+          sub_category: reimburse.request_from || null,
+          project_id: projectId,
+          client_id: clientId,
           amount: reimburse.amount,
           description: reimburse.notes || `Reimbursement - ${reimburse.request_from}`,
           status: "paid",
