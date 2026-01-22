@@ -29,6 +29,7 @@ export function FinanceExpenses() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [bulkPaidDialogOpen, setBulkPaidDialogOpen] = useState(false);
+  const [isBulkPaying, setIsBulkPaying] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -248,6 +249,7 @@ export function FinanceExpenses() {
     if (selectedIds.length === 0) return;
     
     try {
+      setIsBulkPaying(true);
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
@@ -260,6 +262,8 @@ export function FinanceExpenses() {
         toast.error("Tidak ada expense pending yang dipilih");
         return;
       }
+
+      const ledgerByExpenseId: Record<string, string> = {};
 
       // Process each expense
       for (const expense of pendingExpenses) {
@@ -283,6 +287,8 @@ export function FinanceExpenses() {
 
         if (ledgerError) throw ledgerError;
 
+        ledgerByExpenseId[expense.id] = ledgerEntry.id;
+
         // Update expense status
         const { error: updateError } = await supabase
           .from("expenses")
@@ -296,6 +302,20 @@ export function FinanceExpenses() {
         if (updateError) throw updateError;
       }
 
+      // Optimistically update local cache so UI changes immediately
+      queryClient.setQueryData(["finance-expenses"], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((e: any) => {
+          if (!ledgerByExpenseId[e.id]) return e;
+          return {
+            ...e,
+            status: "paid",
+            paid_at: new Date().toISOString(),
+            ledger_entry_id: ledgerByExpenseId[e.id],
+          };
+        });
+      });
+
       toast.success(`${pendingExpenses.length} expense berhasil ditandai sebagai paid`);
       setBulkPaidDialogOpen(false);
       setSelectedIds([]);
@@ -306,6 +326,8 @@ export function FinanceExpenses() {
       queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Gagal mark as paid");
+    } finally {
+      setIsBulkPaying(false);
     }
   };
 
@@ -370,6 +392,7 @@ export function FinanceExpenses() {
 
   const totalPending = filteredExpenses?.filter(e => e.status === "pending").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const totalPaid = filteredExpenses?.filter(e => e.status === "paid").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+  const pendingSelectedCount = selectedIds.filter(id => filteredExpenses?.some(e => e.id === id && e.status === "pending")).length;
 
   return (
     <Card>
@@ -560,10 +583,11 @@ export function FinanceExpenses() {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
+                disabled={pendingSelectedCount === 0 || isBulkPaying}
                 onClick={() => setBulkPaidDialogOpen(true)}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Mark Paid ({selectedIds.filter(id => filteredExpenses?.find(e => e.id === id && e.status === "pending")).length})
+                {isBulkPaying ? "Processing..." : `Mark Paid (${pendingSelectedCount})`}
               </Button>
               <Button 
                 variant="destructive" 
@@ -722,14 +746,14 @@ export function FinanceExpenses() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
             <AlertDialogDescription>
-              Tandai {selectedIds.filter(id => filteredExpenses?.find(e => e.id === id && e.status === "pending")).length} expense pending sebagai paid? 
+              Tandai {pendingSelectedCount} expense pending sebagai paid? 
               Ini akan membuat entry di ledger.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkMarkPaid}>
-              Mark as Paid
+            <AlertDialogAction onClick={handleBulkMarkPaid} disabled={pendingSelectedCount === 0 || isBulkPaying}>
+              {isBulkPaying ? "Processing..." : "Mark as Paid"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
