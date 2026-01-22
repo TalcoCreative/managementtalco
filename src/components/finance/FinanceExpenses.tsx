@@ -143,21 +143,33 @@ export function FinanceExpenses() {
     }
   };
 
+  // Map expense category to valid ledger sub_type
+  const mapCategoryToSubType = (category: string): string => {
+    const mapping: Record<string, string> = {
+      'payroll': 'payroll',
+      'reimburse': 'reimburse',
+      'operasional': 'operational',
+      'operational': 'operational',
+      'project': 'project',
+    };
+    return mapping[category] || 'other';
+  };
+
   const handleMarkPaid = async (expense: any) => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Create ledger entry
+      // Create ledger entry with valid sub_type
       const { data: ledgerEntry, error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
           date: format(new Date(), "yyyy-MM-dd"),
           type: "expense",
-          sub_type: expense.category,
-          sub_category: expense.sub_category,
-          project_id: expense.project_id,
-          client_id: expense.client_id,
+          sub_type: mapCategoryToSubType(expense.category),
+          sub_category: expense.sub_category || null,
+          project_id: expense.project_id || null,
+          client_id: expense.client_id || null,
           amount: expense.amount,
           source: "manual",
           notes: expense.description,
@@ -251,13 +263,13 @@ export function FinanceExpenses() {
 
       // Process each expense
       for (const expense of pendingExpenses) {
-        // Create ledger entry
+        // Create ledger entry with valid sub_type
         const { data: ledgerEntry, error: ledgerError } = await supabase
           .from("ledger_entries")
           .insert({
             date: format(new Date(), "yyyy-MM-dd"),
             type: "expense",
-            sub_type: expense.category || "other",
+            sub_type: mapCategoryToSubType(expense.category),
             sub_category: expense.sub_category || null,
             project_id: expense.project_id || null,
             client_id: expense.client_id || null,
