@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { Plus, ArrowDownCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
+import { Plus, ArrowDownCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
@@ -28,8 +28,6 @@ export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [bulkPaidDialogOpen, setBulkPaidDialogOpen] = useState(false);
-  const [isBulkPaying, setIsBulkPaying] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,49 +99,6 @@ export function FinanceExpenses() {
     });
   };
 
-  const handleSubmit = async () => {
-    if (!formData.amount || !formData.description) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error("Not authenticated");
-
-      // Store original category for proper reporting
-      // No mapping needed - store as-is for income statement & balance sheet
-
-      const { error } = await supabase.from("expenses").insert({
-        category: formData.category,
-        sub_category: formData.sub_category,
-        project_id: formData.project_id || null,
-        client_id: formData.client_id || null,
-        amount: parseFloat(formData.amount),
-        description: formData.description,
-        created_by: session.session.user.id,
-        created_at: new Date(formData.expense_date).toISOString(),
-      });
-
-      if (error) throw error;
-
-      toast.success("Expense created successfully");
-      setDialogOpen(false);
-      setFormData({ 
-        category: "operasional", 
-        sub_category: "transport",
-        project_id: "", 
-        client_id: "", 
-        amount: "", 
-        description: "",
-        expense_date: format(new Date(), "yyyy-MM-dd"),
-      });
-      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create expense");
-    }
-  };
-
   // Map expense category to valid ledger sub_type
   const mapCategoryToSubType = (category: string): string => {
     const mapping: Record<string, string> = {
@@ -156,24 +111,32 @@ export function FinanceExpenses() {
     return mapping[category] || 'other';
   };
 
-  const handleMarkPaid = async (expense: any) => {
+  const handleSubmit = async () => {
+    if (!formData.amount || !formData.description) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Create ledger entry with valid sub_type
+      const expenseDate = formData.expense_date;
+      const subType = mapCategoryToSubType(formData.category);
+
+      // Create ledger entry first with expense date
       const { data: ledgerEntry, error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
-          date: format(new Date(), "yyyy-MM-dd"),
+          date: expenseDate,
           type: "expense",
-          sub_type: mapCategoryToSubType(expense.category),
-          sub_category: expense.sub_category || null,
-          project_id: expense.project_id || null,
-          client_id: expense.client_id || null,
-          amount: expense.amount,
+          sub_type: subType,
+          sub_category: formData.sub_category || null,
+          project_id: formData.project_id || null,
+          client_id: formData.client_id || null,
+          amount: parseFloat(formData.amount),
           source: "manual",
-          notes: expense.description,
+          notes: formData.description,
           created_by: session.session.user.id,
         })
         .select()
@@ -181,27 +144,41 @@ export function FinanceExpenses() {
 
       if (ledgerError) throw ledgerError;
 
-      // Update expense status
-      const { error: updateError } = await supabase
-        .from("expenses")
-        .update({ 
-          status: "paid", 
-          paid_at: new Date().toISOString(),
-          ledger_entry_id: ledgerEntry.id 
-        })
-        .eq("id", expense.id);
+      // Create expense with ledger_entry_id and status paid
+      const { error } = await supabase.from("expenses").insert({
+        category: formData.category,
+        sub_category: formData.sub_category,
+        project_id: formData.project_id || null,
+        client_id: formData.client_id || null,
+        amount: parseFloat(formData.amount),
+        description: formData.description,
+        created_by: session.session.user.id,
+        created_at: new Date(expenseDate).toISOString(),
+        status: "paid",
+        paid_at: new Date(expenseDate).toISOString(),
+        ledger_entry_id: ledgerEntry.id,
+      });
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      toast.success("Expense marked as paid and added to ledger");
+      toast.success("Expense created and added to ledger");
+      setDialogOpen(false);
+      setFormData({ 
+        category: "operasional", 
+        sub_category: "transport",
+        project_id: "", 
+        client_id: "", 
+        amount: "", 
+        description: "",
+        expense_date: format(new Date(), "yyyy-MM-dd"),
+      });
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
-      // Invalidate financial reports
       queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to mark expense as paid");
+      toast.error(error.message || "Failed to create expense");
     }
   };
 
@@ -209,6 +186,14 @@ export function FinanceExpenses() {
     if (!expenseToDelete) return;
     
     try {
+      // Also delete associated ledger entry if exists
+      if (expenseToDelete.ledger_entry_id) {
+        await supabase
+          .from("ledger_entries")
+          .delete()
+          .eq("id", expenseToDelete.ledger_entry_id);
+      }
+
       const { error } = await supabase
         .from("expenses")
         .delete()
@@ -220,6 +205,10 @@ export function FinanceExpenses() {
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+      queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete expense");
     }
@@ -229,6 +218,20 @@ export function FinanceExpenses() {
     if (selectedIds.length === 0) return;
     
     try {
+      // Get ledger_entry_ids for selected expenses
+      const selectedExpenses = filteredExpenses?.filter(e => selectedIds.includes(e.id)) || [];
+      const ledgerIds = selectedExpenses
+        .map(e => e.ledger_entry_id)
+        .filter(Boolean);
+
+      // Delete associated ledger entries
+      if (ledgerIds.length > 0) {
+        await supabase
+          .from("ledger_entries")
+          .delete()
+          .in("id", ledgerIds);
+      }
+
       const { error } = await supabase
         .from("expenses")
         .delete()
@@ -240,94 +243,12 @@ export function FinanceExpenses() {
       setBulkDeleteDialogOpen(false);
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus expense");
-    }
-  };
-
-  const handleBulkMarkPaid = async () => {
-    if (selectedIds.length === 0) return;
-    
-    try {
-      setIsBulkPaying(true);
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error("Not authenticated");
-
-      // Get selected pending expenses
-      const pendingExpenses = filteredExpenses?.filter(
-        e => selectedIds.includes(e.id) && e.status === "pending"
-      ) || [];
-
-      if (pendingExpenses.length === 0) {
-        toast.error("Tidak ada expense pending yang dipilih");
-        return;
-      }
-
-      const ledgerByExpenseId: Record<string, string> = {};
-
-      // Process each expense
-      for (const expense of pendingExpenses) {
-        // Create ledger entry with valid sub_type
-        const { data: ledgerEntry, error: ledgerError } = await supabase
-          .from("ledger_entries")
-          .insert({
-            date: format(new Date(), "yyyy-MM-dd"),
-            type: "expense",
-            sub_type: mapCategoryToSubType(expense.category),
-            sub_category: expense.sub_category || null,
-            project_id: expense.project_id || null,
-            client_id: expense.client_id || null,
-            amount: expense.amount,
-            source: "manual",
-            notes: expense.description,
-            created_by: session.session.user.id,
-          })
-          .select()
-          .single();
-
-        if (ledgerError) throw ledgerError;
-
-        ledgerByExpenseId[expense.id] = ledgerEntry.id;
-
-        // Update expense status
-        const { error: updateError } = await supabase
-          .from("expenses")
-          .update({ 
-            status: "paid", 
-            paid_at: new Date().toISOString(),
-            ledger_entry_id: ledgerEntry.id 
-          })
-          .eq("id", expense.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Optimistically update local cache so UI changes immediately
-      queryClient.setQueryData(["finance-expenses"], (old: any) => {
-        if (!Array.isArray(old)) return old;
-        return old.map((e: any) => {
-          if (!ledgerByExpenseId[e.id]) return e;
-          return {
-            ...e,
-            status: "paid",
-            paid_at: new Date().toISOString(),
-            ledger_entry_id: ledgerByExpenseId[e.id],
-          };
-        });
-      });
-
-      toast.success(`${pendingExpenses.length} expense berhasil ditandai sebagai paid`);
-      setBulkPaidDialogOpen(false);
-      setSelectedIds([]);
-      queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
       queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal mark as paid");
-    } finally {
-      setIsBulkPaying(false);
+      toast.error(error.message || "Gagal menghapus expense");
     }
   };
 
@@ -364,7 +285,6 @@ export function FinanceExpenses() {
     amount: e.amount,
     project_name: e.projects?.title || '',
     client_name: e.clients?.name || '',
-    status: e.status,
   })) || [];
 
   const handleImportExpenses = async (data: any[]) => {
@@ -377,22 +297,50 @@ export function FinanceExpenses() {
     for (const row of data) {
       if (!row.description || !row.amount) continue;
 
+      const expenseDate = row.date || format(new Date(), "yyyy-MM-dd");
+      const category = row.category || 'operational';
+      const subType = mapCategoryToSubType(category);
+
+      // Create ledger entry first
+      const { data: ledgerEntry, error: ledgerError } = await supabase
+        .from("ledger_entries")
+        .insert({
+          date: expenseDate,
+          type: "expense",
+          sub_type: subType,
+          sub_category: row.sub_category || null,
+          amount: Number(row.amount),
+          source: "import",
+          notes: row.description,
+          created_by: session.session.user.id,
+        })
+        .select()
+        .single();
+
+      if (ledgerError) continue;
+
+      // Create expense with ledger_entry_id
       await supabase.from("expenses").insert({
-        category: row.category || 'operational',
+        category: category,
         sub_category: row.sub_category || null,
         amount: Number(row.amount),
         description: row.description,
-        status: row.status || 'pending',
+        status: 'paid',
+        paid_at: new Date(expenseDate).toISOString(),
+        ledger_entry_id: ledgerEntry.id,
         created_by: session.session.user.id,
+        created_at: new Date(expenseDate).toISOString(),
       });
     }
     
     queryClient.invalidateQueries({ queryKey: ["finance-expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
+    queryClient.invalidateQueries({ queryKey: ["income-statement-expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["balance-sheet-expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["insights-expenses"] });
   };
 
-  const totalPending = filteredExpenses?.filter(e => e.status === "pending").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  const totalPaid = filteredExpenses?.filter(e => e.status === "paid").reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  const pendingSelectedCount = selectedIds.filter(id => filteredExpenses?.some(e => e.id === id && e.status === "pending")).length;
+  const totalExpenses = filteredExpenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
   return (
     <Card>
@@ -526,20 +474,12 @@ export function FinanceExpenses() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Summary */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">Pending</div>
-              <div className="text-2xl font-bold text-yellow-500">{formatCurrency(totalPending)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">Paid</div>
-              <div className="text-2xl font-bold text-green-500">{formatCurrency(totalPaid)}</div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-sm text-muted-foreground">Total Expenses</div>
+            <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
+          </CardContent>
+        </Card>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 items-end">
@@ -580,23 +520,13 @@ export function FinanceExpenses() {
             </div>
           </div>
           {selectedIds.length > 0 && (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                disabled={pendingSelectedCount === 0 || isBulkPaying}
-                onClick={() => setBulkPaidDialogOpen(true)}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                {isBulkPaying ? "Processing..." : `Mark Paid (${pendingSelectedCount})`}
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={() => setBulkDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Hapus {selectedIds.length} item
-              </Button>
-            </div>
+            <Button 
+              variant="destructive" 
+              onClick={() => setBulkDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Hapus {selectedIds.length} item
+            </Button>
           )}
         </div>
 
@@ -618,7 +548,6 @@ export function FinanceExpenses() {
                   <TableHead>Description</TableHead>
                   <TableHead>Project/Client</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -661,30 +590,17 @@ export function FinanceExpenses() {
                       {formatCurrency(expense.amount)}
                     </TableCell>
                     <TableCell>
-                      <Badge className={expense.status === "paid" ? "bg-green-500" : "bg-yellow-500"}>
-                        {expense.status === "paid" ? "Paid" : "Pending"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {expense.status === "pending" && (
-                          <Button size="sm" variant="outline" onClick={() => handleMarkPaid(expense)}>
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Mark Paid
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setExpenseToDelete(expense);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setExpenseToDelete(expense);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -741,23 +657,6 @@ export function FinanceExpenses() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={bulkPaidDialogOpen} onOpenChange={setBulkPaidDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tandai {pendingSelectedCount} expense pending sebagai paid? 
-              Ini akan membuat entry di ledger.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkMarkPaid} disabled={pendingSelectedCount === 0 || isBulkPaying}>
-              {isBulkPaying ? "Processing..." : "Mark as Paid"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   );
 }
