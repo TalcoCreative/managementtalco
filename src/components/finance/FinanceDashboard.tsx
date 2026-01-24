@@ -125,6 +125,23 @@ export function FinanceDashboard() {
     setSelectedSubCategory("all");
   };
 
+  // Calculate date range for selected period
+  const periodDateRange = useMemo(() => {
+    const year = parseInt(selectedYear);
+    if (selectedMonth === "all") {
+      return {
+        start: format(startOfYear(new Date(year, 0, 1)), "yyyy-MM-dd"),
+        end: format(endOfYear(new Date(year, 11, 31)), "yyyy-MM-dd")
+      };
+    }
+    const month = parseInt(selectedMonth);
+    const startDate = new Date(year, month, 1);
+    return {
+      start: format(startOfMonth(startDate), "yyyy-MM-dd"),
+      end: format(endOfMonth(startDate), "yyyy-MM-dd")
+    };
+  }, [selectedYear, selectedMonth]);
+
   // Filter ledger entries based on selected filters
   const filteredEntries = useMemo(() => {
     if (!ledgerEntries) return [];
@@ -150,6 +167,35 @@ export function FinanceDashboard() {
     });
   }, [ledgerEntries, selectedYear, selectedMonth, selectedCategory, selectedSubCategory]);
 
+  // Calculate previous balance (all transactions before selected period)
+  const previousBalance = useMemo(() => {
+    if (!ledgerEntries) return 0;
+    
+    return ledgerEntries
+      .filter(entry => entry.date < periodDateRange.start)
+      .reduce((sum, entry) => {
+        if (entry.type === "income") {
+          return sum + Number(entry.amount);
+        } else {
+          return sum - Math.abs(Number(entry.amount));
+        }
+      }, 0);
+  }, [ledgerEntries, periodDateRange.start]);
+
+  // Get previous period label
+  const previousPeriodLabel = useMemo(() => {
+    const year = parseInt(selectedYear);
+    if (selectedMonth === "all") {
+      return `s/d ${year - 1}`;
+    }
+    const month = parseInt(selectedMonth);
+    if (month === 0) {
+      return `s/d Dec ${year - 1}`;
+    }
+    const prevMonth = new Date(year, month - 1, 1);
+    return `s/d ${format(prevMonth, "MMM yyyy")}`;
+  }, [selectedYear, selectedMonth]);
+
   // Calculate metrics from filtered entries
   const todayStr = format(today, "yyyy-MM-dd");
   
@@ -166,6 +212,7 @@ export function FinanceDashboard() {
     .reduce((sum, e) => sum + Number(e.amount), 0);
 
   const netCashflow = totalIncome - totalExpenses;
+  const endingBalance = previousBalance + netCashflow;
 
   const payrollExpenses = filteredEntries
     .filter(e => e.type === "expense" && (e.sub_type === "sdm_hr" || e.sub_category === "gaji_upah"))
@@ -421,15 +468,28 @@ export function FinanceDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Expenses</CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-sm font-medium">Saldo Awal</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{formatCurrency(dailyExpenses)}</div>
-            <p className="text-xs text-muted-foreground">Today</p>
+            <div className={`text-2xl font-bold ${previousBalance >= 0 ? "text-primary" : "text-destructive"}`}>
+              {formatCurrency(previousBalance)}
+            </div>
+            <p className="text-xs text-muted-foreground">{previousPeriodLabel}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+            <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
           </CardContent>
         </Card>
 
@@ -446,25 +506,38 @@ export function FinanceDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">Net Cashflow</CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalIncome)}</div>
+            <div className={`text-2xl font-bold ${netCashflow >= 0 ? "text-green-600" : "text-destructive"}`}>
+              {formatCurrency(netCashflow)}
+            </div>
             <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Cashflow</CardTitle>
+            <CardTitle className="text-sm font-medium">Saldo Akhir</CardTitle>
             <Wallet className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${netCashflow >= 0 ? "text-green-500" : "text-destructive"}`}>
-              {formatCurrency(netCashflow)}
+            <div className={`text-2xl font-bold ${endingBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
+              {formatCurrency(endingBalance)}
             </div>
             <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Daily Expenses</CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{formatCurrency(dailyExpenses)}</div>
+            <p className="text-xs text-muted-foreground">Today</p>
           </CardContent>
         </Card>
       </div>
