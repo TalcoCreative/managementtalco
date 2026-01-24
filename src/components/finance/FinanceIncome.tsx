@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { Plus, ArrowUpCircle, CheckCircle, Trash2, Search, Calendar } from "lucide-react";
+import { Plus, ArrowUpCircle, Trash2, Search, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 export function FinanceIncome() {
@@ -91,20 +91,48 @@ export function FinanceIncome() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
+      const userId = session.session.user.id;
+      const incomeDate = formData.date;
+      const projectId = formData.project_id || null;
+      const clientId = formData.client_id || null;
+
+      // Create ledger entry first with the income date
+      const { data: ledgerEntry, error: ledgerError } = await supabase
+        .from("ledger_entries")
+        .insert({
+          date: incomeDate,
+          type: "income",
+          sub_type: "project",
+          project_id: projectId,
+          client_id: clientId,
+          amount: parseFloat(formData.amount),
+          source: "income",
+          notes: `${formData.source}${formData.notes ? ` - ${formData.notes}` : ""}`,
+          created_by: userId,
+        })
+        .select()
+        .single();
+
+      if (ledgerError) throw ledgerError;
+
+      // Create income with status received and link to ledger
       const { error } = await supabase.from("income").insert({
         source: formData.source,
-        client_id: formData.client_id || null,
-        project_id: formData.project_id || null,
+        client_id: clientId,
+        project_id: projectId,
         amount: parseFloat(formData.amount),
-        date: formData.date,
+        date: incomeDate,
         type: formData.type,
         notes: formData.notes || null,
-        created_by: session.session.user.id,
+        created_by: userId,
+        status: "received",
+        received_at: new Date().toISOString(),
+        ledger_entry_id: ledgerEntry.id,
       });
 
       if (error) throw error;
 
-      toast.success("Income record created");
+      toast.success("Income record created and added to ledger");
       setDialogOpen(false);
       setFormData({
         source: "",
@@ -116,56 +144,12 @@ export function FinanceIncome() {
         notes: "",
       });
       queryClient.invalidateQueries({ queryKey: ["finance-income"] });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create income record");
-    }
-  };
-
-  const handleMarkReceived = async (income: any) => {
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error("Not authenticated");
-
-      // Create ledger entry
-      const { data: ledgerEntry, error: ledgerError } = await supabase
-        .from("ledger_entries")
-        .insert({
-          date: format(new Date(), "yyyy-MM-dd"),
-          type: "income",
-          sub_type: "project",
-          project_id: income.project_id,
-          client_id: income.client_id,
-          amount: income.amount,
-          source: "income",
-          notes: `${income.source}${income.notes ? ` - ${income.notes}` : ""}`,
-          created_by: session.session.user.id,
-        })
-        .select()
-        .single();
-
-      if (ledgerError) throw ledgerError;
-
-      // Update income status
-      const { error: updateError } = await supabase
-        .from("income")
-        .update({ 
-          status: "received", 
-          received_at: new Date().toISOString(),
-          ledger_entry_id: ledgerEntry.id 
-        })
-        .eq("id", income.id);
-
-      if (updateError) throw updateError;
-
-      toast.success("Income marked as received and added to ledger");
-      queryClient.invalidateQueries({ queryKey: ["finance-income"] });
       queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
-      // Invalidate financial reports
       queryClient.invalidateQueries({ queryKey: ["income-statement-income"] });
       queryClient.invalidateQueries({ queryKey: ["balance-sheet-income"] });
       queryClient.invalidateQueries({ queryKey: ["insights-income"] });
     } catch (error: any) {
-      toast.error(error.message || "Failed to mark income as received");
+      toast.error(error.message || "Failed to create income record");
     }
   };
 
@@ -173,6 +157,14 @@ export function FinanceIncome() {
     if (!incomeToDelete) return;
     
     try {
+      // Delete associated ledger entry if exists
+      if (incomeToDelete.ledger_entry_id) {
+        await supabase
+          .from("ledger_entries")
+          .delete()
+          .eq("id", incomeToDelete.ledger_entry_id);
+      }
+
       const { error } = await supabase
         .from("income")
         .delete()
@@ -184,6 +176,7 @@ export function FinanceIncome() {
       setDeleteDialogOpen(false);
       setIncomeToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["finance-income"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete income");
     }
@@ -193,6 +186,20 @@ export function FinanceIncome() {
     if (selectedIds.length === 0) return;
     
     try {
+      // Get ledger entry IDs for selected income
+      const selectedIncome = incomeList?.filter(i => selectedIds.includes(i.id)) || [];
+      const ledgerEntryIds = selectedIncome
+        .filter(i => i.ledger_entry_id)
+        .map(i => i.ledger_entry_id);
+
+      // Delete associated ledger entries
+      if (ledgerEntryIds.length > 0) {
+        await supabase
+          .from("ledger_entries")
+          .delete()
+          .in("id", ledgerEntryIds);
+      }
+
       const { error } = await supabase
         .from("income")
         .delete()
@@ -204,6 +211,7 @@ export function FinanceIncome() {
       setBulkDeleteDialogOpen(false);
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["finance-income"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-ledger"] });
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus income");
     }
@@ -231,8 +239,7 @@ export function FinanceIncome() {
     }).format(value);
   };
 
-  const totalExpected = filteredIncome?.filter(i => i.status === "expected").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
-  const totalReceived = filteredIncome?.filter(i => i.status === "received").reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+  const totalIncome = filteredIncome?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
 
   return (
     <Card>
@@ -271,7 +278,7 @@ export function FinanceIncome() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date *</Label>
+                  <Label>Income Date *</Label>
                   <Input
                     type="date"
                     value={formData.date}
@@ -333,21 +340,13 @@ export function FinanceIncome() {
         </Dialog>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Summary */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">Expected</div>
-              <div className="text-2xl font-bold text-yellow-500">{formatCurrency(totalExpected)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-sm text-muted-foreground">Received</div>
-              <div className="text-2xl font-bold text-green-500">{formatCurrency(totalReceived)}</div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Summary - Single Total */}
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-sm text-muted-foreground">Total Income</div>
+            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalIncome)}</div>
+          </CardContent>
+        </Card>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 items-end">
@@ -416,7 +415,6 @@ export function FinanceIncome() {
                   <TableHead>Client/Project</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -454,30 +452,17 @@ export function FinanceIncome() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={income.status === "received" ? "bg-green-500" : "bg-yellow-500"}>
-                        {income.status === "received" ? "Received" : "Expected"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {income.status === "expected" && (
-                          <Button size="sm" variant="outline" onClick={() => handleMarkReceived(income)}>
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Received
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setIncomeToDelete(income);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setIncomeToDelete(income);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
