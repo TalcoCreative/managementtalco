@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isPast, parseISO, parse, isAfter } from "date-fns";
+import { isPast, parseISO } from "date-fns";
 
 export interface VirtualTask {
   id: string;
   title: string;
-  type: 'task' | 'shooting' | 'meeting';
+  type: 'task' | 'meeting';
   status: string;
   deadline: string | null;
   project_id: string | null;
@@ -34,26 +34,6 @@ export function useVirtualTasks(userId?: string) {
           task_assignees(user_id, profiles(id, full_name))
         `)
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch shootings with crew
-  const { data: shootings } = useQuery({
-    queryKey: ["shootings-for-tasks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shooting_schedules")
-        .select(`
-          *,
-          clients(name),
-          projects(id, title),
-          shooting_crew(user_id, profiles(id, full_name)),
-          requested_by_profile:profiles!fk_shooting_requested_by_profiles(id, full_name),
-          director_profile:profiles!fk_shooting_director_profiles(id, full_name),
-          runner_profile:profiles!fk_shooting_runner_profiles(id, full_name)
-        `);
       if (error) throw error;
       return data;
     },
@@ -111,65 +91,6 @@ export function useVirtualTasks(userId?: string) {
       description: task.description,
       isOverdue: !!isOverdue,
       originalData: task,
-    });
-  });
-
-  // Add shootings as virtual tasks
-  shootings?.forEach(shooting => {
-    const assignees: string[] = [];
-    // Add requester
-    if (shooting.requested_by) assignees.push(shooting.requested_by);
-    // Add director
-    if (shooting.director && !assignees.includes(shooting.director)) assignees.push(shooting.director);
-    // Add runner
-    if (shooting.runner && !assignees.includes(shooting.runner)) assignees.push(shooting.runner);
-    // Add crew
-    shooting.shooting_crew?.forEach((crew: any) => {
-      if (crew.user_id && !assignees.includes(crew.user_id)) {
-        assignees.push(crew.user_id);
-      }
-    });
-
-    // Auto-complete status if past shooting date AND time
-    const now = new Date();
-    let shootingDateTime: Date | null = null;
-    
-    if (shooting.scheduled_date) {
-      const dateStr = shooting.scheduled_date;
-      if (shooting.scheduled_time) {
-        // Combine date and time
-        shootingDateTime = parse(
-          `${dateStr} ${shooting.scheduled_time}`,
-          'yyyy-MM-dd HH:mm:ss',
-          new Date()
-        );
-      } else {
-        // Just use date at end of day
-        shootingDateTime = parseISO(`${dateStr}T23:59:59`);
-      }
-    }
-    
-    let status = shooting.status;
-    if (shootingDateTime && isAfter(now, shootingDateTime) && status !== 'cancelled' && status !== 'rejected') {
-      status = 'completed';
-    }
-
-    virtualTasks.push({
-      id: `shooting-${shooting.id}`,
-      title: `[Shooting] ${shooting.title}`,
-      type: 'shooting',
-      status: status,
-      deadline: shooting.scheduled_date,
-      project_id: shooting.project_id,
-      project_title: shooting.projects?.title || null,
-      client_name: shooting.clients?.name || null,
-      assigned_to: assignees,
-      created_by: shooting.requested_by,
-      created_at: shooting.created_at,
-      priority: 'high',
-      description: shooting.notes,
-      isOverdue: false,
-      originalData: shooting,
     });
   });
 
@@ -242,6 +163,6 @@ export function useVirtualTasks(userId?: string) {
     assignedToUser,
     createdByUser,
     overdueByProject,
-    isLoading: !tasks && !shootings && !meetings,
+    isLoading: !tasks && !meetings,
   };
 }

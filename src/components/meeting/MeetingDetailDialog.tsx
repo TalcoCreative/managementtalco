@@ -491,6 +491,13 @@ const MeetingDetailDialog = ({
   };
 
   const handleAddMOM = async () => {
+    // Re-fetch auth user to ensure we have current session
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      toast.error("Session tidak valid. Silakan refresh halaman.");
+      return;
+    }
+
     const validItems = momItems.filter(item => item.keterangan.trim() || item.hasil.trim());
     if (validItems.length === 0) {
       toast.error("Mohon isi minimal satu baris MOM");
@@ -505,7 +512,7 @@ const MeetingDetailDialog = ({
         .insert({
           meeting_id: meeting.id,
           content,
-          created_by: currentUser?.id,
+          created_by: user.id,
         });
 
       if (error) throw error;
@@ -515,6 +522,7 @@ const MeetingDetailDialog = ({
       setShowMOMForm(false);
       refetchMOM();
     } catch (error: any) {
+      console.error("Add MOM error:", error);
       toast.error(error.message || "Gagal menambahkan MOM");
     } finally {
       setIsUpdating(false);
