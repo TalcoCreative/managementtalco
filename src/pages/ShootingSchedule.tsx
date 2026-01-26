@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,31 @@ import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 
 export default function ShootingSchedule() {
+  const [searchParams] = useSearchParams();
+  const clientFilter = searchParams.get("client");
+  
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [deleteShooting, setDeleteShooting] = useState<{ id: string; title: string } | null>(null);
   const [rescheduleShooting, setRescheduleShooting] = useState<{ id: string; title: string; scheduled_date: string } | null>(null);
   const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
+
+  // Fetch client name for header display
+  const { data: filterClient } = useQuery({
+    queryKey: ["filter-client", clientFilter],
+    queryFn: async () => {
+      if (!clientFilter) return null;
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("id", clientFilter)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientFilter,
+  });
 
   const { data: userRole } = useQuery({
     queryKey: ["user-role"],
@@ -40,19 +60,25 @@ export default function ShootingSchedule() {
   });
 
   const { data: shootings } = useQuery({
-    queryKey: ["shooting-schedules"],
+    queryKey: ["shooting-schedules", clientFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("shooting_schedules")
         .select(`
           *,
           requested_by_profile:profiles!fk_shooting_requested_by_profiles(full_name),
           runner_profile:profiles!fk_shooting_runner_profiles(full_name),
           director_profile:profiles!fk_shooting_director_profiles(full_name),
-          clients(name),
+          clients(id, name),
           projects(title)
         `)
         .order("scheduled_date", { ascending: true });
+      
+      if (clientFilter) {
+        query = query.eq("client_id", clientFilter);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
@@ -387,7 +413,14 @@ export default function ShootingSchedule() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Shooting Schedule</h1>
+            <h1 className="text-3xl font-bold">
+              Shooting Schedule
+              {filterClient && (
+                <span className="text-primary text-xl ml-2 font-normal">
+                  - {filterClient.name}
+                </span>
+              )}
+            </h1>
             <p className="text-muted-foreground">Manage shooting requests and schedules</p>
           </div>
           <CreateShootingDialog />

@@ -56,6 +56,7 @@ import Holiday from "./pages/Holiday";
 import EditorialPlan from "./pages/EditorialPlan";
 import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
+import ClientHub from "./pages/ClientHub";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,7 @@ const App = () => (
           <Route path="/ep/:clientSlug/:epSlug/edit" element={<ProtectedRoute><EditorialPlanEditor /></ProtectedRoute>} />
           <Route path="/ep/:clientSlug/:epSlug" element={<PublicEditorialPlan />} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
+          <Route path="/client-hub" element={<ProtectedRoute><ClientHub /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />

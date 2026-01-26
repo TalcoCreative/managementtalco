@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -18,6 +19,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 const Meeting = () => {
+  const [searchParams] = useSearchParams();
+  const clientFilter = searchParams.get("client");
+  
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +38,22 @@ const Meeting = () => {
   // Date range filter for stats - default to current month
   const [statsDateFrom, setStatsDateFrom] = useState<Date>(startOfMonth(new Date()));
   const [statsDateTo, setStatsDateTo] = useState<Date>(endOfMonth(new Date()));
+
+  // Fetch client name for header display
+  const { data: filterClient } = useQuery({
+    queryKey: ["filter-client", clientFilter],
+    queryFn: async () => {
+      if (!clientFilter) return null;
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("id", clientFilter)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientFilter,
+  });
 
   // Fetch current user
   const { data: currentUser } = useQuery({
@@ -64,9 +84,9 @@ const Meeting = () => {
 
   // Fetch meetings
   const { data: meetings, isLoading, refetch: refetchMeetings } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings", clientFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("meetings")
         .select(`
           *,
@@ -76,6 +96,12 @@ const Meeting = () => {
         `)
         .order("meeting_date", { ascending: true })
         .order("start_time", { ascending: true });
+      
+      if (clientFilter) {
+        query = query.eq("client_id", clientFilter);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -289,7 +315,14 @@ const Meeting = () => {
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold">Meeting Management</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Meeting Management
+              {filterClient && (
+                <span className="text-primary text-lg ml-2 font-normal">
+                  - {filterClient.name}
+                </span>
+              )}
+            </h1>
             <p className="text-muted-foreground text-sm truncate">Kelola jadwal meeting</p>
           </div>
           <div className="flex gap-2 flex-shrink-0">

@@ -49,6 +49,7 @@ import {
 const navItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Clients", url: "/clients", icon: Building2 },
+  { title: "Client Hub", url: "/client-hub", icon: Building2 },
   { title: "Projects", url: "/projects", icon: Briefcase },
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Schedule", url: "/schedule", icon: Calendar },
