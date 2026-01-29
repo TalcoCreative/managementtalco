@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { Plus, ArrowDownCircle, Trash2, Search, Calendar } from "lucide-react";
+import { Plus, ArrowDownCircle, Trash2, Search, Calendar, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { 
   FINANCE_CATEGORIES, 
@@ -23,9 +23,12 @@ import {
 } from "@/lib/finance-categories";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { EXPENSE_COLUMNS } from "@/lib/excel-utils";
+import { EditExpenseDialog } from "./EditExpenseDialog";
 
 export function FinanceExpenses() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<any>(null);
@@ -590,17 +593,29 @@ export function FinanceExpenses() {
                       {formatCurrency(expense.amount)}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setExpenseToDelete(expense);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            setExpenseToEdit(expense);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setExpenseToDelete(expense);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -657,6 +672,13 @@ export function FinanceExpenses() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <EditExpenseDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        expense={expenseToEdit}
+        projects={projects || []}
+        clients={clients || []}
+      />
     </Card>
   );
 }

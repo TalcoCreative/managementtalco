@@ -13,11 +13,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { Plus, ArrowUpCircle, Trash2, Search, Calendar } from "lucide-react";
+import { Plus, ArrowUpCircle, Trash2, Search, Calendar, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { EditIncomeDialog } from "./EditIncomeDialog";
 
 export function FinanceIncome() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [incomeToEdit, setIncomeToEdit] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [incomeToDelete, setIncomeToDelete] = useState<any>(null);
@@ -452,17 +455,29 @@ export function FinanceIncome() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setIncomeToDelete(income);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            setIncomeToEdit(income);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setIncomeToDelete(income);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -518,6 +533,14 @@ export function FinanceIncome() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditIncomeDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        income={incomeToEdit}
+        projects={projects || []}
+        clients={clients || []}
+      />
     </Card>
   );
 }
