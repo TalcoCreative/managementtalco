@@ -12,7 +12,7 @@ import {
   Wallet,
   Filter
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, addMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, addMonths } from "date-fns";
 import { 
   BarChart, 
   Bar, 
@@ -42,7 +42,6 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#10b981', '#f59
 export function FinanceDashboard() {
   const today = new Date();
   const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth();
 
   // Filters
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
@@ -150,7 +149,10 @@ export function FinanceDashboard() {
     return mainCat?.value || "lainnya";
   };
 
-  // Filter ledger entries based on selected filters
+  // SDM/HR sub-categories for payroll detection
+  const sdmSubCategories = ["gaji_upah", "freelance_parttimer", "bpjs", "thr_bonus", "rekrutmen", "training_sertifikasi", "kesehatan_karyawan", "reimburse_karyawan"];
+
+  // Filter ledger entries based on selected filters (for summary cards)
   const filteredEntries = useMemo(() => {
     if (!ledgerEntries) return [];
     
@@ -177,6 +179,25 @@ export function FinanceDashboard() {
       return true;
     });
   }, [ledgerEntries, selectedYear, selectedMonth, selectedCategory, selectedSubCategory]);
+
+  // Base filtered entries (only year/month, no category filter) for charts
+  const baseFilteredEntries = useMemo(() => {
+    if (!ledgerEntries) return [];
+    
+    return ledgerEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const entryYear = entryDate.getFullYear();
+      const entryMonth = entryDate.getMonth();
+      
+      // Year filter
+      if (entryYear.toString() !== selectedYear) return false;
+      
+      // Month filter
+      if (selectedMonth !== "all" && entryMonth !== parseInt(selectedMonth)) return false;
+      
+      return true;
+    });
+  }, [ledgerEntries, selectedYear, selectedMonth]);
 
   // Calculate previous balance (all transactions before selected period)
   const previousBalance = useMemo(() => {
@@ -225,23 +246,24 @@ export function FinanceDashboard() {
   const netCashflow = totalIncome - totalExpenses;
   const endingBalance = previousBalance + netCashflow;
 
-  // SDM/HR sub-categories for payroll detection
-  const sdmSubCategories = ["gaji_upah", "freelance_parttimer", "bpjs", "thr_bonus", "rekrutmen", "training_sertifikasi", "kesehatan_karyawan", "reimburse_karyawan"];
-
-  const payrollExpenses = filteredEntries
+  // Payroll calculations from BASE filtered entries (respects year/month only)
+  const payrollExpenses = baseFilteredEntries
     .filter(e => e.type === "expense" && sdmSubCategories.includes(e.sub_category || ""))
     .reduce((sum, e) => sum + Math.abs(Number(e.amount)), 0);
 
-  const nonPayrollExpenses = totalExpenses - payrollExpenses;
+  const baseTotalExpenses = baseFilteredEntries
+    .filter(e => e.type === "expense")
+    .reduce((sum, e) => sum + Math.abs(Number(e.amount)), 0);
 
-  // Expense by main category - derive from sub_category instead of unreliable sub_type
+  const nonPayrollExpenses = baseTotalExpenses - payrollExpenses;
+
+  // Expense by main category - from BASE filtered entries (respects year/month only)
   const expenseByMainCategory = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
     
-    filteredEntries
+    baseFilteredEntries
       .filter(e => e.type === "expense")
       .forEach(e => {
-        // Derive main category from sub_category using the helper
         const mainCat = deriveMainCategory(e.sub_category);
         categoryTotals[mainCat] = (categoryTotals[mainCat] || 0) + Math.abs(Number(e.amount));
       });
@@ -251,14 +273,15 @@ export function FinanceDashboard() {
         name: getMainCategoryLabel(value),
         value: amount
       }))
-      .sort((a, b) => b.value - a.value);
-  }, [filteredEntries]);
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+  }, [baseFilteredEntries]);
 
-  // Expense by sub-category (for selected main category or all)
+  // Expense by sub-category - from BASE filtered entries (respects year/month only)
   const expenseBySubCategory = useMemo(() => {
     const subCategoryTotals: Record<string, number> = {};
     
-    filteredEntries
+    baseFilteredEntries
       .filter(e => e.type === "expense")
       .forEach(e => {
         const subCat = e.sub_category || "tidak_terklasifikasi";
@@ -267,7 +290,6 @@ export function FinanceDashboard() {
     
     return Object.entries(subCategoryTotals)
       .map(([value, amount]) => {
-        // Find the label for this sub-category
         const allSubs = getAllSubCategories();
         const subInfo = allSubs.find(s => s.value === value);
         return {
@@ -276,8 +298,8 @@ export function FinanceDashboard() {
         };
       })
       .sort((a, b) => b.value - a.value)
-      .slice(0, 10); // Top 10
-  }, [filteredEntries]);
+      .slice(0, 10);
+  }, [baseFilteredEntries]);
 
   // Monthly expense trend (last 6 months or filtered year)
   const monthlyTrend = useMemo(() => {
@@ -287,7 +309,6 @@ export function FinanceDashboard() {
       : [parseInt(selectedMonth)];
     
     if (selectedMonth !== "all") {
-      // If specific month selected, show daily breakdown
       const month = parseInt(selectedMonth);
       const startDate = new Date(year, month, 1);
       const endDate = endOfMonth(startDate);
@@ -314,7 +335,6 @@ export function FinanceDashboard() {
       return days;
     }
     
-    // Show monthly breakdown
     return months.map(month => {
       const startDate = new Date(year, month, 1);
       const start = format(startDate, "yyyy-MM-dd");
@@ -324,7 +344,6 @@ export function FinanceDashboard() {
         ?.filter(e => {
           if (e.type !== "expense") return false;
           if (e.date < start || e.date > end) return false;
-          // Use derived category from sub_category instead of sub_type
           if (selectedCategory !== "all") {
             const derivedCat = deriveMainCategory(e.sub_category);
             if (derivedCat !== selectedCategory) return false;
@@ -355,7 +374,6 @@ export function FinanceDashboard() {
     return Array.from({ length: 3 }, (_, i) => {
       const date = addMonths(today, i + 1);
       
-      // Recurring expenses
       const recurringExpenses = recurringBudgets
         ?.filter(r => r.type === "expense")
         .reduce((sum, r) => {
@@ -365,7 +383,6 @@ export function FinanceDashboard() {
           return sum;
         }, 0) || 0;
 
-      // Planned payroll
       const plannedPayroll = payrollData
         ?.filter(p => {
           const payMonth = new Date(p.month);
@@ -373,7 +390,6 @@ export function FinanceDashboard() {
         })
         .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-      // Recurring income
       const recurringIncome = recurringBudgets
         ?.filter(r => r.type === "income")
         .reduce((sum, r) => {
@@ -400,6 +416,19 @@ export function FinanceDashboard() {
     }).format(value);
   };
 
+  const formatCurrencyShort = (value: number) => {
+    if (Math.abs(value) >= 1000000000) {
+      return `Rp ${(value / 1000000000).toFixed(1)}B`;
+    }
+    if (Math.abs(value) >= 1000000) {
+      return `Rp ${(value / 1000000).toFixed(1)}M`;
+    }
+    if (Math.abs(value) >= 1000) {
+      return `Rp ${(value / 1000).toFixed(0)}K`;
+    }
+    return `Rp ${value}`;
+  };
+
   const getFilterLabel = () => {
     let label = selectedYear;
     if (selectedMonth !== "all") {
@@ -416,22 +445,30 @@ export function FinanceDashboard() {
     return label;
   };
 
+  const getPeriodLabel = () => {
+    if (selectedMonth === "all") {
+      return selectedYear;
+    }
+    const monthInfo = monthOptions.find(m => m.value === selectedMonth);
+    return `${monthInfo?.label} ${selectedYear}`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Filter className="h-4 w-4" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Year</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Year</Label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -441,10 +478,10 @@ export function FinanceDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Month</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Month</Label>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -454,10 +491,10 @@ export function FinanceDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Main Category</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Main Category</Label>
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -468,10 +505,10 @@ export function FinanceDashboard() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Sub-Category</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Sub-Category</Label>
               <Select value={selectedSubCategory} onValueChange={setSelectedSubCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -487,76 +524,76 @@ export function FinanceDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Awal</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Saldo Awal</CardTitle>
+            <Wallet className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${previousBalance >= 0 ? "text-primary" : "text-destructive"}`}>
-              {formatCurrency(previousBalance)}
+          <CardContent className="pb-3 px-3">
+            <div className={`text-lg font-bold truncate ${previousBalance >= 0 ? "text-primary" : "text-destructive"}`}>
+              {formatCurrencyShort(previousBalance)}
             </div>
-            <p className="text-xs text-muted-foreground">{previousPeriodLabel}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{previousPeriodLabel}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Income</CardTitle>
+            <ArrowUpCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-            <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
+          <CardContent className="pb-3 px-3">
+            <div className="text-lg font-bold text-green-600 truncate">{formatCurrencyShort(totalIncome)}</div>
+            <p className="text-[10px] text-muted-foreground truncate">{getPeriodLabel()}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-destructive" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Total Expenses</CardTitle>
+            <ArrowDownCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
-            <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
+          <CardContent className="pb-3 px-3">
+            <div className="text-lg font-bold text-destructive truncate">{formatCurrencyShort(totalExpenses)}</div>
+            <p className="text-[10px] text-muted-foreground truncate">{getPeriodLabel()}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Cashflow</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Net Cashflow</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 text-primary flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netCashflow >= 0 ? "text-green-600" : "text-destructive"}`}>
-              {formatCurrency(netCashflow)}
+          <CardContent className="pb-3 px-3">
+            <div className={`text-lg font-bold truncate ${netCashflow >= 0 ? "text-green-600" : "text-destructive"}`}>
+              {formatCurrencyShort(netCashflow)}
             </div>
-            <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{getPeriodLabel()}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Akhir</CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Saldo Akhir</CardTitle>
+            <Wallet className="h-3.5 w-3.5 text-primary flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${endingBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
-              {formatCurrency(endingBalance)}
+          <CardContent className="pb-3 px-3">
+            <div className={`text-lg font-bold truncate ${endingBalance >= 0 ? "text-green-600" : "text-destructive"}`}>
+              {formatCurrencyShort(endingBalance)}
             </div>
-            <p className="text-xs text-muted-foreground">{getFilterLabel()}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{getPeriodLabel()}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Expenses</CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-destructive" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground truncate">Daily Expenses</CardTitle>
+            <ArrowDownCircle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{formatCurrency(dailyExpenses)}</div>
-            <p className="text-xs text-muted-foreground">Today</p>
+          <CardContent className="pb-3 px-3">
+            <div className="text-lg font-bold text-destructive truncate">{formatCurrencyShort(dailyExpenses)}</div>
+            <p className="text-[10px] text-muted-foreground">Today</p>
           </CardContent>
         </Card>
       </div>
@@ -564,41 +601,57 @@ export function FinanceDashboard() {
       {/* Payroll vs Non-Payroll & Category Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4" />
               Payroll vs Non-Payroll
+              <span className="text-xs font-normal text-muted-foreground ml-auto">
+                {getPeriodLabel()}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Payroll (SDM/HR)</span>
-                <span className="font-bold">{formatCurrency(payrollExpenses)}</span>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Payroll (SDM/HR)</span>
+                <span className="font-semibold">{formatCurrencyShort(payrollExpenses)}</span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-3">
+              <div className="w-full bg-secondary rounded-full h-2.5">
                 <div 
-                  className="bg-primary h-3 rounded-full" 
-                  style={{ width: `${totalExpenses > 0 ? (payrollExpenses / totalExpenses) * 100 : 0}%` }}
+                  className="bg-primary h-2.5 rounded-full transition-all" 
+                  style={{ width: `${baseTotalExpenses > 0 ? (payrollExpenses / baseTotalExpenses) * 100 : 0}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Non-Payroll</span>
-                <span className="font-bold">{formatCurrency(nonPayrollExpenses)}</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Non-Payroll</span>
+                <span className="font-semibold">{formatCurrencyShort(nonPayrollExpenses)}</span>
               </div>
-              <div className="w-full bg-secondary rounded-full h-3">
+              <div className="w-full bg-secondary rounded-full h-2.5">
                 <div 
-                  className="bg-orange-500 h-3 rounded-full" 
-                  style={{ width: `${totalExpenses > 0 ? (nonPayrollExpenses / totalExpenses) * 100 : 0}%` }}
+                  className="bg-orange-500 h-2.5 rounded-full transition-all" 
+                  style={{ width: `${baseTotalExpenses > 0 ? (nonPayrollExpenses / baseTotalExpenses) * 100 : 0}%` }}
                 />
+              </div>
+            </div>
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Total</span>
+                <span className="font-bold">{formatCurrencyShort(baseTotalExpenses)}</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Expense by Main Category</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>Expense by Main Category</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {getPeriodLabel()}
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {expenseByMainCategory.length > 0 ? (
@@ -608,9 +661,9 @@ export function FinanceDashboard() {
                     data={expenseByMainCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    innerRadius={35}
+                    outerRadius={70}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {expenseByMainCategory.map((_, index) => (
@@ -618,11 +671,14 @@ export function FinanceDashboard() {
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                  <Legend />
+                  <Legend 
+                    wrapperStyle={{ fontSize: '11px' }}
+                    formatter={(value) => <span className="text-xs">{value}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
                 No data available
               </div>
             )}
@@ -632,22 +688,33 @@ export function FinanceDashboard() {
 
       {/* Sub-Category Breakdown */}
       <Card>
-        <CardHeader>
-          <CardTitle>Top 10 Expense by Sub-Category</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span>Top 10 Expense by Sub-Category</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {getPeriodLabel()}
+            </span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {expenseBySubCategory.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={expenseBySubCategory} layout="vertical">
+              <BarChart data={expenseBySubCategory} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`} />
-                <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={120} 
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(value) => value.length > 18 ? `${value.slice(0, 18)}...` : value}
+                />
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Bar dataKey="value" fill="hsl(var(--primary))" />
+                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">
               No data available
             </div>
           )}
@@ -656,27 +723,30 @@ export function FinanceDashboard() {
 
       {/* Monthly/Daily Trend */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <TrendingUp className="h-4 w-4" />
             {selectedMonth !== "all" ? "Daily Trend" : "Monthly Trend"}
+            <span className="text-xs font-normal text-muted-foreground ml-auto">
+              {getFilterLabel()}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {monthlyTrend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <BarChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey={selectedMonth !== "all" ? "day" : "month"} />
-                <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} />
+                <XAxis dataKey={selectedMonth !== "all" ? "day" : "month"} tick={{ fontSize: 11 }} />
+                <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                <Legend />
-                <Bar dataKey="income" name="Income" fill="#10b981" />
-                <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--destructive))" />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
               No data available
             </div>
           )}
@@ -685,19 +755,19 @@ export function FinanceDashboard() {
 
       {/* Forecast */}
       <Card>
-        <CardHeader>
-          <CardTitle>Forecast (Next 3 Months)</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Forecast (Next 3 Months)</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={220}>
             <LineChart data={forecast}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} tick={{ fontSize: 11 }} />
               <Tooltip formatter={(value: number) => formatCurrency(value)} />
-              <Legend />
-              <Line type="monotone" dataKey="income" name="Expected Income" stroke="#10b981" strokeWidth={2} />
-              <Line type="monotone" dataKey="expenses" name="Expected Expenses" stroke="hsl(var(--destructive))" strokeWidth={2} />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Line type="monotone" dataKey="income" name="Expected Income" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="expenses" name="Expected Expenses" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
