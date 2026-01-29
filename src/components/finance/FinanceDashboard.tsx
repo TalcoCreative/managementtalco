@@ -33,7 +33,8 @@ import {
   getMainCategoryLabel, 
   getSubCategoryLabel,
   getSubCategories,
-  getAllSubCategories
+  getAllSubCategories,
+  findCategoryBySubCategory
 } from "@/lib/finance-categories";
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -142,6 +143,13 @@ export function FinanceDashboard() {
     };
   }, [selectedYear, selectedMonth]);
 
+  // Helper to derive main category from sub_category for filtering
+  const deriveMainCategory = (subCategory: string | null): string => {
+    if (!subCategory) return "lainnya";
+    const mainCat = findCategoryBySubCategory(subCategory);
+    return mainCat?.value || "lainnya";
+  };
+
   // Filter ledger entries based on selected filters
   const filteredEntries = useMemo(() => {
     if (!ledgerEntries) return [];
@@ -157,8 +165,11 @@ export function FinanceDashboard() {
       // Month filter
       if (selectedMonth !== "all" && entryMonth !== parseInt(selectedMonth)) return false;
       
-      // Category filter
-      if (selectedCategory !== "all" && entry.sub_type !== selectedCategory) return false;
+      // Category filter - derive from sub_category instead of unreliable sub_type
+      if (selectedCategory !== "all") {
+        const derivedCategory = deriveMainCategory(entry.sub_category);
+        if (derivedCategory !== selectedCategory) return false;
+      }
       
       // Sub-category filter
       if (selectedSubCategory !== "all" && entry.sub_category !== selectedSubCategory) return false;
@@ -214,21 +225,25 @@ export function FinanceDashboard() {
   const netCashflow = totalIncome - totalExpenses;
   const endingBalance = previousBalance + netCashflow;
 
+  // SDM/HR sub-categories for payroll detection
+  const sdmSubCategories = ["gaji_upah", "freelance_parttimer", "bpjs", "thr_bonus", "rekrutmen", "training_sertifikasi", "kesehatan_karyawan", "reimburse_karyawan"];
+
   const payrollExpenses = filteredEntries
-    .filter(e => e.type === "expense" && (e.sub_type === "sdm_hr" || e.sub_category === "gaji_upah"))
+    .filter(e => e.type === "expense" && sdmSubCategories.includes(e.sub_category || ""))
     .reduce((sum, e) => sum + Math.abs(Number(e.amount)), 0);
 
   const nonPayrollExpenses = totalExpenses - payrollExpenses;
 
-  // Expense by main category
+  // Expense by main category - derive from sub_category instead of unreliable sub_type
   const expenseByMainCategory = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
     
     filteredEntries
       .filter(e => e.type === "expense")
       .forEach(e => {
-        const cat = e.sub_type || "lainnya";
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(Number(e.amount));
+        // Derive main category from sub_category using the helper
+        const mainCat = deriveMainCategory(e.sub_category);
+        categoryTotals[mainCat] = (categoryTotals[mainCat] || 0) + Math.abs(Number(e.amount));
       });
     
     return Object.entries(categoryTotals)
@@ -309,7 +324,11 @@ export function FinanceDashboard() {
         ?.filter(e => {
           if (e.type !== "expense") return false;
           if (e.date < start || e.date > end) return false;
-          if (selectedCategory !== "all" && e.sub_type !== selectedCategory) return false;
+          // Use derived category from sub_category instead of sub_type
+          if (selectedCategory !== "all") {
+            const derivedCat = deriveMainCategory(e.sub_category);
+            if (derivedCat !== selectedCategory) return false;
+          }
           if (selectedSubCategory !== "all" && e.sub_category !== selectedSubCategory) return false;
           return true;
         })
