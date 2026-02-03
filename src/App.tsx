@@ -56,6 +56,7 @@ import Holiday from "./pages/Holiday";
 import EditorialPlan from "./pages/EditorialPlan";
 import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
+import PublicEditorialPlanList from "./pages/PublicEditorialPlanList";
 import ClientHub from "./pages/ClientHub";
 import PublicClientHub from "./pages/PublicClientHub";
 
@@ -109,6 +110,7 @@ const App = () => (
           <Route path="/editorial-plan" element={<ProtectedRoute><EditorialPlan /></ProtectedRoute>} />
           <Route path="/ep/:clientSlug/:epSlug/edit" element={<ProtectedRoute><EditorialPlanEditor /></ProtectedRoute>} />
           <Route path="/ep/:clientSlug/:epSlug" element={<PublicEditorialPlan />} />
+          <Route path="/ep-list/:clientSlug" element={<PublicEditorialPlanList />} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/client-hub" element={<ProtectedRoute><ClientHub /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />

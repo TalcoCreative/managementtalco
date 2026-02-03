@@ -103,7 +103,7 @@ export default function PublicClientHub() {
       description: "Lihat editorial plan dan konten yang direncanakan",
       icon: FileText,
       color: "bg-purple-500",
-      onClick: () => navigate(`/ep/${slug}`),
+      onClick: () => navigate(`/ep-list/${client.dashboard_slug}`),
       enabled: hasEditorialPlans,
     },
   ];
