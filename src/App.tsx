@@ -57,6 +57,7 @@ import EditorialPlan from "./pages/EditorialPlan";
 import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
 import ClientHub from "./pages/ClientHub";
+import PublicClientHub from "./pages/PublicClientHub";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const App = () => (
           <Route path="/dashboard/:slug" element={<SharedClientDashboard />} />
           <Route path="/clients/public/:slug" element={<SharedClientDashboard />} />
           <Route path="/reports/:slug" element={<SharedClientReports />} />
+          <Route path="/hub/:slug" element={<PublicClientHub />} />
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
