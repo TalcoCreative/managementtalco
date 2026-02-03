@@ -15,6 +15,9 @@ interface ClientHubData {
     dashboard_slug: string;
     social_media_slug: string | null;
   };
+  hasProjects: boolean;
+  hasReports: boolean;
+  hasSocialMedia: boolean;
   hasEditorialPlans: boolean;
 }
 
@@ -68,7 +71,7 @@ export default function PublicClientHub() {
     );
   }
 
-  const { client, hasEditorialPlans } = data;
+  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans } = data;
 
   const navigationCards = [
     {
@@ -77,7 +80,7 @@ export default function PublicClientHub() {
       icon: LayoutDashboard,
       color: "bg-blue-500",
       onClick: () => navigate(`/dashboard/${client.dashboard_slug}`),
-      enabled: !!client.dashboard_slug,
+      enabled: hasProjects && !!client.dashboard_slug,
     },
     {
       title: "Reports",
@@ -85,7 +88,7 @@ export default function PublicClientHub() {
       icon: BarChart3,
       color: "bg-green-500",
       onClick: () => navigate(`/reports/${client.dashboard_slug}`),
-      enabled: !!client.dashboard_slug,
+      enabled: hasReports && !!client.dashboard_slug,
     },
     {
       title: "Social Media",
@@ -93,7 +96,7 @@ export default function PublicClientHub() {
       icon: Camera,
       color: "bg-orange-500",
       onClick: () => navigate(`/social-media/client/${client.social_media_slug}`),
-      enabled: !!client.social_media_slug,
+      enabled: hasSocialMedia,
     },
     {
       title: "Editorial Plan",

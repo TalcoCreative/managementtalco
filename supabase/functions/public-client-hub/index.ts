@@ -50,14 +50,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if client has editorial plans
-    const { data: editorialPlans } = await supabase
-      .from("editorial_plans")
-      .select("id")
-      .eq("client_id", client.id)
-      .limit(1);
+    // Check for projects (for Dashboard)
+    const { count: projectCount } = await supabase
+      .from("projects")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
 
-    const hasEditorialPlans = editorialPlans && editorialPlans.length > 0;
+    // Check for platform accounts (for Reports)
+    const { count: platformCount } = await supabase
+      .from("platform_accounts")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
+
+    // Check if client has editorial plans
+    const { count: epCount } = await supabase
+      .from("editorial_plans")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
 
     const response = {
       client: {
@@ -67,8 +76,13 @@ Deno.serve(async (req) => {
         dashboard_slug: client.dashboard_slug,
         social_media_slug: client.social_media_slug,
       },
-      hasEditorialPlans,
+      hasProjects: (projectCount || 0) > 0,
+      hasReports: (platformCount || 0) > 0,
+      hasSocialMedia: !!client.social_media_slug,
+      hasEditorialPlans: (epCount || 0) > 0,
     };
+
+    console.log("Public client hub response:", response);
 
     return new Response(
       JSON.stringify(response),
