@@ -68,20 +68,18 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id);
 
-    // Check for meetings (non-confidential, not cancelled)
+    // Check for meetings (non-confidential)
     const { count: meetingCount } = await supabase
       .from("meetings")
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id)
-      .eq("is_confidential", false)
-      .neq("status", "cancelled");
+      .eq("is_confidential", false);
 
-    // Check for shootings (approved only for public view)
+    // Check for shootings (all statuses)
     const { count: shootingCount } = await supabase
       .from("shooting_schedules")
       .select("*", { count: "exact", head: true })
-      .eq("client_id", client.id)
-      .eq("status", "approved");
+      .eq("client_id", client.id);
 
     const response = {
       client: {
