@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Building2, ArrowLeft, Calendar, Clock, MapPin, 
-  Video, Users, AlertCircle 
+  Video, Users, AlertCircle, Filter
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -32,9 +34,27 @@ interface ClientData {
   dashboard_slug: string;
 }
 
+const getMonthOptions = () => {
+  const options = [];
+  const now = new Date();
+  
+  // Past 6 months + current month + next 3 months
+  for (let i = -6; i <= 3; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    options.push({
+      value: format(date, "yyyy-MM"),
+      label: format(date, "MMMM yyyy", { locale: idLocale }),
+    });
+  }
+  return options;
+};
+
 export default function PublicMeetingList() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
   const navigate = useNavigate();
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+
+  const monthOptions = getMonthOptions();
 
   // Fetch client info
   const { data: client, isLoading: clientLoading } = useQuery<ClientData | null>({
@@ -53,7 +73,7 @@ export default function PublicMeetingList() {
     enabled: !!clientSlug,
   });
 
-  // Fetch meetings for client
+  // Fetch all meetings for client
   const { data: meetings, isLoading: meetingsLoading } = useQuery<Meeting[]>({
     queryKey: ["public-meetings", client?.id],
     queryFn: async () => {
@@ -66,7 +86,6 @@ export default function PublicMeetingList() {
         `)
         .eq("client_id", client!.id)
         .eq("is_confidential", false)
-        .neq("status", "cancelled")
         .order("meeting_date", { ascending: false });
 
       if (error) throw error;
@@ -79,6 +98,16 @@ export default function PublicMeetingList() {
   });
 
   const isLoading = clientLoading || meetingsLoading;
+
+  // Filter by month
+  const filteredMeetings = meetings?.filter((meeting) => {
+    if (selectedMonth === "all") return true;
+    const meetingDate = parseISO(meeting.meeting_date);
+    const [year, month] = selectedMonth.split("-").map(Number);
+    const filterStart = startOfMonth(new Date(year, month - 1));
+    const filterEnd = endOfMonth(new Date(year, month - 1));
+    return meetingDate >= filterStart && meetingDate <= filterEnd;
+  });
 
   if (isLoading) {
     return (
@@ -103,22 +132,27 @@ export default function PublicMeetingList() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge variant="default" className="bg-green-500">Selesai</Badge>;
-      case "scheduled":
-        return <Badge variant="secondary">Dijadwalkan</Badge>;
-      case "rescheduled":
-        return <Badge variant="outline" className="border-orange-500 text-orange-500">Dijadwal Ulang</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const getStatusBadge = (status: string, meetingDate: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const date = new Date(meetingDate);
+    const isPast = date < today;
+
+    if (status === "cancelled") {
+      return <Badge variant="destructive">Dibatalkan</Badge>;
     }
+    if (status === "completed" || (status === "scheduled" && isPast)) {
+      return <Badge className="bg-green-500 hover:bg-green-600">Selesai</Badge>;
+    }
+    if (status === "rescheduled") {
+      return <Badge variant="outline" className="border-orange-500 text-orange-600">Dijadwal Ulang</Badge>;
+    }
+    return <Badge variant="secondary">Dijadwalkan</Badge>;
   };
 
   const getModeIcon = (mode: string) => {
     return mode === "online" ? (
-      <Video className="h-4 w-4 text-blue-500" />
+      <Video className="h-4 w-4 text-primary" />
     ) : (
       <MapPin className="h-4 w-4 text-orange-500" />
     );
@@ -151,19 +185,38 @@ export default function PublicMeetingList() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Jadwal Meeting
-          </h2>
-          <p className="text-muted-foreground">
-            Daftar meeting yang dijadwalkan
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-1 flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Jadwal Meeting
+            </h2>
+            <p className="text-muted-foreground">
+              {filteredMeetings?.length || 0} meeting ditemukan
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Bulan</SelectItem>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {meetings && meetings.length > 0 ? (
+        {filteredMeetings && filteredMeetings.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {meetings.map((meeting) => (
+            {filteredMeetings.map((meeting) => (
               <Card 
                 key={meeting.id} 
                 className="hover:shadow-lg transition-all"
@@ -173,7 +226,7 @@ export default function PublicMeetingList() {
                     <CardTitle className="text-base line-clamp-2">
                       {meeting.title}
                     </CardTitle>
-                    {getStatusBadge(meeting.status)}
+                    {getStatusBadge(meeting.status, meeting.meeting_date)}
                   </div>
                   {meeting.project && (
                     <p className="text-sm text-muted-foreground">
@@ -207,7 +260,9 @@ export default function PublicMeetingList() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">
-                Belum ada jadwal meeting
+                {selectedMonth === "all" 
+                  ? "Belum ada jadwal meeting" 
+                  : "Tidak ada meeting di bulan ini"}
               </p>
             </CardContent>
           </Card>
