@@ -68,6 +68,21 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id);
 
+    // Check for meetings (non-confidential, not cancelled)
+    const { count: meetingCount } = await supabase
+      .from("meetings")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id)
+      .eq("is_confidential", false)
+      .neq("status", "cancelled");
+
+    // Check for shootings (approved only for public view)
+    const { count: shootingCount } = await supabase
+      .from("shooting_schedules")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id)
+      .eq("status", "approved");
+
     const response = {
       client: {
         id: client.id,
@@ -80,6 +95,8 @@ Deno.serve(async (req) => {
       hasReports: (platformCount || 0) > 0,
       hasSocialMedia: !!client.social_media_slug,
       hasEditorialPlans: (epCount || 0) > 0,
+      hasMeetings: (meetingCount || 0) > 0,
+      hasShootings: (shootingCount || 0) > 0,
     };
 
     console.log("Public client hub response:", response);
