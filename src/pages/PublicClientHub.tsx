@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   Building2, LayoutDashboard, BarChart3, Camera, 
-  Users, FileText, ArrowRight, AlertCircle 
+  Users, FileText, ArrowRight, AlertCircle, Video 
 } from "lucide-react";
 
 interface ClientHubData {
@@ -19,6 +19,8 @@ interface ClientHubData {
   hasReports: boolean;
   hasSocialMedia: boolean;
   hasEditorialPlans: boolean;
+  hasMeetings: boolean;
+  hasShootings: boolean;
 }
 
 export default function PublicClientHub() {
@@ -71,7 +73,7 @@ export default function PublicClientHub() {
     );
   }
 
-  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans } = data;
+  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans, hasMeetings, hasShootings } = data;
 
   const navigationCards = [
     {
@@ -105,6 +107,22 @@ export default function PublicClientHub() {
       color: "bg-purple-500",
       onClick: () => navigate(`/ep-list/${client.dashboard_slug}`),
       enabled: hasEditorialPlans,
+    },
+    {
+      title: "Meeting",
+      description: "Lihat jadwal meeting dengan client",
+      icon: Users,
+      color: "bg-indigo-500",
+      onClick: () => navigate(`/meeting-list/${client.dashboard_slug}`),
+      enabled: hasMeetings,
+    },
+    {
+      title: "Shooting",
+      description: "Lihat jadwal shooting yang telah disetujui",
+      icon: Video,
+      color: "bg-pink-500",
+      onClick: () => navigate(`/shooting-list/${client.dashboard_slug}`),
+      enabled: hasShootings,
     },
   ];
 
