@@ -31,11 +31,13 @@ export default function PublicClientHub() {
     queryKey: ["public-client-hub", slug],
     queryFn: async () => {
       const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+       const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const res = await fetch(
         `${baseUrl}/functions/v1/public-client-hub?slug=${encodeURIComponent(slug || "")}`,
         {
           headers: {
             "Content-Type": "application/json",
+             "apikey": apiKey,
           },
         }
       );
