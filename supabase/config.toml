@@ -53,3 +53,12 @@ verify_jwt = false
 
 [functions.shared-client-reports]
 verify_jwt = false
+
+ [functions.public-client-hub]
+ verify_jwt = false
+
+ [functions.public-meetings]
+ verify_jwt = false
+
+ [functions.public-shootings]
+ verify_jwt = false

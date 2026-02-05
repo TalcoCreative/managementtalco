@@ -53,8 +53,7 @@
        .from("shooting_schedules")
        .select(`
          id, title, scheduled_date, scheduled_time, 
-         location, status, notes,
-         projects(name)
+         location, status, notes, project_id
        `)
        .eq("client_id", client.id)
        .order("scheduled_date", { ascending: false });
@@ -67,11 +66,28 @@
        );
      }
  
-     const formattedShootings = (shootings || []).map((s: any) => ({
-       ...s,
-       project: s.projects,
-       projects: undefined,
-     }));
+     // Get project titles for shootings that have project_id
+     const projectIds = [...new Set((shootings || []).filter((s: any) => s.project_id).map((s: any) => s.project_id))];
+     let projectMap: Record<string, string> = {};
+     
+     if (projectIds.length > 0) {
+       const { data: projects } = await supabase
+         .from("projects")
+         .select("id, title")
+         .in("id", projectIds);
+       
+       if (projects) {
+         projectMap = Object.fromEntries(projects.map((p: any) => [p.id, p.title]));
+       }
+     }
+ 
+     const formattedShootings = (shootings || []).map((s: any) => {
+       const { project_id, ...rest } = s;
+       return {
+         ...rest,
+         project: project_id ? { name: projectMap[project_id] || null } : null,
+       };
+     });
  
      console.log(`Public shootings for ${client.name}: ${formattedShootings.length} found`);
  
