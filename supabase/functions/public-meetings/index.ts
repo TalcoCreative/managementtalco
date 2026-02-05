@@ -53,8 +53,7 @@
        .from("meetings")
        .select(`
          id, title, meeting_date, start_time, end_time, mode, 
-         location, meeting_link, status, type,
-         projects(name)
+         location, meeting_link, status, type, project_id
        `)
        .eq("client_id", client.id)
        .eq("is_confidential", false)
@@ -68,11 +67,28 @@
        );
      }
  
-     const formattedMeetings = (meetings || []).map((m: any) => ({
-       ...m,
-       project: m.projects,
-       projects: undefined,
-     }));
+     // Get project titles for meetings that have project_id
+     const projectIds = [...new Set((meetings || []).filter((m: any) => m.project_id).map((m: any) => m.project_id))];
+     let projectMap: Record<string, string> = {};
+     
+     if (projectIds.length > 0) {
+       const { data: projects } = await supabase
+         .from("projects")
+         .select("id, title")
+         .in("id", projectIds);
+       
+       if (projects) {
+         projectMap = Object.fromEntries(projects.map((p: any) => [p.id, p.title]));
+       }
+     }
+ 
+     const formattedMeetings = (meetings || []).map((m: any) => {
+       const { project_id, ...rest } = m;
+       return {
+         ...rest,
+         project: project_id ? { name: projectMap[project_id] || null } : null,
+       };
+     });
  
      console.log(`Public meetings for ${client.name}: ${formattedMeetings.length} found`);
  
