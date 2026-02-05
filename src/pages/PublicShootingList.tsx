@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
+ 
+ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 interface Shooting {
   id: string;
@@ -53,47 +55,32 @@ export default function PublicShootingList() {
 
   const monthOptions = getMonthOptions();
 
-  // Fetch client info
-  const { data: client, isLoading: clientLoading } = useQuery<ClientData | null>({
-    queryKey: ["public-client-shooting", clientSlug],
+   // Fetch client and shootings via edge function
+   const { data, isLoading } = useQuery<{ client: ClientData; shootings: Shooting[] } | null>({
+     queryKey: ["public-shootings-data", clientSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, name, company, dashboard_slug")
-        .eq("dashboard_slug", clientSlug)
-        .eq("status", "active")
-        .maybeSingle();
+       const response = await fetch(
+         `${SUPABASE_URL}/functions/v1/public-shootings?slug=${clientSlug}`,
+         {
+           headers: {
+             "apikey": SUPABASE_ANON_KEY,
+             "Content-Type": "application/json",
+           },
+         }
+       );
 
-      if (error) throw error;
-      return data;
+       if (!response.ok) {
+         if (response.status === 404) return null;
+         throw new Error("Failed to fetch shootings");
+       }
+ 
+       return response.json();
     },
     enabled: !!clientSlug,
   });
 
-  // Fetch ALL shootings for client (not just approved)
-  const { data: shootings, isLoading: shootingsLoading } = useQuery<Shooting[]>({
-    queryKey: ["public-shootings", client?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("shooting_schedules")
-        .select(`
-          id, title, scheduled_date, scheduled_time, 
-          location, status, notes,
-          projects(name)
-        `)
-        .eq("client_id", client!.id)
-        .order("scheduled_date", { ascending: false });
-
-      if (error) throw error;
-      return (data || []).map((s: any) => ({
-        ...s,
-        project: s.projects
-      })) as Shooting[];
-    },
-    enabled: !!client?.id,
-  });
-
-  const isLoading = clientLoading || shootingsLoading;
+   const client = data?.client || null;
+   const shootings = data?.shootings || [];
 
   // Filter by month
   const filteredShootings = shootings?.filter((shooting) => {
