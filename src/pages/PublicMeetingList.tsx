@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
+ 
+ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 interface Meeting {
   id: string;
@@ -56,48 +58,32 @@ export default function PublicMeetingList() {
 
   const monthOptions = getMonthOptions();
 
-  // Fetch client info
-  const { data: client, isLoading: clientLoading } = useQuery<ClientData | null>({
-    queryKey: ["public-client-meeting", clientSlug],
+   // Fetch client and meetings via edge function
+   const { data, isLoading } = useQuery<{ client: ClientData; meetings: Meeting[] } | null>({
+     queryKey: ["public-meetings-data", clientSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("id, name, company, dashboard_slug")
-        .eq("dashboard_slug", clientSlug)
-        .eq("status", "active")
-        .maybeSingle();
+       const response = await fetch(
+         `${SUPABASE_URL}/functions/v1/public-meetings?slug=${clientSlug}`,
+         {
+           headers: {
+             "apikey": SUPABASE_ANON_KEY,
+             "Content-Type": "application/json",
+           },
+         }
+       );
 
-      if (error) throw error;
-      return data;
+       if (!response.ok) {
+         if (response.status === 404) return null;
+         throw new Error("Failed to fetch meetings");
+       }
+ 
+       return response.json();
     },
     enabled: !!clientSlug,
   });
 
-  // Fetch all meetings for client
-  const { data: meetings, isLoading: meetingsLoading } = useQuery<Meeting[]>({
-    queryKey: ["public-meetings", client?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("meetings")
-        .select(`
-          id, title, meeting_date, start_time, end_time, mode, 
-          location, meeting_link, status, type,
-          projects(name)
-        `)
-        .eq("client_id", client!.id)
-        .eq("is_confidential", false)
-        .order("meeting_date", { ascending: false });
-
-      if (error) throw error;
-      return (data || []).map((m: any) => ({
-        ...m,
-        project: m.projects
-      })) as Meeting[];
-    },
-    enabled: !!client?.id,
-  });
-
-  const isLoading = clientLoading || meetingsLoading;
+   const client = data?.client || null;
+   const meetings = data?.meetings || [];
 
   // Filter by month
   const filteredMeetings = meetings?.filter((meeting) => {
