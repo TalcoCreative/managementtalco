@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper, Home } from "lucide-react";
+import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper, Home, Building2, User } from "lucide-react";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +44,8 @@ export default function Schedule() {
   const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
   const [filterMonth, setFilterMonth] = useState<Date>(new Date());
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterPerson, setFilterPerson] = useState<string>("all");
 
   // Fetch tasks with deadlines
   const { data: tasks } = useQuery({
@@ -51,7 +53,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
-        .select("*, projects(title, clients(name)), assigned_profile:profiles!fk_tasks_assigned_to_profiles(full_name)")
+        .select("*, projects(title, clients(id, name)), assigned_profile:profiles!fk_tasks_assigned_to_profiles(full_name)")
         .not("deadline", "is", null)
         .order("deadline", { ascending: true });
       if (error) throw error;
@@ -65,7 +67,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
-        .select("*, clients(name)")
+        .select("*, clients(id, name)")
         .not("deadline", "is", null)
         .order("deadline", { ascending: true });
       if (error) throw error;
@@ -79,7 +81,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meetings")
-        .select("*, clients(name), projects(title), created_by_profile:profiles!fk_meetings_created_by(full_name)")
+        .select("*, clients(id, name), projects(title), created_by_profile:profiles!fk_meetings_created_by(full_name)")
         .order("meeting_date", { ascending: true });
       if (error) throw error;
       return data;
@@ -92,7 +94,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shooting_schedules")
-        .select("*, clients(name), projects(title), profiles!shooting_schedules_requested_by_fkey(full_name)")
+        .select("*, clients(id, name), projects(title), profiles!shooting_schedules_requested_by_fkey(full_name)")
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
       return data;
@@ -113,7 +115,152 @@ export default function Schedule() {
     },
   });
 
-  // Helper to check if a date falls within a holiday range
+  // Fetch clients for filter
+  const { data: clients } = useQuery({
+    queryKey: ["clients-for-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch profiles for person filter
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles-for-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch meeting participants for person filter
+  const { data: meetingParticipants } = useQuery({
+    queryKey: ["meeting-participants-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_participants")
+        .select("meeting_id, user_id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch task assignees for person filter
+  const { data: taskAssignees } = useQuery({
+    queryKey: ["task-assignees-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_assignees")
+        .select("task_id, user_id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch shooting crew for person filter
+  const { data: shootingCrew } = useQuery({
+    queryKey: ["shooting-crew-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shooting_crew")
+        .select("shooting_id, user_id");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Build lookup maps for person filtering
+  const meetingPersonMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    meetingParticipants?.forEach((p: any) => {
+      if (!map[p.meeting_id]) map[p.meeting_id] = new Set();
+      map[p.meeting_id].add(p.user_id);
+    });
+    return map;
+  }, [meetingParticipants]);
+
+  const taskPersonMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    taskAssignees?.forEach((a: any) => {
+      if (!map[a.task_id]) map[a.task_id] = new Set();
+      map[a.task_id].add(a.user_id);
+    });
+    return map;
+  }, [taskAssignees]);
+
+  const shootingPersonMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    shootingCrew?.forEach((c: any) => {
+      if (!map[c.shooting_id]) map[c.shooting_id] = new Set();
+      map[c.shooting_id].add(c.user_id);
+    });
+    return map;
+  }, [shootingCrew]);
+
+  // Apply client & person filters
+  const filteredTasks = useMemo(() => {
+    return (tasks || []).filter((task: any) => {
+      if (filterClient !== "all") {
+        const taskClientId = task.projects?.clients?.id;
+        if (!taskClientId || taskClientId !== filterClient) return false;
+      }
+      if (filterPerson !== "all") {
+        const isAssigned = task.assigned_to === filterPerson;
+        const isInAssignees = taskPersonMap[task.id]?.has(filterPerson);
+        if (!isAssigned && !isInAssignees) return false;
+      }
+      return true;
+    });
+  }, [tasks, filterClient, filterPerson, taskPersonMap]);
+
+  const filteredProjects = useMemo(() => {
+    return (projects || []).filter((project: any) => {
+      if (filterClient !== "all") {
+        if (project.clients?.id !== filterClient) return false;
+      }
+      if (filterPerson !== "all") {
+        if (project.pic_id !== filterPerson && project.created_by !== filterPerson) return false;
+      }
+      return true;
+    });
+  }, [projects, filterClient, filterPerson]);
+
+  const filteredMeetings = useMemo(() => {
+    return (meetings || []).filter((meeting: any) => {
+      if (filterClient !== "all") {
+        if (meeting.clients?.id !== filterClient) return false;
+      }
+      if (filterPerson !== "all") {
+        const isCreator = meeting.created_by === filterPerson;
+        const isParticipant = meetingPersonMap[meeting.id]?.has(filterPerson);
+        if (!isCreator && !isParticipant) return false;
+      }
+      return true;
+    });
+  }, [meetings, filterClient, filterPerson, meetingPersonMap]);
+
+  const filteredShootings = useMemo(() => {
+    return (shootings || []).filter((shooting: any) => {
+      if (filterClient !== "all") {
+        if (shooting.clients?.id !== filterClient) return false;
+      }
+      if (filterPerson !== "all") {
+        const isRequester = shooting.requested_by === filterPerson;
+        const isCrew = shootingPersonMap[shooting.id]?.has(filterPerson);
+        if (!isRequester && !isCrew) return false;
+      }
+      return true;
+    });
+  }, [shootings, filterClient, filterPerson, shootingPersonMap]);
   const getHolidaysForDate = (date: Date) => {
     return holidays?.filter(holiday => {
       const start = new Date(holiday.start_date);
@@ -128,16 +275,16 @@ export default function Schedule() {
 
   const getDatesWithEvents = () => {
     const dates: Date[] = [];
-    tasks?.forEach(task => {
+    filteredTasks?.forEach(task => {
       if (task.deadline) dates.push(new Date(task.deadline));
     });
-    projects?.forEach(project => {
+    filteredProjects?.forEach(project => {
       if (project.deadline) dates.push(new Date(project.deadline));
     });
-    meetings?.forEach(meeting => {
+    filteredMeetings?.forEach(meeting => {
       if (meeting.meeting_date) dates.push(new Date(meeting.meeting_date));
     });
-    shootings?.forEach(shooting => {
+    filteredShootings?.forEach(shooting => {
       if (shooting.scheduled_date) dates.push(new Date(shooting.scheduled_date));
     });
     // Add holiday dates
@@ -152,19 +299,19 @@ export default function Schedule() {
   };
 
   const getEventsForDate = (date: Date) => {
-    const taskEvents = tasks?.filter(task => 
+    const taskEvents = filteredTasks?.filter(task => 
       task.deadline && isSameDay(new Date(task.deadline), date)
     ) || [];
     
-    const projectEvents = projects?.filter(project => 
+    const projectEvents = filteredProjects?.filter(project => 
       project.deadline && isSameDay(new Date(project.deadline), date)
     ) || [];
 
-    const meetingEvents = meetings?.filter(meeting => 
+    const meetingEvents = filteredMeetings?.filter(meeting => 
       meeting.meeting_date && isSameDay(new Date(meeting.meeting_date), date)
     ) || [];
 
-    const shootingEvents = shootings?.filter(shooting => 
+    const shootingEvents = filteredShootings?.filter(shooting => 
       shooting.scheduled_date && isSameDay(new Date(shooting.scheduled_date), date)
     ) || [];
 
@@ -177,25 +324,25 @@ export default function Schedule() {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
     
-    const taskEvents = tasks?.filter(task => {
+    const taskEvents = filteredTasks?.filter(task => {
       if (!task.deadline) return false;
       const d = parseISO(task.deadline);
       return isWithinInterval(d, { start, end });
     }) || [];
     
-    const projectEvents = projects?.filter(project => {
+    const projectEvents = filteredProjects?.filter(project => {
       if (!project.deadline) return false;
       const d = parseISO(project.deadline);
       return isWithinInterval(d, { start, end });
     }) || [];
 
-    const meetingEvents = meetings?.filter(meeting => {
+    const meetingEvents = filteredMeetings?.filter(meeting => {
       if (!meeting.meeting_date) return false;
       const d = parseISO(meeting.meeting_date);
       return isWithinInterval(d, { start, end });
     }) || [];
 
-    const shootingEvents = shootings?.filter(shooting => {
+    const shootingEvents = filteredShootings?.filter(shooting => {
       if (!shooting.scheduled_date) return false;
       const d = parseISO(shooting.scheduled_date);
       return isWithinInterval(d, { start, end });
@@ -204,7 +351,6 @@ export default function Schedule() {
     const holidayEvents = holidays?.filter(holiday => {
       const holidayStart = parseISO(holiday.start_date);
       const holidayEnd = parseISO(holiday.end_date);
-      // Include if any part of the holiday overlaps with the month
       return (holidayStart <= end && holidayEnd >= start);
     }) || [];
 
@@ -246,25 +392,68 @@ export default function Schedule() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Schedule</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === "calendar" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("calendar")}
-            >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              Calendar
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4 mr-1" />
-              List
-            </Button>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Schedule</h1>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "calendar" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("calendar")}
+              >
+                <LayoutGrid className="h-4 w-4 mr-1" />
+                Calendar
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4 mr-1" />
+                List
+              </Button>
+            </div>
+          </div>
+
+          {/* Client & Person Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterClient} onValueChange={setFilterClient}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter Client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Client</SelectItem>
+                  {clients?.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <Select value={filterPerson} onValueChange={setFilterPerson}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter Person" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Orang</SelectItem>
+                  {profiles?.map((profile: any) => (
+                    <SelectItem key={profile.id} value={profile.id}>{profile.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(filterClient !== "all" || filterPerson !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setFilterClient("all"); setFilterPerson("all"); }}
+              >
+                Reset Filter
+              </Button>
+            )}
           </div>
         </div>
 
