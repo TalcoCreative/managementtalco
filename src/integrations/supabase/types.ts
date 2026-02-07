@@ -4846,6 +4846,7 @@ export type Database = {
           description_edited_at: string | null
           event_id: string | null
           id: string
+          is_hidden: boolean
           link: string | null
           priority: string | null
           project_id: string
@@ -4866,6 +4867,7 @@ export type Database = {
           description_edited_at?: string | null
           event_id?: string | null
           id?: string
+          is_hidden?: boolean
           link?: string | null
           priority?: string | null
           project_id: string
@@ -4886,6 +4888,7 @@ export type Database = {
           description_edited_at?: string | null
           event_id?: string | null
           id?: string
+          is_hidden?: boolean
           link?: string | null
           priority?: string | null
           project_id?: string
