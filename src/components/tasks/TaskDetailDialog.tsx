@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check } from "lucide-react";
+import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check, EyeOff, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
@@ -764,6 +765,42 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Hidden from Client Toggle */}
+              <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+                <div className="flex items-center gap-2">
+                  {task.is_hidden ? (
+                    <EyeOff className="h-4 w-4 text-orange-500" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="font-medium text-sm">Hidden dari Client</p>
+                    <p className="text-xs text-muted-foreground">
+                      {task.is_hidden 
+                        ? "Task ini tidak terlihat di dashboard public client" 
+                        : "Task ini terlihat di dashboard public client"}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={!!task.is_hidden}
+                  onCheckedChange={async (checked) => {
+                    if (!taskId) return;
+                    const { error } = await supabase
+                      .from("tasks")
+                      .update({ is_hidden: checked } as any)
+                      .eq("id", taskId);
+                    if (error) {
+                      toast.error("Gagal update status hidden");
+                      return;
+                    }
+                    toast.success(checked ? "Task di-hide dari client" : "Task visible untuk client");
+                    queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+                    queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+                  }}
+                />
               </div>
 
               {/* Related Shooting Section */}

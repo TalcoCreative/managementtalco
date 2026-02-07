@@ -100,7 +100,8 @@ serve(async (req) => {
         project_id,
         created_at
       `)
-      .in("project_id", projectIds.length > 0 ? projectIds : ['no-project']);
+      .in("project_id", projectIds.length > 0 ? projectIds : ['no-project'])
+      .or("is_hidden.is.null,is_hidden.eq.false");
 
     // Apply date filter
     if (startDate) {
