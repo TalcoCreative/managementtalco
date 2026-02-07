@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Calendar, Clock, MapPin, Video, Users, Building2, 
   Link as LinkIcon, Check, X, ExternalLink, CalendarClock,
@@ -673,7 +674,9 @@ const MeetingDetailDialog = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl p-0 max-h-[90vh]">
+          <ScrollArea className="max-h-[85vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 flex-wrap">
               {meeting.title}
@@ -1363,6 +1366,8 @@ const MeetingDetailDialog = ({
               <p>Pada: {format(parseISO(meeting.created_at), "dd MMM yyyy HH:mm", { locale: id })}</p>
             </div>
           </div>
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
 
