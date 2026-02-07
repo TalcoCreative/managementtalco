@@ -48,16 +48,17 @@
        );
      }
  
-     // Fetch all non-confidential meetings for the client
-     const { data: meetings, error: meetingsError } = await supabase
-       .from("meetings")
-       .select(`
-         id, title, meeting_date, start_time, end_time, mode, 
-         location, meeting_link, status, type, project_id
-       `)
-       .eq("client_id", client.id)
-       .eq("is_confidential", false)
-       .order("meeting_date", { ascending: false });
+      // Fetch all non-confidential external meetings for the client
+      const { data: meetings, error: meetingsError } = await supabase
+        .from("meetings")
+        .select(`
+          id, title, meeting_date, start_time, end_time, mode, 
+          location, meeting_link, status, type, project_id
+        `)
+        .eq("client_id", client.id)
+        .eq("is_confidential", false)
+        .eq("type", "external")
+        .order("meeting_date", { ascending: false });
  
      if (meetingsError) {
        console.error("Error fetching meetings:", meetingsError);
