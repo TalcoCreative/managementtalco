@@ -347,6 +347,23 @@ export default function Projects() {
         )}
       </div>
 
+      <div onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={project.status}
+          onValueChange={(value) => handleStatusChange(project.id, value)}
+        >
+          <SelectTrigger className="h-7 text-xs w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-50 bg-popover">
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="on_hold">On Hold</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {tasksByProject?.get(project.id)?.today?.length > 0 && (
         <div className="p-1.5 bg-amber-500/10 rounded border border-amber-500/20">
           <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs font-medium">
