@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink } from "lucide-react";
+import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
@@ -51,6 +52,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     deadline: "",
     link: "",
     notes: "",
+    is_hidden: false,
   });
   const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData>({
@@ -181,6 +183,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         created_by: session.session.user.id,
         status: "pending",
         requested_at: new Date().toISOString(),
+        is_hidden: formData.is_hidden,
       }).select('id').single();
 
       if (error) throw error;
@@ -237,6 +240,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         deadline: "",
         link: "",
         notes: "",
+        is_hidden: false,
       });
       setAssignedUsers([]);
       setTableData({
@@ -489,6 +493,21 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <EyeOff className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <Label htmlFor="is_hidden" className="text-sm font-medium cursor-pointer">Hidden dari Client</Label>
+                <p className="text-xs text-muted-foreground">Task tidak akan muncul di client dashboard</p>
+              </div>
+            </div>
+            <Switch
+              id="is_hidden"
+              checked={formData.is_hidden}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_hidden: checked })}
+            />
           </div>
 
           <div className="flex gap-2 justify-end">
