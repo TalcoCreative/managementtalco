@@ -61,10 +61,12 @@ export default {
         status: {
           todo: "hsl(var(--status-todo))",
           progress: "hsl(var(--status-progress))",
+          "in-progress": "hsl(var(--status-progress))",
           done: "hsl(var(--status-done))",
           pending: "hsl(var(--status-pending))",
           completed: "hsl(var(--status-completed))",
           onHold: "hsl(var(--status-on-hold))",
+          "on-hold": "hsl(var(--status-on-hold))",
         },
         priority: {
           low: "hsl(var(--priority-low))",
