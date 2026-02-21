@@ -292,13 +292,13 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0 pb-2">
           <DialogTitle>Buat Meeting Baru</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 -mr-4 pr-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex-1 overflow-y-auto -mr-4 pr-4 min-h-0">
+          <form onSubmit={handleSubmit} className="space-y-4 pb-2">
             {/* Basic Info */}
             <div className="space-y-4">
               <div>
@@ -646,7 +646,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
             </div>
 
           </form>
-        </ScrollArea>
+        </div>
 
         <div className="flex-shrink-0 flex justify-end gap-2 pt-3 border-t">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
