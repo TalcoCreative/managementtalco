@@ -48,7 +48,7 @@ export default function HRAnalytics() {
   // Filters
   const [startDate, setStartDate] = useState(format(startOfMonth(now), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(now), 'yyyy-MM-dd'));
-  const [compareMonth, setCompareMonth] = useState(format(subMonths(now, 1), 'yyyy-MM'));
+  const [compareMonth, setCompareMonth] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [activityFilter, setActivityFilter] = useState<string>("all");
@@ -92,10 +92,11 @@ export default function HRAnalytics() {
     },
   });
 
-  // Fetch attendance for comparison period
+  // Fetch attendance for comparison period (only when compareMonth is set)
   const { data: compareAttendance } = useQuery({
     queryKey: ["hr-analytics-compare-attendance", compareMonth],
     queryFn: async () => {
+      if (!compareMonth) return [];
       const compareStart = format(startOfMonth(new Date(compareMonth + '-01')), 'yyyy-MM-dd');
       const compareEnd = format(endOfMonth(new Date(compareMonth + '-01')), 'yyyy-MM-dd');
       const { data, error } = await supabase
@@ -106,6 +107,7 @@ export default function HRAnalytics() {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!compareMonth,
   });
 
   // Fetch tasks
@@ -284,13 +286,16 @@ export default function HRAnalytics() {
       a.notes?.includes('[AUTO CLOCK-OUT')
     ).length;
 
-    // Calculate changes
-    const workHoursChange = compareTotalHours > 0 
+    // Calculate changes (only when comparison is active)
+    const hasComparison = !!compareMonth && filteredCompareAttendance.length > 0;
+    const workHoursChange = hasComparison && compareTotalHours > 0 
       ? Math.round((totalWorkHours - compareTotalHours) / compareTotalHours * 100) 
-      : 0;
-    const autoClockoutChange = compareAutoClockout > 0 
-      ? Math.round((autoClockoutCount - compareAutoClockout) / compareAutoClockout * 100)
-      : autoClockoutCount > 0 ? 100 : 0;
+      : null;
+    const autoClockoutChange = hasComparison
+      ? (compareAutoClockout > 0 
+        ? Math.round((autoClockoutCount - compareAutoClockout) / compareAutoClockout * 100)
+        : autoClockoutCount > 0 ? 100 : 0)
+      : null;
 
     return {
       totalEmployees,
@@ -307,7 +312,7 @@ export default function HRAnalytics() {
       workHoursChange,
       autoClockoutChange,
     };
-  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
@@ -485,14 +490,18 @@ export default function HRAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{kpis.totalWorkHours}h</div>
-              <div className="flex items-center text-xs">
-                {kpis.workHoursChange >= 0 ? (
-                  <><ArrowUpRight className="h-3 w-3 text-green-500" /><span className="text-green-500">+{kpis.workHoursChange}%</span></>
-                ) : (
-                  <><ArrowDownRight className="h-3 w-3 text-red-500" /><span className="text-red-500">{kpis.workHoursChange}%</span></>
-                )}
-                <span className="text-muted-foreground ml-1">vs bulan lalu</span>
-              </div>
+              {kpis.workHoursChange !== null ? (
+                <div className="flex items-center text-xs">
+                  {kpis.workHoursChange >= 0 ? (
+                    <><ArrowUpRight className="h-3 w-3 text-green-500" /><span className="text-green-500">+{kpis.workHoursChange}%</span></>
+                  ) : (
+                    <><ArrowDownRight className="h-3 w-3 text-red-500" /><span className="text-red-500">{kpis.workHoursChange}%</span></>
+                  )}
+                  <span className="text-muted-foreground ml-1">vs {compareMonth}</span>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Pilih bulan bandingkan</p>
+              )}
             </CardContent>
           </Card>
 
@@ -541,13 +550,17 @@ export default function HRAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-amber-500">{kpis.autoClockoutCount}</div>
-              <div className="flex items-center text-xs">
-                {kpis.autoClockoutChange <= 0 ? (
-                  <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.autoClockoutChange}%</span></>
-                ) : (
-                  <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.autoClockoutChange}%</span></>
-                )}
-              </div>
+              {kpis.autoClockoutChange !== null ? (
+                <div className="flex items-center text-xs">
+                  {kpis.autoClockoutChange <= 0 ? (
+                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.autoClockoutChange}%</span></>
+                  ) : (
+                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.autoClockoutChange}%</span></>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Periode ini</p>
+              )}
             </CardContent>
           </Card>
 
@@ -588,13 +601,15 @@ export default function HRAnalytics() {
             startDate={startDate}
             endDate={endDate}
           />
-          <HRMonthComparisonChart 
-            currentAttendance={attendance || []}
-            compareAttendance={compareAttendance || []}
-            currentTasks={tasks || []}
-            currentMonth={format(new Date(startDate), 'MMM yyyy', { locale: idLocale })}
-            compareMonth={format(new Date(compareMonth + '-01'), 'MMM yyyy', { locale: idLocale })}
-          />
+          {compareMonth && (
+            <HRMonthComparisonChart 
+              currentAttendance={attendance || []}
+              compareAttendance={compareAttendance || []}
+              currentTasks={tasks || []}
+              currentMonth={format(new Date(startDate), 'MMM yyyy', { locale: idLocale })}
+              compareMonth={format(new Date(compareMonth + '-01'), 'MMM yyyy', { locale: idLocale })}
+            />
+          )}
         </div>
 
         {/* Risk & Bottleneck Panel */}
