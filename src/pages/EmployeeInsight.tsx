@@ -39,6 +39,7 @@ import { EmployeeMonthComparison } from "@/components/hr-analytics/EmployeeMonth
 import { EmployeeProjectContribution } from "@/components/hr-analytics/EmployeeProjectContribution";
 import { EmployeeInsightPanel } from "@/components/hr-analytics/EmployeeInsightPanel";
 import { EmployeeDailyLog } from "@/components/hr-analytics/EmployeeDailyLog";
+import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
 
 export default function EmployeeInsight() {
   const { id: employeeId } = useParams();
@@ -188,6 +189,42 @@ export default function EmployeeInsight() {
       );
     },
     enabled: !!employeeId,
+  });
+
+  // Fetch task status logs for this employee's tasks
+  const { data: employeeStatusLogs } = useQuery({
+    queryKey: ["employee-status-logs", employeeId, startDate, endDate],
+    queryFn: async () => {
+      // Get task IDs assigned to this employee
+      const { data: assignedTasks } = await supabase
+        .from("tasks")
+        .select("id")
+        .or(`assigned_to.eq.${employeeId},created_by.eq.${employeeId}`);
+      
+      if (!assignedTasks || assignedTasks.length === 0) return [];
+      
+      const taskIds = assignedTasks.map(t => t.id);
+      const { data, error } = await supabase
+        .from("task_status_logs")
+        .select("*")
+        .in("task_id", taskIds)
+        .gte("changed_at", `${startDate}T00:00:00`)
+        .lte("changed_at", `${endDate}T23:59:59`)
+        .order("changed_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!employeeId,
+  });
+
+  // Fetch profile for the component
+  const { data: profileForAnalytics } = useQuery({
+    queryKey: ["profiles-for-analytics"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, full_name").order("full_name");
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   // Calculate work minutes helper
@@ -378,10 +415,11 @@ export default function EmployeeInsight() {
         </Card>
 
         <Tabs defaultValue="attendance" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="attendance">Kehadiran</TabsTrigger>
             <TabsTrigger value="activity">Aktivitas</TabsTrigger>
-            <TabsTrigger value="projects">Kontribusi Project</TabsTrigger>
+            <TabsTrigger value="duration">Durasi Task</TabsTrigger>
+            <TabsTrigger value="projects">Kontribusi</TabsTrigger>
             <TabsTrigger value="insight">Insight</TabsTrigger>
             <TabsTrigger value="daily">Log Harian</TabsTrigger>
           </TabsList>
@@ -559,6 +597,17 @@ export default function EmployeeInsight() {
               shootings={shootings || []}
               events={events || []}
               employeeId={employeeId || ''}
+            />
+          </TabsContent>
+
+          {/* Task Duration Tab */}
+          <TabsContent value="duration">
+            <TaskDurationAnalytics
+              statusLogs={employeeStatusLogs || []}
+              tasks={tasks || []}
+              profiles={profileForAnalytics || []}
+              title="Durasi Penyelesaian Task"
+              showPerEmployee={false}
             />
           </TabsContent>
 

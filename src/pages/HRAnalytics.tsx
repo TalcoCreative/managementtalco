@@ -37,6 +37,7 @@ import { HRAutoClockoutChart } from "@/components/hr-analytics/HRAutoClockoutCha
 import { HRMonthComparisonChart } from "@/components/hr-analytics/HRMonthComparisonChart";
 import { HRRiskPanel } from "@/components/hr-analytics/HRRiskPanel";
 import { HRProductivityRanking } from "@/components/hr-analytics/HRProductivityRanking";
+import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
 import { usePositions, getRoleLabel } from "@/hooks/usePositions";
 
 export default function HRAnalytics() {
@@ -163,7 +164,7 @@ export default function HRAnalytics() {
     },
   });
 
-  // Fetch projects
+   // Fetch projects
   const { data: projects } = useQuery({
     queryKey: ["hr-analytics-projects"],
     queryFn: async () => {
@@ -171,6 +172,21 @@ export default function HRAnalytics() {
         .from("projects")
         .select("id, title")
         .order("title");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch task status logs for duration tracking
+  const { data: taskStatusLogs } = useQuery({
+    queryKey: ["hr-analytics-status-logs", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_status_logs")
+        .select("*")
+        .gte("changed_at", `${startDate}T00:00:00`)
+        .lte("changed_at", `${endDate}T23:59:59`)
+        .order("changed_at", { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -587,6 +603,15 @@ export default function HRAnalytics() {
           attendance={attendance || []}
           tasks={tasks || []}
           onViewEmployee={handleViewEmployee}
+        />
+
+        {/* Task Duration Analytics */}
+        <TaskDurationAnalytics
+          statusLogs={taskStatusLogs || []}
+          tasks={tasks || []}
+          profiles={profiles || []}
+          title="Task Duration Analytics"
+          showPerEmployee={true}
         />
 
         {/* Productivity Ranking */}
