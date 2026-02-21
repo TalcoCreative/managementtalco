@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff, Pencil, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { toast } from "sonner";
@@ -29,8 +30,10 @@ export default function Projects() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string>("all");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [editProject, setEditProject] = useState<any>(null);
   const [deleteProject, setDeleteProject] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: clients } = useQuery({
@@ -63,7 +66,6 @@ export default function Projects() {
     },
   });
 
-  // Fetch overdue and today's tasks per project
   const { data: tasksByProject } = useQuery({
     queryKey: ["tasks-by-project-deadline"],
     queryFn: async () => {
@@ -79,7 +81,6 @@ export default function Projects() {
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
       
-      // Group by project with overdue and today
       const byProject = new Map<string, { overdue: any[]; today: any[] }>();
       
       data?.forEach(task => {
@@ -103,6 +104,14 @@ export default function Projects() {
       return byProject;
     },
   });
+
+  const activeProjects = useMemo(() => {
+    return projects?.filter((p: any) => p.status !== "completed") || [];
+  }, [projects]);
+
+  const completedProjects = useMemo(() => {
+    return projects?.filter((p: any) => p.status === "completed") || [];
+  }, [projects]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -153,7 +162,6 @@ export default function Projects() {
     }
   };
 
-
   const handleDelete = async (reason: string) => {
     if (!deleteProject) return;
     
@@ -162,7 +170,6 @@ export default function Projects() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Log the deletion
       await supabase.from("deletion_logs").insert({
         entity_type: "project",
         entity_id: deleteProject.id,
@@ -171,7 +178,6 @@ export default function Projects() {
         reason,
       });
 
-      // Remove foreign key references first
       await supabase.from("shooting_schedules").update({ project_id: null }).eq("project_id", deleteProject.id);
       await supabase.from("meetings").update({ project_id: null }).eq("project_id", deleteProject.id);
       await supabase.from("expenses").update({ project_id: null }).eq("project_id", deleteProject.id);
@@ -179,11 +185,8 @@ export default function Projects() {
       await supabase.from("reimbursements").update({ project_id: null }).eq("project_id", deleteProject.id);
       await supabase.from("recurring_budget").update({ project_id: null }).eq("project_id", deleteProject.id);
       await supabase.from("ledger_entries").update({ project_id: null }).eq("project_id", deleteProject.id);
-      
-      // Delete tasks related to this project
       await supabase.from("tasks").delete().eq("project_id", deleteProject.id);
 
-      // Delete the project
       const { error } = await supabase.from("projects").delete().eq("id", deleteProject.id);
       if (error) throw error;
 
@@ -196,6 +199,154 @@ export default function Projects() {
       setDeleting(false);
     }
   };
+
+  const renderProjectCard = (project: any) => (
+    <Card
+      key={project.id}
+      className={`cursor-pointer hover:shadow-lg transition-shadow relative group ${
+        project.hidden_from_dashboard ? "opacity-60" : ""
+      }`}
+      onClick={() => setSelectedProjectId(project.id)}
+    >
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditProject(project);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Edit Project</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={project.hidden_from_dashboard ? "secondary" : "outline"}
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleVisibility(project.id, project.hidden_from_dashboard || false);
+                }}
+              >
+                {project.hidden_from_dashboard ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {project.hidden_from_dashboard
+                ? "Tampilkan di Client Dashboard"
+                : "Sembunyikan dari Client Dashboard"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button
+          variant="destructive"
+          size="icon"
+          className="h-8 w-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDeleteProject({ id: project.id, title: project.title });
+          }}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      <CardContent className="p-4 sm:p-6">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+            <h3 className="font-semibold text-base sm:text-lg flex-1 line-clamp-2">{project.title}</h3>
+            <Select
+              value={project.status}
+              onValueChange={(value) => handleStatusChange(project.id, value)}
+            >
+              <SelectTrigger 
+                className={`w-full sm:w-32 h-8 sm:h-7 text-xs ${getStatusColor(project.status)} text-white border-0`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent onClick={(e) => e.stopPropagation()}>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {project.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {project.description}
+            </p>
+          )}
+
+          <div className="space-y-1 text-sm">
+            {project.clients && (
+              <p className="font-medium text-primary">{project.clients.name}</p>
+            )}
+            {project.type && (
+              <p className="text-muted-foreground">Type: {project.type}</p>
+            )}
+            {project.profiles && (
+              <p className="text-muted-foreground">Assigned: {project.profiles.full_name}</p>
+            )}
+            {project.deadline && (
+              <p className="text-muted-foreground">
+                Deadline: {new Date(project.deadline).toLocaleDateString()}
+              </p>
+            )}
+
+            {tasksByProject?.get(project.id)?.today?.length > 0 && (
+              <div className="mt-2 p-2 bg-amber-500/10 rounded border border-amber-500/20">
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
+                  <Clock className="h-4 w-4" />
+                  {tasksByProject.get(project.id)!.today.length} Hari Ini
+                </div>
+                <div className="mt-1 space-y-1">
+                  {tasksByProject.get(project.id)!.today.slice(0, 2).map((task: any) => (
+                    <p key={task.id} className="text-xs text-muted-foreground truncate">• {task.title}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {tasksByProject?.get(project.id)?.overdue?.length > 0 && (
+              <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
+                <div className="flex items-center gap-2 text-destructive text-sm font-medium">
+                  <AlertTriangle className="h-4 w-4" />
+                  {tasksByProject.get(project.id)!.overdue.length} Overdue
+                </div>
+                <div className="mt-1 space-y-1">
+                  {tasksByProject.get(project.id)!.overdue.slice(0, 3).map((task: any) => (
+                    <p key={task.id} className="text-xs text-muted-foreground truncate">• {task.title}</p>
+                  ))}
+                  {tasksByProject.get(project.id)!.overdue.length > 3 && (
+                    <p className="text-xs text-muted-foreground">
+                      +{tasksByProject.get(project.id)!.overdue.length - 3} more
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <AppLayout>
@@ -229,153 +380,45 @@ export default function Projects() {
             <p className="text-muted-foreground">Loading projects...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {projects && projects.length > 0 ? (
-              projects.map((project: any) => (
-                <Card
-                  key={project.id}
-                  className={`cursor-pointer hover:shadow-lg transition-shadow relative group ${
-                    project.hidden_from_dashboard ? "opacity-60" : ""
-                  }`}
-                  onClick={() => setSelectedProjectId(project.id)}
+          <div className="space-y-6">
+            {/* Active Projects */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {activeProjects.length > 0 ? (
+                activeProjects.map((project: any) => renderProjectCard(project))
+              ) : completedProjects.length > 0 ? (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  Semua project sudah completed!
+                </div>
+              ) : (
+                <div className="col-span-full text-center py-12 text-muted-foreground">
+                  No projects found. Create your first project!
+                </div>
+              )}
+            </div>
+
+            {/* Completed Projects Section */}
+            {completedProjects.length > 0 && (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  className="flex items-center gap-2 w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                 >
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={project.hidden_from_dashboard ? "secondary" : "outline"}
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleVisibility(project.id, project.hidden_from_dashboard || false);
-                            }}
-                          >
-                            {project.hidden_from_dashboard ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {project.hidden_from_dashboard
-                            ? "Tampilkan di Client Dashboard"
-                            : "Sembunyikan dari Client Dashboard"}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteProject({ id: project.id, title: project.title });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <CheckCircle2 className="h-5 w-5 text-status-completed" />
+                  <span className="font-semibold text-sm">
+                    Completed Projects ({completedProjects.length})
+                  </span>
+                  {showCompleted ? (
+                    <ChevronUp className="h-4 w-4 ml-auto text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 ml-auto text-muted-foreground" />
+                  )}
+                </button>
+
+                {showCompleted && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {completedProjects.map((project: any) => renderProjectCard(project))}
                   </div>
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="space-y-2 sm:space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-2">
-                        <h3 className="font-semibold text-base sm:text-lg flex-1 line-clamp-2">{project.title}</h3>
-                        <Select
-                          value={project.status}
-                          onValueChange={(value) => handleStatusChange(project.id, value)}
-                        >
-                          <SelectTrigger 
-                            className={`w-full sm:w-32 h-8 sm:h-7 text-xs ${getStatusColor(project.status)} text-white border-0`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent onClick={(e) => e.stopPropagation()}>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="on_hold">On Hold</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {project.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {project.description}
-                        </p>
-                      )}
-
-                      <div className="space-y-1 text-sm">
-                        {project.clients && (
-                          <p className="font-medium text-primary">
-                            {project.clients.name}
-                          </p>
-                        )}
-                        
-                        {project.type && (
-                          <p className="text-muted-foreground">
-                            Type: {project.type}
-                          </p>
-                        )}
-
-                        {project.profiles && (
-                          <p className="text-muted-foreground">
-                            Assigned: {project.profiles.full_name}
-                          </p>
-                        )}
-
-                        {project.deadline && (
-                          <p className="text-muted-foreground">
-                            Deadline: {new Date(project.deadline).toLocaleDateString()}
-                          </p>
-                        )}
-
-                        {/* Today's tasks indicator */}
-                        {tasksByProject?.get(project.id)?.today?.length > 0 && (
-                          <div className="mt-2 p-2 bg-amber-500/10 rounded border border-amber-500/20">
-                            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm font-medium">
-                              <Clock className="h-4 w-4" />
-                              {tasksByProject.get(project.id)!.today.length} Hari Ini
-                            </div>
-                            <div className="mt-1 space-y-1">
-                              {tasksByProject.get(project.id)!.today.slice(0, 2).map((task: any) => (
-                                <p key={task.id} className="text-xs text-muted-foreground truncate">
-                                  • {task.title}
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Overdue tasks indicator */}
-                        {tasksByProject?.get(project.id)?.overdue?.length > 0 && (
-                          <div className="mt-2 p-2 bg-destructive/10 rounded border border-destructive/20">
-                            <div className="flex items-center gap-2 text-destructive text-sm font-medium">
-                              <AlertTriangle className="h-4 w-4" />
-                              {tasksByProject.get(project.id)!.overdue.length} Overdue
-                            </div>
-                            <div className="mt-1 space-y-1">
-                              {tasksByProject.get(project.id)!.overdue.slice(0, 3).map((task: any) => (
-                                <p key={task.id} className="text-xs text-muted-foreground truncate">
-                                  • {task.title}
-                                </p>
-                              ))}
-                              {tasksByProject.get(project.id)!.overdue.length > 3 && (
-                                <p className="text-xs text-muted-foreground">
-                                  +{tasksByProject.get(project.id)!.overdue.length - 3} more
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-muted-foreground">
-                No projects found. Create your first project!
+                )}
               </div>
             )}
           </div>
@@ -385,6 +428,12 @@ export default function Projects() {
       <CreateProjectDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      <EditProjectDialog
+        project={editProject}
+        open={!!editProject}
+        onOpenChange={(open) => !open && setEditProject(null)}
       />
 
       <ProjectDetailDialog
