@@ -1,0 +1,195 @@
+import { useMemo, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  addMonths,
+  subMonths,
+  isSameMonth,
+  isSameDay,
+  isToday,
+} from "date-fns";
+import { id as localeId } from "date-fns/locale";
+
+interface Slide {
+  id: string;
+  slide_order: number;
+  status: "proposed" | "approved" | "published";
+  publish_date: string | null;
+  channel: string | null;
+  format: string | null;
+}
+
+interface EPCalendarViewProps {
+  slides: Slide[];
+  onSlideClick: (index: number) => void;
+}
+
+const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  proposed: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-200", dot: "bg-amber-500" },
+  approved: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-800 dark:text-emerald-200", dot: "bg-emerald-500" },
+  published: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-200", dot: "bg-blue-500" },
+};
+
+const CHANNEL_ICONS: Record<string, string> = {
+  instagram: "📸",
+  tiktok: "🎵",
+  youtube: "▶️",
+  twitter: "𝕏",
+  facebook: "📘",
+  linkedin: "💼",
+  threads: "🧵",
+  other: "📌",
+};
+
+export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Group slides by publish_date
+  const slidesByDate = useMemo(() => {
+    const map = new Map<string, { slide: Slide; index: number }[]>();
+    slides.forEach((slide, index) => {
+      if (slide.publish_date) {
+        const dateKey = slide.publish_date;
+        if (!map.has(dateKey)) map.set(dateKey, []);
+        map.get(dateKey)!.push({ slide, index });
+      }
+    });
+    return map;
+  }, [slides]);
+
+  const scheduledCount = slides.filter(s => s.publish_date).length;
+  const unscheduledCount = slides.filter(s => !s.publish_date).length;
+
+  // Generate calendar days
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+
+  const days: Date[] = [];
+  let day = calStart;
+  while (day <= calEnd) {
+    days.push(day);
+    day = addDays(day, 1);
+  }
+
+  const weeks: Date[][] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-muted-foreground" />
+          <h3 className="font-semibold">Jadwal Tayang</h3>
+          <Badge variant="secondary">{scheduledCount} terjadwal</Badge>
+          {unscheduledCount > 0 && (
+            <Badge variant="outline" className="text-muted-foreground">{unscheduledCount} belum dijadwalkan</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3 mr-4 text-xs">
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block" />
+              Proposed
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
+              Approved
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block" />
+              Published
+            </span>
+          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[120px] text-center">
+            {format(currentMonth, "MMMM yyyy", { locale: localeId })}
+          </span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 bg-muted/50">
+          {dayNames.map((name) => (
+            <div key={name} className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground border-b">
+              {name}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar weeks */}
+        {weeks.map((week, wi) => (
+          <div key={wi} className="grid grid-cols-7">
+            {week.map((dayDate) => {
+              const dateKey = format(dayDate, "yyyy-MM-dd");
+              const daySlides = slidesByDate.get(dateKey) || [];
+              const inMonth = isSameMonth(dayDate, currentMonth);
+              const today = isToday(dayDate);
+
+              return (
+                <div
+                  key={dateKey}
+                  className={cn(
+                    "min-h-[80px] p-1 border-b border-r last:border-r-0 transition-colors",
+                    !inMonth && "bg-muted/20",
+                    today && "bg-primary/5"
+                  )}
+                >
+                  <div className={cn(
+                    "text-xs font-medium mb-0.5 px-1",
+                    !inMonth && "text-muted-foreground/40",
+                    today && "text-primary font-bold"
+                  )}>
+                    {format(dayDate, "d")}
+                  </div>
+                  <div className="space-y-0.5">
+                    {daySlides.map(({ slide, index }) => {
+                      const colors = STATUS_COLORS[slide.status] || STATUS_COLORS.proposed;
+                      const channelIcon = CHANNEL_ICONS[slide.channel || "other"] || "📌";
+                      return (
+                        <button
+                          key={slide.id}
+                          onClick={() => onSlideClick(index)}
+                          className={cn(
+                            "w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight truncate flex items-center gap-1 hover:opacity-80 transition-opacity",
+                            colors.bg,
+                            colors.text
+                          )}
+                          title={`Slide ${slide.slide_order + 1} • ${slide.channel} • ${slide.format} • ${slide.status}`}
+                        >
+                          <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", colors.dot)} />
+                          <span>{channelIcon}</span>
+                          <span className="truncate">S{slide.slide_order + 1} · {slide.format}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}

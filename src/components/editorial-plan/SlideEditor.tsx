@@ -25,6 +25,7 @@ import {
   Upload,
   GripVertical,
   Plus,
+  Calendar,
 } from "lucide-react";
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,9 @@ interface Slide {
   status: "proposed" | "approved" | "published";
   approved_at: string | null;
   published_at: string | null;
+  publish_date: string | null;
+  channel: string | null;
+  format: string | null;
 }
 
 interface Block {
@@ -54,19 +58,65 @@ interface SlideEditorProps {
   onStatusChange: () => void;
 }
 
-const CONTENT_FORMATS = [
-  { value: "feed", label: "Feed" },
-  { value: "carousel", label: "Carousel" },
-  { value: "reels", label: "Reels" },
-  { value: "story", label: "Story" },
-];
+// Channel-specific format options
+const CHANNEL_FORMATS: Record<string, { value: string; label: string }[]> = {
+  instagram: [
+    { value: "feed", label: "Feed Post" },
+    { value: "carousel", label: "Carousel" },
+    { value: "reels", label: "Reels" },
+    { value: "story", label: "Story" },
+  ],
+  tiktok: [
+    { value: "video", label: "Video" },
+    { value: "carousel", label: "Carousel Photo" },
+    { value: "story", label: "Story" },
+    { value: "live", label: "Live" },
+  ],
+  youtube: [
+    { value: "video", label: "Video" },
+    { value: "shorts", label: "Shorts" },
+    { value: "live", label: "Live Stream" },
+    { value: "community", label: "Community Post" },
+  ],
+  twitter: [
+    { value: "tweet", label: "Tweet" },
+    { value: "thread", label: "Thread" },
+    { value: "media", label: "Media Tweet" },
+    { value: "poll", label: "Poll" },
+  ],
+  linkedin: [
+    { value: "post", label: "Post" },
+    { value: "article", label: "Article" },
+    { value: "carousel", label: "Carousel Document" },
+    { value: "video", label: "Video" },
+    { value: "poll", label: "Poll" },
+  ],
+  facebook: [
+    { value: "post", label: "Post" },
+    { value: "reels", label: "Reels" },
+    { value: "story", label: "Story" },
+    { value: "live", label: "Live" },
+    { value: "carousel", label: "Carousel" },
+  ],
+  threads: [
+    { value: "post", label: "Post" },
+    { value: "carousel", label: "Carousel" },
+  ],
+  other: [
+    { value: "post", label: "Post" },
+    { value: "video", label: "Video" },
+    { value: "other", label: "Other" },
+  ],
+};
 
 const CONTENT_CHANNELS = [
   { value: "instagram", label: "Instagram" },
   { value: "tiktok", label: "TikTok" },
-  { value: "twitter", label: "X (Twitter)" },
   { value: "youtube", label: "YouTube" },
+  { value: "twitter", label: "X (Twitter)" },
+  { value: "facebook", label: "Facebook" },
   { value: "linkedin", label: "LinkedIn" },
+  { value: "threads", label: "Threads" },
   { value: "other", label: "Other" },
 ];
 
@@ -101,6 +151,20 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
     },
     onSuccess: () => {
       refetchBlocks();
+    },
+  });
+
+  // Update slide fields mutation (channel, format, publish_date)
+  const updateSlideMutation = useMutation({
+    mutationFn: async (fields: Partial<Slide>) => {
+      const { error } = await supabase
+        .from("editorial_slides")
+        .update(fields as any)
+        .eq("id", slide.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      onStatusChange();
     },
   });
 
@@ -246,7 +310,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
     switch (block.block_type) {
       case "status":
         return (
-          <Card className="p-4">
+          <Card className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Status:</span>
@@ -268,6 +332,60 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                 </Select>
               )}
             </div>
+
+            {/* Publish Date, Channel, Format at slide level */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Tanggal Tayang
+                </Label>
+                <Input
+                  type="date"
+                  value={slide.publish_date || ""}
+                  onChange={(e) => updateSlideMutation.mutate({ publish_date: e.target.value || null } as any)}
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Channel</Label>
+                <Select
+                  value={slide.channel || "instagram"}
+                  onValueChange={(value) => updateSlideMutation.mutate({ channel: value, format: CHANNEL_FORMATS[value]?.[0]?.value || "post" } as any)}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CONTENT_CHANNELS.map((ch) => (
+                      <SelectItem key={ch.value} value={ch.value}>
+                        {ch.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Format</Label>
+                <Select
+                  value={slide.format || "feed"}
+                  onValueChange={(value) => updateSlideMutation.mutate({ format: value } as any)}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(CHANNEL_FORMATS[slide.channel || "instagram"] || CHANNEL_FORMATS.other).map((fmt) => (
+                      <SelectItem key={fmt.value} value={fmt.value}>
+                        {fmt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </Card>
         );
 
@@ -277,48 +395,6 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Content Details</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Format</Label>
-                <Select
-                  value={block.content?.format || "feed"}
-                  onValueChange={(value) => handleContentChange(block.id, "format", value)}
-                  disabled={!canEdit}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTENT_FORMATS.map((format) => (
-                      <SelectItem key={format.value} value={format.value}>
-                        {format.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Channel</Label>
-                <Select
-                  value={block.content?.channel || "instagram"}
-                  onValueChange={(value) => handleContentChange(block.id, "channel", value)}
-                  disabled={!canEdit}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTENT_CHANNELS.map((channel) => (
-                      <SelectItem key={channel.value} value={channel.value}>
-                        {channel.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="space-y-2">

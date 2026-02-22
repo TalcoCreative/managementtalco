@@ -14,11 +14,13 @@ import {
   ArrowLeft,
   GripVertical,
   MessageSquare,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
 import { SlideStatusBadge } from "@/components/editorial-plan/SlideStatusBadge";
 import { EPCommentsPanel } from "@/components/editorial-plan/EPCommentsPanel";
+import { EPCalendarView } from "@/components/editorial-plan/EPCalendarView";
 
 interface Slide {
   id: string;
@@ -27,6 +29,9 @@ interface Slide {
   status: "proposed" | "approved" | "published";
   approved_at: string | null;
   published_at: string | null;
+  publish_date: string | null;
+  channel: string | null;
+  format: string | null;
   created_at: string;
 }
 
@@ -48,6 +53,7 @@ export default function EditorialPlanEditor() {
   const queryClient = useQueryClient();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -242,6 +248,14 @@ export default function EditorialPlanEditor() {
 
           <div className="flex items-center gap-2">
             <Button
+              variant={showCalendar ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowCalendar(!showCalendar)}
+            >
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Kalender
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowComments(!showComments)}
@@ -278,7 +292,14 @@ export default function EditorialPlanEditor() {
                 )}
               >
                 <GripVertical className="h-3 w-3 opacity-50" />
-                <span>Slide {index + 1}</span>
+                <div className="flex flex-col items-start">
+                  <span>Slide {index + 1}</span>
+                  {slide.publish_date && (
+                    <span className="text-[10px] opacity-70">
+                      {new Date(slide.publish_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                </div>
                 <SlideStatusBadge status={slide.status} size="sm" />
               </button>
             ))}
@@ -294,8 +315,21 @@ export default function EditorialPlanEditor() {
             </Button>
           </div>
 
+          {/* Calendar View */}
+          {showCalendar && slides && slides.length > 0 && (
+            <div className="px-4 py-3 border-b overflow-y-auto max-h-[45vh]">
+              <EPCalendarView
+                slides={slides}
+                onSlideClick={(index) => {
+                  setCurrentSlideIndex(index);
+                  setShowCalendar(false);
+                }}
+              />
+            </div>
+          )}
+
           {/* Current Slide Editor */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative overflow-y-auto">
             {currentSlide ? (
               <SlideEditor
                 slide={currentSlide}
