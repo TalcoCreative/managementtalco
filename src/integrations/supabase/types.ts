@@ -1281,9 +1281,12 @@ export type Database = {
       editorial_slides: {
         Row: {
           approved_at: string | null
+          channel: string | null
           created_at: string
           ep_id: string
+          format: string | null
           id: string
+          publish_date: string | null
           published_at: string | null
           slide_order: number
           status: Database["public"]["Enums"]["ep_slide_status"]
@@ -1291,9 +1294,12 @@ export type Database = {
         }
         Insert: {
           approved_at?: string | null
+          channel?: string | null
           created_at?: string
           ep_id: string
+          format?: string | null
           id?: string
+          publish_date?: string | null
           published_at?: string | null
           slide_order?: number
           status?: Database["public"]["Enums"]["ep_slide_status"]
@@ -1301,9 +1307,12 @@ export type Database = {
         }
         Update: {
           approved_at?: string | null
+          channel?: string | null
           created_at?: string
           ep_id?: string
+          format?: string | null
           id?: string
+          publish_date?: string | null
           published_at?: string | null
           slide_order?: number
           status?: Database["public"]["Enums"]["ep_slide_status"]
