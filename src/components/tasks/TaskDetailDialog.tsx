@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check, EyeOff, Eye } from "lucide-react";
+import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Link as LinkIcon, Download, Trash2, X, ExternalLink, Pencil, Save, Share2, Copy, Check, EyeOff, Eye, BellRing } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
@@ -53,6 +53,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [editCommentContent, setEditCommentContent] = useState("");
   const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
   const [shootingDetailOpen, setShootingDetailOpen] = useState(false);
+  const [editWatchers, setEditWatchers] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -104,21 +105,39 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
     .map((ta: any) => ta.profiles?.full_name)
     .filter(Boolean);
 
+  // Fetch watchers
+  const { data: watchers } = useQuery({
+    queryKey: ["task-watchers", taskId],
+    queryFn: async () => {
+      if (!taskId) return [];
+      const { data, error } = await supabase
+        .from("task_watchers")
+        .select("user_id, profiles:profiles!task_watchers_user_id_fkey(id, full_name)")
+        .eq("task_id", taskId);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!taskId,
+  });
+
+  const watcherIds = (watchers || []).map((w: any) => w.user_id);
+  const watcherNames = (watchers || []).map((w: any) => w.profiles?.full_name).filter(Boolean);
+
   // Reset edit state when task changes
   useEffect(() => {
     if (task) {
       setEditTitle(task.title || "");
       setEditDescription(task.description || "");
-      // Initialize from task_assignees or fallback to assigned_to
       const assignees = taskAssigneeIds.length > 0 
         ? taskAssigneeIds 
         : (task.assigned_to ? [task.assigned_to] : []);
       setEditAssignees(assignees);
       setEditDeadline(task.deadline || "");
       setEditTableData(task.table_data || null);
+      setEditWatchers(watcherIds);
       setIsEditing(false);
     }
-  }, [task]);
+  }, [task, watchers]);
 
   const isCreator = currentUser && task?.created_by === currentUser;
 
@@ -222,9 +241,35 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         }
       }
 
+      // Update task_watchers - sync with editWatchers
+      const currentWatcherIds = watcherIds;
+      const newWatchers = editWatchers.filter(id => !currentWatcherIds.includes(id));
+      const removedWatchers = currentWatcherIds.filter((id: string) => !editWatchers.includes(id));
+
+      if (removedWatchers.length > 0) {
+        await supabase.from("task_watchers").delete().eq("task_id", taskId).in("user_id", removedWatchers);
+      }
+      if (newWatchers.length > 0) {
+        await supabase.from("task_watchers").insert(newWatchers.map((userId: string) => ({ task_id: taskId, user_id: userId })));
+        // Send notification to new watchers
+        const { data: session } = await supabase.auth.getSession();
+        const { data: senderProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+        for (const wId of newWatchers) {
+          supabase.from("task_notifications").insert({
+            task_id: taskId,
+            user_id: wId,
+            notification_type: "assigned",
+            message: `${senderProfile?.full_name || "Someone"} menambahkan lo sebagai watcher di task "${editTitle}"`,
+            created_by: session.session?.user.id,
+          }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
+          sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderProfile?.full_name || "Someone" }).catch(console.error);
+        }
+      }
+
       toast.success("Task berhasil diupdate");
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["task-watchers", taskId] });
       queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
       queryClient.invalidateQueries({ queryKey: ["completed-tasks"] });
     } catch (error: any) {
@@ -611,6 +656,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         setEditAssignees(assignees);
                         setEditDeadline(task.deadline || "");
                         setEditTableData(task.table_data || null);
+                        setEditWatchers(watcherIds);
                       }}
                     >
                       Cancel
@@ -715,6 +761,26 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                         {taskAssigneeNames.length > 0 
                           ? taskAssigneeNames.join(", ") 
                           : (task.profiles?.full_name || "-")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 rounded-lg border bg-card p-3 sm:col-span-2">
+                  <BellRing className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">Notify To (Watchers)</p>
+                    {isEditing ? (
+                      <MultiUserSelect
+                        users={(users || []).filter(u => !editAssignees.includes(u.id))}
+                        selectedUserIds={editWatchers}
+                        onChange={setEditWatchers}
+                        placeholder="Pilih orang yang akan dinotifikasi"
+                        className="mt-1"
+                      />
+                    ) : (
+                      <p className="font-medium">
+                        {watcherNames.length > 0 ? watcherNames.join(", ") : "-"}
                       </p>
                     )}
                   </div>
