@@ -82,7 +82,7 @@ export default function Index() {
     queryFn: async () => {
       const [clientsRes, projectsRes, tasksRes] = await Promise.all([
         supabase.from("clients").select("id", { count: "exact", head: true }).eq("client_type", "client").eq("status", "active"),
-        supabase.from("projects").select("id", { count: "exact", head: true }),
+        supabase.from("projects").select("id", { count: "exact", head: true }).neq("status", "completed"),
         supabase.from("tasks").select("id", { count: "exact", head: true }),
       ]);
 
