@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   GripVertical,
   MessageSquare,
-  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
@@ -53,7 +52,7 @@ export default function EditorialPlanEditor() {
   const queryClient = useQueryClient();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(true);
+  const [showSlides, setShowSlides] = useState(false);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -248,14 +247,6 @@ export default function EditorialPlanEditor() {
 
           <div className="flex items-center gap-2">
             <Button
-              variant={showCalendar ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowCalendar(!showCalendar)}
-            >
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Kalender
-            </Button>
-            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowComments(!showComments)}
@@ -316,13 +307,13 @@ export default function EditorialPlanEditor() {
           </div>
 
           {/* Calendar View */}
-          {showCalendar && slides && slides.length > 0 && (
+          {slides && slides.length > 0 && (
             <div className="px-4 py-3 border-b overflow-y-auto max-h-[45vh]">
               <EPCalendarView
                 slides={slides}
                 onSlideClick={(index) => {
                   setCurrentSlideIndex(index);
-                  setShowCalendar(false);
+                  setShowSlides(true);
                 }}
               />
             </div>
