@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff } from "lucide-react";
+import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff, BellRing } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
@@ -55,6 +55,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
     is_hidden: false,
   });
   const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
+  const [notifyUsers, setNotifyUsers] = useState<string[]>([]);
   const [tableData, setTableData] = useState<TableData>({
     headers: ["No", "Item", "Keterangan", "Status"],
     rows: [["1", "", "", ""]],
@@ -202,6 +203,15 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         await supabase.from("task_assignees").insert(assigneeInserts);
       }
 
+      // Insert watchers into task_watchers table
+      if (taskData && notifyUsers.length > 0) {
+        const watcherInserts = notifyUsers.map(userId => ({
+          task_id: taskData.id,
+          user_id: userId,
+        }));
+        await supabase.from("task_watchers").insert(watcherInserts);
+      }
+
       // Log task creation as activity
       await supabase.from("task_activities").insert({
         user_id: session.session.user.id,
@@ -229,6 +239,28 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             creatorName: creatorProfile?.full_name || "Someone",
           }).catch(err => console.error("Email notification failed:", err));
         }
+
+        // Send notification to watchers (email + in-app)
+        for (const watcherId of notifyUsers) {
+          // In-app notification
+          supabase.from("task_notifications").insert({
+            task_id: taskData.id,
+            user_id: watcherId,
+            notification_type: "assigned",
+            message: `${creatorProfile?.full_name || "Someone"} menambahkan lo sebagai watcher di task "${formData.title.trim()}"`,
+            created_by: session.session.user.id,
+          }).then(({ error }) => { if (error) console.error("Watcher notification failed:", error); });
+
+          // Email notification  
+          sendTaskAssignmentEmail(watcherId, {
+            id: taskData.id,
+            title: formData.title.trim(),
+            description: formData.notes?.trim(),
+            deadline: formData.deadline,
+            priority: formData.priority,
+            creatorName: creatorProfile?.full_name || "Someone",
+          }).catch(err => console.error("Watcher email failed:", err));
+        }
       }
 
       toast.success("Task created successfully!");
@@ -243,6 +275,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         is_hidden: false,
       });
       setAssignedUsers([]);
+      setNotifyUsers([]);
       setTableData({
         headers: ["No", "Item", "Keterangan", "Status"],
         rows: [["1", "", "", ""]],
@@ -340,6 +373,22 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                 placeholder="Select assignees"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              <div className="flex items-center gap-2">
+                <BellRing className="h-4 w-4" />
+                Notify To
+              </div>
+            </Label>
+            <MultiUserSelect
+              users={(users || []).filter(u => !assignedUsers.includes(u.id))}
+              selectedUserIds={notifyUsers}
+              onChange={setNotifyUsers}
+              placeholder="Pilih orang yang akan dinotifikasi"
+            />
+            <p className="text-xs text-muted-foreground">Orang yang di-notify akan dapat notifikasi tapi tidak di-assign ke task</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
