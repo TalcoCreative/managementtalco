@@ -16,7 +16,7 @@ import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { ATTENDANCE_COLUMNS } from "@/lib/excel-utils";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database } from "lucide-react";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database, Cake } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -66,7 +66,7 @@ export default function HRDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, birth_date")
         .order("full_name");
       if (error) throw error;
       return data;
@@ -525,6 +525,54 @@ export default function HRDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Birthday Reminders */}
+        {(() => {
+          const today = new Date();
+          const upcomingBirthdays = profiles
+            ?.filter(p => p.birth_date)
+            ?.map(p => {
+              const bd = new Date(p.birth_date + 'T00:00:00');
+              const thisYear = new Date(today.getFullYear(), bd.getMonth(), bd.getDate());
+              if (thisYear < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+                thisYear.setFullYear(today.getFullYear() + 1);
+              }
+              const diffDays = Math.ceil((thisYear.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / (1000 * 60 * 60 * 24));
+              return { ...p, nextBirthday: thisYear, daysUntil: diffDays };
+            })
+            ?.sort((a, b) => a.daysUntil - b.daysUntil)
+            ?.slice(0, 5) || [];
+
+          return upcomingBirthdays.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Cake className="h-5 w-5" />
+                  Ulang Tahun Mendatang
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {upcomingBirthdays.map(p => (
+                    <div key={p.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Cake className={`h-4 w-4 ${p.daysUntil === 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={`font-medium ${p.daysUntil === 0 ? 'text-primary' : ''}`}>{p.full_name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {p.daysUntil === 0 ? (
+                          <Badge className="bg-primary">🎂 Hari Ini!</Badge>
+                        ) : (
+                          <span>{format(p.nextBirthday, 'dd MMM')} ({p.daysUntil} hari lagi)</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null;
+        })()}
 
         {/* Deletion Notifications */}
         <DeletionNotifications />

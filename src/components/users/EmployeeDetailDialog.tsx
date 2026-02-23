@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark, Shield } from "lucide-react";
+import { User, MapPin, CreditCard, Calendar, DollarSign, Phone, Mail, Edit, Save, X, AlertCircle, Landmark, Shield, Cake } from "lucide-react";
 import { format } from "date-fns";
 import { useRoleOptions, getPositionColor, getRoleLabel } from "@/hooks/usePositions";
 
@@ -33,6 +33,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
     full_name: "",
     address: "",
     ktp_number: "",
+    birth_date: "",
     contract_start: "",
     contract_end: "",
     salary: "",
@@ -56,6 +57,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
         full_name: employee.full_name || "",
         address: employee.address || "",
         ktp_number: employee.ktp_number || "",
+        birth_date: employee.birth_date || "",
         contract_start: employee.contract_start || "",
         contract_end: employee.contract_end || "",
         salary: employee.salary?.toString() || "",
@@ -140,6 +142,7 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
           full_name: formData.full_name,
           address: formData.address || null,
           ktp_number: formData.ktp_number || null,
+          birth_date: formData.birth_date || null,
           contract_start: formData.contract_start || null,
           contract_end: formData.contract_end || null,
           salary: formData.salary ? parseFloat(formData.salary) : null,
@@ -441,6 +444,20 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
                   />
                 ) : (
                   <p className="font-medium">{employee.ktp_number || "-"}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-muted-foreground">
+                  <Cake className="h-4 w-4" /> Tanggal Lahir
+                </Label>
+                {isEditing ? (
+                  <Input
+                    type="date"
+                    value={formData.birth_date}
+                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  />
+                ) : (
+                  <p className="font-medium">{employee.birth_date ? format(new Date(employee.birth_date + 'T00:00:00'), 'dd MMM yyyy') : "-"}</p>
                 )}
               </div>
               <div className="space-y-2 md:col-span-2">
