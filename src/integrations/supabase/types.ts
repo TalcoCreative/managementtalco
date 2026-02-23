@@ -3365,6 +3365,7 @@ export type Database = {
           avatar_url: string | null
           bank_account_name: string | null
           bank_account_number: string | null
+          birth_date: string | null
           contract_end: string | null
           contract_start: string | null
           created_at: string | null
@@ -3387,6 +3388,7 @@ export type Database = {
           avatar_url?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
+          birth_date?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string | null
@@ -3409,6 +3411,7 @@ export type Database = {
           avatar_url?: string | null
           bank_account_name?: string | null
           bank_account_number?: string | null
+          birth_date?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string | null
