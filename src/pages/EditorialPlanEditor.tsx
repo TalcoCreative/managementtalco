@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   GripVertical,
   MessageSquare,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
@@ -50,9 +51,8 @@ export default function EditorialPlanEditor() {
   const { clientSlug, epSlug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState<number | null>(null); // null = jadwal view
   const [showComments, setShowComments] = useState(false);
-  const [showSlides, setShowSlides] = useState(false);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -89,7 +89,7 @@ export default function EditorialPlanEditor() {
     enabled: !!ep?.id,
   });
 
-  const currentSlide = slides?.[currentSlideIndex];
+  const currentSlide = currentSlideIndex !== null ? slides?.[currentSlideIndex] : undefined;
 
   // Add slide mutation
   const addSlideMutation = useMutation({
@@ -187,10 +187,16 @@ export default function EditorialPlanEditor() {
         return;
       }
 
-      if (e.key === "ArrowLeft" && currentSlideIndex > 0) {
-        setCurrentSlideIndex(currentSlideIndex - 1);
-      } else if (e.key === "ArrowRight" && slides && currentSlideIndex < slides.length - 1) {
-        setCurrentSlideIndex(currentSlideIndex + 1);
+      if (e.key === "ArrowLeft") {
+        if (currentSlideIndex === null) return;
+        if (currentSlideIndex === 0) setCurrentSlideIndex(null);
+        else setCurrentSlideIndex(currentSlideIndex - 1);
+      } else if (e.key === "ArrowRight") {
+        if (currentSlideIndex === null && slides && slides.length > 0) {
+          setCurrentSlideIndex(0);
+        } else if (currentSlideIndex !== null && slides && currentSlideIndex < slides.length - 1) {
+          setCurrentSlideIndex(currentSlideIndex + 1);
+        }
       }
     };
 
@@ -271,6 +277,19 @@ export default function EditorialPlanEditor() {
         <div className="flex-1 flex flex-col">
           {/* Slide Navigation */}
           <div className="border-b bg-muted/30 px-4 py-2 flex items-center gap-2 overflow-x-auto">
+            <button
+              onClick={() => setCurrentSlideIndex(null)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors shrink-0 font-medium",
+                currentSlideIndex === null
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <Calendar className="h-3.5 w-3.5" />
+              Jadwal
+            </button>
+            <div className="w-px h-6 bg-border shrink-0" />
             {slides?.map((slide, index) => (
               <button
                 key={slide.id}
@@ -306,22 +325,28 @@ export default function EditorialPlanEditor() {
             </Button>
           </div>
 
-          {/* Calendar View */}
-          {slides && slides.length > 0 && (
-            <div className="px-4 py-3 border-b overflow-y-auto max-h-[45vh]">
-              <EPCalendarView
-                slides={slides}
-                onSlideClick={(index) => {
-                  setCurrentSlideIndex(index);
-                  setShowSlides(true);
-                }}
-              />
-            </div>
-          )}
-
-          {/* Current Slide Editor */}
+          {/* Current View: Jadwal or Slide Editor */}
           <div className="flex-1 relative overflow-y-auto">
-            {currentSlide ? (
+            {currentSlideIndex === null ? (
+              <div className="p-4">
+                {slides && slides.length > 0 ? (
+                  <EPCalendarView
+                    slides={slides}
+                    onSlideClick={(index) => setCurrentSlideIndex(index)}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <p className="text-muted-foreground mb-4">Belum ada slide</p>
+                      <Button onClick={() => addSlideMutation.mutate()}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Tambah Slide Pertama
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : currentSlide ? (
               <SlideEditor
                 slide={currentSlide}
                 epId={ep.id}
@@ -342,17 +367,19 @@ export default function EditorialPlanEditor() {
           </div>
 
           {/* Bottom Navigation */}
-          {slides && slides.length > 0 && (
+          {slides && slides.length > 0 && currentSlideIndex !== null && (
             <div className="border-t bg-card px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
-                  disabled={currentSlideIndex === 0}
+                  onClick={() => {
+                    if (currentSlideIndex === 0) setCurrentSlideIndex(null);
+                    else setCurrentSlideIndex(currentSlideIndex - 1);
+                  }}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  {currentSlideIndex === 0 ? "Jadwal" : "Previous"}
                 </Button>
                 <span className="text-sm text-muted-foreground px-2">
                   {currentSlideIndex + 1} / {slides.length}
