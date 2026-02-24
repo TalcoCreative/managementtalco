@@ -20,12 +20,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, FileEdit, Eye, Copy, MoreVertical, Trash2, ExternalLink, Code } from "lucide-react";
+import { Plus, Search, FileEdit, Eye, Copy, MoreVertical, Trash2, ExternalLink, Code, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateRecruitmentFormDialog } from "@/components/recruitment-forms/CreateRecruitmentFormDialog";
 import { FormBuilderDialog } from "@/components/recruitment-forms/FormBuilderDialog";
 import { EmbedCodeDialog } from "@/components/recruitment-forms/EmbedCodeDialog";
+import { EditRecruitmentFormDialog } from "@/components/recruitment-forms/EditRecruitmentFormDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +54,7 @@ export default function RecruitmentForms() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [embedDialogFormId, setEmbedDialogFormId] = useState<string | null>(null);
+  const [editDialogFormId, setEditDialogFormId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<RecruitmentForm | null>(null);
   const queryClient = useQueryClient();
@@ -235,9 +237,13 @@ export default function RecruitmentForms() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditDialogFormId(form.id)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit Info
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setSelectedFormId(form.id)}>
                               <FileEdit className="mr-2 h-4 w-4" />
-                              Edit Form
+                              Edit Fields
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => window.open(`/apply/${form.slug}`, '_blank')}>
                               <Eye className="mr-2 h-4 w-4" />
@@ -298,6 +304,12 @@ export default function RecruitmentForms() {
         formId={embedDialogFormId}
         open={!!embedDialogFormId}
         onOpenChange={(open) => !open && setEmbedDialogFormId(null)}
+      />
+
+      <EditRecruitmentFormDialog
+        formId={editDialogFormId}
+        open={!!editDialogFormId}
+        onOpenChange={(open) => !open && setEditDialogFormId(null)}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
