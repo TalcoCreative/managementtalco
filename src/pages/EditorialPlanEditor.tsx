@@ -418,6 +418,7 @@ export default function EditorialPlanEditor() {
         {showComments && ep && (
           <EPCommentsPanel
             epId={ep.id}
+            currentSlideId={currentSlide?.id}
             onClose={() => setShowComments(false)}
           />
         )}
