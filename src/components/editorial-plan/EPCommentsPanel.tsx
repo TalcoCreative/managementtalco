@@ -2,10 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send, Trash2, EyeOff } from "lucide-react";
+import { X, Trash2, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -21,22 +19,28 @@ interface Comment {
 
 interface EPCommentsPanelProps {
   epId: string;
+  currentSlideId?: string;
   onClose: () => void;
 }
 
-export function EPCommentsPanel({ epId, onClose }: EPCommentsPanelProps) {
+export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPanelProps) {
   const queryClient = useQueryClient();
 
-  // Fetch comments
+  // Fetch comments filtered by current slide
   const { data: comments, refetch } = useQuery({
-    queryKey: ["ep-comments", epId],
+    queryKey: ["ep-comments", epId, currentSlideId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("ep_comments")
         .select("*")
         .eq("ep_id", epId)
         .order("created_at", { ascending: false });
 
+      if (currentSlideId) {
+        query = query.eq("slide_id", currentSlideId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Comment[];
     },
@@ -77,7 +81,14 @@ export function EPCommentsPanel({ epId, onClose }: EPCommentsPanelProps) {
   return (
     <div className="w-80 border-l bg-card flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
-        <h3 className="font-semibold">Comments</h3>
+        <div>
+          <h3 className="font-semibold">Comments</h3>
+          {currentSlideId ? (
+            <p className="text-xs text-muted-foreground">Slide ini</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Semua slide</p>
+          )}
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -87,7 +98,7 @@ export function EPCommentsPanel({ epId, onClose }: EPCommentsPanelProps) {
         <div className="p-4 space-y-4">
           {comments?.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              No comments yet
+              {currentSlideId ? "Belum ada komentar di slide ini" : "Belum ada komentar"}
             </p>
           ) : (
             comments?.map((comment) => (

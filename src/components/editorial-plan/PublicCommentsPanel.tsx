@@ -29,23 +29,28 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
 
-  // Fetch comments (only non-hidden)
+  // Fetch comments filtered by current slide (only non-hidden)
   const { data: comments, refetch } = useQuery({
-    queryKey: ["public-ep-comments", epId],
+    queryKey: ["public-ep-comments", epId, currentSlideId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("ep_comments")
         .select("*")
         .eq("ep_id", epId)
         .eq("is_hidden", false)
         .order("created_at", { ascending: false });
 
+      if (currentSlideId) {
+        query = query.eq("slide_id", currentSlideId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Comment[];
     },
   });
 
-  // Add comment mutation
+  // Add comment mutation - always tied to current slide
   const addCommentMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim() || !comment.trim()) {
@@ -79,40 +84,53 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
   return (
     <div className="w-80 border-l bg-card flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
-        <h3 className="font-semibold">Comments</h3>
+        <div>
+          <h3 className="font-semibold">Comments</h3>
+          {currentSlideId ? (
+            <p className="text-xs text-muted-foreground">Slide ini</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">Pilih slide untuk komentar</p>
+          )}
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Comment Form */}
-      <form onSubmit={handleSubmit} className="p-4 border-b space-y-3">
-        <Input
-          placeholder="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Textarea
-          placeholder="Write a comment..."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          rows={3}
-        />
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={!name.trim() || !comment.trim() || addCommentMutation.isPending}
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {addCommentMutation.isPending ? "Sending..." : "Send Comment"}
-        </Button>
-      </form>
+      {/* Comment Form - only show when on a slide */}
+      {currentSlideId && (
+        <form onSubmit={handleSubmit} className="p-4 border-b space-y-3">
+          <Input
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Textarea
+            placeholder="Write a comment..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+          />
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!name.trim() || !comment.trim() || addCommentMutation.isPending}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {addCommentMutation.isPending ? "Sending..." : "Send Comment"}
+          </Button>
+        </form>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
-          {comments?.length === 0 ? (
+          {!currentSlideId ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              No comments yet. Be the first to comment!
+              Pilih slide terlebih dahulu untuk melihat dan menambah komentar
+            </p>
+          ) : comments?.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Belum ada komentar di slide ini
             </p>
           ) : (
             comments?.map((c) => (

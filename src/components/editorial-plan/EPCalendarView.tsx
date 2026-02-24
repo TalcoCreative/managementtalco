@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +54,38 @@ const CHANNEL_ICONS: Record<string, string> = {
 
 export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Fetch slide_blocks to get titles
+  const slideIds = slides.map(s => s.id);
+  const { data: slideBlocks } = useQuery({
+    queryKey: ["slide-blocks-titles", slideIds],
+    queryFn: async () => {
+      if (slideIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("slide_blocks")
+        .select("slide_id, content")
+        .in("slide_id", slideIds)
+        .eq("block_type", "content_meta");
+      if (error) throw error;
+      return data;
+    },
+    enabled: slideIds.length > 0,
+  });
+
+  // Map slide_id -> title
+  const slideTitles = useMemo(() => {
+    const map = new Map<string, string>();
+    slideBlocks?.forEach((block: any) => {
+      const content = block.content as any;
+      if (content?.title) {
+        map.set(block.slide_id, content.title);
+      } else if (content?.caption) {
+        // fallback to caption if no title
+        map.set(block.slide_id, content.caption.substring(0, 40));
+      }
+    });
+    return map;
+  }, [slideBlocks]);
 
   // Group slides by publish_date
   const slidesByDate = useMemo(() => {
@@ -150,7 +184,7 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
                 <div
                   key={dateKey}
                   className={cn(
-                    "min-h-[80px] p-1 border-b border-r last:border-r-0 transition-colors",
+                    "min-h-[90px] p-1 border-b border-r last:border-r-0 transition-colors",
                     !inMonth && "bg-muted/20",
                     today && "bg-primary/5"
                   )}
@@ -166,20 +200,26 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
                     {daySlides.map(({ slide, index }) => {
                       const colors = STATUS_COLORS[slide.status] || STATUS_COLORS.proposed;
                       const channelIcon = CHANNEL_ICONS[slide.channel || "other"] || "📌";
+                      const title = slideTitles.get(slide.id);
                       return (
                         <button
                           key={slide.id}
                           onClick={() => onSlideClick(index)}
                           className={cn(
-                            "w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight truncate flex items-center gap-1 hover:opacity-80 transition-opacity",
+                            "w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight flex flex-col gap-0 hover:opacity-80 transition-opacity",
                             colors.bg,
                             colors.text
                           )}
-                          title={`Slide ${slide.slide_order + 1} • ${slide.channel} • ${slide.format} • ${slide.status}`}
+                          title={`Slide ${slide.slide_order + 1} • ${slide.channel} • ${slide.format} • ${slide.status}${title ? ` • ${title}` : ''}`}
                         >
-                          <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", colors.dot)} />
-                          <span>{channelIcon}</span>
-                          <span className="truncate">S{slide.slide_order + 1} · {slide.format}</span>
+                          <div className="flex items-center gap-1 truncate">
+                            <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", colors.dot)} />
+                            <span>{channelIcon}</span>
+                            <span className="truncate">S{slide.slide_order + 1} · {slide.format}</span>
+                          </div>
+                          {title && (
+                            <span className="truncate pl-4 opacity-80 font-medium">{title}</span>
+                          )}
                         </button>
                       );
                     })}
