@@ -31,6 +31,10 @@ import Recruitment from "./pages/Recruitment";
 import RecruitmentForms from "./pages/RecruitmentForms";
 import RecruitmentDashboard from "./pages/RecruitmentDashboard";
 import PublicApplyForm from "./pages/PublicApplyForm";
+import Forms from "./pages/Forms";
+import FormEditor from "./pages/FormEditor";
+import FormResponses from "./pages/FormResponses";
+import PublicForm from "./pages/PublicForm";
 import Meeting from "./pages/Meeting";
 import Asset from "./pages/Asset";
 import Letters from "./pages/Letters";
@@ -98,6 +102,10 @@ const App = () => (
           <Route path="/recruitment/forms" element={<ProtectedRoute><RecruitmentForms /></ProtectedRoute>} />
           <Route path="/recruitment/dashboard" element={<ProtectedRoute><RecruitmentDashboard /></ProtectedRoute>} />
           <Route path="/apply/:slug" element={<PublicApplyForm />} />
+          <Route path="/forms" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
+          <Route path="/forms/:formId" element={<ProtectedRoute><FormEditor /></ProtectedRoute>} />
+          <Route path="/forms/:formId/responses" element={<ProtectedRoute><FormResponses /></ProtectedRoute>} />
+          <Route path="/f/:slug" element={<PublicForm />} />
           <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
           <Route path="/asset" element={<ProtectedRoute><Asset /></ProtectedRoute>} />
           <Route path="/letters" element={<ProtectedRoute><Letters /></ProtectedRoute>} />

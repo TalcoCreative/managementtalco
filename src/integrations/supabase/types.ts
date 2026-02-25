@@ -1974,6 +1974,160 @@ export type Database = {
           },
         ]
       }
+      form_answers: {
+        Row: {
+          answer_file_url: string | null
+          answer_text: string | null
+          created_at: string | null
+          id: string
+          question_id: string
+          response_id: string
+        }
+        Insert: {
+          answer_file_url?: string | null
+          answer_text?: string | null
+          created_at?: string | null
+          id?: string
+          question_id: string
+          response_id: string
+        }
+        Update: {
+          answer_file_url?: string | null
+          answer_text?: string | null
+          created_at?: string | null
+          id?: string
+          question_id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "form_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "form_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_questions: {
+        Row: {
+          created_at: string | null
+          field_order: number | null
+          field_type: string
+          form_id: string
+          id: string
+          is_required: boolean | null
+          label: string
+          options: Json | null
+          placeholder: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          field_order?: number | null
+          field_type: string
+          form_id: string
+          id?: string
+          is_required?: boolean | null
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          field_order?: number | null
+          field_type?: string
+          form_id?: string
+          id?: string
+          is_required?: boolean | null
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_questions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_responses: {
+        Row: {
+          form_id: string
+          id: string
+          respondent_email: string | null
+          respondent_name: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          form_id: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          form_id?: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          slug: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          slug: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          slug?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       freelancers: {
         Row: {
           bank_account_name: string | null

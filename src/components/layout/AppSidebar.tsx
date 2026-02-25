@@ -60,6 +60,7 @@ const navItems = [
   { title: "Asset", url: "/asset", icon: Package },
   { title: "Event", url: "/event", icon: PartyPopper },
   { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Form Builder", url: "/forms", icon: FileText },
   { title: "KOL Database", url: "/kol-database", icon: Star },
   { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
 ];
