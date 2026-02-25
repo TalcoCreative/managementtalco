@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -403,7 +403,7 @@ export function CandidateDetailDialog({
             <TabsTrigger value="notes" className="text-xs sm:text-sm">Catatan</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(90vh - 180px)' }}>
             <TabsContent value="info" className="space-y-4 mt-4">
               {/* Status */}
               <Card>
@@ -521,16 +521,38 @@ export function CandidateDetailDialog({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {candidate.cv_url ? (
-                    <a
-                      href={candidate.cv_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:underline"
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Extract storage path from URL
+                          const url = candidate.cv_url;
+                          const publicPrefix = '/storage/v1/object/public/';
+                          const idx = url.indexOf(publicPrefix);
+                          if (idx !== -1) {
+                            const fullPath = url.substring(idx + publicPrefix.length);
+                            const slashIdx = fullPath.indexOf('/');
+                            const bucket = fullPath.substring(0, slashIdx);
+                            const path = fullPath.substring(slashIdx + 1);
+                            const { data, error } = await supabase.storage
+                              .from(bucket)
+                              .createSignedUrl(path, 3600);
+                            if (data?.signedUrl) {
+                              window.open(data.signedUrl, '_blank');
+                              return;
+                            }
+                          }
+                          // Fallback: open direct URL
+                          window.open(url, '_blank');
+                        } catch {
+                          window.open(candidate.cv_url, '_blank');
+                        }
+                      }}
+                      className="flex items-center gap-2 text-primary hover:underline cursor-pointer"
                     >
                       <FileText className="h-4 w-4" />
                       <span>Lihat CV</span>
                       <ExternalLink className="h-3 w-3" />
-                    </a>
+                    </button>
                   ) : (
                     <p className="text-muted-foreground text-sm">CV belum diupload</p>
                   )}
@@ -574,6 +596,23 @@ export function CandidateDetailDialog({
                             : JSON.stringify(v);
 
                         const isLink = typeof v === "string" && /^https?:\/\//i.test(v);
+                        const isStorageLink = isLink && typeof v === "string" && v.includes('/storage/v1/object/');
+
+                        const openWithSignedUrl = async (url: string) => {
+                          try {
+                            const publicPrefix = '/storage/v1/object/public/';
+                            const idx = url.indexOf(publicPrefix);
+                            if (idx !== -1) {
+                              const fullPath = url.substring(idx + publicPrefix.length);
+                              const slashIdx = fullPath.indexOf('/');
+                              const bucket = fullPath.substring(0, slashIdx);
+                              const path = fullPath.substring(slashIdx + 1);
+                              const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+                              if (data?.signedUrl) { window.open(data.signedUrl, '_blank'); return; }
+                            }
+                          } catch {}
+                          window.open(url, '_blank');
+                        };
 
                         return (
                           <div key={item.id} className="rounded-lg border p-3">
@@ -581,6 +620,14 @@ export function CandidateDetailDialog({
                             <div className="mt-1 text-sm text-muted-foreground break-words">
                               {isEmpty ? (
                                 <span>-</span>
+                              ) : isStorageLink ? (
+                                <button
+                                  onClick={() => openWithSignedUrl(String(v))}
+                                  className="text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                                >
+                                  Buka File
+                                  <ExternalLink className="h-3 w-3" />
+                                </button>
                               ) : isLink ? (
                                 <a
                                   href={String(v)}
