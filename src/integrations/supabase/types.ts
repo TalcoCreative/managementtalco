@@ -2102,6 +2102,7 @@ export type Database = {
           name: string
           slug: string
           status: string | null
+          theme: string
           updated_at: string | null
         }
         Insert: {
@@ -2113,6 +2114,7 @@ export type Database = {
           name: string
           slug: string
           status?: string | null
+          theme?: string
           updated_at?: string | null
         }
         Update: {
@@ -2124,6 +2126,7 @@ export type Database = {
           name?: string
           slug?: string
           status?: string | null
+          theme?: string
           updated_at?: string | null
         }
         Relationships: []

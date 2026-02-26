@@ -47,8 +47,7 @@ export const MeetingInvitationNotifications = () => {
           )
         `)
         .eq("user_id", currentUser.id)
-        .eq("status", "pending")
-        .gte("meeting.meeting_date", new Date().toISOString().split("T")[0]);
+        .eq("status", "pending");
 
       if (error) throw error;
       return data?.filter(d => d.meeting) || [];

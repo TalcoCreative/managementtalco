@@ -10,6 +10,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -48,7 +52,8 @@ export default function Forms() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editForm, setEditForm] = useState<Form | null>(null);
   const [deleteForm, setDeleteForm] = useState<Form | null>(null);
-  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true });
+  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true, theme: "clean" });
+  const [embedForm, setEmbedForm] = useState<Form | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -94,15 +99,16 @@ export default function Forms() {
         name: newForm.name,
         description: newForm.description || null,
         is_public: newForm.is_public,
+        theme: newForm.theme,
         slug,
         created_by: session.session.user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
       setCreateOpen(false);
-      setNewForm({ name: "", description: "", is_public: true });
+      setNewForm({ name: "", description: "", is_public: true, theme: "clean" });
       toast.success("Form berhasil dibuat");
     },
     onError: (e) => toast.error("Gagal membuat form: " + e.message),
@@ -281,13 +287,16 @@ export default function Forms() {
                           <DropdownMenuItem onClick={() => setEditForm({ ...form })}>
                             <Pencil className="mr-2 h-4 w-4" />Edit Info
                           </DropdownMenuItem>
-                          {form.is_public && (
+                           {form.is_public && (
                             <>
                               <DropdownMenuItem onClick={() => window.open(`/f/${form.slug}`, '_blank')}>
                                 <ExternalLink className="mr-2 h-4 w-4" />Preview
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyLink(form.slug)}>
                                 <Copy className="mr-2 h-4 w-4" />Salin Link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setEmbedForm(form)}>
+                                <FileText className="mr-2 h-4 w-4" />Embed Code
                               </DropdownMenuItem>
                             </>
                           )}
@@ -324,6 +333,16 @@ export default function Forms() {
             <div className="flex items-center justify-between">
               <Label>Form Publik</Label>
               <Switch checked={newForm.is_public} onCheckedChange={v => setNewForm(p => ({ ...p, is_public: v }))} />
+            </div>
+            <div>
+              <Label>Tema</Label>
+              <Select value={newForm.theme} onValueChange={v => setNewForm(p => ({ ...p, theme: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clean">Clean (Terang)</SelectItem>
+                  <SelectItem value="dark">Dark Mode</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -377,6 +396,56 @@ export default function Forms() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Embed Code Dialog */}
+      <Dialog open={!!embedForm} onOpenChange={o => !o && setEmbedForm(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader><DialogTitle>Embed Form: {embedForm?.name}</DialogTitle></DialogHeader>
+          {embedForm && (() => {
+            const shortDomain = "https://ms.talco.id";
+            const publicUrl = `${shortDomain}/forms/${embedForm.slug}`;
+            const iframeCode = `<iframe\n  src="${publicUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; min-height: 600px;">\n</iframe>`;
+            const scriptCode = `<div id="talco-form" data-form="${embedForm.slug}"></div>\n<script src="${shortDomain}/embed-form.js" async></script>`;
+            const copyText = (text: string, label: string) => { navigator.clipboard.writeText(text); toast.success(`${label} disalin!`); };
+            return (
+              <Tabs defaultValue="link" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="link">Link</TabsTrigger>
+                  <TabsTrigger value="iframe">Iframe</TabsTrigger>
+                  <TabsTrigger value="script">Script</TabsTrigger>
+                </TabsList>
+                <TabsContent value="link" className="space-y-3 mt-3">
+                  <p className="text-sm text-muted-foreground">Bagikan link ini:</p>
+                  <div className="flex gap-2">
+                    <code className="flex-1 p-3 bg-muted rounded-md text-sm break-all">{publicUrl}</code>
+                    <Button variant="outline" size="icon" onClick={() => copyText(publicUrl, "Link")}><Copy className="h-4 w-4" /></Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="iframe" className="space-y-3 mt-3">
+                  <p className="text-sm text-muted-foreground">Embed menggunakan iframe:</p>
+                  <div className="relative">
+                    <pre className="p-4 bg-muted rounded-md text-xs overflow-x-auto">{iframeCode}</pre>
+                    <Button variant="outline" size="sm" className="absolute top-2 right-2" onClick={() => copyText(iframeCode, "Iframe code")}>
+                      <Copy className="h-3 w-3 mr-1" />Copy
+                    </Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="script" className="space-y-3 mt-3">
+                  <p className="text-sm text-muted-foreground">Embed dengan script:</p>
+                  <div className="relative">
+                    <pre className="p-4 bg-muted rounded-md text-xs overflow-x-auto">{scriptCode}</pre>
+                    <Button variant="outline" size="sm" className="absolute top-2 right-2" onClick={() => copyText(scriptCode, "Script code")}>
+                      <Copy className="h-3 w-3 mr-1" />Copy
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmbedForm(null)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

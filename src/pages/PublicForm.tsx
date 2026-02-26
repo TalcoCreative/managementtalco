@@ -20,6 +20,7 @@ interface FormData {
   name: string;
   description: string | null;
   slug: string;
+  theme?: string;
 }
 
 interface Question {
@@ -196,19 +197,21 @@ export default function PublicForm() {
     );
   }
 
+  const isDark = form.theme === 'dark';
+
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className={`min-h-screen py-8 px-4 ${isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-background'}`}>
       <div className="max-w-2xl mx-auto">
-        <Card className="mb-6">
+        <Card className={isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : ''}>
           <CardHeader>
             <CardTitle className="text-2xl">{form.name}</CardTitle>
-            {form.description && <CardDescription>{form.description}</CardDescription>}
+            {form.description && <CardDescription className={isDark ? 'text-zinc-400' : ''}>{form.description}</CardDescription>}
           </CardHeader>
         </Card>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           {questions.map(q => (
-            <Card key={q.id}>
+            <Card key={q.id} className={isDark ? 'bg-zinc-900 border-zinc-800 text-zinc-100' : ''}>
               <CardContent className="pt-6 space-y-2">
                 <Label className="text-sm font-medium">
                   {q.label}
