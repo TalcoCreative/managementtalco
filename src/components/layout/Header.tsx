@@ -10,6 +10,7 @@ import { CreateAnnouncementDialog } from "@/components/announcements/CreateAnnou
 import { ManageAnnouncementsDialog } from "@/components/announcements/ManageAnnouncementsDialog";
 import { HeaderNotifications } from "@/components/layout/HeaderNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ import {
 export function Header() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [manageAnnouncementsOpen, setManageAnnouncementsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -48,44 +50,22 @@ export function Header() {
 
   const canManageAnnouncements = userRoles?.includes("hr") || userRoles?.includes("super_admin");
 
-  // Realtime subscription for new tasks
   useEffect(() => {
     if (!currentUser) return;
-
     const channel = supabase
       .channel('task-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'tasks',
-        },
-        (payload) => {
-          const newTask = payload.new as any;
-          
-          // Notify if the task is assigned to the current user
-          if (newTask.assigned_to === currentUser.id) {
-            toast.info(`New task assigned to you: ${newTask.title}`, {
-              duration: 5000,
-            });
-          } else {
-            // Notify all users about new task
-            toast.info(`New task created: ${newTask.title}`, {
-              duration: 3000,
-            });
-          }
-          
-          // Refresh task queries
-          queryClient.invalidateQueries({ queryKey: ["tasks"] });
-          queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
+        const newTask = payload.new as any;
+        if (newTask.assigned_to === currentUser.id) {
+          toast.info(`New task assigned to you: ${newTask.title}`, { duration: 5000 });
+        } else {
+          toast.info(`New task created: ${newTask.title}`, { duration: 3000 });
         }
-      )
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
+      })
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [currentUser, queryClient]);
 
   const handleLogout = async () => {
@@ -94,15 +74,16 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-14 sm:h-16 items-center justify-between border-b bg-card px-3 sm:px-6 gap-2 sticky top-0 z-40">
-      <SidebarTrigger className="flex-shrink-0" />
+    <header className="flex h-12 sm:h-14 items-center justify-between border-b border-border/40 bg-card/80 backdrop-blur-xl px-3 sm:px-5 gap-2 sticky top-0 z-40">
+      {!isMobile && <SidebarTrigger className="flex-shrink-0" />}
+      {isMobile && <h1 className="text-sm font-semibold truncate">Talco</h1>}
       
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1">
         {canManageAnnouncements && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" title="Pengumuman" className="h-9 w-9 sm:h-10 sm:w-10">
-                <Megaphone className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Button variant="ghost" size="icon" title="Pengumuman" className="h-8 w-8">
+                <Megaphone className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -118,19 +99,13 @@ export function Header() {
         
         <HeaderNotifications onTaskClick={(taskId) => setSelectedTaskId(taskId)} />
 
-        <Button variant="ghost" size="icon" onClick={handleLogout} className="h-9 w-9 sm:h-10 sm:w-10">
-          <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8">
+          <LogOut className="h-4 w-4" />
         </Button>
       </div>
 
-      <CreateAnnouncementDialog
-        open={createAnnouncementOpen}
-        onOpenChange={setCreateAnnouncementOpen}
-      />
-      <ManageAnnouncementsDialog
-        open={manageAnnouncementsOpen}
-        onOpenChange={setManageAnnouncementsOpen}
-      />
+      <CreateAnnouncementDialog open={createAnnouncementOpen} onOpenChange={setCreateAnnouncementOpen} />
+      <ManageAnnouncementsDialog open={manageAnnouncementsOpen} onOpenChange={setManageAnnouncementsOpen} />
       {selectedTaskId && (
         <TaskDetailDialog
           taskId={selectedTaskId}
