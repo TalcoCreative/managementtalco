@@ -394,8 +394,8 @@ export function CandidateDetailDialog({
           <DialogTitle className="text-xl">{candidate.full_name}</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="info" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="info" className="flex-1 min-h-0 flex flex-col">
+          <TabsList className="grid w-full grid-cols-5 shrink-0">
             <TabsTrigger value="info" className="text-xs sm:text-sm">Info</TabsTrigger>
             <TabsTrigger value="answers" className="text-xs sm:text-sm">Jawaban</TabsTrigger>
             <TabsTrigger value="history" className="text-xs sm:text-sm">Riwayat</TabsTrigger>
@@ -403,7 +403,7 @@ export function CandidateDetailDialog({
             <TabsTrigger value="notes" className="text-xs sm:text-sm">Catatan</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 mt-2" style={{ maxHeight: 'calc(90vh - 200px)' }}>
             <TabsContent value="info" className="space-y-4 mt-4">
               {/* Status */}
               <Card>
@@ -840,7 +840,7 @@ export function CandidateDetailDialog({
                 </CardContent>
               </Card>
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
 
         {/* Delete Button */}
