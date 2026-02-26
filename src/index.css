@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Clean "Mineral Water" Design System - Soft, Harmonious, Modern
-   All colors MUST be HSL. No clashing colors.
+/* Premium Agency OS Design System
+   Floating cards, soft shadows, dark-mode friendly, high density
+   All colors MUST be HSL.
 */
 
 @layer base {
@@ -17,7 +18,6 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 14%;
 
-    /* Refined slate-blue primary - softer, easier on eyes */
     --primary: 220 70% 50%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 220 60% 60%;
@@ -38,9 +38,9 @@
     --input: 220 14% 90%;
     --ring: 220 70% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    /* Sidebar - Deep navy slate */
+    /* Sidebar */
     --sidebar-background: 220 25% 12%;
     --sidebar-foreground: 220 14% 96%;
     --sidebar-primary: 220 70% 55%;
@@ -50,7 +50,7 @@
     --sidebar-border: 220 20% 20%;
     --sidebar-ring: 220 70% 55%;
 
-    /* Status colors - Muted, professional */
+    /* Status */
     --status-todo: 220 60% 55%;
     --status-progress: 35 80% 50%;
     --status-done: 150 50% 45%;
@@ -58,12 +58,12 @@
     --status-completed: 150 50% 45%;
     --status-on-hold: 25 80% 50%;
 
-    /* Priority colors */
+    /* Priority */
     --priority-low: 220 10% 60%;
     --priority-medium: 35 80% 50%;
     --priority-high: 0 65% 55%;
 
-    /* Success, Warning, Info - Softer tones */
+    /* Semantic */
     --success: 150 50% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 35 80% 50%;
@@ -71,9 +71,17 @@
     --info: 200 70% 50%;
     --info-foreground: 0 0% 100%;
 
-    /* Glass effect variables */
+    /* Glass */
     --glass-bg: 0 0% 100%;
     --glass-border: 220 14% 92%;
+
+    /* Floating card */
+    --float-shadow: 0 2px 8px hsl(220 25% 20% / 0.05), 0 8px 24px hsl(220 25% 20% / 0.08);
+    --float-shadow-hover: 0 4px 12px hsl(220 25% 20% / 0.07), 0 16px 40px hsl(220 25% 20% / 0.12);
+
+    /* Bottom nav */
+    --bottom-nav-bg: 0 0% 100%;
+    --bottom-nav-border: 220 14% 92%;
   }
 
   .dark {
@@ -116,6 +124,12 @@
 
     --glass-bg: 220 20% 14%;
     --glass-border: 220 20% 22%;
+
+    --float-shadow: 0 2px 8px hsl(220 25% 5% / 0.3), 0 8px 24px hsl(220 25% 5% / 0.4);
+    --float-shadow-hover: 0 4px 12px hsl(220 25% 5% / 0.4), 0 16px 40px hsl(220 25% 5% / 0.5);
+
+    --bottom-nav-bg: 220 20% 12%;
+    --bottom-nav-border: 220 20% 20%;
   }
 }
 
@@ -137,6 +151,14 @@
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
+    /* Desktop: 15px base, Mobile: 13px base */
+    font-size: 15px;
+  }
+
+  @media (max-width: 767px) {
+    body {
+      font-size: 13px;
+    }
   }
 
   #root {
@@ -144,94 +166,133 @@
     min-height: 100vh;
     min-height: 100dvh;
   }
+
+  /* Responsive typography scale */
+  h1 { @apply text-xl sm:text-2xl md:text-3xl font-bold tracking-tight; }
+  h2 { @apply text-lg sm:text-xl md:text-2xl font-semibold tracking-tight; }
+  h3 { @apply text-base sm:text-lg font-semibold; }
 }
 
 @layer components {
-  /* Glass morphism effect */
+  /* Glass morphism */
   .glass {
     @apply bg-card/90 backdrop-blur-md border border-border/60;
   }
-
   .glass-strong {
     @apply bg-card/95 backdrop-blur-xl border border-border/40;
   }
 
-  /* Gradient backgrounds - Subtle, not harsh */
+  /* Gradients */
   .gradient-primary {
     background: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 60% 60%));
   }
-
   .gradient-subtle {
     background: linear-gradient(180deg, hsl(220 20% 97%), hsl(220 14% 95%));
   }
-
   .gradient-card {
     background: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
   }
 
-  /* Soft shadows - Very subtle */
+  /* Soft shadows */
   .shadow-soft {
-    box-shadow: 
-      0 1px 3px hsl(220 25% 20% / 0.04),
-      0 4px 12px hsl(220 25% 20% / 0.06);
+    box-shadow: var(--float-shadow);
   }
-
   .shadow-soft-lg {
-    box-shadow: 
-      0 2px 6px hsl(220 25% 20% / 0.04),
-      0 8px 24px hsl(220 25% 20% / 0.08);
+    box-shadow: var(--float-shadow-hover);
   }
 
-  /* Hover lift effect */
+  /* Floating card system */
+  .floating-card {
+    @apply rounded-2xl border-0 bg-card text-card-foreground transition-all duration-200;
+    box-shadow: var(--float-shadow);
+  }
+  .floating-card:hover {
+    box-shadow: var(--float-shadow-hover);
+    transform: translateY(-1px);
+  }
+  .floating-card:active {
+    transform: translateY(0);
+  }
+
+  /* Hover lift */
   .hover-lift {
     @apply transition-all duration-200 ease-out;
   }
-
   .hover-lift:hover {
     transform: translateY(-1px);
-    box-shadow: 
-      0 4px 12px hsl(220 25% 20% / 0.06),
-      0 12px 32px hsl(220 25% 20% / 0.1);
+    box-shadow: var(--float-shadow-hover);
   }
 
-  /* Status pill styles */
+  /* Status pill */
   .status-pill {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
-  /* Animated underline for links */
+  /* Link underline */
   .link-underline {
     @apply relative;
   }
-
   .link-underline::after {
     content: '';
     @apply absolute bottom-0 left-0 w-full h-0.5 bg-primary scale-x-0 origin-right transition-transform duration-200;
   }
-
   .link-underline:hover::after {
     @apply scale-x-100 origin-left;
+  }
+
+  /* Mobile card list - stacked floating cards */
+  .mobile-card-list {
+    @apply flex flex-col gap-3;
+  }
+  .mobile-card-list > * {
+    @apply floating-card p-4;
+  }
+
+  /* Bottom nav safe area */
+  .pb-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* FAB positioning */
+  .fab-position {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+  }
+
+  @media (min-width: 768px) {
+    .fab-position {
+      bottom: 1.5rem;
+      right: 1.5rem;
+    }
+    .pb-bottom-nav {
+      padding-bottom: 0;
+    }
   }
 }
 
 @layer utilities {
-  /* Text gradient */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 60% 60%));
   }
+  .rounded-2xl { border-radius: 1rem; }
+  .rounded-3xl { border-radius: 1.5rem; }
+  .backdrop-blur-xs { backdrop-filter: blur(2px); }
 
-  /* Rounded utilities */
-  .rounded-2xl {
-    border-radius: 1rem;
+  /* Mobile compact text */
+  .text-compact {
+    @apply text-xs sm:text-sm;
   }
-
-  .rounded-3xl {
-    border-radius: 1.5rem;
+  .text-compact-sm {
+    font-size: 0.6875rem;
+    line-height: 1rem;
   }
-
-  /* Backdrop blur utilities */
-  .backdrop-blur-xs {
-    backdrop-filter: blur(2px);
+  @media (min-width: 640px) {
+    .text-compact-sm {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
   }
 }
