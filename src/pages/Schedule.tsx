@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { format, isSameDay, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper, Home, Building2, User } from "lucide-react";
+import { Calendar as CalendarIcon, Video, Users, CheckSquare, FolderOpen, Filter, List, LayoutGrid, PartyPopper, Home, Building2, User, Send } from "lucide-react";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -114,6 +115,47 @@ export default function Schedule() {
       return data;
     },
   });
+
+  // Fetch editorial slides with publish_date (Jadwal Post)
+  const { data: editorialSlides } = useQuery({
+    queryKey: ["editorial-slides-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select("*, editorial_plans(id, title, client_id, clients(id, name))")
+        .not("publish_date", "is", null)
+        .order("publish_date", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch slide blocks for titles
+  const epSlideIds = useMemo(() => editorialSlides?.map((s: any) => s.id) || [], [editorialSlides]);
+  const { data: slideBlocks } = useQuery({
+    queryKey: ["slide-blocks-schedule", epSlideIds],
+    queryFn: async () => {
+      if (epSlideIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("slide_blocks")
+        .select("slide_id, content")
+        .in("slide_id", epSlideIds)
+        .eq("block_type", "content_meta");
+      if (error) throw error;
+      return data;
+    },
+    enabled: epSlideIds.length > 0,
+  });
+
+  const slideTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    slideBlocks?.forEach((block: any) => {
+      const content = block.content as any;
+      if (content?.title) map.set(block.slide_id, content.title);
+      else if (content?.caption) map.set(block.slide_id, content.caption.substring(0, 40));
+    });
+    return map;
+  }, [slideBlocks]);
 
   // Fetch clients for filter
   const { data: clients } = useQuery({
@@ -261,6 +303,17 @@ export default function Schedule() {
       return true;
     });
   }, [shootings, filterClient, filterPerson, shootingPersonMap]);
+
+  const filteredEpSlides = useMemo(() => {
+    return (editorialSlides || []).filter((slide: any) => {
+      if (filterClient !== "all") {
+        if (slide.editorial_plans?.clients?.id !== filterClient) return false;
+      }
+      // Person filter not applicable to EP slides
+      return true;
+    });
+  }, [editorialSlides, filterClient]);
+
   const getHolidaysForDate = (date: Date) => {
     return holidays?.filter(holiday => {
       const start = new Date(holiday.start_date);
@@ -287,7 +340,9 @@ export default function Schedule() {
     filteredShootings?.forEach(shooting => {
       if (shooting.scheduled_date) dates.push(new Date(shooting.scheduled_date));
     });
-    // Add holiday dates
+    filteredEpSlides?.forEach((slide: any) => {
+      if (slide.publish_date) dates.push(new Date(slide.publish_date));
+    });
     holidays?.forEach(holiday => {
       const start = new Date(holiday.start_date);
       const end = new Date(holiday.end_date);
@@ -302,64 +357,57 @@ export default function Schedule() {
     const taskEvents = filteredTasks?.filter(task => 
       task.deadline && isSameDay(new Date(task.deadline), date)
     ) || [];
-    
     const projectEvents = filteredProjects?.filter(project => 
       project.deadline && isSameDay(new Date(project.deadline), date)
     ) || [];
-
     const meetingEvents = filteredMeetings?.filter(meeting => 
       meeting.meeting_date && isSameDay(new Date(meeting.meeting_date), date)
     ) || [];
-
     const shootingEvents = filteredShootings?.filter(shooting => 
       shooting.scheduled_date && isSameDay(new Date(shooting.scheduled_date), date)
     ) || [];
-
+    const epSlideEvents = filteredEpSlides?.filter((slide: any) => 
+      slide.publish_date && isSameDay(new Date(slide.publish_date), date)
+    ) || [];
     const holidayEvents = getHolidaysForDate(date);
-
-    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, holidays: holidayEvents };
+    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, epSlides: epSlideEvents, holidays: holidayEvents };
   };
 
   const getEventsForMonth = (date: Date) => {
     const start = startOfMonth(date);
     const end = endOfMonth(date);
-    
     const taskEvents = filteredTasks?.filter(task => {
       if (!task.deadline) return false;
-      const d = parseISO(task.deadline);
-      return isWithinInterval(d, { start, end });
+      return isWithinInterval(parseISO(task.deadline), { start, end });
     }) || [];
-    
     const projectEvents = filteredProjects?.filter(project => {
       if (!project.deadline) return false;
-      const d = parseISO(project.deadline);
-      return isWithinInterval(d, { start, end });
+      return isWithinInterval(parseISO(project.deadline), { start, end });
     }) || [];
-
     const meetingEvents = filteredMeetings?.filter(meeting => {
       if (!meeting.meeting_date) return false;
-      const d = parseISO(meeting.meeting_date);
-      return isWithinInterval(d, { start, end });
+      return isWithinInterval(parseISO(meeting.meeting_date), { start, end });
     }) || [];
-
     const shootingEvents = filteredShootings?.filter(shooting => {
       if (!shooting.scheduled_date) return false;
-      const d = parseISO(shooting.scheduled_date);
-      return isWithinInterval(d, { start, end });
+      return isWithinInterval(parseISO(shooting.scheduled_date), { start, end });
     }) || [];
-
+    const epSlideEvents = filteredEpSlides?.filter((slide: any) => {
+      if (!slide.publish_date) return false;
+      return isWithinInterval(parseISO(slide.publish_date), { start, end });
+    }) || [];
     const holidayEvents = holidays?.filter(holiday => {
       const holidayStart = parseISO(holiday.start_date);
       const holidayEnd = parseISO(holiday.end_date);
       return (holidayStart <= end && holidayEnd >= start);
     }) || [];
-
-    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, holidays: holidayEvents };
+    return { tasks: taskEvents, projects: projectEvents, meetings: meetingEvents, shootings: shootingEvents, epSlides: epSlideEvents, holidays: holidayEvents };
   };
 
-  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : { tasks: [], projects: [], meetings: [], shootings: [], holidays: [] };
+  const navigate = useNavigate();
+  const selectedEvents = selectedDate ? getEventsForDate(selectedDate) : { tasks: [], projects: [], meetings: [], shootings: [], epSlides: [], holidays: [] };
   const monthEvents = getEventsForMonth(filterMonth);
-  const hasEvents = selectedEvents.tasks.length > 0 || selectedEvents.projects.length > 0 || selectedEvents.meetings.length > 0 || selectedEvents.shootings.length > 0 || selectedEvents.holidays.length > 0;
+  const hasEvents = selectedEvents.tasks.length > 0 || selectedEvents.projects.length > 0 || selectedEvents.meetings.length > 0 || selectedEvents.shootings.length > 0 || selectedEvents.epSlides.length > 0 || selectedEvents.holidays.length > 0;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -524,6 +572,44 @@ export default function Schedule() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Jadwal Post (EP Slides) */}
+                    {selectedEvents.epSlides.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                          <Send className="h-4 w-4" />
+                          Jadwal Post ({selectedEvents.epSlides.length})
+                        </h3>
+                        {selectedEvents.epSlides.map((slide: any) => {
+                          const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
+                          const clientName = slide.editorial_plans?.clients?.name;
+                          const epTitle = slide.editorial_plans?.title;
+                          const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+                          return (
+                            <div
+                              key={slide.id}
+                              onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                              className="p-3 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <h4 className="font-medium">{title}</h4>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {clientName} • {epTitle}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {slide.channel && `${slide.channel} • `}{slide.format || ''}
+                                  </p>
+                                </div>
+                                <Badge className={statusColor}>
+                                  {slide.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -695,9 +781,9 @@ export default function Schedule() {
             </Card>
 
             <Tabs defaultValue="all" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="all">
-                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.holidays.length})
+                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.epSlides.length + monthEvents.holidays.length})
                 </TabsTrigger>
                 <TabsTrigger value="shootings">
                   <Video className="h-4 w-4 mr-1" />
@@ -706,6 +792,10 @@ export default function Schedule() {
                 <TabsTrigger value="meetings">
                   <Users className="h-4 w-4 mr-1" />
                   Meetings ({monthEvents.meetings.length})
+                </TabsTrigger>
+                <TabsTrigger value="epSlides">
+                  <Send className="h-4 w-4 mr-1" />
+                  Jadwal Post ({monthEvents.epSlides.length})
                 </TabsTrigger>
                 <TabsTrigger value="tasks">
                   <CheckSquare className="h-4 w-4 mr-1" />
@@ -777,6 +867,37 @@ export default function Schedule() {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        )}
+
+                        {/* Jadwal Post Section */}
+                        {monthEvents.epSlides.length > 0 && (
+                          <div>
+                            <h3 className="font-semibold flex items-center gap-2 mb-2">
+                              <Send className="h-4 w-4" /> Jadwal Post
+                            </h3>
+                            {monthEvents.epSlides.map((slide: any) => {
+                              const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
+                              const clientName = slide.editorial_plans?.clients?.name;
+                              const epTitle = slide.editorial_plans?.title;
+                              const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+                              return (
+                                <div
+                                  key={slide.id}
+                                  onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                                  className="p-3 border rounded-lg mb-2 hover:bg-accent cursor-pointer"
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <p className="font-medium">{title}</p>
+                                      <p className="text-sm text-muted-foreground">{clientName} • {epTitle}</p>
+                                      <p className="text-xs text-muted-foreground">{format(new Date(slide.publish_date), "dd MMM yyyy")} • {slide.channel || ''} • {slide.format || ''}</p>
+                                    </div>
+                                    <Badge className={statusColor}>{slide.status}</Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -1057,6 +1178,59 @@ export default function Schedule() {
                               </TableCell>
                             </TableRow>
                           ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Jadwal Post Tab */}
+              <TabsContent value="epSlides">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Send className="h-5 w-5" />
+                      Jadwal Post - {format(filterMonth, "MMMM yyyy")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ScrollArea className="h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Judul</TableHead>
+                            <TableHead>Client / EP</TableHead>
+                            <TableHead>Tanggal Tayang</TableHead>
+                            <TableHead>Channel</TableHead>
+                            <TableHead>Format</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {monthEvents.epSlides.map((slide: any) => {
+                            const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
+                            const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+                            return (
+                              <TableRow
+                                key={slide.id}
+                                className="cursor-pointer hover:bg-accent"
+                                onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                              >
+                                <TableCell className="font-medium">{title}</TableCell>
+                                <TableCell>
+                                  <div>{slide.editorial_plans?.clients?.name}</div>
+                                  <div className="text-xs text-muted-foreground">{slide.editorial_plans?.title}</div>
+                                </TableCell>
+                                <TableCell>{format(new Date(slide.publish_date), "dd MMM yyyy")}</TableCell>
+                                <TableCell className="capitalize">{slide.channel || '-'}</TableCell>
+                                <TableCell>{slide.format || '-'}</TableCell>
+                                <TableCell>
+                                  <Badge className={statusColor}>{slide.status}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </ScrollArea>
