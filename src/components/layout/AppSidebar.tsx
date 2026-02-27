@@ -28,6 +28,7 @@ import {
   PieChart,
   Sparkles,
   CalendarHeart,
+  BarChart2,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -71,8 +72,6 @@ const socialMediaItems = [
   { title: "Content Builder", url: "/content-builder", icon: Sparkles },
 ];
 
-import { BarChart2 } from "lucide-react";
-
 const hrItems = [
   { title: "Team", url: "/users", icon: Users },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
@@ -105,7 +104,6 @@ export function AppSidebar() {
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return null;
-
       const { data, error } = await supabase
         .from("profiles")
         .select("full_name")
@@ -121,7 +119,6 @@ export function AppSidebar() {
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return [];
-
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -157,32 +154,57 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
       isActive
-        ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+        ? 'bg-sidebar-primary/15 text-sidebar-primary-foreground shadow-inner-soft'
+        : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
     }`;
 
+  const renderGroup = (label: string, items: typeof navItems) => (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu className="px-2 space-y-0.5">
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title + item.url}>
+              <SidebarMenuButton asChild>
+                <NavLink to={item.url} className={navLinkClass}>
+                  <item.icon className="h-4 w-4 opacity-70" />
+                  {!isCollapsed && <span>{item.title}</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/30">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/15">
       <SidebarContent className="bg-sidebar">
-        <div className="px-4 py-5">
+        <div className="px-4 py-6">
           {!isCollapsed && (
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-semibold text-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
+                <span className="text-sidebar-primary font-semibold text-sm">
                   {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
               </div>
-              <h1 className="text-sm font-semibold text-sidebar-foreground">
-                Hi, {userProfile?.full_name?.split(" ")[0] || "User"}
-              </h1>
+              <div>
+                <h1 className="text-sm font-semibold text-sidebar-foreground leading-tight">
+                  Hi, {userProfile?.full_name?.split(" ")[0] || "User"}
+                </h1>
+                <p className="text-[10px] text-sidebar-foreground/40 mt-0.5">Talco Management</p>
+              </div>
             </div>
           )}
           {isCollapsed && (
             <div className="flex justify-center">
-              <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-semibold text-sm">
+              <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
+                <span className="text-sidebar-primary font-semibold text-sm">
                   {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
               </div>
@@ -190,125 +212,33 @@ export function AppSidebar() {
           )}
         </div>
         
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
-            Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="px-2 space-y-0.5">
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={navLinkClass}>
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-              {canAccessLetters && (
+        {renderGroup("Navigation", navItems)}
+
+        {canAccessLetters && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="px-2 space-y-0.5">
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/letters" className={navLinkClass}>
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-4 w-4 opacity-70" />
                       {!isCollapsed && <span>Surat</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
-            Social Media
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="px-2 space-y-0.5">
-              {socialMediaItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} className={navLinkClass}>
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {isHRorAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
-              HR
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                {hrItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink to={item.url} className={navLinkClass}>
-                        <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {canAccessFinance && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
-              Finance
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                {financeItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink to={item.url} className={navLinkClass}>
-                        <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {canAccessSales && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
-              Sales
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                {salesItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink to={item.url} className={navLinkClass}>
-                        <item.icon className="h-4 w-4" />
-                        {!isCollapsed && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {renderGroup("Social Media", socialMediaItems)}
+        {isHRorAdmin && renderGroup("HR", hrItems)}
+        {canAccessFinance && renderGroup("Finance", financeItems)}
+        {canAccessSales && renderGroup("Sales", salesItems)}
 
         {isSuperAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
+            <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
               Executive
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -316,7 +246,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/ceo-dashboard" className={navLinkClass}>
-                      <Crown className="h-4 w-4" />
+                      <Crown className="h-4 w-4 opacity-70" />
                       {!isCollapsed && <span>CEO Dashboard</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -328,7 +258,7 @@ export function AppSidebar() {
 
         {isSuperAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[11px] font-semibold uppercase tracking-wider px-4 mb-1">
+            <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
               System
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -336,7 +266,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/system/email-settings" className={navLinkClass}>
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-4 w-4 opacity-70" />
                       {!isCollapsed && <span>Email Settings</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -347,12 +277,12 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/30 p-3">
+      <SidebarFooter className="border-t border-sidebar-border/15 p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton 
               onClick={handleLogout} 
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors duration-150"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/50 hover:bg-destructive/8 hover:text-destructive transition-all duration-200"
             >
               <LogOut className="h-4 w-4" />
               {!isCollapsed && <span>Logout</span>}

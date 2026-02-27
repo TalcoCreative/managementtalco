@@ -95,11 +95,15 @@ export default {
         "3xl": "calc(var(--radius) + 16px)",
       },
       boxShadow: {
-        soft: "0 1px 3px hsl(220 25% 20% / 0.04), 0 4px 12px hsl(220 25% 20% / 0.06)",
-        "soft-lg": "0 2px 6px hsl(220 25% 20% / 0.04), 0 8px 24px hsl(220 25% 20% / 0.08)",
-        "soft-xl": "0 4px 8px hsl(220 25% 20% / 0.04), 0 12px 32px hsl(220 25% 20% / 0.1)",
+        soft: "0 1px 2px hsl(222 20% 20% / 0.03), 0 4px 12px hsl(222 20% 20% / 0.05)",
+        "soft-md": "0 2px 6px hsl(222 20% 20% / 0.04), 0 6px 18px hsl(222 20% 20% / 0.06)",
+        "soft-lg": "0 2px 8px hsl(222 20% 20% / 0.04), 0 10px 28px hsl(222 20% 20% / 0.08)",
+        "soft-xl": "0 4px 12px hsl(222 20% 20% / 0.05), 0 16px 40px hsl(222 20% 20% / 0.1)",
         "float": "var(--float-shadow)",
         "float-hover": "var(--float-shadow-hover)",
+        "float-active": "var(--float-shadow-active)",
+        "glow-primary": "0 0 20px hsl(222 72% 52% / 0.15)",
+        "inner-soft": "inset 0 1px 2px hsl(222 20% 20% / 0.06)",
       },
       keyframes: {
         "accordion-down": {
@@ -111,15 +115,15 @@ export default {
           to: { height: "0", opacity: "0" },
         },
         "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "fade-out": {
           "0%": { opacity: "1", transform: "translateY(0)" },
-          "100%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "0", transform: "translateY(6px)" },
         },
         "scale-in": {
-          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "0%": { opacity: "0", transform: "scale(0.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
         "slide-in-right": {
@@ -130,25 +134,41 @@ export default {
           "0%": { transform: "translateY(100%)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "slide-down-in": {
+          "0%": { transform: "translateY(-8px)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
         },
         float: {
           "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-4px)" },
+          "50%": { transform: "translateY(-3px)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        "fab-pop": {
+          "0%": { transform: "scale(0.8)", opacity: "0" },
+          "60%": { transform: "scale(1.05)" },
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
-        "fade-out": "fade-out 0.3s ease-out",
-        "scale-in": "scale-in 0.2s ease-out",
-        "slide-in-right": "slide-in-right 0.3s ease-out",
-        "slide-up": "slide-up 0.35s ease-out",
+        "accordion-down": "accordion-down 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        "accordion-up": "accordion-up 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "fade-in": "fade-in 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        "fade-out": "fade-out 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "scale-in": "scale-in 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-in-right": "slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-up": "slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+        "slide-down-in": "slide-down-in 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
         shimmer: "shimmer 2s linear infinite",
         float: "float 3s ease-in-out infinite",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "fab-pop": "fab-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
       },
       backdropBlur: {
         xs: "2px",

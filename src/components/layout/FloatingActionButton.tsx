@@ -1,6 +1,6 @@
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const contextActions: Record<string, { label: string; action: string }[]> = {
@@ -28,19 +28,19 @@ export function FloatingActionButton() {
 
   const handleAction = (action: string) => {
     setOpen(false);
-    // Dispatch a custom event that pages can listen to
     window.dispatchEvent(new CustomEvent("fab-action", { detail: action }));
   };
 
   return (
     <div className="fab-position">
       {open && (
-        <div className="flex flex-col gap-2 mb-3 items-end animate-fade-in">
-          {actions.map((a) => (
+        <div className="flex flex-col gap-2.5 mb-3 items-end">
+          {actions.map((a, i) => (
             <button
               key={a.action}
               onClick={() => handleAction(a.action)}
-              className="flex items-center gap-2 rounded-full bg-card px-4 py-2.5 text-sm font-medium shadow-soft-lg border border-border/30 hover:bg-accent transition-colors"
+              className="flex items-center gap-2.5 rounded-2xl bg-card px-5 py-3 text-sm font-medium shadow-float-hover border-0 hover:shadow-soft-xl transition-all duration-200 animate-fab-pop"
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               {a.label}
             </button>
@@ -50,13 +50,13 @@ export function FloatingActionButton() {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "h-14 w-14 rounded-full flex items-center justify-center shadow-soft-lg transition-all duration-200",
+          "h-14 w-14 rounded-2xl flex items-center justify-center shadow-float-hover transition-all duration-250",
           open
-            ? "bg-muted text-muted-foreground rotate-45"
-            : "bg-primary text-primary-foreground"
+            ? "bg-muted text-muted-foreground rotate-45 shadow-float"
+            : "bg-primary text-primary-foreground hover:shadow-soft-xl hover:-translate-y-0.5"
         )}
       >
-        {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
       </button>
     </div>
   );

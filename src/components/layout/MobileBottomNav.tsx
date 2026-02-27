@@ -43,8 +43,11 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t bg-card/95 backdrop-blur-xl" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        <div className="flex items-center justify-around h-14">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/80 backdrop-blur-2xl border-t border-border/15"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
+        <div className="flex items-center justify-around h-16">
           {primaryTabs.map((tab) => {
             if (tab.url === "#more") {
               return (
@@ -52,12 +55,12 @@ export function MobileBottomNav() {
                   key="more"
                   onClick={() => setMoreOpen(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-0.5 w-full h-full text-muted-foreground transition-colors",
+                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground/60 transition-all duration-200 tap-target",
                     moreOpen && "text-primary"
                   )}
                 >
                   <tab.icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium">{tab.title}</span>
+                  <span className="text-[10px] font-medium tracking-wide">{tab.title}</span>
                 </button>
               );
             }
@@ -67,12 +70,20 @@ export function MobileBottomNav() {
                 key={tab.url}
                 to={tab.url}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 tap-target",
+                  isActive ? "text-primary" : "text-muted-foreground/60"
                 )}
               >
-                <tab.icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{tab.title}</span>
+                <div className={cn(
+                  "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
+                  isActive && "bg-primary/10"
+                )}>
+                  <tab.icon className="h-5 w-5" />
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium tracking-wide",
+                  isActive && "font-semibold"
+                )}>{tab.title}</span>
               </NavLink>
             );
           })}
@@ -80,22 +91,22 @@ export function MobileBottomNav() {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl pb-8 max-h-[70vh]">
+        <SheetContent side="bottom" className="rounded-t-3xl pb-10 max-h-[70vh] border-0 shadow-soft-xl">
           <SheetHeader>
-            <SheetTitle className="text-base">Menu Lainnya</SheetTitle>
+            <SheetTitle className="text-base font-semibold">Menu Lainnya</SheetTitle>
           </SheetHeader>
-          <ScrollArea className="mt-3 max-h-[55vh]">
-            <div className="grid grid-cols-3 gap-2 pr-2">
+          <ScrollArea className="mt-4 max-h-[55vh]">
+            <div className="grid grid-cols-3 gap-2.5 pr-2">
               {moreItems.map((item) => (
                 <NavLink
                   key={item.url}
                   to={item.url}
                   onClick={() => setMoreOpen(false)}
                   className={cn(
-                    "flex items-center justify-center rounded-xl px-2 py-3 text-xs font-medium transition-colors text-center",
+                    "flex items-center justify-center rounded-2xl px-3 py-3.5 text-xs font-medium transition-all duration-200 text-center tap-target",
                     location.pathname === item.url
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted/50 text-foreground hover:bg-muted"
+                      ? "bg-primary/8 text-primary shadow-soft"
+                      : "bg-muted/30 text-foreground hover:bg-muted/50 hover:shadow-soft"
                   )}
                 >
                   {item.title}

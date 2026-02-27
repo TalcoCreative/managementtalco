@@ -74,19 +74,21 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-12 sm:h-14 items-center justify-between border-b border-border/40 bg-card/80 backdrop-blur-xl px-3 sm:px-5 gap-2 sticky top-0 z-40">
+    <header className="flex h-14 items-center justify-between bg-card/70 backdrop-blur-2xl px-4 sm:px-6 gap-3 sticky top-0 z-40 border-b border-border/20">
       {!isMobile && <SidebarTrigger className="flex-shrink-0" />}
-      {isMobile && <h1 className="text-sm font-semibold truncate">Talco</h1>}
+      {isMobile && (
+        <h1 className="text-sm font-semibold tracking-tight truncate text-foreground">Talco</h1>
+      )}
       
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {canManageAnnouncements && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" title="Pengumuman" className="h-8 w-8">
+              <Button variant="ghost" size="icon" title="Pengumuman" className="h-9 w-9 rounded-xl">
                 <Megaphone className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg border-border/30">
               <DropdownMenuItem onClick={() => setCreateAnnouncementOpen(true)}>
                 Buat Pengumuman
               </DropdownMenuItem>
@@ -99,7 +101,7 @@ export function Header() {
         
         <HeaderNotifications onTaskClick={(taskId) => setSelectedTaskId(taskId)} />
 
-        <Button variant="ghost" size="icon" onClick={handleLogout} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="h-9 w-9 rounded-xl">
           <LogOut className="h-4 w-4" />
         </Button>
       </div>
