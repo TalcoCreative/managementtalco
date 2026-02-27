@@ -18,7 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         {!isMobile && <AppSidebar />}
         <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
           <Header />
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-x-hidden pb-bottom-nav">
+          <main className="flex-1 p-4 sm:p-5 md:p-8 overflow-x-hidden pb-bottom-nav section-atmospheric">
             {children}
           </main>
         </div>
