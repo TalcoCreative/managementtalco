@@ -28,7 +28,10 @@ interface Slide {
   published_at: string | null;
   publish_date: string | null;
   channel: string | null;
+  channels: string[] | null;
   format: string | null;
+  slug: string | null;
+  publish_links: any[] | null;
 }
 
 interface EditorialPlanData {

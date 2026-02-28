@@ -1282,39 +1282,48 @@ export type Database = {
         Row: {
           approved_at: string | null
           channel: string | null
+          channels: string[] | null
           created_at: string
           ep_id: string
           format: string | null
           id: string
           publish_date: string | null
+          publish_links: Json | null
           published_at: string | null
           slide_order: number
+          slug: string | null
           status: Database["public"]["Enums"]["ep_slide_status"]
           updated_at: string
         }
         Insert: {
           approved_at?: string | null
           channel?: string | null
+          channels?: string[] | null
           created_at?: string
           ep_id: string
           format?: string | null
           id?: string
           publish_date?: string | null
+          publish_links?: Json | null
           published_at?: string | null
           slide_order?: number
+          slug?: string | null
           status?: Database["public"]["Enums"]["ep_slide_status"]
           updated_at?: string
         }
         Update: {
           approved_at?: string | null
           channel?: string | null
+          channels?: string[] | null
           created_at?: string
           ep_id?: string
           format?: string | null
           id?: string
           publish_date?: string | null
+          publish_links?: Json | null
           published_at?: string | null
           slide_order?: number
+          slug?: string | null
           status?: Database["public"]["Enums"]["ep_slide_status"]
           updated_at?: string
         }

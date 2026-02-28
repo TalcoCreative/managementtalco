@@ -31,7 +31,10 @@ interface Slide {
   published_at: string | null;
   publish_date: string | null;
   channel: string | null;
+  channels: string[] | null;
   format: string | null;
+  slug: string | null;
+  publish_links: any[] | null;
   created_at: string;
 }
 
@@ -97,12 +100,16 @@ export default function EditorialPlanEditor() {
       if (!ep?.id) throw new Error("No EP");
 
       const newOrder = (slides?.length || 0);
+      const slug = `slide-${newOrder + 1}`;
       const { data: slide, error } = await supabase
         .from("editorial_slides")
         .insert({
           ep_id: ep.id,
           slide_order: newOrder,
           status: "proposed",
+          slug,
+          channels: [],
+          publish_links: [],
         })
         .select()
         .single();

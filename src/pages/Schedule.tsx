@@ -122,7 +122,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("editorial_slides")
-        .select("*, editorial_plans(id, title, client_id, clients(id, name))")
+        .select("*, editorial_plans(id, title, slug, client_id, clients(id, name))")
         .not("publish_date", "is", null)
         .order("publish_date", { ascending: true });
       if (error) throw error;
@@ -586,11 +586,16 @@ export default function Schedule() {
                           const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
                           const clientName = slide.editorial_plans?.clients?.name;
                           const epTitle = slide.editorial_plans?.title;
+                          const epSlug = slide.editorial_plans?.slug;
+                          const clientSlug = clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
+                          const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
+                          const channelText = channels.join(", ");
                           const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+                          const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}` : `/editorial-plan/${slide.ep_id}`;
                           return (
                             <div
                               key={slide.id}
-                              onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                              onClick={() => navigate(previewUrl)}
                               className="p-3 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
                             >
                               <div className="flex items-start justify-between gap-2">
@@ -600,7 +605,7 @@ export default function Schedule() {
                                     {clientName} • {epTitle}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    {slide.channel && `${slide.channel} • `}{slide.format || ''}
+                                    {channelText && `${channelText} • `}{slide.format || ''}
                                   </p>
                                 </div>
                                 <Badge className={statusColor}>
@@ -880,18 +885,23 @@ export default function Schedule() {
                               const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
                               const clientName = slide.editorial_plans?.clients?.name;
                               const epTitle = slide.editorial_plans?.title;
+                              const epSlug = slide.editorial_plans?.slug;
+                              const clientSlug = clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
+                              const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
+                              const channelText = channels.join(", ");
                               const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+                              const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}` : `/editorial-plan/${slide.ep_id}`;
                               return (
                                 <div
                                   key={slide.id}
-                                  onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                                  onClick={() => navigate(previewUrl)}
                                   className="p-3 border rounded-lg mb-2 hover:bg-accent cursor-pointer"
                                 >
                                   <div className="flex justify-between items-start">
                                     <div>
                                       <p className="font-medium">{title}</p>
                                       <p className="text-sm text-muted-foreground">{clientName} • {epTitle}</p>
-                                      <p className="text-xs text-muted-foreground">{format(new Date(slide.publish_date), "dd MMM yyyy")} • {slide.channel || ''} • {slide.format || ''}</p>
+                                      <p className="text-xs text-muted-foreground">{format(new Date(slide.publish_date), "dd MMM yyyy")} • {channelText} • {slide.format || ''}</p>
                                     </div>
                                     <Badge className={statusColor}>{slide.status}</Badge>
                                   </div>
