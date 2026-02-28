@@ -96,7 +96,13 @@ export function ClientAnalyticsDashboard() {
   const [filterMonth, setFilterMonth] = useState<string>(currentMonth.toString());
   
   // Date range filter state
-  const [startDate, setStartDate] = useState<Date>(new Date(currentYear, 0, 1)); // Jan 1 of current year
+  const [startDate, setStartDate] = useState<Date>(() => {
+    // Default to 6 months ago to avoid always starting from Jan
+    const d = new Date();
+    d.setMonth(d.getMonth() - 5);
+    d.setDate(1);
+    return d;
+  });
   const [endDate, setEndDate] = useState<Date>(new Date()); // Current date
 
   const { data: clients = [] } = useQuery({

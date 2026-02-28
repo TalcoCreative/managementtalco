@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Select,
@@ -15,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Image as ImageIcon,
   Video,
@@ -26,6 +34,8 @@ import {
   GripVertical,
   Plus,
   Calendar,
+  Link as LinkIcon,
+  ExternalLink,
 } from "lucide-react";
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
@@ -39,7 +49,10 @@ interface Slide {
   published_at: string | null;
   publish_date: string | null;
   channel: string | null;
+  channels: string[] | null;
   format: string | null;
+  slug: string | null;
+  publish_links: any[] | null;
 }
 
 interface Block {
@@ -123,6 +136,13 @@ const CONTENT_CHANNELS = [
 export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEditorProps) {
   const queryClient = useQueryClient();
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [publishLinks, setPublishLinks] = useState<Record<string, string>>({});
+
+  // Get active channels (prefer new channels array, fallback to legacy channel)
+  const activeChannels = slide.channels && slide.channels.length > 0 
+    ? slide.channels 
+    : (slide.channel ? [slide.channel] : []);
 
   // Fetch blocks for this slide
   const { data: blocks, refetch: refetchBlocks } = useQuery({
@@ -154,7 +174,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
     },
   });
 
-  // Update slide fields mutation (channel, format, publish_date)
+  // Update slide fields mutation (channels, format, publish_date)
   const updateSlideMutation = useMutation({
     mutationFn: async (fields: Partial<Slide>) => {
       const { error } = await supabase
@@ -171,9 +191,26 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
   // Update slide status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: "proposed" | "approved" | "published") => {
+      if (newStatus === "published") {
+        // Open publish dialog to collect links
+        setPublishDialogOpen(true);
+        // Initialize links for each active channel
+        const links: Record<string, string> = {};
+        activeChannels.forEach(ch => {
+          links[ch] = "";
+        });
+        // Pre-fill existing publish links
+        if (slide.publish_links && Array.isArray(slide.publish_links)) {
+          slide.publish_links.forEach((pl: any) => {
+            if (pl.platform && pl.url) links[pl.platform] = pl.url;
+          });
+        }
+        setPublishLinks(links);
+        return; // Don't update yet, wait for dialog confirmation
+      }
+
       const updateData: any = { status: newStatus };
       if (newStatus === "approved") updateData.approved_at = new Date().toISOString();
-      if (newStatus === "published") updateData.published_at = new Date().toISOString();
 
       const { error } = await supabase
         .from("editorial_slides")
@@ -182,14 +219,61 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      onStatusChange();
-      toast.success("Status updated");
+    onSuccess: (_, newStatus) => {
+      if (newStatus !== "published") {
+        onStatusChange();
+        toast.success("Status updated");
+      }
     },
     onError: () => {
       toast.error("Failed to update status");
     },
   });
+
+  // Confirm publish with links
+  const handleConfirmPublish = async () => {
+    const linksArray = Object.entries(publishLinks)
+      .filter(([_, url]) => url.trim() !== "")
+      .map(([platform, url]) => ({ platform, url: url.trim() }));
+
+    const updateData: any = {
+      status: "published",
+      published_at: new Date().toISOString(),
+      publish_links: linksArray,
+    };
+
+    const { error } = await supabase
+      .from("editorial_slides")
+      .update(updateData)
+      .eq("id", slide.id);
+
+    if (error) {
+      toast.error("Gagal publish");
+      return;
+    }
+
+    setPublishDialogOpen(false);
+    onStatusChange();
+    toast.success("Content published!");
+  };
+
+  // Toggle channel in channels array
+  const handleToggleChannel = (channelValue: string) => {
+    const current = [...activeChannels];
+    const idx = current.indexOf(channelValue);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(channelValue);
+    }
+    // Update both channels array and legacy channel field
+    updateSlideMutation.mutate({
+      channels: current,
+      channel: current[0] || null,
+      // Reset format if no channels
+      format: current.length > 0 ? (slide.format || CHANNEL_FORMATS[current[0]]?.[0]?.value || "post") : null,
+    } as any);
+  };
 
   // Add block mutation
   const addBlockMutation = useMutation({
@@ -333,8 +417,8 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
               )}
             </div>
 
-            {/* Publish Date, Channel, Format at slide level */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Publish Date & Format */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
@@ -348,25 +432,6 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                 />
               </div>
               <div className="space-y-2">
-                <Label>Channel</Label>
-                <Select
-                  value={slide.channel || "instagram"}
-                  onValueChange={(value) => updateSlideMutation.mutate({ channel: value, format: CHANNEL_FORMATS[value]?.[0]?.value || "post" } as any)}
-                  disabled={!canEdit}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CONTENT_CHANNELS.map((ch) => (
-                      <SelectItem key={ch.value} value={ch.value}>
-                        {ch.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
                 <Label>Format</Label>
                 <Select
                   value={slide.format || "feed"}
@@ -377,7 +442,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(CHANNEL_FORMATS[slide.channel || "instagram"] || CHANNEL_FORMATS.other).map((fmt) => (
+                    {(CHANNEL_FORMATS[activeChannels[0] || "instagram"] || CHANNEL_FORMATS.other).map((fmt) => (
                       <SelectItem key={fmt.value} value={fmt.value}>
                         {fmt.label}
                       </SelectItem>
@@ -386,6 +451,63 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                 </Select>
               </div>
             </div>
+
+            {/* Multi-Channel Selection */}
+            <div className="space-y-2">
+              <Label>Platform / Channel</Label>
+              <div className="flex flex-wrap gap-3">
+                {CONTENT_CHANNELS.map((ch) => {
+                  const isChecked = activeChannels.includes(ch.value);
+                  return (
+                    <label
+                      key={ch.value}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors text-sm",
+                        isChecked ? "bg-primary/10 border-primary text-primary" : "hover:bg-muted",
+                        !canEdit && "opacity-60 cursor-default"
+                      )}
+                    >
+                      <Checkbox
+                        checked={isChecked}
+                        onCheckedChange={() => canEdit && handleToggleChannel(ch.value)}
+                        disabled={!canEdit}
+                        className="h-3.5 w-3.5"
+                      />
+                      {ch.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Published Links Display */}
+            {slide.status === "published" && slide.publish_links && Array.isArray(slide.publish_links) && slide.publish_links.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <Label className="flex items-center gap-1.5">
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Link Publish
+                </Label>
+                <div className="space-y-1.5">
+                  {slide.publish_links.map((link: any, idx: number) => {
+                    const channelLabel = CONTENT_CHANNELS.find(c => c.value === link.platform)?.label || link.platform;
+                    return (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="text-xs shrink-0">{channelLabel}</Badge>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline truncate flex items-center gap-1"
+                        >
+                          {link.url}
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </Card>
         );
 
@@ -631,6 +753,47 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
           </div>
         </Card>
       )}
+
+      {/* Publish Dialog - Collect Links */}
+      <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Publish Content</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Masukkan link publish untuk setiap platform:
+            </p>
+            {Object.keys(publishLinks).length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">
+                Belum ada platform dipilih. Pilih platform di Status block terlebih dahulu.
+              </p>
+            ) : (
+              Object.entries(publishLinks).map(([platform, url]) => {
+                const label = CONTENT_CHANNELS.find(c => c.value === platform)?.label || platform;
+                return (
+                  <div key={platform} className="space-y-1.5">
+                    <Label>{label}</Label>
+                    <Input
+                      value={url}
+                      onChange={(e) => setPublishLinks(prev => ({ ...prev, [platform]: e.target.value }))}
+                      placeholder={`Link ${label}...`}
+                    />
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPublishDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleConfirmPublish} className="bg-green-600 hover:bg-green-700">
+              Publish
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
