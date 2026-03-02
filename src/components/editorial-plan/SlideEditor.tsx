@@ -565,24 +565,31 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
             </div>
 
             {images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                {images.map((url: string, index: number) => (
-                  <div key={index} className="relative group aspect-square">
-                    <img
-                      src={url}
-                      alt={`Slide image ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                    {canEdit && (
-                      <button
-                        onClick={() => handleRemoveImage(block.id, url)}
-                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <div className="mb-4">
+                <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
+                  {images.map((url: string, index: number) => (
+                    <div key={index} className="relative group shrink-0 snap-center">
+                      <img
+                        src={url}
+                        alt={`Slide image ${index + 1}`}
+                        className="max-h-[400px] w-auto rounded-lg object-contain"
+                      />
+                      {canEdit && (
+                        <button
+                          onClick={() => handleRemoveImage(block.id, url)}
+                          className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                      {images.length > 1 && (
+                        <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                          {index + 1}/{images.length}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

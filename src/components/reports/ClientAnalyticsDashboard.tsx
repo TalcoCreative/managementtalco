@@ -853,9 +853,9 @@ export function ClientAnalyticsDashboard() {
                           <thead>
                             <tr className="border-b">
                               <th className="text-left py-2 px-2 min-w-[100px]">Metric</th>
-                              {MONTHS.slice(0, 12).map((m) => (
-                                <th key={m.value} className="text-right py-2 px-2 min-w-[70px]">
-                                  {m.label.slice(0, 3)}
+                              {chartMonths.map((m) => (
+                                <th key={`${m.year}-${m.value}`} className="text-right py-2 px-2 min-w-[70px]">
+                                  {m.label}
                                 </th>
                               ))}
                             </tr>
