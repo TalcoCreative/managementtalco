@@ -1,103 +1,82 @@
 import { 
-  Users, 
-  Briefcase, 
-  CheckSquare, 
-  Calendar, 
-  BarChart3,
-  Building2,
-  ClipboardCheck,
-  Video,
-  Home,
-  LogOut,
-  CalendarOff,
-  Wallet,
-  Receipt,
-  UserPlus,
-  TrendingUp,
-  UserSearch,
-  CalendarClock,
-  Package,
-  FileText,
-  Star,
-  Megaphone,
-  PartyPopper,
-  Crown,
-  Share2,
-  Mail,
-  Scale,
-  PieChart,
-  Sparkles,
-  CalendarHeart,
-  BarChart2,
+  Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
+  Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
+  UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
+  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
+import { usePermissions } from "@/hooks/usePermissions";
 
-const navItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Clients", url: "/clients", icon: Building2 },
-  { title: "Client Hub", url: "/client-hub", icon: Building2 },
-  { title: "Projects", url: "/projects", icon: Briefcase },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare },
-  { title: "Schedule", url: "/schedule", icon: Calendar },
-  { title: "Shooting", url: "/shooting", icon: Video },
-  { title: "Meeting", url: "/meeting", icon: CalendarClock },
-  { title: "Leave", url: "/leave", icon: CalendarOff },
-  { title: "Reimburse", url: "/my-reimbursement", icon: Receipt },
-  { title: "Asset", url: "/asset", icon: Package },
-  { title: "Event", url: "/event", icon: PartyPopper },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Form Builder", url: "/forms", icon: FileText },
-  { title: "KOL Database", url: "/kol-database", icon: Star },
-  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone },
+type NavItem = { title: string; url: string; icon: any; featureKey: string };
+
+const navItems: NavItem[] = [
+  { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
+  { title: "Clients", url: "/clients", icon: Building2, featureKey: "clients" },
+  { title: "Client Hub", url: "/client-hub", icon: Building2, featureKey: "client_hub" },
+  { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
+  { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
+  { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
+  { title: "Shooting", url: "/shooting", icon: Video, featureKey: "shooting" },
+  { title: "Meeting", url: "/meeting", icon: CalendarClock, featureKey: "meeting" },
+  { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
+  { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
+  { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
+  { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
+  { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
+  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
+  { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
+  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
+  { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
 ];
 
-const socialMediaItems = [
-  { title: "Social Media", url: "/social-media", icon: Share2 },
-  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText },
-  { title: "Content Builder", url: "/content-builder", icon: Sparkles },
+const socialMediaItems: NavItem[] = [
+  { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
+  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
+  { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
 ];
 
-const hrItems = [
-  { title: "Team", url: "/users", icon: Users },
-  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck },
-  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2 },
-  { title: "Kalender Libur", url: "/hr/holiday", icon: CalendarHeart },
-  { title: "Performance", url: "/performance", icon: TrendingUp },
-  { title: "Recruitment", url: "/recruitment", icon: UserSearch },
-  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3 },
-  { title: "Form Builder", url: "/recruitment/forms", icon: FileText },
+const hrItems: NavItem[] = [
+  { title: "Team", url: "/users", icon: Users, featureKey: "team" },
+  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
+  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
+  { title: "Kalender Libur", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
+  { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
+  { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
+  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
+  { title: "Form Builder", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
 ];
 
-const financeItems = [
-  { title: "Finance", url: "/finance", icon: Wallet },
-  { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart },
-  { title: "Neraca", url: "/finance/neraca", icon: Scale },
-  { title: "Performance", url: "/performance", icon: TrendingUp },
+const financeItems: NavItem[] = [
+  { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
+  { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
+  { title: "Neraca", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
 ];
 
-const salesItems = [
-  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp },
-  { title: "Prospects", url: "/prospects", icon: UserPlus },
+const salesItems: NavItem[] = [
+  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
+  { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
+];
+
+const executiveItems: NavItem[] = [
+  { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
+];
+
+const systemItems: NavItem[] = [
+  { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
+  { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const navigate = useNavigate();
+  const { canView, isSuperAdmin } = usePermissions();
 
   const { data: userProfile } = useQuery({
     queryKey: ["user-profile-sidebar"],
@@ -114,39 +93,12 @@ export function AppSidebar() {
     },
   });
 
-  const { data: userRoles } = useQuery({
-    queryKey: ["user-roles"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return [];
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.session.user.id);
-      if (error) throw error;
-      return data?.map(r => r.role) || [];
-    },
-  });
-
-  const isSuperAdmin = userRoles?.includes('super_admin');
-  const isHRorAdmin = userRoles?.includes('hr') || userRoles?.includes('super_admin');
-  const canAccessFinance = userRoles?.includes('super_admin') || 
-                           userRoles?.includes('finance') || 
-                           userRoles?.includes('accounting') || 
-                           userRoles?.includes('hr');
-  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
-  const canAccessLetters = userRoles?.includes('super_admin') || 
-                           userRoles?.includes('hr') || 
-                           userRoles?.includes('finance') || 
-                           userRoles?.includes('project_manager') || 
-                           userRoles?.includes('sales' as any);
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       toast.success("Logged out successfully");
       navigate("/auth");
-    } catch (error) {
+    } catch {
       toast.error("Failed to log out");
     }
   };
@@ -160,33 +112,39 @@ export function AppSidebar() {
         : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
     }`;
 
-  const renderGroup = (label: string, items: typeof navItems) => (
-    <SidebarGroup>
-      <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="px-2 space-y-0.5">
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title + item.url}>
-              <SidebarMenuButton asChild>
-                <NavLink to={item.url} className={navLinkClass}>
-                  <item.icon className="h-4 w-4 opacity-70" />
-                  {!isCollapsed && <span>{item.title}</span>}
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
+  const filterItems = (items: NavItem[]) => items.filter(i => canView(i.featureKey));
+
+  const renderGroup = (label: string, items: NavItem[]) => {
+    const visible = filterItems(items);
+    if (visible.length === 0) return null;
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
+          {label}
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu className="px-2 space-y-0.5">
+            {visible.map((item) => (
+              <SidebarMenuItem key={item.title + item.url}>
+                <SidebarMenuButton asChild>
+                  <NavLink to={item.url} className={navLinkClass}>
+                    <item.icon className="h-4 w-4 opacity-70" />
+                    {!isCollapsed && <span>{item.title}</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/15">
       <SidebarContent className="bg-sidebar">
         <div className="px-4 py-6">
-          {!isCollapsed && (
+          {!isCollapsed ? (
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
                 <span className="text-sidebar-primary font-semibold text-sm">
@@ -200,8 +158,7 @@ export function AppSidebar() {
                 <p className="text-[10px] text-sidebar-foreground/40 mt-0.5">Talco Management</p>
               </div>
             </div>
-          )}
-          {isCollapsed && (
+          ) : (
             <div className="flex justify-center">
               <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
                 <span className="text-sidebar-primary font-semibold text-sm">
@@ -213,68 +170,12 @@ export function AppSidebar() {
         </div>
         
         {renderGroup("Navigation", navItems)}
-
-        {canAccessLetters && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/letters" className={navLinkClass}>
-                      <FileText className="h-4 w-4 opacity-70" />
-                      {!isCollapsed && <span>Surat</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
         {renderGroup("Social Media", socialMediaItems)}
-        {isHRorAdmin && renderGroup("HR", hrItems)}
-        {canAccessFinance && renderGroup("Finance", financeItems)}
-        {canAccessSales && renderGroup("Sales", salesItems)}
-
-        {isSuperAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
-              Executive
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/ceo-dashboard" className={navLinkClass}>
-                      <Crown className="h-4 w-4 opacity-70" />
-                      {!isCollapsed && <span>CEO Dashboard</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {isSuperAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
-              System
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="px-2 space-y-0.5">
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/system/email-settings" className={navLinkClass}>
-                      <Mail className="h-4 w-4 opacity-70" />
-                      {!isCollapsed && <span>Email Settings</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {renderGroup("HR", hrItems)}
+        {renderGroup("Finance", financeItems)}
+        {renderGroup("Sales", salesItems)}
+        {renderGroup("Executive", executiveItems)}
+        {renderGroup("System", systemItems)}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/15 p-3">

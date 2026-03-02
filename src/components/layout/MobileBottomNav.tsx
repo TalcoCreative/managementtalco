@@ -1,45 +1,53 @@
-import { Home, CheckSquare, Briefcase, Calendar, BarChart3, Menu } from "lucide-react";
+import { Home, CheckSquare, Briefcase, Calendar, Menu } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const primaryTabs = [
-  { title: "Home", url: "/", icon: Home },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare },
-  { title: "Projects", url: "/projects", icon: Briefcase },
-  { title: "Schedule", url: "/schedule", icon: Calendar },
-  { title: "More", url: "#more", icon: Menu },
+  { title: "Home", url: "/", icon: Home, featureKey: "dashboard" },
+  { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
+  { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
+  { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
+  { title: "More", url: "#more", icon: Menu, featureKey: "__more__" },
 ];
 
 const moreItems = [
-  { title: "Clients", url: "/clients" },
-  { title: "Client Hub", url: "/client-hub" },
-  { title: "Shooting", url: "/shooting" },
-  { title: "Meeting", url: "/meeting" },
-  { title: "Leave", url: "/leave" },
-  { title: "Reimburse", url: "/my-reimbursement" },
-  { title: "Asset", url: "/asset" },
-  { title: "Event", url: "/event" },
-  { title: "Reports", url: "/reports" },
-  { title: "Form Builder", url: "/forms" },
-  { title: "KOL Database", url: "/kol-database" },
-  { title: "KOL Campaign", url: "/kol-campaign" },
-  { title: "Surat", url: "/letters" },
-  { title: "Social Media", url: "/social-media" },
-  { title: "Editorial Plan", url: "/editorial-plan" },
-  { title: "Content Builder", url: "/content-builder" },
-  { title: "Finance", url: "/finance" },
-  { title: "HR Dashboard", url: "/hr-dashboard" },
-  { title: "Recruitment", url: "/recruitment" },
-  { title: "Sales", url: "/sales/dashboard" },
-  { title: "Performance", url: "/performance" },
+  { title: "Clients", url: "/clients", featureKey: "clients" },
+  { title: "Client Hub", url: "/client-hub", featureKey: "client_hub" },
+  { title: "Shooting", url: "/shooting", featureKey: "shooting" },
+  { title: "Meeting", url: "/meeting", featureKey: "meeting" },
+  { title: "Leave", url: "/leave", featureKey: "leave" },
+  { title: "Reimburse", url: "/my-reimbursement", featureKey: "reimburse" },
+  { title: "Asset", url: "/asset", featureKey: "asset" },
+  { title: "Event", url: "/event", featureKey: "event" },
+  { title: "Reports", url: "/reports", featureKey: "reports" },
+  { title: "Form Builder", url: "/forms", featureKey: "form_builder" },
+  { title: "KOL Database", url: "/kol-database", featureKey: "kol_database" },
+  { title: "KOL Campaign", url: "/kol-campaign", featureKey: "kol_campaign" },
+  { title: "Surat", url: "/letters", featureKey: "letters" },
+  { title: "Social Media", url: "/social-media", featureKey: "social_media" },
+  { title: "Editorial Plan", url: "/editorial-plan", featureKey: "editorial_plan" },
+  { title: "Content Builder", url: "/content-builder", featureKey: "content_builder" },
+  { title: "Team", url: "/users", featureKey: "team" },
+  { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard" },
+  { title: "Finance", url: "/finance", featureKey: "finance" },
+  { title: "Recruitment", url: "/recruitment", featureKey: "recruitment" },
+  { title: "Sales", url: "/sales/dashboard", featureKey: "sales_analytics" },
+  { title: "Performance", url: "/performance", featureKey: "performance" },
+  { title: "CEO Dashboard", url: "/ceo-dashboard", featureKey: "ceo_dashboard" },
+  { title: "Role & Access", url: "/system/roles", featureKey: "role_management" },
 ];
 
 export function MobileBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
+  const { canView } = usePermissions();
+
+  const visiblePrimary = primaryTabs.filter(t => t.featureKey === "__more__" || canView(t.featureKey));
+  const visibleMore = moreItems.filter(i => canView(i.featureKey));
 
   return (
     <>
@@ -48,7 +56,7 @@ export function MobileBottomNav() {
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-around h-16">
-          {primaryTabs.map((tab) => {
+          {visiblePrimary.map((tab) => {
             if (tab.url === "#more") {
               return (
                 <button
@@ -97,7 +105,7 @@ export function MobileBottomNav() {
           </SheetHeader>
           <ScrollArea className="mt-4 max-h-[55vh]">
             <div className="grid grid-cols-3 gap-2.5 pr-2">
-              {moreItems.map((item) => (
+              {visibleMore.map((item) => (
                 <NavLink
                   key={item.url}
                   to={item.url}
