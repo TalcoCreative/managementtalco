@@ -65,6 +65,7 @@ import ClientHub from "./pages/ClientHub";
 import PublicClientHub from "./pages/PublicClientHub";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
+import RoleManagement from "./pages/RoleManagement";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,7 @@ const App = () => (
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/client-hub" element={<ProtectedRoute><ClientHub /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
+          <Route path="/system/roles" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />
           <Route path="/share/project/:token" element={<SharedProject />} />
