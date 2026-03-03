@@ -86,6 +86,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
     features: [
       { key: "email_settings", label: "Email Settings" },
       { key: "role_management", label: "Role & Access Control" },
+      { key: "system_settings", label: "System Settings" },
     ],
   },
 ];
@@ -131,6 +132,7 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/ceo-dashboard": "ceo_dashboard",
   "/system/email-settings": "email_settings",
   "/system/roles": "role_management",
+  "/system/settings": "system_settings",
 };
 
 // Map feature keys to sidebar nav URLs
