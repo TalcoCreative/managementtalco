@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { Header } from "./Header";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { FloatingActionButton } from "./FloatingActionButton";
+import { AIChatPopup } from "@/components/ai/AIChatPopup";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppLayoutProps {
@@ -25,6 +26,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       {isMobile && <MobileBottomNav />}
       <FloatingActionButton />
+      <AIChatPopup />
     </SidebarProvider>
   );
 }
