@@ -591,7 +591,8 @@ export default function Schedule() {
                           const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
                           const channelText = channels.join(", ");
                           const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
-                          const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}` : `/editorial-plan/${slide.ep_id}`;
+                          const slideSlug = slide.slug || `slide-${slide.slide_order + 1}`;
+                          const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}?slide=${slideSlug}` : `/editorial-plan/${slide.ep_id}`;
                           return (
                             <div
                               key={slide.id}
@@ -890,7 +891,8 @@ export default function Schedule() {
                               const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
                               const channelText = channels.join(", ");
                               const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
-                              const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}` : `/editorial-plan/${slide.ep_id}`;
+                              const slideSlug = slide.slug || `slide-${slide.slide_order + 1}`;
+                              const previewUrl = epSlug ? `/ep/${clientSlug}/${epSlug}?slide=${slideSlug}` : `/editorial-plan/${slide.ep_id}`;
                               return (
                                 <div
                                   key={slide.id}

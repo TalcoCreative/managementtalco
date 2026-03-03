@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -53,9 +53,12 @@ interface EditorialPlanData {
 export default function EditorialPlanEditor() {
   const { clientSlug, epSlug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const slideSlugParam = searchParams.get("slide");
   const queryClient = useQueryClient();
-  const [currentSlideIndex, setCurrentSlideIndex] = useState<number | null>(null); // null = jadwal view
+  const [currentSlideIndex, setCurrentSlideIndex] = useState<number | null>(null);
   const [showComments, setShowComments] = useState(false);
+  const [initialSlideResolved, setInitialSlideResolved] = useState(false);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -93,6 +96,16 @@ export default function EditorialPlanEditor() {
   });
 
   const currentSlide = currentSlideIndex !== null ? slides?.[currentSlideIndex] : undefined;
+
+  // Resolve ?slide=slug to index
+  useEffect(() => {
+    if (initialSlideResolved || !slides || slides.length === 0 || !slideSlugParam) return;
+    const idx = slides.findIndex((s) => s.slug === slideSlugParam);
+    if (idx >= 0) {
+      setCurrentSlideIndex(idx);
+    }
+    setInitialSlideResolved(true);
+  }, [slides, slideSlugParam, initialSlideResolved]);
 
   // Add slide mutation
   const addSlideMutation = useMutation({

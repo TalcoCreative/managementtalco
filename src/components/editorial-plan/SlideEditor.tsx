@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
+import { ImageLightbox } from "./ImageLightbox";
 
 interface Slide {
   id: string;
@@ -71,56 +72,14 @@ interface SlideEditorProps {
   onStatusChange: () => void;
 }
 
-// Channel-specific format options
-const CHANNEL_FORMATS: Record<string, { value: string; label: string }[]> = {
-  instagram: [
-    { value: "feed", label: "Feed Post" },
-    { value: "carousel", label: "Carousel" },
-    { value: "reels", label: "Reels" },
-    { value: "story", label: "Story" },
-  ],
-  tiktok: [
-    { value: "video", label: "Video" },
-    { value: "carousel", label: "Carousel Photo" },
-    { value: "story", label: "Story" },
-    { value: "live", label: "Live" },
-  ],
-  youtube: [
-    { value: "video", label: "Video" },
-    { value: "shorts", label: "Shorts" },
-    { value: "live", label: "Live Stream" },
-    { value: "community", label: "Community Post" },
-  ],
-  twitter: [
-    { value: "tweet", label: "Tweet" },
-    { value: "thread", label: "Thread" },
-    { value: "media", label: "Media Tweet" },
-    { value: "poll", label: "Poll" },
-  ],
-  linkedin: [
-    { value: "post", label: "Post" },
-    { value: "article", label: "Article" },
-    { value: "carousel", label: "Carousel Document" },
-    { value: "video", label: "Video" },
-    { value: "poll", label: "Poll" },
-  ],
-  facebook: [
-    { value: "post", label: "Post" },
-    { value: "reels", label: "Reels" },
-    { value: "story", label: "Story" },
-    { value: "live", label: "Live" },
-    { value: "carousel", label: "Carousel" },
-  ],
-  threads: [
-    { value: "post", label: "Post" },
-    { value: "carousel", label: "Carousel" },
-  ],
-  other: [
-    { value: "post", label: "Post" },
-    { value: "video", label: "Video" },
-    { value: "other", label: "Other" },
-  ],
-};
+// Universal format options
+const CONTENT_FORMATS = [
+  { value: "story", label: "Story" },
+  { value: "carousel", label: "Carousel" },
+  { value: "single_post", label: "Single Post" },
+  { value: "long_video", label: "Long Video" },
+  { value: "shorts", label: "Shorts" },
+];
 
 const CONTENT_CHANNELS = [
   { value: "instagram", label: "Instagram" },
@@ -138,6 +97,9 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
   const [uploadingImage, setUploadingImage] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [publishLinks, setPublishLinks] = useState<Record<string, string>>({});
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Get active channels (prefer new channels array, fallback to legacy channel)
   const activeChannels = slide.channels && slide.channels.length > 0 
@@ -271,7 +233,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
       channels: current,
       channel: current[0] || null,
       // Reset format if no channels
-      format: current.length > 0 ? (slide.format || CHANNEL_FORMATS[current[0]]?.[0]?.value || "post") : null,
+      format: current.length > 0 ? (slide.format || "single_post") : null,
     } as any);
   };
 
@@ -434,7 +396,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
               <div className="space-y-2">
                 <Label>Format</Label>
                 <Select
-                  value={slide.format || "feed"}
+                  value={slide.format || "single_post"}
                   onValueChange={(value) => updateSlideMutation.mutate({ format: value } as any)}
                   disabled={!canEdit}
                 >
@@ -442,7 +404,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(CHANNEL_FORMATS[activeChannels[0] || "instagram"] || CHANNEL_FORMATS.other).map((fmt) => (
+                    {CONTENT_FORMATS.map((fmt) => (
                       <SelectItem key={fmt.value} value={fmt.value}>
                         {fmt.label}
                       </SelectItem>
@@ -568,11 +530,13 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
               <div className="mb-4">
                 <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
                   {images.map((url: string, index: number) => (
-                    <div key={index} className="relative group shrink-0 snap-center">
+                    <div key={index} className="relative group shrink-0 snap-center cursor-pointer"
+                      onClick={() => { setLightboxImages(images); setLightboxIndex(index); setLightboxOpen(true); }}
+                    >
                       <img
                         src={url}
                         alt={`Slide image ${index + 1}`}
-                        className="max-h-[400px] w-auto rounded-lg object-contain"
+                        className="max-h-[400px] w-auto rounded-lg object-contain hover:opacity-90 transition-opacity"
                       />
                       {canEdit && (
                         <button
@@ -801,6 +765,14 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 }

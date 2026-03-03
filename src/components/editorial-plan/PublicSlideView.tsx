@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SlideStatusBadge } from "./SlideStatusBadge";
+import { ImageLightbox } from "./ImageLightbox";
 import {
   Image as ImageIcon,
   Video,
@@ -40,10 +42,14 @@ const CHANNEL_ICONS: Record<string, any> = {
 };
 
 const FORMAT_LABELS: Record<string, string> = {
-  feed: "Feed Post",
-  carousel: "Carousel",
-  reels: "Reels",
   story: "Story",
+  carousel: "Carousel",
+  single_post: "Single Post",
+  long_video: "Long Video",
+  shorts: "Shorts",
+  // Legacy
+  feed: "Feed Post",
+  reels: "Reels",
 };
 
 const CHANNEL_LABELS: Record<string, string> = {
@@ -56,6 +62,10 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 
 export function PublicSlideView({ slide }: PublicSlideViewProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   // Fetch blocks (only non-internal)
   const { data: blocks } = useQuery({
     queryKey: ["public-slide-blocks", slide.id],
@@ -72,6 +82,12 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
     },
   });
 
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   const renderBlock = (block: Block) => {
     switch (block.block_type) {
       case "status":
@@ -86,7 +102,6 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
         const ChannelIcon = CHANNEL_ICONS[block.content?.channel] || FileText;
         return (
           <Card className="p-6 space-y-4">
-            {/* Format & Channel Tags */}
             <div className="flex items-center gap-2 flex-wrap">
               {block.content?.format && (
                 <Badge variant="secondary">
@@ -101,14 +116,12 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
               )}
             </div>
 
-            {/* Title */}
             {block.content?.title && (
               <div>
                 <h3 className="text-xl font-semibold">{block.content.title}</h3>
               </div>
             )}
 
-            {/* Copywriting */}
             {block.content?.copywriting && (
               <div>
                 <p className="text-sm text-muted-foreground font-medium mb-1">Brief / Idea</p>
@@ -116,7 +129,6 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
               </div>
             )}
 
-            {/* Caption */}
             {block.content?.caption && (
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-sm text-muted-foreground font-medium mb-2">Caption</p>
@@ -139,27 +151,26 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
               </span>
             </div>
 
-            {images.length === 1 ? (
-              <div className="rounded-lg overflow-hidden">
-                <img
-                  src={images[0]}
-                  alt="Content"
-                  className="w-full h-auto max-h-[600px] object-contain"
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {images.map((url: string, index: number) => (
-                  <div key={index} className="aspect-square rounded-lg overflow-hidden">
-                    <img
-                      src={url}
-                      alt={`Slide ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
+              {images.map((url: string, index: number) => (
+                <div
+                  key={index}
+                  className="relative shrink-0 snap-center cursor-pointer group"
+                  onClick={() => openLightbox(images, index)}
+                >
+                  <img
+                    src={url}
+                    alt={`Slide ${index + 1}`}
+                    className="max-h-[500px] w-auto rounded-lg object-contain hover:opacity-90 transition-opacity"
+                  />
+                  {images.length > 1 && (
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                      {index + 1}/{images.length}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </Card>
         );
 
@@ -212,6 +223,13 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
           No content on this slide
         </div>
       )}
+
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 }
