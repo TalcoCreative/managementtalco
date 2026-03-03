@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,9 +48,12 @@ interface EditorialPlanData {
 
 export default function PublicEditorialPlan() {
   const { clientSlug, epSlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const slideSlugParam = searchParams.get("slide");
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [initialSlideResolved, setInitialSlideResolved] = useState(false);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -88,6 +91,16 @@ export default function PublicEditorialPlan() {
   });
 
   const currentSlide = currentSlideIndex !== null ? slides?.[currentSlideIndex] : undefined;
+
+  // Resolve ?slide=slug to index
+  useEffect(() => {
+    if (initialSlideResolved || !slides || slides.length === 0 || !slideSlugParam) return;
+    const idx = slides.findIndex((s: any) => s.slug === slideSlugParam);
+    if (idx >= 0) {
+      setCurrentSlideIndex(idx);
+    }
+    setInitialSlideResolved(true);
+  }, [slides, slideSlugParam, initialSlideResolved]);
 
   // Keyboard navigation
   useEffect(() => {
