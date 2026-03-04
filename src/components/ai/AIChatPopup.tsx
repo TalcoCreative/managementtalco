@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Loader2, Bot, User, Minimize2 } from "lucide-react";
+import { X, Send, Loader2, Bot, User, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/hooks/usePermissions";
 import ReactMarkdown from "react-markdown";
 
@@ -18,7 +17,6 @@ export function AIChatPopup() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -92,10 +90,7 @@ export function AIChatPopup() {
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content;
@@ -107,7 +102,6 @@ export function AIChatPopup() {
         }
       }
 
-      // Flush remaining
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -144,7 +138,7 @@ export function AIChatPopup() {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center md:bottom-8 md:right-8"
-        title="Talco AI Operations"
+        title="Tassa — Talco Support Assistant"
       >
         <Bot className="h-6 w-6" />
       </button>
@@ -161,10 +155,10 @@ export function AIChatPopup() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground leading-tight">
-              Talco AI Operations
+              Tassa
             </h3>
             <p className="text-[10px] text-muted-foreground">
-              Internal Strategic Assistant
+              Talco Support Assistant
             </p>
           </div>
         </div>
@@ -181,10 +175,7 @@ export function AIChatPopup() {
             variant="ghost"
             size="icon"
             className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setOpen(false);
-              setMessages([]);
-            }}
+            onClick={() => { setOpen(false); setMessages([]); }}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -199,12 +190,9 @@ export function AIChatPopup() {
               <Bot className="h-7 w-7 text-violet-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">
-                Talco AI Operations
-              </p>
+              <p className="text-sm font-medium text-foreground">Tassa</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
-                Ask about tasks, finance, clients, performance, HR, or any
-                operational data.
+                Tanya soal tasks, finance, clients, performance, HR, atau data operasional lainnya.
               </p>
             </div>
           </div>
@@ -259,11 +247,10 @@ export function AIChatPopup() {
       <div className="border-t border-border/20 p-3">
         <div className="flex items-end gap-2">
           <Textarea
-            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about operations..."
+            placeholder="Tanya Tassa..."
             className="min-h-[42px] max-h-[120px] resize-none rounded-xl border-border/30 bg-muted/30 text-sm py-2.5 px-3.5"
             rows={1}
           />
@@ -273,11 +260,7 @@ export function AIChatPopup() {
             disabled={!input.trim() || isLoading}
             className="h-[42px] w-[42px] rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 hover:from-violet-700 hover:to-indigo-800 flex-shrink-0"
           >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>
