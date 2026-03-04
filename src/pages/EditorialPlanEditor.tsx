@@ -64,15 +64,25 @@ export default function EditorialPlanEditor() {
   const { data: ep, isLoading: epLoading } = useQuery({
     queryKey: ["editorial-plan", clientSlug, epSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("editorial_plans")
-        .select(`
-          *,
-          clients(id, name)
-        `)
-        .eq("slug", epSlug)
-        .single();
+      // First find client by slug-matching name
+      const { data: clients } = await supabase
+        .from("clients")
+        .select("id, name");
+      
+      const matchedClient = clients?.find(c => 
+        c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") === clientSlug
+      );
 
+      let query = supabase
+        .from("editorial_plans")
+        .select(`*, clients(id, name)`)
+        .eq("slug", epSlug);
+
+      if (matchedClient) {
+        query = query.eq("client_id", matchedClient.id);
+      }
+
+      const { data, error } = await query.single();
       if (error) throw error;
       return data as EditorialPlanData;
     },
