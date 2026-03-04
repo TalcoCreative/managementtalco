@@ -65,10 +65,12 @@ export function CreateEditorialPlanDialog({
   });
 
   const generateSlug = (title: string) => {
-    return title
+    const base = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
+    const suffix = Date.now().toString(36).slice(-4);
+    return `${base}-${suffix}`;
   };
 
   const handleTitleChange = (title: string) => {
@@ -167,7 +169,7 @@ export function CreateEditorialPlanDialog({
       
       // Get client slug for navigation
       const client = clients?.find(c => c.id === formData.clientId);
-      const clientSlug = client?.name.toLowerCase().replace(/\s+/g, "-") || "client";
+      const clientSlug = client?.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "client";
       
       onSuccess();
       navigate(`/ep/${clientSlug}/${ep.slug}/edit`);
