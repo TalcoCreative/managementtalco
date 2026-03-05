@@ -5334,6 +5334,10 @@ export type Database = {
         }
         Returns: number
       }
+      has_dynamic_perm: {
+        Args: { _action?: string; _feature_key: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
