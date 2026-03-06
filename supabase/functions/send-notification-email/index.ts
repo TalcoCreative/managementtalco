@@ -7,31 +7,35 @@ const corsHeaders = {
 };
 
 interface EmailRequest {
-  type: "test" | "notification";
+  type: "test" | "notification" | "recruitment_pic_assigned";
   notification_type?: string;
-  notificationType?: string; // Support camelCase
+  notificationType?: string;
   recipient_email?: string;
-  recipientEmail?: string; // Support camelCase
+  recipientEmail?: string;
+  recipientUserId?: string;
   recipient_name?: string;
-  recipientName?: string; // Support camelCase
+  recipientName?: string;
+  candidateName?: string;
+  candidatePosition?: string;
+  assignedBy?: string;
   data?: {
     title?: string;
     description?: string;
-    content?: string; // For announcements
+    content?: string;
     deadline?: string;
     creator_name?: string;
-    creatorName?: string; // Support camelCase
+    creatorName?: string;
     link?: string;
     priority?: string;
     status?: string;
     participants?: string;
     location?: string;
     createdAt?: string;
-    comment_content?: string; // For mentions
-    updated_at?: string; // For status changes
+    comment_content?: string;
+    updated_at?: string;
   };
   related_id?: string;
-  relatedId?: string; // Support camelCase
+  relatedId?: string;
 }
 
 interface ResendResponse {
@@ -100,6 +104,8 @@ const getSubject = (type: string, name: string): string => {
       return `Hi @${firstName} – reminder meeting nih 📅`;
     case "announcement":
       return `📢 Pengumuman: Ada info penting nih buat lo!`;
+    case "recruitment_pic_assigned":
+      return `Hi @${firstName} – lo ditunjuk jadi PIC kandidat nih 📋`;
     default:
       return `Hi @${firstName} – ada update buat lo nih 🚀`;
   }
@@ -126,6 +132,8 @@ const getNotificationLabel = (type: string): string => {
       return "Meeting";
     case "announcement":
       return "Pengumuman";
+    case "recruitment_pic_assigned":
+      return "Recruitment";
     default:
       return "Notifikasi";
   }
@@ -376,6 +384,51 @@ serve(async (req: Request): Promise<Response> => {
       recipientName = "Admin";
       subject = "✅ Talco System - Test Email Berhasil!";
       htmlBody = buildTestEmailBody(recipientEmail);
+    } else if (body.type === "recruitment_pic_assigned") {
+      // Recruitment PIC assignment - resolve user email from ID
+      if (!body.recipientUserId) {
+        throw new Error("recipientUserId is required for recruitment_pic_assigned");
+      }
+
+      const { data: picProfile, error: picError } = await supabase
+        .from("profiles")
+        .select("full_name, user_id")
+        .eq("id", body.recipientUserId)
+        .single();
+
+      if (picError || !picProfile) {
+        throw new Error("PIC profile not found");
+      }
+
+      // Get user email from auth
+      const { data: authUser } = await supabase.auth.admin.getUserById(body.recipientUserId);
+      if (!authUser?.user?.email) {
+        throw new Error("PIC email not found");
+      }
+
+      // Get assigner name
+      let assignerName = "Admin";
+      if (body.assignedBy) {
+        const { data: assignerProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", body.assignedBy)
+          .single();
+        assignerName = assignerProfile?.full_name || "Admin";
+      }
+
+      recipientEmail = authUser.user.email;
+      recipientName = picProfile.full_name || "User";
+      subject = getSubject("recruitment_pic_assigned", recipientName);
+      htmlBody = buildEmailBody(
+        recipientName,
+        "recruitment_pic_assigned",
+        {
+          title: `${body.candidateName || "Kandidat"} - ${body.candidatePosition || "Posisi"}`,
+          description: `Lo ditunjuk sebagai PIC untuk kandidat ${body.candidateName} yang melamar posisi ${body.candidatePosition}.`,
+          creator_name: assignerName,
+        }
+      );
     } else {
       // Notification email
       if (!normalizedRecipientEmail) {

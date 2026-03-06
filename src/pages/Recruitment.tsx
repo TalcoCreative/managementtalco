@@ -39,6 +39,7 @@ const STATUS_OPTIONS = [
   { value: "offering", label: "Offering", color: "bg-indigo-500" },
   { value: "hired", label: "Hired", color: "bg-green-500" },
   { value: "rejected", label: "Rejected", color: "bg-red-500" },
+  { value: "keep", label: "Keep", color: "bg-cyan-500" },
 ];
 
 export default function Recruitment() {
@@ -70,19 +71,16 @@ export default function Recruitment() {
     },
   });
 
-  // Fetch HR users for filter
+  // Fetch all team members for HR PIC filter & assignment
   const { data: hrUsers = [] } = useQuery({
-    queryKey: ["hr-users-filter"],
+    queryKey: ["team-members-for-pic"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles")
-        .select(`
-          user_id,
-          profiles!inner(id, full_name)
-        `)
-        .in("role", ["hr", "super_admin"]);
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name");
       if (error) throw error;
-      return data?.map((r: any) => r.profiles) || [];
+      return data || [];
     },
   });
 
