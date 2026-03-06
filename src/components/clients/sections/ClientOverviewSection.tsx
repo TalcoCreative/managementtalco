@@ -80,7 +80,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
   };
 
   const handleCopyDashboardLink = () => {
-    const dashboardUrl = `https://ms.talco.id/${client.dashboard_slug}`;
+    const dashboardUrl = `https://ms.talco.id/hub/${client.dashboard_slug}`;
     navigator.clipboard.writeText(dashboardUrl);
     toast.success("Link dashboard berhasil disalin!");
   };
@@ -171,7 +171,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
           {client.dashboard_slug ? (
             <div className="flex items-center gap-2 flex-wrap">
               <code className="text-xs bg-muted px-2 py-1 rounded flex-1 min-w-0 truncate">
-                ms.talco.id/{client.dashboard_slug}
+                ms.talco.id/hub/{client.dashboard_slug}
               </code>
               <Button variant="outline" size="sm" onClick={handleCopyDashboardLink}>
                 <Copy className="h-3 w-3 mr-1" />
@@ -180,7 +180,7 @@ export function ClientOverviewSection({ clientId, client, canEdit }: ClientOverv
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => window.open(`/clients/public/${client.dashboard_slug}`, "_blank")}
+                onClick={() => window.open(`https://ms.talco.id/hub/${client.dashboard_slug}`, "_blank")}
               >
                 <ExternalLink className="h-3 w-3 mr-1" />
                 Open
