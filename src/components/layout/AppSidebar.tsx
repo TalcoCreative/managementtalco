@@ -30,10 +30,13 @@ const navItems: NavItem[] = [
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
   { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
   { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
   { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
   { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
+];
+
+const formBuilderItems: NavItem[] = [
+  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
 ];
 
 const socialMediaItems: NavItem[] = [
@@ -171,6 +174,7 @@ export function AppSidebar() {
         </div>
         
         {renderGroup("Navigation", navItems)}
+        {renderGroup("Form Builder", formBuilderItems)}
         {renderGroup("Social Media", socialMediaItems)}
         {renderGroup("HR", hrItems)}
         {renderGroup("Finance", financeItems)}

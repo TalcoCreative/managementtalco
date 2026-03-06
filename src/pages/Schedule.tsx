@@ -95,7 +95,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shooting_schedules")
-        .select("*, clients(id, name), projects(title), profiles!shooting_schedules_requested_by_fkey(full_name)")
+        .select("*, clients(id, name), projects(title), profiles!fk_shooting_requested_by_profiles(full_name)")
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
       return data;
@@ -122,7 +122,7 @@ export default function Schedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("editorial_slides")
-        .select("*, editorial_plans(id, title, slug, client_id, clients(id, name))")
+        .select("*, editorial_plans(id, title, slug, client_id, clients(id, name, dashboard_slug))")
         .not("publish_date", "is", null)
         .order("publish_date", { ascending: true });
       if (error) throw error;
@@ -587,7 +587,7 @@ export default function Schedule() {
                           const clientName = slide.editorial_plans?.clients?.name;
                           const epTitle = slide.editorial_plans?.title;
                           const epSlug = slide.editorial_plans?.slug;
-                          const clientSlug = clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
+                          const clientSlug = slide.editorial_plans?.clients?.dashboard_slug || clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
                           const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
                           const channelText = channels.join(", ");
                           const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
@@ -887,7 +887,7 @@ export default function Schedule() {
                               const clientName = slide.editorial_plans?.clients?.name;
                               const epTitle = slide.editorial_plans?.title;
                               const epSlug = slide.editorial_plans?.slug;
-                              const clientSlug = clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
+                              const clientSlug = slide.editorial_plans?.clients?.dashboard_slug || clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
                               const channels = slide.channels && slide.channels.length > 0 ? slide.channels : (slide.channel ? [slide.channel] : []);
                               const channelText = channels.join(", ");
                               const statusColor = slide.status === 'published' ? 'bg-blue-500/10 text-blue-600 border-blue-500/30' : slide.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-amber-500/10 text-amber-600 border-amber-500/30';
@@ -1227,7 +1227,14 @@ export default function Schedule() {
                               <TableRow
                                 key={slide.id}
                                 className="cursor-pointer hover:bg-accent"
-                                onClick={() => navigate(`/editorial-plan/${slide.ep_id}`)}
+                                onClick={() => {
+                                  const epSlug = slide.editorial_plans?.slug;
+                                  const clientName = slide.editorial_plans?.clients?.name;
+                                  const clientSlug = slide.editorial_plans?.clients?.dashboard_slug || clientName?.toLowerCase().replace(/\s+/g, "-") || "client";
+                                  const slideSlug = slide.slug || `slide-${slide.slide_order + 1}`;
+                                  const url = epSlug ? `/ep/${clientSlug}/${epSlug}?slide=${slideSlug}` : `/editorial-plan/${slide.ep_id}`;
+                                  navigate(url);
+                                }}
                               >
                                 <TableCell className="font-medium">{title}</TableCell>
                                 <TableCell>

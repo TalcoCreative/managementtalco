@@ -77,19 +77,16 @@ export function CandidateDetailDialog({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch HR users for PIC assignment
+  // Fetch all team members for PIC assignment
   const { data: hrUsers = [] } = useQuery({
-    queryKey: ["hr-users-for-pic"],
+    queryKey: ["team-members-for-pic"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles")
-        .select(`
-          user_id,
-          profiles!inner(id, full_name)
-        `)
-        .in("role", ["hr", "super_admin"]);
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name");
       if (error) throw error;
-      return data?.map((r: any) => r.profiles) || [];
+      return data || [];
     },
   });
 
@@ -335,6 +332,31 @@ export function CandidateDetailDialog({
         changed_by: session.session.user.id,
         notes: `HR PIC diubah dari ${oldPicName} ke ${newPicName}`,
       });
+
+      // Send email notification to the new PIC
+      if (newPicId) {
+        try {
+          const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          await fetch(`${baseUrl}/functions/v1/send-notification-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": apiKey,
+              "Authorization": `Bearer ${session.session.access_token}`,
+            },
+            body: JSON.stringify({
+              type: "recruitment_pic_assigned",
+              recipientUserId: newPicId,
+              candidateName: candidate?.full_name,
+              candidatePosition: candidate?.position,
+              assignedBy: session.session.user.id,
+            }),
+          });
+        } catch (emailErr) {
+          console.error("Failed to send PIC notification email:", emailErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidate", candidateId] });

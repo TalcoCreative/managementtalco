@@ -157,7 +157,7 @@ export function usePermissions() {
   }, []);
 
   // Check if user is super_admin (via old user_roles table)
-  const { data: oldRoles } = useQuery({
+  const { data: oldRoles, isLoading: oldRolesLoading } = useQuery({
     queryKey: ["user-old-roles", userId],
     queryFn: async () => {
       if (!userId) return [];
@@ -173,7 +173,7 @@ export function usePermissions() {
   const isSuperAdmin = oldRoles?.includes("super_admin") ?? false;
 
   // Get user's dynamic role
-  const { data: dynamicRole } = useQuery({
+  const { data: dynamicRole, isLoading: dynamicRoleLoading } = useQuery({
     queryKey: ["user-dynamic-role", userId],
     queryFn: async () => {
       if (!userId) return null;
@@ -191,7 +191,7 @@ export function usePermissions() {
   const roleId = (dynamicRole as any)?.role_id;
   const roleName = (dynamicRole as any)?.dynamic_roles?.name ?? null;
 
-  const { data: permissions, isLoading } = useQuery({
+  const { data: permissions, isLoading: permsLoading } = useQuery({
     queryKey: ["role-permissions", roleId],
     queryFn: async () => {
       if (!roleId) return {};
@@ -208,6 +208,8 @@ export function usePermissions() {
     },
     enabled: !!roleId,
   });
+
+  const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading);
 
   const can = (featureKey: string, action: PermissionAction = "can_view"): boolean => {
     // Super admin always has full access
