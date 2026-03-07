@@ -537,7 +537,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
                 <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
                   {images.map((url: string, index: number) => (
                     <div key={index} className="relative group shrink-0 snap-center cursor-pointer"
-                      onClick={() => { setLightboxImages(images); setLightboxIndex(index); setLightboxOpen(true); }}
+                      onClick={() => { setLightboxImages(images); setLightboxIndex(index); handleLightboxOpenChange(true); }}
                     >
                       <img
                         src={url}
