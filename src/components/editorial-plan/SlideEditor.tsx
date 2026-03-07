@@ -70,6 +70,7 @@ interface SlideEditorProps {
   epId: string;
   isEditable: boolean;
   onStatusChange: () => void;
+  onLightboxChange?: (open: boolean) => void;
 }
 
 // Universal format options
