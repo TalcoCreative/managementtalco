@@ -70,6 +70,7 @@ interface SlideEditorProps {
   epId: string;
   isEditable: boolean;
   onStatusChange: () => void;
+  onLightboxChange?: (open: boolean) => void;
 }
 
 // Universal format options
@@ -92,7 +93,7 @@ const CONTENT_CHANNELS = [
   { value: "other", label: "Other" },
 ];
 
-export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEditorProps) {
+export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightboxChange }: SlideEditorProps) {
   const queryClient = useQueryClient();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -100,6 +101,11 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const handleLightboxOpenChange = (open: boolean) => {
+    setLightboxOpen(open);
+    onLightboxChange?.(open);
+  };
 
   // Get active channels (prefer new channels array, fallback to legacy channel)
   const activeChannels = slide.channels && slide.channels.length > 0 
@@ -531,7 +537,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
                 <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
                   {images.map((url: string, index: number) => (
                     <div key={index} className="relative group shrink-0 snap-center cursor-pointer"
-                      onClick={() => { setLightboxImages(images); setLightboxIndex(index); setLightboxOpen(true); }}
+                      onClick={() => { setLightboxImages(images); setLightboxIndex(index); handleLightboxOpenChange(true); }}
                     >
                       <img
                         src={url}
@@ -771,7 +777,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
         images={lightboxImages}
         initialIndex={lightboxIndex}
         open={lightboxOpen}
-        onOpenChange={setLightboxOpen}
+        onOpenChange={handleLightboxOpenChange}
       />
     </div>
   );

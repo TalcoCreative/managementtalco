@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,8 @@ export default function PublicEditorialPlan() {
   const [showComments, setShowComments] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [initialSlideResolved, setInitialSlideResolved] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const slideTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
@@ -61,10 +63,7 @@ export default function PublicEditorialPlan() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("editorial_plans")
-        .select(`
-          *,
-          clients(id, name)
-        `)
+        .select(`*, clients(id, name)`)
         .eq("slug", epSlug)
         .single();
 
@@ -102,12 +101,20 @@ export default function PublicEditorialPlan() {
     setInitialSlideResolved(true);
   }, [slides, slideSlugParam, initialSlideResolved]);
 
-  // Keyboard navigation
+  // Scroll active tab into view
+  useEffect(() => {
+    if (currentSlideIndex === null || !slideTabsRef.current) return;
+    const activeBtn = slideTabsRef.current.children[currentSlideIndex + 2] as HTMLElement;
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [currentSlideIndex]);
+
+  // Keyboard navigation - skip when lightbox is open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+      if (lightboxOpen) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "ArrowLeft") {
         if (currentSlideIndex === null) return;
@@ -124,7 +131,7 @@ export default function PublicEditorialPlan() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSlideIndex, slides]);
+  }, [currentSlideIndex, slides, lightboxOpen]);
 
   const handleApprove = async () => {
     if (!currentSlide || currentSlide.status !== "proposed") return;
@@ -141,7 +148,6 @@ export default function PublicEditorialPlan() {
 
       if (error) throw error;
 
-      // Log activity
       await supabase.from("ep_activity_logs").insert({
         ep_id: ep?.id,
         slide_id: currentSlide.id,
@@ -182,14 +188,13 @@ export default function PublicEditorialPlan() {
     );
   }
 
-  // Calculate approval stats
   const approvedCount = slides?.filter(s => s.status === "approved" || s.status === "published").length || 0;
   const totalSlides = slides?.length || 0;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-card px-4 py-4">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      {/* Header - fixed */}
+      <header className="border-b bg-card px-4 py-4 shrink-0">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -198,16 +203,11 @@ export default function PublicEditorialPlan() {
             </div>
             <h1 className="text-xl font-semibold">{ep.title}</h1>
           </div>
-
           <div className="flex items-center gap-3">
             <div className="text-sm text-muted-foreground">
               {approvedCount}/{totalSlides} Approved
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowComments(!showComments)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Comments
             </Button>
@@ -215,9 +215,13 @@ export default function PublicEditorialPlan() {
         </div>
       </header>
 
-      {/* Slide Thumbnails */}
-      <div className="border-b bg-muted/30 px-4 py-3 overflow-x-auto">
-        <div className="max-w-6xl mx-auto flex items-center gap-2">
+      {/* Slide Tabs - fixed, scrollable */}
+      <div
+        ref={slideTabsRef}
+        className="border-b bg-muted/30 px-4 py-3 shrink-0 overflow-x-auto scrollbar-thin"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentSlideIndex(null)}
             className={cn(
@@ -236,7 +240,7 @@ export default function PublicEditorialPlan() {
               key={slide.id}
               onClick={() => setCurrentSlideIndex(index)}
               className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors shrink-0 min-w-[80px]",
+                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors shrink-0 min-w-[60px]",
                 currentSlideIndex === index
                   ? "bg-primary text-primary-foreground"
                   : "bg-card hover:bg-muted border"
@@ -253,11 +257,11 @@ export default function PublicEditorialPlan() {
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Current View */}
-          <div className="flex-1 overflow-auto">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          {/* Content area - only this scrolls */}
+          <div className="flex-1 overflow-y-auto min-h-0">
             {currentSlideIndex === null ? (
               <div className="p-4 max-w-6xl mx-auto">
                 {slides && slides.length > 0 ? (
@@ -272,7 +276,7 @@ export default function PublicEditorialPlan() {
                 )}
               </div>
             ) : currentSlide ? (
-              <PublicSlideView slide={currentSlide} />
+              <PublicSlideView slide={currentSlide} onLightboxChange={setLightboxOpen} />
             ) : (
               <div className="h-full flex items-center justify-center">
                 <p className="text-muted-foreground">Tidak ada content</p>
@@ -280,9 +284,9 @@ export default function PublicEditorialPlan() {
             )}
           </div>
 
-          {/* Bottom Navigation */}
+          {/* Bottom Navigation - fixed at bottom */}
           {slides && slides.length > 0 && currentSlideIndex !== null && (
-            <div className="border-t bg-card px-4 py-4">
+            <div className="border-t bg-card px-4 py-4 shrink-0">
               <div className="max-w-6xl mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Button
@@ -308,7 +312,6 @@ export default function PublicEditorialPlan() {
                   </Button>
                 </div>
 
-                {/* Approve Button */}
                 {currentSlide?.status === "proposed" && (
                   <Button
                     onClick={handleApprove}

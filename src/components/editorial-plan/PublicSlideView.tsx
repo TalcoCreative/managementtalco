@@ -34,6 +34,7 @@ interface Block {
 
 interface PublicSlideViewProps {
   slide: Slide;
+  onLightboxChange?: (open: boolean) => void;
 }
 
 const CHANNEL_ICONS: Record<string, any> = {
@@ -47,7 +48,6 @@ const FORMAT_LABELS: Record<string, string> = {
   single_post: "Single Post",
   long_video: "Long Video",
   shorts: "Shorts",
-  // Legacy
   feed: "Feed Post",
   reels: "Reels",
 };
@@ -61,12 +61,16 @@ const CHANNEL_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export function PublicSlideView({ slide }: PublicSlideViewProps) {
+export function PublicSlideView({ slide, onLightboxChange }: PublicSlideViewProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  // Fetch blocks (only non-internal)
+  const handleLightboxChange = (open: boolean) => {
+    setLightboxOpen(open);
+    onLightboxChange?.(open);
+  };
+
   const { data: blocks } = useQuery({
     queryKey: ["public-slide-blocks", slide.id],
     queryFn: async () => {
@@ -85,7 +89,7 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
   const openLightbox = (images: string[], index: number) => {
     setLightboxImages(images);
     setLightboxIndex(index);
-    setLightboxOpen(true);
+    handleLightboxChange(true);
   };
 
   const renderBlock = (block: Block) => {
@@ -115,20 +119,15 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
                 </Badge>
               )}
             </div>
-
             {block.content?.title && (
-              <div>
-                <h3 className="text-xl font-semibold">{block.content.title}</h3>
-              </div>
+              <h3 className="text-xl font-semibold">{block.content.title}</h3>
             )}
-
             {block.content?.copywriting && (
               <div>
                 <p className="text-sm text-muted-foreground font-medium mb-1">Brief / Idea</p>
                 <p className="whitespace-pre-wrap">{block.content.copywriting}</p>
               </div>
             )}
-
             {block.content?.caption && (
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-sm text-muted-foreground font-medium mb-2">Caption</p>
@@ -141,7 +140,6 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
       case "image":
         const images = block.content?.images || [];
         if (images.length === 0) return null;
-
         return (
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -150,7 +148,6 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
                 {images.length > 1 ? `Carousel (${images.length} images)` : "Image"}
               </span>
             </div>
-
             <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory scrollbar-thin">
               {images.map((url: string, index: number) => (
                 <div
@@ -176,27 +173,20 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
 
       case "video":
         if (!block.content?.embedUrl) return null;
-
         return (
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-4">
               <Video className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium">Video</span>
             </div>
-
             <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-              <iframe
-                src={block.content.embedUrl}
-                className="w-full h-full"
-                allowFullScreen
-              />
+              <iframe src={block.content.embedUrl} className="w-full h-full" allowFullScreen />
             </div>
           </Card>
         );
 
       case "external_notes":
         if (!block.content?.notes) return null;
-
         return (
           <Card className="p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -228,7 +218,7 @@ export function PublicSlideView({ slide }: PublicSlideViewProps) {
         images={lightboxImages}
         initialIndex={lightboxIndex}
         open={lightboxOpen}
-        onOpenChange={setLightboxOpen}
+        onOpenChange={handleLightboxChange}
       />
     </div>
   );

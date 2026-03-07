@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,6 @@ import {
   Trash2,
   Eye,
   ArrowLeft,
-  GripVertical,
   MessageSquare,
   Calendar,
 } from "lucide-react";
@@ -59,12 +58,13 @@ export default function EditorialPlanEditor() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [initialSlideResolved, setInitialSlideResolved] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const slideTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch EP data
   const { data: ep, isLoading: epLoading } = useQuery({
     queryKey: ["editorial-plan", clientSlug, epSlug],
     queryFn: async () => {
-      // First find client by slug-matching name
       const { data: clients } = await supabase
         .from("clients")
         .select("id, name");
@@ -117,6 +117,15 @@ export default function EditorialPlanEditor() {
     setInitialSlideResolved(true);
   }, [slides, slideSlugParam, initialSlideResolved]);
 
+  // Scroll active tab into view
+  useEffect(() => {
+    if (currentSlideIndex === null || !slideTabsRef.current) return;
+    const activeBtn = slideTabsRef.current.children[currentSlideIndex + 2] as HTMLElement; // +2 for jadwal btn + divider
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [currentSlideIndex]);
+
   // Add slide mutation
   const addSlideMutation = useMutation({
     mutationFn: async () => {
@@ -139,7 +148,6 @@ export default function EditorialPlanEditor() {
 
       if (error) throw error;
 
-      // Add default blocks
       const defaultBlocks: Array<{
         slide_id: string;
         block_type: "content_meta" | "image" | "video" | "status" | "internal_notes" | "external_notes";
@@ -147,33 +155,9 @@ export default function EditorialPlanEditor() {
         content: any;
         is_internal: boolean;
       }> = [
-        {
-          slide_id: slide.id,
-          block_type: "status",
-          block_order: 0,
-          content: {},
-          is_internal: false,
-        },
-        {
-          slide_id: slide.id,
-          block_type: "content_meta",
-          block_order: 1,
-          content: {
-            title: "",
-            copywriting: "",
-            caption: "",
-            format: "feed",
-            channel: "instagram",
-          },
-          is_internal: false,
-        },
-        {
-          slide_id: slide.id,
-          block_type: "image",
-          block_order: 2,
-          content: { images: [] },
-          is_internal: false,
-        },
+        { slide_id: slide.id, block_type: "status", block_order: 0, content: {}, is_internal: false },
+        { slide_id: slide.id, block_type: "content_meta", block_order: 1, content: { title: "", copywriting: "", caption: "", format: "feed", channel: "instagram" }, is_internal: false },
+        { slide_id: slide.id, block_type: "image", block_order: 2, content: { images: [] }, is_internal: false },
       ];
 
       await supabase.from("slide_blocks").insert(defaultBlocks);
@@ -201,7 +185,7 @@ export default function EditorialPlanEditor() {
     onSuccess: () => {
       refetchSlides();
       toast.success("Slide dihapus");
-      if (currentSlideIndex > 0) {
+      if (currentSlideIndex !== null && currentSlideIndex > 0) {
         setCurrentSlideIndex(currentSlideIndex - 1);
       }
     },
@@ -210,12 +194,11 @@ export default function EditorialPlanEditor() {
     },
   });
 
-  // Keyboard navigation
+  // Keyboard navigation - skip when lightbox is open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+      if (lightboxOpen) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       if (e.key === "ArrowLeft") {
         if (currentSlideIndex === null) return;
@@ -232,7 +215,7 @@ export default function EditorialPlanEditor() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSlideIndex, slides]);
+  }, [currentSlideIndex, slides, lightboxOpen]);
 
   if (epLoading || slidesLoading) {
     return (
@@ -261,16 +244,12 @@ export default function EditorialPlanEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-card px-4 py-3">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      {/* Header - fixed */}
+      <header className="border-b bg-card px-4 py-3 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/editorial-plan")}
-            >
+            <Button variant="ghost" size="icon" onClick={() => navigate("/editorial-plan")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
@@ -280,21 +259,12 @@ export default function EditorialPlanEditor() {
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowComments(!showComments)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Comments
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}
-            >
+            <Button variant="outline" size="sm" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
@@ -302,11 +272,15 @@ export default function EditorialPlanEditor() {
         </div>
       </header>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Slide Navigation */}
-          <div className="border-b bg-muted/30 px-4 py-2 flex items-center gap-2 overflow-x-auto">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          {/* Slide Navigation - fixed, scrollable */}
+          <div
+            ref={slideTabsRef}
+            className="border-b bg-muted/30 px-4 py-2 flex items-center gap-2 shrink-0 overflow-x-auto scrollbar-thin"
+            style={{ scrollbarWidth: "thin" }}
+          >
             <button
               onClick={() => setCurrentSlideIndex(null)}
               className={cn(
@@ -331,7 +305,6 @@ export default function EditorialPlanEditor() {
                     : "hover:bg-muted"
                 )}
               >
-                <GripVertical className="h-3 w-3 opacity-50" />
                 <div className="flex flex-col items-start">
                   <span>Slide {index + 1}</span>
                   {slide.publish_date && (
@@ -355,8 +328,8 @@ export default function EditorialPlanEditor() {
             </Button>
           </div>
 
-          {/* Current View: Jadwal or Slide Editor */}
-          <div className="flex-1 relative overflow-y-auto">
+          {/* Content area - scrollable */}
+          <div className="flex-1 overflow-y-auto min-h-0">
             {currentSlideIndex === null ? (
               <div className="p-4">
                 {slides && slides.length > 0 ? (
@@ -382,6 +355,7 @@ export default function EditorialPlanEditor() {
                 epId={ep.id}
                 isEditable={currentSlide.status !== "published"}
                 onStatusChange={() => refetchSlides()}
+                onLightboxChange={setLightboxOpen}
               />
             ) : (
               <div className="h-full flex items-center justify-center">
@@ -396,9 +370,9 @@ export default function EditorialPlanEditor() {
             )}
           </div>
 
-          {/* Bottom Navigation */}
+          {/* Bottom Navigation - fixed at bottom */}
           {slides && slides.length > 0 && currentSlideIndex !== null && (
-            <div className="border-t bg-card px-4 py-3 flex items-center justify-between">
+            <div className="border-t bg-card px-4 py-3 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
