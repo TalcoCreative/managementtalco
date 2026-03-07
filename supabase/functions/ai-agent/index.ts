@@ -7,6 +7,99 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// All queryable tables in Talco Management System
+const ALLOWED_TABLES = [
+  "profiles", "user_roles", "user_dynamic_roles", "dynamic_roles", "role_permissions",
+  "clients", "client_accounts", "client_activity_logs", "client_contracts", "client_documents",
+  "client_payment_settings", "client_payments", "client_quotas",
+  "projects", "tasks", "task_status_logs", "comments", "comment_mentions",
+  "attendance", "auto_clockout_notifications",
+  "leave_requests",
+  "income", "expenses", "ledger_entries", "recurring_entries",
+  "balance_sheet_items", "chart_of_accounts", "company_settings",
+  "events", "event_crew", "event_checklists", "event_documents", "event_history", "event_issues", "event_vendors",
+  "shooting_schedules",
+  "meetings", "meeting_participants", "meeting_invitations",
+  "assets", "asset_transactions",
+  "candidates", "candidate_assessments", "candidate_notes", "candidate_notifications", "candidate_status_history",
+  "recruitment_forms", "form_questions", "form_responses", "form_answers",
+  "prospects", "prospect_history",
+  "kol_profiles", "kol_campaigns", "kol_campaign_history",
+  "editorial_plans", "editorial_slides", "ep_comments", "ep_activity_logs",
+  "announcements", "announcement_reads",
+  "letters",
+  "disciplinary_cases",
+  "holidays",
+  "social_media_accounts",
+  "email_logs", "email_settings",
+  "deletion_logs",
+  "payroll_records",
+  "reimbursements",
+];
+
+// Tool definitions for the AI to call
+const DATA_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "query_table",
+      description: `Query any table in the Talco Management System. Available tables: ${ALLOWED_TABLES.join(", ")}. You can filter, sort, limit, and select specific columns. Use this to retrieve raw data for analysis. You may call this multiple times for different tables or different filters.`,
+      parameters: {
+        type: "object",
+        properties: {
+          table: {
+            type: "string",
+            description: "The table name to query.",
+          },
+          select: {
+            type: "string",
+            description: "Columns to select. Use '*' for all columns. Supports Supabase select syntax with joins, e.g. '*, clients(name), profiles!assigned_to(full_name)'. Default: '*'",
+          },
+          filters: {
+            type: "array",
+            description: "Array of filter conditions to apply.",
+            items: {
+              type: "object",
+              properties: {
+                column: { type: "string", description: "Column name to filter on." },
+                operator: { type: "string", enum: ["eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "in", "is"], description: "Filter operator." },
+                value: { type: "string", description: "Filter value. For 'in' operator, comma-separated values. For 'is', use 'null' or 'not.null'." },
+              },
+              required: ["column", "operator", "value"],
+            },
+          },
+          order_by: {
+            type: "string",
+            description: "Column to order by. Prefix with '-' for descending. e.g. '-created_at' for newest first.",
+          },
+          limit: {
+            type: "number",
+            description: "Max rows to return. Default: 100. Max: 500.",
+          },
+          count_only: {
+            type: "boolean",
+            description: "If true, only return the count of matching rows, not the data itself.",
+          },
+        },
+        required: ["table"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_system_overview",
+      description: "Get a quick overview of the entire system: counts of all major entities (clients, projects, tasks, employees, events, etc.), today's attendance, and recent activity summary. Use this as a starting point for broad questions.",
+      parameters: {
+        type: "object",
+        properties: {},
+        additionalProperties: false,
+      },
+    },
+  },
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,71 +159,75 @@ serve(async (req) => {
       });
     }
 
-    const lastUserMessage = messages[messages.length - 1]?.content || "";
-    const dataContext = await fetchOperationalData(adminClient, lastUserMessage);
+    const systemPrompt = `You are Tassa (Talco Support Assistant), an intelligent internal strategic assistant for Super Admin of Talco Management System.
 
-    const systemPrompt = `You are Tassa (Talco Support Assistant).
+You have FULL ACCESS to the entire Talco Management System database through tool calls. You can query ANY table, filter, join, and analyze data across all modules.
 
-You operate inside Talco Management System.
-You are only accessible by SUPER ADMIN.
+MODULES YOU HAVE ACCESS TO:
+- Dashboard, Clients, Client Hub, Projects, Tasks, Schedule
+- Shooting, Meeting, Leave, Reimburse, Asset, Event
+- Reports, Form Builder, KOL Database, KOL Campaign
+- Surat (Letters), Social Media, Editorial Plan, Content Builder
+- HR: Team, HR Dashboard, HR Analytics, Kalender Libur, Performance, Recruitment
+- Finance: Income, Expenses, Laba Rugi, Neraca
+- Sales: Analytics, Prospects
+- Executive: CEO Dashboard
+- System: Email Settings, Role & Access, System Settings
 
-You have full conceptual access to ALL database tables and records of Talco Management System, including:
-Dashboard, Clients, Client Hub, Projects, Tasks, Schedule, Shooting, Meeting, Leave, Reimburse, Asset, Event, Reports, Form Builder, KOL Database, KOL Campaign, Surat (Letters), Social Media, Editorial Plan, Content Builder, HR, Team, HR Dashboard, HR Analytics, Kalender Libur, Performance, Recruitment, Recruitment Dashboard, Finance, Laba Rugi, Neraca, Sales, Sales Analytics, Prospects, Executive, CEO Dashboard, System, Email Settings, Role & Access, System Settings.
+KEY TABLES AND RELATIONSHIPS:
+- profiles: all employees (id, full_name, division, position, employment_status, phone, join_date)
+- tasks: linked to profiles via assigned_to, to projects via project_id, to clients via client_id
+- projects: linked to clients via client_id, has tasks
+- clients: has projects, contracts, payments, quotas, accounts, documents
+- attendance: linked to profiles via user_id, daily clock in/out records
+- leave_requests: employee leave data
+- income/expenses: financial records with categories
+- events: with crew, checklists, vendors, documents
+- shooting_schedules: photo/video production schedules
+- meetings/meeting_participants: meeting records
+- prospects/prospect_history: sales pipeline
+- candidates: recruitment pipeline with status tracking
+- kol_profiles/kol_campaigns: influencer management
+- editorial_plans/editorial_slides: content planning
+- assets/asset_transactions: company asset tracking
+- disciplinary_cases: HR disciplinary records
+- announcements: company announcements
+- letters: official company letters
+- holidays: company holiday calendar
 
-You can read raw data down to individual records and fields.
-Backend provides you raw database rows in JSON or structured format.
-
-PERSONALITY:
-- Friendly, casual, and approachable
-- Direct, concise, and on-point
-- Confident but not robotic
-- Strategic and observant
-- Focus on key insights and actions
-- You are Talco's internal strategic partner, not a cold corporate report generator
+INVESTIGATION WORKFLOW:
+1. Understand what the user is asking
+2. Identify which tables contain the relevant data
+3. Use query_table tool to fetch the data (you can make multiple queries)
+4. Analyze the returned data
+5. Answer clearly with specific numbers and facts
 
 RULES:
-- Never ask for permission
-- Never say you don't have access
-- Analyze everything provided
-- Do not invent missing data
-- If data is not provided, say clearly that specific data was not included
-- Cross-analyze across tables when relevant
-- Keep responses short and actionable
-- Do not use emojis
-- Do not repeat the question
-- Do not use corporate jargon excessively
+- ALWAYS use tools to fetch data before answering - never guess or assume
+- You can call multiple query_table tools in parallel for efficiency
+- Never fabricate numbers or data
+- If a query returns empty, say so clearly
+- Cross-reference data across tables when needed (e.g., get task data, then look up employee names)
+- Keep responses short, direct, and actionable
 
-RESPONSE STYLE:
-Start naturally, like you're responding in a real internal chat.
-Then structure the response like this:
+PERSONALITY:
+- Friendly, casual, approachable - like a smart colleague
+- Direct and concise, no fluff
+- Strategic and observant
+- Speak naturally in Bahasa Indonesia
+- No emojis, no excessive corporate jargon
+- No robotic tone
 
-**Jawaban Singkat:**
-Direct answer in plain, simple language.
+RESPONSE FORMAT (flexible, use what fits):
+Start with a natural direct answer, then if helpful:
+- **Yang Gue Lihat:** key facts, numbers, patterns
+- **Yang Perlu Diperhatiin:** risks or issues (if any)
+- **Saran Gue:** actionable next steps (if relevant)
 
-**Yang Gue Lihat:**
-- Key records, patterns, numbers (bullet points)
-- Important numbers or facts
+Keep it conversational. Not every answer needs all sections.`;
 
-**Yang Perlu Diperhatiin:**
-Risks, potential delays, issues — explained casually but clearly.
-
-**Saran Gue:**
-Clear actions or next steps.
-
-Special Notes:
-- When a user asks about a person, project, task, or finance, reply with specifics from the raw records provided.
-- Always keep it easy to read and on-point, no fluff.
-- Think like a strategic team member who really understands Talco's operations.
-
-CURRENT OPERATIONAL DATA CONTEXT:
-${dataContext}`;
-
-    const openaiMessages = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ];
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // STEP 1: Call AI with tools to let it decide what data to fetch
+    const step1Response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -138,33 +235,125 @@ ${dataContext}`;
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: openaiMessages,
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        tools: DATA_TOOLS,
+        tool_choice: "auto",
+        stream: false,
+      }),
+    });
+
+    if (!step1Response.ok) {
+      const status = step1Response.status;
+      if (status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded, coba lagi sebentar ya." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits habis. Top up di workspace settings." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const errText = await step1Response.text();
+      console.error("AI gateway step1 error:", status, errText);
+      return new Response(JSON.stringify({ error: `AI gateway error: ${status}` }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const step1Data = await step1Response.json();
+    const assistantMessage = step1Data.choices?.[0]?.message;
+
+    // If the AI didn't call any tools, it has enough context - stream the response directly
+    if (!assistantMessage?.tool_calls || assistantMessage.tool_calls.length === 0) {
+      // Re-call with streaming for the final answer
+      const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
+          stream: true,
+        }),
+      });
+
+      if (!streamResponse.ok) {
+        return new Response(JSON.stringify({ error: "AI streaming error" }), {
+          status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(streamResponse.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // STEP 2: Execute all tool calls in parallel
+    const toolResults = await Promise.all(
+      assistantMessage.tool_calls.map(async (toolCall: any) => {
+        const funcName = toolCall.function.name;
+        let args: any;
+        try {
+          args = JSON.parse(toolCall.function.arguments);
+        } catch {
+          return { tool_call_id: toolCall.id, role: "tool", content: JSON.stringify({ error: "Invalid arguments" }) };
+        }
+
+        try {
+          let result: any;
+          if (funcName === "get_system_overview") {
+            result = await getSystemOverview(adminClient);
+          } else if (funcName === "query_table") {
+            result = await queryTable(adminClient, args);
+          } else {
+            result = { error: "Unknown function" };
+          }
+          // Truncate if too large
+          let content = JSON.stringify(result);
+          if (content.length > 60000) {
+            content = content.slice(0, 60000) + "... [TRUNCATED - too much data, try narrower filters or smaller limit]";
+          }
+          return { tool_call_id: toolCall.id, role: "tool", content };
+        } catch (e) {
+          console.error(`Tool ${funcName} error:`, e);
+          return { tool_call_id: toolCall.id, role: "tool", content: JSON.stringify({ error: String(e) }) };
+        }
+      })
+    );
+
+    // STEP 3: Send tool results back and stream the final response
+    const step3Messages = [
+      { role: "system", content: systemPrompt },
+      ...messages,
+      assistantMessage,
+      ...toolResults,
+    ];
+
+    const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: step3Messages,
         stream: true,
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again shortly." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please top up in workspace settings." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
-      return new Response(JSON.stringify({ error: `AI gateway error: ${response.status}` }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (!finalResponse.ok) {
+      const errText = await finalResponse.text();
+      console.error("AI gateway final error:", finalResponse.status, errText);
+      return new Response(JSON.stringify({ error: `AI gateway error: ${finalResponse.status}` }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(response.body, {
+    return new Response(finalResponse.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
@@ -176,294 +365,134 @@ ${dataContext}`;
   }
 });
 
-// ─── Data Fetching ───────────────────────────────────────────────────────────
+// ─── Tool Implementations ────────────────────────────────────────────────────
 
-async function fetchOperationalData(client: any, question: string): Promise<string> {
-  const sections: string[] = [];
-  const q = question.toLowerCase();
+async function getSystemOverview(client: any): Promise<any> {
+  const tables = [
+    "clients", "projects", "tasks", "events", "profiles",
+    "prospects", "candidates", "meetings", "shooting_schedules",
+    "assets", "leave_requests", "income", "expenses",
+    "editorial_plans", "kol_profiles", "kol_campaigns",
+    "announcements", "letters", "disciplinary_cases",
+  ];
 
+  const counts: Record<string, number> = {};
+  await Promise.all(
+    tables.map(async (table) => {
+      try {
+        const { count } = await client.from(table).select("*", { count: "exact", head: true });
+        counts[table] = count || 0;
+      } catch {
+        counts[table] = -1; // table may not exist
+      }
+    })
+  );
+
+  // Today's attendance
+  const today = new Date().toISOString().split("T")[0];
+  let attendanceSummary: any = {};
   try {
-    // Always fetch overview counts
-    const [
-      { count: clientCount },
-      { count: projectCount },
-      { count: taskCount },
-      { count: eventCount },
-      { count: employeeCount },
-      { count: prospectCount },
-      { count: candidateCount },
-      { count: meetingCount },
-      { count: shootingCount },
-    ] = await Promise.all([
-      client.from("clients").select("*", { count: "exact", head: true }),
-      client.from("projects").select("*", { count: "exact", head: true }),
-      client.from("tasks").select("*", { count: "exact", head: true }),
-      client.from("events").select("*", { count: "exact", head: true }),
-      client.from("profiles").select("*", { count: "exact", head: true }),
-      client.from("prospects").select("*", { count: "exact", head: true }),
-      client.from("candidates").select("*", { count: "exact", head: true }),
-      client.from("meetings").select("*", { count: "exact", head: true }).then((r: any) => r).catch(() => ({ count: 0 })),
-      client.from("shootings").select("*", { count: "exact", head: true }).then((r: any) => r).catch(() => ({ count: 0 })),
-    ]);
+    const { data: att } = await client.from("attendance").select("clock_in, clock_out").eq("date", today);
+    attendanceSummary = {
+      total: att?.length || 0,
+      clocked_in: att?.filter((a: any) => a.clock_in && !a.clock_out).length || 0,
+      completed: att?.filter((a: any) => a.clock_in && a.clock_out).length || 0,
+    };
+  } catch { /* ignore */ }
 
-    sections.push(`OVERVIEW: ${clientCount} clients, ${projectCount} projects, ${taskCount} tasks, ${eventCount} events, ${employeeCount} employees, ${prospectCount} prospects, ${candidateCount} candidates, ${meetingCount || 0} meetings, ${shootingCount || 0} shootings`);
+  // Recent finance
+  let financeSummary: any = {};
+  try {
+    const thisMonth = new Date();
+    const monthStart = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, "0")}-01`;
+    const { data: inc } = await client.from("income").select("amount").gte("created_at", monthStart);
+    const { data: exp } = await client.from("expenses").select("amount").gte("created_at", monthStart);
+    const totalInc = inc?.reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
+    const totalExp = exp?.reduce((s: number, e: any) => s + (e.amount || 0), 0) || 0;
+    financeSummary = { this_month_income: totalInc, this_month_expenses: totalExp, net: totalInc - totalExp };
+  } catch { /* ignore */ }
 
-    // ─── Tasks ──────────────────────────────────────────────────────
-    if (matchAny(q, ["task", "tugas", "kinerja", "performance", "progress", "kanban"])) {
-      const { data: tasks } = await client.from("tasks").select("id, title, status, priority, assigned_to, client_id, project_id, due_date, created_at").order("created_at", { ascending: false }).limit(500);
-      if (tasks) {
-        const statusCount = countBy(tasks, "status");
-        const prioCount = countBy(tasks, "priority");
-        const overdue = tasks.filter((t: any) => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length;
-        sections.push(`TASKS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`TASKS BY PRIORITY: ${JSON.stringify(prioCount)}`);
-        sections.push(`OVERDUE TASKS: ${overdue}`);
-        sections.push(`RECENT TASKS (last 20): ${JSON.stringify(tasks.slice(0, 20))}`);
-      }
+  // Task status breakdown
+  let taskSummary: any = {};
+  try {
+    const { data: tasks } = await client.from("tasks").select("status");
+    if (tasks) {
+      taskSummary = {};
+      tasks.forEach((t: any) => {
+        const s = t.status || "unknown";
+        taskSummary[s] = (taskSummary[s] || 0) + 1;
+      });
     }
+  } catch { /* ignore */ }
 
-    // ─── Finance ────────────────────────────────────────────────────
-    if (matchAny(q, ["finance", "keuangan", "revenue", "expense", "pendapatan", "pengeluaran", "income", "laba", "rugi", "neraca", "balance", "profit"])) {
-      const [{ data: income }, { data: expenses }] = await Promise.all([
-        client.from("income").select("*").order("created_at", { ascending: false }).limit(200),
-        client.from("expenses").select("*").order("created_at", { ascending: false }).limit(200),
-      ]);
-      const totalIncome = income?.reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
-      const totalExpense = expenses?.reduce((s: number, e: any) => s + (e.amount || 0), 0) || 0;
-      sections.push(`FINANCE SUMMARY: Total Income=${totalIncome}, Total Expenses=${totalExpense}, Net=${totalIncome - totalExpense}`);
-      if (income) {
-        const incCat = countBySum(income, "category", "amount");
-        sections.push(`INCOME BY CATEGORY: ${JSON.stringify(incCat)}`);
-      }
-      if (expenses) {
-        const expCat = countBySum(expenses, "category", "amount");
-        const expStatus = countBy(expenses, "status");
-        sections.push(`EXPENSES BY CATEGORY: ${JSON.stringify(expCat)}`);
-        sections.push(`EXPENSES BY STATUS: ${JSON.stringify(expStatus)}`);
-      }
-      sections.push(`RECENT INCOME (last 10): ${JSON.stringify(income?.slice(0, 10))}`);
-      sections.push(`RECENT EXPENSES (last 10): ${JSON.stringify(expenses?.slice(0, 10))}`);
-    }
+  return {
+    entity_counts: counts,
+    today_attendance: attendanceSummary,
+    this_month_finance: financeSummary,
+    task_status_breakdown: taskSummary,
+    date: today,
+  };
+}
 
-    // ─── Clients ────────────────────────────────────────────────────
-    if (matchAny(q, ["client", "klien", "customer"])) {
-      const { data: clients } = await client.from("clients").select("*").limit(100);
-      if (clients) {
-        const statusCount = countBy(clients, "status");
-        const typeCount = countBy(clients, "client_type");
-        sections.push(`CLIENTS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`CLIENTS BY TYPE: ${JSON.stringify(typeCount)}`);
-        sections.push(`ALL CLIENTS: ${JSON.stringify(clients)}`);
-      }
-    }
+async function queryTable(client: any, args: any): Promise<any> {
+  const { table, select = "*", filters = [], order_by, limit = 100, count_only = false } = args;
 
-    // ─── Employees / HR / Team ──────────────────────────────────────
-    if (matchAny(q, ["employee", "karyawan", "hr", "team", "tim", "staff", "divisi", "division", "position"])) {
-      const { data: profiles } = await client.from("profiles").select("*").limit(200);
-      if (profiles) {
-        const divCount = countBy(profiles, "division");
-        const posCount = countBy(profiles, "position");
-        const statusCount = countBy(profiles, "employment_status");
-        sections.push(`EMPLOYEES BY DIVISION: ${JSON.stringify(divCount)}`);
-        sections.push(`EMPLOYEES BY POSITION: ${JSON.stringify(posCount)}`);
-        sections.push(`EMPLOYEES BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`ALL EMPLOYEES: ${JSON.stringify(profiles)}`);
-      }
-    }
-
-    // ─── Attendance ─────────────────────────────────────────────────
-    if (matchAny(q, ["attendance", "kehadiran", "clock", "absen", "hadir"])) {
-      const today = new Date().toISOString().split("T")[0];
-      const { data: attendance } = await client.from("attendance").select("*").eq("date", today);
-      const clockedIn = attendance?.filter((a: any) => a.clock_in && !a.clock_out).length || 0;
-      const clockedOut = attendance?.filter((a: any) => a.clock_in && a.clock_out).length || 0;
-      sections.push(`TODAY ATTENDANCE (${today}): ${attendance?.length || 0} records, ${clockedIn} currently clocked in, ${clockedOut} completed`);
-      sections.push(`ATTENDANCE DETAILS: ${JSON.stringify(attendance)}`);
-    }
-
-    // ─── Leave ──────────────────────────────────────────────────────
-    if (matchAny(q, ["leave", "cuti", "izin"])) {
-      const { data: leaves } = await client.from("leave_requests").select("*").order("created_at", { ascending: false }).limit(200);
-      if (leaves) {
-        const statusCount = countBy(leaves, "status");
-        const typeCount = countBy(leaves, "leave_type");
-        sections.push(`LEAVE REQUESTS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`LEAVE REQUESTS BY TYPE: ${JSON.stringify(typeCount)}`);
-        sections.push(`RECENT LEAVE REQUESTS: ${JSON.stringify(leaves.slice(0, 20))}`);
-      }
-    }
-
-    // ─── Projects ───────────────────────────────────────────────────
-    if (matchAny(q, ["project", "proyek"])) {
-      const { data: projects } = await client.from("projects").select("*").limit(200);
-      if (projects) {
-        const statusCount = countBy(projects, "status");
-        sections.push(`PROJECTS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`ALL PROJECTS: ${JSON.stringify(projects)}`);
-      }
-    }
-
-    // ─── Prospects / Sales ──────────────────────────────────────────
-    if (matchAny(q, ["prospect", "sales", "penjualan", "lead", "pipeline", "deal"])) {
-      const { data: prospects } = await client.from("prospects").select("*").order("created_at", { ascending: false }).limit(200);
-      if (prospects) {
-        const statusCount = countBy(prospects, "status");
-        const sourceCount = countBy(prospects, "source");
-        sections.push(`PROSPECTS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`PROSPECTS BY SOURCE: ${JSON.stringify(sourceCount)}`);
-        sections.push(`ALL PROSPECTS: ${JSON.stringify(prospects)}`);
-      }
-    }
-
-    // ─── Events ─────────────────────────────────────────────────────
-    if (matchAny(q, ["event", "acara"])) {
-      const { data: events } = await client.from("events").select("*").order("start_date", { ascending: false }).limit(100);
-      if (events) {
-        const statusCount = countBy(events, "status");
-        const typeCount = countBy(events, "event_type");
-        sections.push(`EVENTS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`EVENTS BY TYPE: ${JSON.stringify(typeCount)}`);
-        sections.push(`ALL EVENTS: ${JSON.stringify(events)}`);
-      }
-    }
-
-    // ─── Recruitment ────────────────────────────────────────────────
-    if (matchAny(q, ["recruit", "rekrut", "candidate", "kandidat", "hiring", "lamaran"])) {
-      const { data: candidates } = await client.from("candidates").select("*").order("created_at", { ascending: false }).limit(200);
-      if (candidates) {
-        const statusCount = countBy(candidates, "status");
-        const divCount = countBy(candidates, "division");
-        sections.push(`CANDIDATES BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`CANDIDATES BY DIVISION: ${JSON.stringify(divCount)}`);
-        sections.push(`ALL CANDIDATES: ${JSON.stringify(candidates)}`);
-      }
-    }
-
-    // ─── KOL ────────────────────────────────────────────────────────
-    if (matchAny(q, ["kol", "influencer", "campaign", "kampanye"])) {
-      const [{ data: kols }, { data: campaigns }] = await Promise.all([
-        client.from("kol_profiles").select("*").limit(100).then((r: any) => r).catch(() => ({ data: null })),
-        client.from("kol_campaigns").select("*").limit(100).then((r: any) => r).catch(() => ({ data: null })),
-      ]);
-      if (kols) sections.push(`KOL PROFILES: ${JSON.stringify(kols)}`);
-      if (campaigns) {
-        const statusCount = countBy(campaigns, "status");
-        sections.push(`KOL CAMPAIGNS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`ALL KOL CAMPAIGNS: ${JSON.stringify(campaigns)}`);
-      }
-    }
-
-    // ─── Editorial Plan ─────────────────────────────────────────────
-    if (matchAny(q, ["editorial", "ep", "konten", "content", "slide"])) {
-      const { data: eps } = await client.from("editorial_plans").select("*, editorial_slides(id, status, publish_date, channel, slide_order)").limit(50);
-      if (eps) sections.push(`EDITORIAL PLANS: ${JSON.stringify(eps)}`);
-    }
-
-    // ─── Letters / Surat ────────────────────────────────────────────
-    if (matchAny(q, ["surat", "letter"])) {
-      const { data: letters } = await client.from("letters").select("*").order("created_at", { ascending: false }).limit(100).then((r: any) => r).catch(() => ({ data: null }));
-      if (letters) sections.push(`LETTERS: ${JSON.stringify(letters)}`);
-    }
-
-    // ─── Assets ─────────────────────────────────────────────────────
-    if (matchAny(q, ["asset", "aset", "inventaris", "barang"])) {
-      const { data: assets } = await client.from("assets").select("*").limit(100);
-      if (assets) {
-        const statusCount = countBy(assets, "status");
-        const catCount = countBy(assets, "category");
-        sections.push(`ASSETS BY STATUS: ${JSON.stringify(statusCount)}`);
-        sections.push(`ASSETS BY CATEGORY: ${JSON.stringify(catCount)}`);
-        sections.push(`ALL ASSETS: ${JSON.stringify(assets)}`);
-      }
-    }
-
-    // ─── Disciplinary ───────────────────────────────────────────────
-    if (matchAny(q, ["disciplin", "pelanggaran", "sp", "sanksi"])) {
-      const { data: cases } = await client.from("disciplinary_cases").select("*").order("created_at", { ascending: false }).limit(100);
-      if (cases) sections.push(`DISCIPLINARY CASES: ${JSON.stringify(cases)}`);
-    }
-
-    // ─── Announcements ──────────────────────────────────────────────
-    if (matchAny(q, ["announcement", "pengumuman"])) {
-      const { data: announcements } = await client.from("announcements").select("*").order("created_at", { ascending: false }).limit(50);
-      if (announcements) sections.push(`ANNOUNCEMENTS: ${JSON.stringify(announcements)}`);
-    }
-
-    // ─── Reimbursements ─────────────────────────────────────────────
-    if (matchAny(q, ["reimburse", "reimburs"])) {
-      const { data: reimb } = await client.from("expenses").select("*").eq("category", "reimbursement").order("created_at", { ascending: false }).limit(100).then((r: any) => r).catch(() => ({ data: null }));
-      if (reimb) sections.push(`REIMBURSEMENTS: ${JSON.stringify(reimb)}`);
-    }
-
-    // ─── Meetings ───────────────────────────────────────────────────
-    if (matchAny(q, ["meeting", "rapat", "mom"])) {
-      const { data: meetings } = await client.from("meetings").select("*").order("meeting_date", { ascending: false }).limit(50).then((r: any) => r).catch(() => ({ data: null }));
-      if (meetings) sections.push(`MEETINGS: ${JSON.stringify(meetings)}`);
-    }
-
-    // ─── Shootings ──────────────────────────────────────────────────
-    if (matchAny(q, ["shooting", "foto", "video", "produksi"])) {
-      const { data: shootings } = await client.from("shootings").select("*").order("shooting_date", { ascending: false }).limit(50).then((r: any) => r).catch(() => ({ data: null }));
-      if (shootings) sections.push(`SHOOTINGS: ${JSON.stringify(shootings)}`);
-    }
-
-    // ─── Holidays ───────────────────────────────────────────────────
-    if (matchAny(q, ["holiday", "libur", "kalender"])) {
-      const { data: holidays } = await client.from("holidays").select("*").order("date", { ascending: true }).limit(100).then((r: any) => r).catch(() => ({ data: null }));
-      if (holidays) sections.push(`HOLIDAYS: ${JSON.stringify(holidays)}`);
-    }
-
-    // ─── Social Media ───────────────────────────────────────────────
-    if (matchAny(q, ["social media", "socmed", "sosmed", "instagram", "tiktok"])) {
-      const { data: accounts } = await client.from("social_media_accounts").select("*").limit(50).then((r: any) => r).catch(() => ({ data: null }));
-      if (accounts) sections.push(`SOCIAL MEDIA ACCOUNTS: ${JSON.stringify(accounts)}`);
-    }
-
-    // ─── Catch-all: general / dashboard / CEO ───────────────────────
-    if (matchAny(q, ["dashboard", "overview", "ringkasan", "summary", "ceo", "executive", "semua", "all", "general", "laporan", "report"])) {
-      // Provide a broader snapshot
-      const [{ data: recentTasks }, { data: recentIncome }, { data: recentExpenses }] = await Promise.all([
-        client.from("tasks").select("id, title, status, priority, due_date").order("created_at", { ascending: false }).limit(30),
-        client.from("income").select("amount, category, created_at").order("created_at", { ascending: false }).limit(30),
-        client.from("expenses").select("amount, category, status, created_at").order("created_at", { ascending: false }).limit(30),
-      ]);
-      if (recentTasks) {
-        const taskStatus = countBy(recentTasks, "status");
-        sections.push(`RECENT TASKS STATUS: ${JSON.stringify(taskStatus)}`);
-      }
-      const totalInc = recentIncome?.reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
-      const totalExp = recentExpenses?.reduce((s: number, e: any) => s + (e.amount || 0), 0) || 0;
-      sections.push(`RECENT FINANCE: Income=${totalInc}, Expenses=${totalExp}, Net=${totalInc - totalExp}`);
-    }
-
-  } catch (e) {
-    console.error("Error fetching operational data:", e);
-    sections.push("Note: Some operational data could not be fetched.");
+  if (!ALLOWED_TABLES.includes(table)) {
+    return { error: `Table '${table}' is not available. Available tables: ${ALLOWED_TABLES.join(", ")}` };
   }
 
-  return sections.join("\n");
+  const safeLimit = Math.min(Math.max(1, limit), 500);
+
+  try {
+    if (count_only) {
+      let query = client.from(table).select("*", { count: "exact", head: true });
+      query = applyFilters(query, filters);
+      const { count, error } = await query;
+      if (error) return { error: error.message };
+      return { table, count, filters_applied: filters };
+    }
+
+    let query = client.from(table).select(select);
+    query = applyFilters(query, filters);
+
+    if (order_by) {
+      const desc = order_by.startsWith("-");
+      const col = desc ? order_by.slice(1) : order_by;
+      query = query.order(col, { ascending: !desc });
+    }
+
+    query = query.limit(safeLimit);
+    const { data, error, count } = await query;
+    if (error) return { error: error.message };
+
+    return {
+      table,
+      row_count: data?.length || 0,
+      data,
+    };
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function matchAny(text: string, keywords: string[]): boolean {
-  return keywords.some((k) => text.includes(k));
-}
-
-function countBy(arr: any[], key: string): Record<string, number> {
-  const result: Record<string, number> = {};
-  arr.forEach((item) => {
-    const val = item[key] || "unknown";
-    result[val] = (result[val] || 0) + 1;
-  });
-  return result;
-}
-
-function countBySum(arr: any[], groupKey: string, sumKey: string): Record<string, number> {
-  const result: Record<string, number> = {};
-  arr.forEach((item) => {
-    const val = item[groupKey] || "unknown";
-    result[val] = (result[val] || 0) + (item[sumKey] || 0);
-  });
-  return result;
+function applyFilters(query: any, filters: any[]): any {
+  for (const f of filters) {
+    const { column, operator, value } = f;
+    switch (operator) {
+      case "eq": query = query.eq(column, value); break;
+      case "neq": query = query.neq(column, value); break;
+      case "gt": query = query.gt(column, value); break;
+      case "gte": query = query.gte(column, value); break;
+      case "lt": query = query.lt(column, value); break;
+      case "lte": query = query.lte(column, value); break;
+      case "like": query = query.like(column, value); break;
+      case "ilike": query = query.ilike(column, value); break;
+      case "in": query = query.in(column, value.split(",")); break;
+      case "is":
+        if (value === "null") query = query.is(column, null);
+        else if (value === "not.null") query = query.not(column, "is", null);
+        break;
+    }
+  }
+  return query;
 }
