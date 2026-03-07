@@ -93,7 +93,7 @@ const CONTENT_CHANNELS = [
   { value: "other", label: "Other" },
 ];
 
-export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEditorProps) {
+export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightboxChange }: SlideEditorProps) {
   const queryClient = useQueryClient();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -101,6 +101,11 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange }: SlideEd
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const handleLightboxOpenChange = (open: boolean) => {
+    setLightboxOpen(open);
+    onLightboxChange?.(open);
+  };
 
   // Get active channels (prefer new channels array, fallback to legacy channel)
   const activeChannels = slide.channels && slide.channels.length > 0 
