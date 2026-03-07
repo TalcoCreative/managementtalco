@@ -777,7 +777,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
         images={lightboxImages}
         initialIndex={lightboxIndex}
         open={lightboxOpen}
-        onOpenChange={setLightboxOpen}
+        onOpenChange={handleLightboxOpenChange}
       />
     </div>
   );
