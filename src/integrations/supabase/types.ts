@@ -2895,6 +2895,68 @@ export type Database = {
           },
         ]
       }
+      marketplace_reports: {
+        Row: {
+          avg_order_value: number | null
+          client_id: string
+          conversion_rate: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          marketplace: string
+          notes: string | null
+          report_month: number
+          report_year: number
+          store_visitors: number | null
+          total_orders: number | null
+          total_products_sold: number | null
+          total_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_order_value?: number | null
+          client_id: string
+          conversion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marketplace?: string
+          notes?: string | null
+          report_month: number
+          report_year: number
+          store_visitors?: number | null
+          total_orders?: number | null
+          total_products_sold?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_order_value?: number | null
+          client_id?: string
+          conversion_rate?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marketplace?: string
+          notes?: string | null
+          report_month?: number
+          report_year?: number
+          store_visitors?: number | null
+          total_orders?: number | null
+          total_products_sold?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_external_participants: {
         Row: {
           company: string | null
