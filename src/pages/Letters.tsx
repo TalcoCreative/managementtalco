@@ -51,6 +51,7 @@ export default function Letters() {
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [downloadingPDF, setDownloadingPDF] = useState<string | null>(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user-letters"],
