@@ -486,7 +486,7 @@ export default function Schedule() {
                   <SelectValue placeholder="Filter Person" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Orang</SelectItem>
+                  <SelectItem value="all">All People</SelectItem>
                   {profiles?.map((profile: any) => (
                     <SelectItem key={profile.id} value={profile.id}>{profile.full_name}</SelectItem>
                   ))}
