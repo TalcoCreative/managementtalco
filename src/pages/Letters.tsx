@@ -245,10 +245,6 @@ export default function Letters() {
               <p className="section-subtitle">Buat, kelola, dan kirim surat perusahaan</p>
             </div>
           </div>
-            <p className="text-muted-foreground">
-              Kelola surat dengan nomor otomatis terstruktur
-            </p>
-          </div>
           {canManage && (
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
