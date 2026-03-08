@@ -591,6 +591,27 @@ export default function HRAnalytics() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
+              <Clock className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{kpis.lateCount}x</div>
+              {kpis.lateChange !== null ? (
+                <div className="flex items-center text-xs">
+                  {kpis.lateChange <= 0 ? (
+                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.lateChange}%</span></>
+                  ) : (
+                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.lateChange}%</span></>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Total keterlambatan</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Produktivitas</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
