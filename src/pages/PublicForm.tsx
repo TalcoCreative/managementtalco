@@ -21,6 +21,7 @@ interface FormData {
   description: string | null;
   slug: string;
   theme?: string;
+  form_template?: string | null;
 }
 
 interface Question {
