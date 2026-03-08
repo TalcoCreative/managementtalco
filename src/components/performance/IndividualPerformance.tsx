@@ -79,7 +79,7 @@ export function IndividualPerformance({
       const userTasks = tasks.filter(t => 
         isUserAssignedToTask(t.id, t.assigned_to, profile.id) && filterByMonth(t.created_at)
       );
-      const completedTasks = userTasks.filter(t => t.status === 'done').length;
+      const completedTasks = userTasks.filter(t => t.status === 'done' || t.status === 'completed').length;
 
       // Projects: assigned_to OR created_by
       const userProjects = projects.filter(p => 
