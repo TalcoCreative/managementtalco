@@ -13,7 +13,7 @@ import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Lin
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
-import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { RichBriefEditor, BriefData, migrateLegacyData } from "@/components/tasks/RichBriefEditor";
 import { MentionInput, extractMentions, renderCommentWithMentions } from "@/components/tasks/MentionInput";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
@@ -27,10 +27,6 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-interface TableData {
-  headers: string[];
-  rows: string[][];
-}
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
   const [comment, setComment] = useState("");
@@ -46,7 +42,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [editDescription, setEditDescription] = useState("");
   const [editAssignees, setEditAssignees] = useState<string[]>([]);
   const [editDeadline, setEditDeadline] = useState<string>("");
-  const [editTableData, setEditTableData] = useState<TableData | null>(null);
+  const [editBriefData, setEditBriefData] = useState<BriefData | null>(null);
   const [saving, setSaving] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -134,7 +130,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         : (task.assigned_to ? [task.assigned_to] : []);
       setEditAssignees(assignees);
       setEditDeadline(task.deadline || "");
-      setEditTableData(task.table_data || null);
+      setEditBriefData(migrateLegacyData(task.table_data) || null);
       setEditWatchers(watcherIds);
       setIsEditing(false);
     }
@@ -216,7 +212,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           description: editDescription,
           assigned_to: primaryAssignee,
           deadline: editDeadline || null,
-          table_data: editTableData as any,
+          table_data: editBriefData as any,
           assigned_at: primaryAssignee ? new Date().toISOString() : null,
           title_edited_at: editTitle !== task?.title ? new Date().toISOString() : task?.title_edited_at,
           description_edited_at: editDescription !== task?.description ? new Date().toISOString() : task?.description_edited_at,
@@ -656,7 +652,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                           : (task.assigned_to ? [task.assigned_to] : []);
                         setEditAssignees(assignees);
                         setEditDeadline(task.deadline || "");
-                        setEditTableData(task.table_data || null);
+                        setEditBriefData(migrateLegacyData(task.table_data) || null);
                         setEditWatchers(watcherIds);
                       }}
                     >
@@ -705,12 +701,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               )}
 
-              {/* Task Brief Table */}
+              {/* Task Brief */}
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-3">Brief / Deskripsi</h3>
-                <EditableTaskTable
-                  data={isEditing ? editTableData : (task.table_data as TableData | null)}
-                  onChange={setEditTableData}
+                <RichBriefEditor
+                  data={isEditing ? editBriefData : task.table_data}
+                  onChange={setEditBriefData}
                   readOnly={!isEditing}
                 />
               </div>

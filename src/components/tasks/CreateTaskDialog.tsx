@@ -12,14 +12,10 @@ import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff, Bel
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
-import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { RichBriefEditor, BriefData } from "@/components/tasks/RichBriefEditor";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 
-interface TableData {
-  headers: string[];
-  rows: string[][];
-}
 
 interface LinkAttachment {
   name: string;
@@ -59,10 +55,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
   const [notifyUsers, setNotifyUsers] = useState<string[]>([]);
   const [subTaskTitles, setSubTaskTitles] = useState<string[]>([]);
   const [newSubTask, setNewSubTask] = useState("");
-  const [tableData, setTableData] = useState<TableData>({
-    headers: ["No", "Item", "Keterangan", "Status"],
-    rows: [["1", "", "", ""]],
-  });
+  const [briefData, setBriefData] = useState<BriefData | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [linkAttachments, setLinkAttachments] = useState<LinkAttachment[]>([]);
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -177,7 +170,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
       const { data: taskData, error } = await supabase.from("tasks").insert({
         title: formData.title.trim(),
-        table_data: tableData as any,
+        table_data: briefData as any,
         description: formData.notes.trim() || null,
         priority: formData.priority,
         project_id: formData.project_id,
@@ -291,10 +284,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       setNotifyUsers([]);
       setSubTaskTitles([]);
       setNewSubTask("");
-      setTableData({
-        headers: ["No", "Item", "Keterangan", "Status"],
-        rows: [["1", "", "", ""]],
-      });
+      setBriefData(null);
       setFiles([]);
       setLinkAttachments([]);
       setShowLinkInput(false);
@@ -341,9 +331,9 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
           <div className="space-y-2">
             <Label>Brief / Deskripsi</Label>
-            <EditableTaskTable
-              data={tableData}
-              onChange={setTableData}
+            <RichBriefEditor
+              data={briefData}
+              onChange={setBriefData}
               readOnly={false}
             />
           </div>
