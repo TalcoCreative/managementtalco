@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo } from "react";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear, parseISO } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
-import { DollarSign, Users, TrendingUp, Briefcase, Target, Receipt, AlertCircle } from "lucide-react";
+import { parseISO } from "date-fns";
 import { PerformanceOverview } from "@/components/performance/PerformanceOverview";
 import { TeamEffectiveness } from "@/components/performance/TeamEffectiveness";
 import { IndividualPerformance } from "@/components/performance/IndividualPerformance";
 import { Badge } from "@/components/ui/badge";
+import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Performance() {
@@ -21,6 +20,9 @@ export default function Performance() {
   const [selectedDivision, setSelectedDivision] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+
+  const startDate = `${selectedYear}-01-01`;
+  const endDate = `${selectedYear}-12-31`;
 
   // Check user access
   const { data: userRoles, isLoading: rolesLoading } = useQuery({
@@ -65,8 +67,6 @@ export default function Performance() {
   const { data: payrollData = [] } = useQuery({
     queryKey: ["payroll-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("payroll")
         .select("*")
@@ -81,8 +81,6 @@ export default function Performance() {
   const { data: reimbursements = [] } = useQuery({
     queryKey: ["reimbursements-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("reimbursements")
         .select("*")
@@ -97,8 +95,6 @@ export default function Performance() {
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
@@ -110,11 +106,22 @@ export default function Performance() {
     enabled: canAccess,
   });
 
+  // Fetch task_assignees to support multi-assignee attribution
+  const { data: taskAssignees = [] } = useQuery({
+    queryKey: ["task-assignees-performance", selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_assignees")
+        .select("*");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: canAccess,
+  });
+
   const { data: projects = [] } = useQuery({
     queryKey: ["projects-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -129,8 +136,6 @@ export default function Performance() {
   const { data: shootings = [] } = useQuery({
     queryKey: ["shootings-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("shooting_schedules")
         .select("*")
@@ -145,8 +150,6 @@ export default function Performance() {
   const { data: prospects = [] } = useQuery({
     queryKey: ["prospects-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("prospects")
         .select("*")
@@ -161,8 +164,6 @@ export default function Performance() {
   const { data: attendance = [] } = useQuery({
     queryKey: ["attendance-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("attendance")
         .select("*")
@@ -177,8 +178,6 @@ export default function Performance() {
   const { data: leaveRequests = [] } = useQuery({
     queryKey: ["leave-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("leave_requests")
         .select("*")
@@ -193,8 +192,6 @@ export default function Performance() {
   const { data: ledgerEntries = [] } = useQuery({
     queryKey: ["ledger-performance", selectedYear],
     queryFn: async () => {
-      const startDate = `${selectedYear}-01-01`;
-      const endDate = `${selectedYear}-12-31`;
       const { data, error } = await supabase
         .from("ledger_entries")
         .select("*")
@@ -205,6 +202,54 @@ export default function Performance() {
     },
     enabled: canAccess,
   });
+
+  // Fetch meetings
+  const { data: meetings = [] } = useQuery({
+    queryKey: ["meetings-performance", selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meetings")
+        .select("*")
+        .gte("meeting_date", startDate)
+        .lte("meeting_date", endDate);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: canAccess,
+  });
+
+  // Fetch meeting participants
+  const { data: meetingParticipants = [] } = useQuery({
+    queryKey: ["meeting-participants-performance", selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("meeting_participants")
+        .select("*");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: canAccess,
+  });
+
+  // Build a map: taskId -> list of user_ids from task_assignees
+  const taskAssigneeMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    taskAssignees.forEach(ta => {
+      if (!map[ta.task_id]) map[ta.task_id] = [];
+      map[ta.task_id].push(ta.user_id);
+    });
+    return map;
+  }, [taskAssignees]);
+
+  // Build a map: meetingId -> list of user_ids from meeting_participants
+  const meetingParticipantMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    meetingParticipants.forEach(mp => {
+      if (!map[mp.meeting_id]) map[mp.meeting_id] = [];
+      map[mp.meeting_id].push(mp.user_id);
+    });
+    return map;
+  }, [meetingParticipants]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
@@ -231,6 +276,24 @@ export default function Performance() {
     } catch {
       return true;
     }
+  };
+
+  // Helper: check if a user is assigned to a task (supports multi-assignee)
+  const isUserAssignedToTask = (taskId: string, assignedTo: string | null, userId: string) => {
+    // Check task_assignees first (multi-assignee)
+    const assignees = taskAssigneeMap[taskId];
+    if (assignees && assignees.length > 0) {
+      return assignees.includes(userId);
+    }
+    // Fallback to single assigned_to
+    return assignedTo === userId;
+  };
+
+  // Helper: check if user is involved in a meeting
+  const isUserInMeeting = (meetingId: string, createdBy: string, userId: string) => {
+    if (createdBy === userId) return true;
+    const participants = meetingParticipantMap[meetingId];
+    return participants?.includes(userId) || false;
   };
 
   // Filter profiles by role
@@ -260,25 +323,6 @@ export default function Performance() {
     { value: "12", label: "Desember" },
   ];
 
-  // Export payroll data
-  const payrollExportData = payrollData.map(p => {
-    const employee = profiles.find(pr => pr.id === p.employee_id);
-    return {
-      employee_name: employee?.full_name || '',
-      month: p.month,
-      amount: p.amount,
-      bonus: p.bonus || 0,
-      potongan_terlambat: p.potongan_terlambat || 0,
-      potongan_kasbon: p.potongan_kasbon || 0,
-      adjustment_lainnya: p.adjustment_lainnya || 0,
-      reimburse: p.reimburse || 0,
-      status: p.status,
-    };
-  });
-
-  const handleImportPayroll = async (data: any[]) => {
-    toast.info("Import payroll hanya tersedia melalui menu Finance");
-  };
   if (rolesLoading) {
     return (
       <AppLayout>
@@ -404,8 +448,11 @@ export default function Performance() {
               tasks={tasks}
               projects={projects}
               prospects={prospects}
+              meetings={meetings}
               selectedMonth={selectedMonth}
               filterByMonth={filterByMonth}
+              isUserAssignedToTask={isUserAssignedToTask}
+              isUserInMeeting={isUserInMeeting}
             />
           </TabsContent>
 
@@ -419,12 +466,15 @@ export default function Performance() {
               projects={projects}
               shootings={shootings}
               prospects={prospects}
+              meetings={meetings}
               attendance={attendance}
               leaveRequests={leaveRequests}
               selectedMonth={selectedMonth}
               selectedEmployee={selectedEmployee}
               setSelectedEmployee={setSelectedEmployee}
               filterByMonth={filterByMonth}
+              isUserAssignedToTask={isUserAssignedToTask}
+              isUserInMeeting={isUserInMeeting}
             />
           </TabsContent>
         </Tabs>

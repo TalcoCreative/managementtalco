@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,8 +12,11 @@ interface TeamEffectivenessProps {
   tasks: any[];
   projects: any[];
   prospects: any[];
+  meetings: any[];
   selectedMonth: string;
   filterByMonth: (date: string | null) => boolean;
+  isUserAssignedToTask: (taskId: string, assignedTo: string | null, userId: string) => boolean;
+  isUserInMeeting: (meetingId: string, createdBy: string, userId: string) => boolean;
 }
 
 const COLORS = ['hsl(250, 80%, 60%)', 'hsl(270, 85%, 65%)', 'hsl(142, 76%, 36%)', 'hsl(25, 95%, 53%)', 'hsl(217, 91%, 60%)', 'hsl(0, 84%, 60%)'];
@@ -26,8 +29,11 @@ export function TeamEffectiveness({
   tasks,
   projects,
   prospects,
+  meetings,
   selectedMonth,
   filterByMonth,
+  isUserAssignedToTask,
+  isUserInMeeting,
 }: TeamEffectivenessProps) {
   
   const formatCurrency = (value: number) => {
@@ -46,6 +52,7 @@ export function TeamEffectiveness({
       taskCount: number;
       projectCount: number;
       prospectCount: number;
+      meetingCount: number;
       employeeCount: number;
     }> = {};
 
@@ -53,7 +60,7 @@ export function TeamEffectiveness({
     Object.values(employeeRoles).forEach(userRoles => {
       userRoles.forEach(role => {
         if (!roles[role]) {
-          roles[role] = { cost: 0, taskCount: 0, projectCount: 0, prospectCount: 0, employeeCount: 0 };
+          roles[role] = { cost: 0, taskCount: 0, projectCount: 0, prospectCount: 0, meetingCount: 0, employeeCount: 0 };
         }
       });
     });
@@ -62,31 +69,34 @@ export function TeamEffectiveness({
     profiles.forEach(profile => {
       const userRolesList = employeeRoles[profile.id] || [];
       
-      // Get payroll cost
       const userPayroll = payrollData
         .filter(p => p.employee_id === profile.id && filterByMonth(p.month) && p.status === 'paid')
         .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       
-      // Get reimbursement cost
       const userReimburse = reimbursements
         .filter(r => r.user_id === profile.id && filterByMonth(r.created_at) && r.status === 'paid')
         .reduce((sum, r) => sum + Number(r.amount || 0), 0);
       
       const totalCost = userPayroll + userReimburse;
 
-      // Get task count
+      // Tasks: check multi-assignee
       const userTasks = tasks.filter(t => 
-        t.assigned_to === profile.id && filterByMonth(t.created_at)
+        isUserAssignedToTask(t.id, t.assigned_to, profile.id) && filterByMonth(t.created_at)
       ).length;
 
-      // Get project count
+      // Projects: assigned_to OR created_by
       const userProjects = projects.filter(p => 
-        p.assigned_to === profile.id && filterByMonth(p.created_at)
+        (p.assigned_to === profile.id || p.created_by === profile.id) && filterByMonth(p.created_at)
       ).length;
 
-      // Get prospect count
+      // Prospects
       const userProspects = prospects.filter(p => 
         (p.created_by === profile.id || p.pic_id === profile.id) && filterByMonth(p.created_at)
+      ).length;
+
+      // Meetings
+      const userMeetings = meetings.filter(m =>
+        isUserInMeeting(m.id, m.created_by, profile.id) && filterByMonth(m.meeting_date)
       ).length;
 
       // Distribute costs evenly across user's roles
@@ -97,6 +107,7 @@ export function TeamEffectiveness({
           roles[role].taskCount += userTasks * roleFraction;
           roles[role].projectCount += userProjects * roleFraction;
           roles[role].prospectCount += userProspects * roleFraction;
+          roles[role].meetingCount += userMeetings * roleFraction;
           roles[role].employeeCount += roleFraction;
         }
       });
@@ -108,9 +119,9 @@ export function TeamEffectiveness({
       ...metrics,
       costPerTask: metrics.taskCount > 0 ? metrics.cost / metrics.taskCount : 0,
       costPerProject: metrics.projectCount > 0 ? metrics.cost / metrics.projectCount : 0,
-      totalOutput: metrics.taskCount + metrics.projectCount + metrics.prospectCount,
+      totalOutput: metrics.taskCount + metrics.projectCount + metrics.prospectCount + metrics.meetingCount,
     })).sort((a, b) => b.cost - a.cost);
-  }, [profiles, employeeRoles, payrollData, reimbursements, tasks, projects, prospects, filterByMonth]);
+  }, [profiles, employeeRoles, payrollData, reimbursements, tasks, projects, prospects, meetings, filterByMonth, isUserAssignedToTask, isUserInMeeting]);
 
   // Bar chart data for cost per division
   const costPerDivisionData = roleMetrics.slice(0, 8);
@@ -121,6 +132,7 @@ export function TeamEffectiveness({
     tasks: Math.round(r.taskCount),
     projects: Math.round(r.projectCount),
     prospects: Math.round(r.prospectCount),
+    meetings: Math.round(r.meetingCount),
   })).slice(0, 8);
 
   return (
@@ -162,6 +174,7 @@ export function TeamEffectiveness({
                   <Bar dataKey="tasks" name="Tasks" fill="hsl(250, 80%, 60%)" stackId="output" />
                   <Bar dataKey="projects" name="Projects" fill="hsl(270, 85%, 65%)" stackId="output" />
                   <Bar dataKey="prospects" name="Prospects" fill="hsl(142, 76%, 36%)" stackId="output" />
+                  <Bar dataKey="meetings" name="Meetings" fill="hsl(25, 95%, 53%)" stackId="output" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -185,6 +198,7 @@ export function TeamEffectiveness({
                   <TableHead className="text-right">Tasks</TableHead>
                   <TableHead className="text-right">Projects</TableHead>
                   <TableHead className="text-right">Prospects</TableHead>
+                  <TableHead className="text-right">Meetings</TableHead>
                   <TableHead className="text-right">Cost/Task</TableHead>
                   <TableHead className="text-right">Cost/Project</TableHead>
                 </TableRow>
@@ -201,6 +215,7 @@ export function TeamEffectiveness({
                       <TableCell className="text-right">{Math.round(metric.taskCount)}</TableCell>
                       <TableCell className="text-right">{Math.round(metric.projectCount)}</TableCell>
                       <TableCell className="text-right">{Math.round(metric.prospectCount)}</TableCell>
+                      <TableCell className="text-right">{Math.round(metric.meetingCount)}</TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {metric.costPerTask > 0 ? formatCurrency(metric.costPerTask) : '-'}
                       </TableCell>
@@ -211,7 +226,7 @@ export function TeamEffectiveness({
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
