@@ -472,7 +472,7 @@ export default function Schedule() {
                   <SelectValue placeholder="Filter Client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Client</SelectItem>
+                  <SelectItem value="all">All Clients</SelectItem>
                   {clients?.map((client: any) => (
                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                   ))}
