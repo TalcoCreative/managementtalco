@@ -37,6 +37,7 @@ const employeeItems: NavItem[] = [
   { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
+  { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
 ];
 
 // ── Reports & Letters ───────────────────────────────────
