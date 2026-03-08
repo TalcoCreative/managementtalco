@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Building2, ChevronDown, FileText, CreditCard, 
-  Package, Lock, FolderOpen, Activity, Calendar, Users, CheckCircle2, Share2
+  Lock, FolderOpen, Activity, CheckCircle2
 } from "lucide-react";
 import { ClientOverviewSection } from "@/components/clients/sections/ClientOverviewSection";
 import { ClientContractSection } from "@/components/clients/sections/ClientContractSection";
