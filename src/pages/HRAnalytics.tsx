@@ -500,7 +500,10 @@ export default function HRAnalytics() {
           </CardContent>
         </Card>
 
-        {/* KPI Summary Cards */}
+        {/* KPI Summary Cards — Colorful */}
+        <div className="section-divider">
+          <span className="divider-label">Key Metrics</span>
+        </div>
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
