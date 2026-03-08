@@ -729,9 +729,19 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
 
             {/* Preview Tab */}
             <TabsContent value="preview" className="px-1">
-              <div className="border rounded-lg p-4 bg-white">
-              <div className="max-w-md mx-auto space-y-4">
-                  {/* Header Preview - scaled to match PDF proportions */}
+              <div className="border rounded-lg p-4 bg-white relative overflow-hidden">
+                {/* Stamp watermark overlay */}
+                {settings.pdf_show_stamp && settings.company_stamp && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <img 
+                      src={settings.company_stamp} 
+                      alt="Stamp" 
+                      className="w-40 h-40 object-contain opacity-[0.08]"
+                    />
+                  </div>
+                )}
+                <div className="max-w-md mx-auto space-y-4 relative z-0">
+                  {/* Header Preview */}
                   <div className="flex items-start gap-3">
                     {settings.company_logo ? (
                       <img 
@@ -739,8 +749,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                         alt="Logo" 
                         className="object-contain flex-shrink-0"
                         style={{ 
-                          width: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
-                          height: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
+                          maxWidth: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
+                          maxHeight: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
                         }}
                       />
                     ) : (
@@ -764,8 +774,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                       >
                         {settings.pdf_company_name}
                       </h2>
-                      <p className="text-gray-500 text-sm">{settings.pdf_company_tagline}</p>
-                      <p className="text-gray-500 text-xs">{settings.pdf_company_address}</p>
+                      <p className="text-muted-foreground text-sm">{settings.pdf_company_tagline}</p>
+                      <p className="text-muted-foreground text-xs">{settings.pdf_company_address}</p>
                     </div>
                   </div>
 
@@ -775,11 +785,11 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   />
 
                   <h3 className="text-center font-bold">{settings.pdf_document_title}</h3>
-                  <p className="text-center text-sm text-gray-500">Periode: Januari 2025</p>
+                  <p className="text-center text-sm text-muted-foreground">Periode: Januari 2025</p>
 
-                  <div className="bg-gray-50 rounded p-3 text-sm">
-                    <p><span className="text-gray-500">Nama Karyawan:</span> <strong>John Doe</strong></p>
-                    <p><span className="text-gray-500">Jabatan:</span> <strong>Developer</strong></p>
+                  <div className="bg-muted/50 rounded p-3 text-sm">
+                    <p><span className="text-muted-foreground">Nama Karyawan:</span> <strong>John Doe</strong></p>
+                    <p><span className="text-muted-foreground">Jabatan:</span> <strong>Developer</strong></p>
                   </div>
 
                   <div className="text-sm">
@@ -809,7 +819,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   </div>
 
                   {settings.pdf_show_terbilang && (
-                    <p className="text-xs italic text-gray-500">
+                    <p className="text-xs italic text-muted-foreground">
                       Terbilang: Enam Juta Rupiah
                     </p>
                   )}
@@ -824,18 +834,18 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                           <div className="h-12 my-2" />
                         )}
                         <p className="font-bold underline">{settings.hr_name}</p>
-                        <p className="text-xs text-gray-500">{settings.pdf_giver_role}</p>
+                        <p className="text-xs text-muted-foreground">{settings.pdf_giver_role}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium">{settings.pdf_receiver_label}</p>
                         <div className="h-12 my-2" />
                         <p className="font-bold underline">John Doe</p>
-                        <p className="text-xs text-gray-500">{settings.pdf_receiver_role}</p>
+                        <p className="text-xs text-muted-foreground">{settings.pdf_receiver_role}</p>
                       </div>
                     </div>
                   )}
 
-                  <p className="text-center text-xs text-gray-400 pt-4">
+                  <p className="text-center text-xs text-muted-foreground/60 pt-4">
                     {settings.pdf_footer_text}
                   </p>
                 </div>
