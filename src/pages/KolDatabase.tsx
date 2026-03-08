@@ -221,8 +221,6 @@ export default function KolDatabase() {
               <p className="section-subtitle">Manage your Key Opinion Leaders database</p>
             </div>
           </div>
-            </p>
-          </div>
           <div className="flex gap-2">
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

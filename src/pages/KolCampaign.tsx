@@ -185,8 +185,6 @@ export default function KolCampaign() {
               <p className="section-subtitle">Track and manage KOL campaigns and activations</p>
             </div>
           </div>
-            </p>
-          </div>
           <div className="flex gap-2">
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
