@@ -6,6 +6,7 @@ import {
   Users, FileText, ArrowRight, AlertCircle, Video,
 } from "lucide-react";
 import { PublicClientSchedule } from "@/components/public-hub/PublicClientSchedule";
+import { HubBottomNav } from "@/components/public-hub/HubBottomNav";
 
 interface ScheduleItem {
   id: string;
