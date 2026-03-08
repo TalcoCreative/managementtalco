@@ -1,10 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  Building2, LayoutDashboard, BarChart3, Camera, 
-  Users, FileText, ArrowRight, AlertCircle, Video 
+import { Badge } from "@/components/ui/badge";
+import {
+  Building2, LayoutDashboard, BarChart3, Camera,
+  Users, FileText, ArrowRight, AlertCircle, Video,
 } from "lucide-react";
 import { PublicClientSchedule } from "@/components/public-hub/PublicClientSchedule";
 
@@ -35,6 +34,7 @@ interface ClientHubData {
     company: string | null;
     dashboard_slug: string;
     social_media_slug: string | null;
+    client_logo: string | null;
   };
   hasProjects: boolean;
   hasReports: boolean;
@@ -77,10 +77,12 @@ export default function PublicClientHub() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-[100dvh] hub-gradient flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Building2 className="h-6 w-6 text-primary" />
+          </div>
+          <p className="text-muted-foreground text-sm">Memuat...</p>
         </div>
       </div>
     );
@@ -88,11 +90,13 @@ export default function PublicClientHub() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Client Tidak Ditemukan</h1>
-          <p className="text-muted-foreground">Link tidak valid atau client sudah tidak aktif.</p>
+      <div className="min-h-[100dvh] hub-gradient flex items-center justify-center px-4">
+        <div className="text-center hub-card p-8 rounded-3xl max-w-sm w-full">
+          <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-7 w-7 text-destructive" />
+          </div>
+          <h1 className="text-xl font-bold mb-2">Client Tidak Ditemukan</h1>
+          <p className="text-sm text-muted-foreground">Link tidak valid atau client sudah tidak aktif.</p>
         </div>
       </div>
     );
@@ -105,7 +109,7 @@ export default function PublicClientHub() {
       title: "Dashboard",
       description: "Overview project & progress",
       icon: LayoutDashboard,
-      color: "bg-blue-500",
+      gradient: "from-[hsl(222,72%,52%)] to-[hsl(222,60%,62%)]",
       onClick: () => navigate(`/dashboard/${client.dashboard_slug}`),
       enabled: hasProjects && !!client.dashboard_slug,
     },
@@ -113,7 +117,7 @@ export default function PublicClientHub() {
       title: "Reports",
       description: "Analytics & performa",
       icon: BarChart3,
-      color: "bg-green-500",
+      gradient: "from-[hsl(152,48%,46%)] to-[hsl(152,48%,56%)]",
       onClick: () => navigate(`/reports/${client.dashboard_slug}`),
       enabled: hasReports && !!client.dashboard_slug,
     },
@@ -121,7 +125,7 @@ export default function PublicClientHub() {
       title: "Social Media",
       description: "Konten & jadwal",
       icon: Camera,
-      color: "bg-orange-500",
+      gradient: "from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)]",
       onClick: () => navigate(`/social-media/client/${client.social_media_slug}`),
       enabled: hasSocialMedia,
     },
@@ -129,7 +133,7 @@ export default function PublicClientHub() {
       title: "Editorial Plan",
       description: "Perencanaan konten",
       icon: FileText,
-      color: "bg-purple-500",
+      gradient: "from-[hsl(270,60%,55%)] to-[hsl(280,50%,65%)]",
       onClick: () => navigate(`/ep-list/${client.dashboard_slug}`),
       enabled: hasEditorialPlans,
     },
@@ -137,7 +141,7 @@ export default function PublicClientHub() {
       title: "Meeting",
       description: "Jadwal meeting",
       icon: Users,
-      color: "bg-indigo-500",
+      gradient: "from-[hsl(240,60%,58%)] to-[hsl(250,50%,68%)]",
       onClick: () => navigate(`/meeting-list/${client.dashboard_slug}`),
       enabled: hasMeetings,
     },
@@ -145,7 +149,7 @@ export default function PublicClientHub() {
       title: "Shooting",
       description: "Jadwal shooting",
       icon: Video,
-      color: "bg-pink-500",
+      gradient: "from-[hsl(330,60%,55%)] to-[hsl(340,50%,65%)]",
       onClick: () => navigate(`/shooting-list/${client.dashboard_slug}`),
       enabled: hasShootings,
     },
@@ -154,46 +158,63 @@ export default function PublicClientHub() {
   const availableCards = navigationCards.filter(card => card.enabled);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="rounded-xl bg-primary p-2.5 sm:p-3">
-              <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
+    <div className="min-h-[100dvh] hub-gradient">
+      {/* Hero Header */}
+      <header className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4" />
+        <div className="relative container mx-auto px-4 pt-8 pb-6 sm:pt-12 sm:pb-8">
+          <div className="flex flex-col items-center text-center gap-4">
+            {/* Client Logo or Fallback */}
+            <div className="hub-logo-container w-20 h-20 sm:w-24 sm:h-24 rounded-3xl flex items-center justify-center overflow-hidden">
+              {client.client_logo ? (
+                <img
+                  src={client.client_logo}
+                  alt={`${client.name} logo`}
+                  className="w-full h-full object-contain p-2"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                  <span className="text-3xl sm:text-4xl font-bold text-primary-foreground">
+                    {client.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold truncate">{client.name}</h1>
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{client.name}</h1>
               {client.company && (
-                <p className="text-sm text-muted-foreground truncate">{client.company}</p>
+                <p className="text-sm sm:text-base text-muted-foreground">{client.company}</p>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="container mx-auto px-4 pb-8 space-y-6 sm:space-y-8">
         {/* Quick Access Cards */}
         {availableCards.length > 0 && (
-          <div>
-            <h2 className="text-base sm:text-lg font-semibold mb-3">Akses Cepat</h2>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 sm:gap-3">
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+              Akses Cepat
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
               {availableCards.map((card) => (
-                <Card
+                <button
                   key={card.title}
-                  className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 group"
                   onClick={card.onClick}
+                  className="hub-card group p-4 sm:p-5 rounded-2xl text-left transition-all duration-200 hover:-translate-y-1 active:scale-[0.97]"
                 >
-                  <CardContent className="p-3 sm:p-4">
-                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${card.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform`}>
-                      <card.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                    <p className="font-medium text-sm">{card.title}</p>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 hidden sm:block">
-                      {card.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200 shadow-lg`}>
+                    <card.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  </div>
+                  <p className="font-semibold text-sm">{card.title}</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 leading-relaxed hidden sm:block">
+                    {card.description}
+                  </p>
+                  <div className="flex items-center gap-1 mt-2 text-primary text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Buka <ArrowRight className="h-3 w-3" />
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -206,24 +227,26 @@ export default function PublicClientHub() {
           clientSlug={client.dashboard_slug}
         />
 
-        {/* Empty state when nothing */}
+        {/* Empty state */}
         {availableCards.length === 0 && (!schedule || schedule.length === 0) && (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-lg font-medium text-muted-foreground">
-                Belum ada modul yang tersedia
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Hubungi tim untuk mengaktifkan akses
-              </p>
-            </CardContent>
-          </Card>
+          <div className="hub-card rounded-2xl border border-dashed border-border/50 p-8 sm:p-12 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="h-7 w-7 text-muted-foreground/50" />
+            </div>
+            <p className="text-base font-medium text-muted-foreground">
+              Belum ada modul yang tersedia
+            </p>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              Hubungi tim untuk mengaktifkan akses
+            </p>
+          </div>
         )}
 
         {/* Footer */}
-        <div className="pt-6 text-center text-xs text-muted-foreground">
-          <p>Powered by Talco Management System</p>
+        <div className="pt-4 pb-2 text-center">
+          <p className="text-[11px] text-muted-foreground/50 font-medium tracking-wide">
+            Powered by Talco Management System
+          </p>
         </div>
       </main>
     </div>

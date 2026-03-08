@@ -161,6 +161,7 @@ Deno.serve(async (req) => {
         company: client.company,
         dashboard_slug: client.dashboard_slug,
         social_media_slug: client.social_media_slug,
+        client_logo: client.client_logo,
       },
       hasProjects: (projectCount || 0) > 0,
       hasReports: (platformCount || 0) > 0,
