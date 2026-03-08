@@ -259,6 +259,7 @@ export default function Letters() {
                     <TableRow>
                       <TableHead>Nomor Surat</TableHead>
                       <TableHead>Entitas</TableHead>
+                      <TableHead>Kategori</TableHead>
                       <TableHead>Penerima</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Tanggal</TableHead>
