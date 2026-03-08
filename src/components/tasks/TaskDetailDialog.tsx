@@ -42,7 +42,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   const [editDescription, setEditDescription] = useState("");
   const [editAssignees, setEditAssignees] = useState<string[]>([]);
   const [editDeadline, setEditDeadline] = useState<string>("");
-  const [editTableData, setEditTableData] = useState<TableData | null>(null);
+  const [editBriefData, setEditBriefData] = useState<BriefData | null>(null);
   const [saving, setSaving] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
