@@ -127,11 +127,11 @@ export default function Clients() {
       const { error } = await supabase.from("clients").delete().eq("id", deleteClient.id);
       if (error) throw error;
 
-      toast.success("Client dihapus");
+      toast.success("Client deleted");
       setDeleteClient(null);
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus client");
+      toast.error(error.message || "Failed to delete client");
     } finally {
       setDeleting(false);
     }
