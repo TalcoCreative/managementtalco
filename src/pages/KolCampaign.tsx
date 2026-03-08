@@ -26,8 +26,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateCampaignDialog } from "@/components/kol/CreateCampaignDialog";
 import { CampaignDetailDialog } from "@/components/kol/CampaignDetailDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { KOL_CAMPAIGN_COLUMNS } from "@/lib/excel-utils";
 
 const statusColors: Record<string, string> = {
   contacted: "bg-gray-500",
