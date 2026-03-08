@@ -58,8 +58,14 @@ export default function Finance() {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Finance Center</h1>
+        <div className="section-header" style={{ '--section-color': 'var(--section-finance)' } as React.CSSProperties}>
+          <div className="section-icon">
+            <ArrowUpCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="section-title">Finance Center</h1>
+            <p className="section-subtitle">Kelola keuangan perusahaan</p>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

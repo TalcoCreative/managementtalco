@@ -276,7 +276,15 @@ export default function Tasks() {
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h1 className="text-2xl sm:text-3xl font-bold">Tasks</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-tasks)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <CheckSquare className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Tasks</h1>
+              <p className="section-subtitle">Kelola semua tugas tim</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
