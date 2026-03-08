@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Phone, Mail, Building2, MapPin, ArrowUpDown, History, Flame, Snowflake, Thermometer } from "lucide-react";
+import { Plus, Search, Phone, Mail, Building2, MapPin, ArrowUpDown, History, Flame, Snowflake, Thermometer, Target } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";

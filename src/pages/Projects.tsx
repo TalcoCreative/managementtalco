@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff, Pencil, Archive, Filter } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff, Pencil, Archive, Filter, FolderKanban } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";

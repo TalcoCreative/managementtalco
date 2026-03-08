@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, MapPin, Check, X } from "lucide-react";
+import { Plus, Search, Eye, MapPin, Check, X, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateCampaignDialog } from "@/components/kol/CreateCampaignDialog";

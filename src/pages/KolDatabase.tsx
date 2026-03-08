@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Instagram, ExternalLink } from "lucide-react";
+import { Plus, Search, Edit, Instagram, ExternalLink, Users } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
