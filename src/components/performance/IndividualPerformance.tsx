@@ -85,7 +85,7 @@ export function IndividualPerformance({
       const userProjects = projects.filter(p => 
         (p.assigned_to === profile.id || p.created_by === profile.id) && filterByMonth(p.created_at)
       );
-      const completedProjects = userProjects.filter(p => p.status === 'completed').length;
+      const completedProjects = userProjects.filter(p => p.status === 'completed' || p.status === 'done').length;
 
       const userShootings = shootings.filter(s => 
         (s.director === profile.id || s.runner === profile.id || s.requested_by === profile.id) && 
