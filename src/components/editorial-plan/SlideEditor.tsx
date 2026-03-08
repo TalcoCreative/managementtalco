@@ -379,6 +379,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
                   <SelectContent>
                     <SelectItem value="proposed">Proposed</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="revise">Revise</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
                   </SelectContent>
                 </Select>

@@ -38,6 +38,7 @@ interface EPCalendarViewProps {
 const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   proposed: { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-200", dot: "bg-amber-500" },
   approved: { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-800 dark:text-emerald-200", dot: "bg-emerald-500" },
+  revise: { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-200", dot: "bg-orange-500" },
   published: { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-800 dark:text-blue-200", dot: "bg-blue-500" },
 };
 
