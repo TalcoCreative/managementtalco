@@ -242,10 +242,8 @@ export function MobileBottomNav() {
                           </div>
                           <span
                             className={cn(
-                              "text-[10px] font-medium leading-tight text-center",
-                              isActive
-                                ? "text-primary"
-                                : "text-foreground/80"
+                              "text-[10px] font-medium leading-tight text-center text-foreground",
+                              isActive && "text-primary"
                             )}
                           >
                             {item.title}
