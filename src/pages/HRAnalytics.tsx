@@ -352,10 +352,15 @@ export default function HRAnalytics() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">HR Analytics Overview</h1>
-          <p className="text-muted-foreground">Gambaran besar performa SDM berdasarkan jam kerja, aktivitas, dan konsistensi</p>
+        {/* Header — Immersive section */}
+        <div className="section-header" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
+          <div className="section-icon">
+            <Activity className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="section-title">HR Analytics Overview</h1>
+            <p className="section-subtitle">Gambaran besar performa SDM berdasarkan jam kerja, aktivitas, dan konsistensi</p>
+          </div>
         </div>
 
         {/* Global Filters */}
