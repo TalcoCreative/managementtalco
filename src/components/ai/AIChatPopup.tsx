@@ -190,10 +190,20 @@ export function AIChatPopup() {
     );
   }
 
+  const pos = position ?? getDefaultPos();
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden md:bottom-8 md:right-8">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20">
+    <div
+      className="fixed z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
+      style={{ left: pos.x, top: pos.y }}
+    >
+      {/* Draggable Header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20 cursor-grab active:cursor-grabbing select-none touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
             <Bot className="h-5 w-5 text-white" />
