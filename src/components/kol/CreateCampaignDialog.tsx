@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
