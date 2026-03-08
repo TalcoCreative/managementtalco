@@ -63,7 +63,8 @@ export function HRProductivityRanking({
       const tasksCompleted = userTasks.filter(t => 
         t.status === 'done' || t.status === 'completed'
       ).length;
-      const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length;
+      const userPublished = publishedSlides.filter(s => s.created_by === profile.id).length;
+      const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length + userPublished;
 
       // Overdue count
       const overdueCount = userTasks.filter(t => {
