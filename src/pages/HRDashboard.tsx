@@ -129,15 +129,16 @@ export default function HRDashboard() {
     },
   });
 
-  // Fetch all users with their attendance
+  // Fetch all users with their attendance (filtered by period)
   const { data: attendance } = useQuery({
-    queryKey: ["hr-attendance"],
+    queryKey: ["hr-attendance", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendance")
         .select("*, profiles(full_name)")
-        .order("date", { ascending: false })
-        .limit(50);
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
@@ -451,7 +452,7 @@ export default function HRDashboard() {
       }
     }
     
-    queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+    queryClient.invalidateQueries({ queryKey: ["hr-attendance", startDate, endDate] });
   };
 
   const handleAutoClockout = async () => {
@@ -467,7 +468,7 @@ export default function HRDashboard() {
         const count = data.results?.length || 0;
         if (count > 0) {
           toast.success(`Berhasil auto clock-out ${count} attendance yang lupa clock-out!`);
-          queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+          queryClient.invalidateQueries({ queryKey: ["hr-attendance", startDate, endDate] });
         } else {
           toast.info("Tidak ada attendance yang perlu di-auto clock-out");
         }
@@ -1013,7 +1014,7 @@ export default function HRDashboard() {
             <Card>
               <CardHeader className="flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between">
-                  <CardTitle>Recent Attendance</CardTitle>
+                  <CardTitle>Attendance ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})</CardTitle>
                   <Button 
                     variant="outline" 
                     size="sm"
