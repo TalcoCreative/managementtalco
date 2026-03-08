@@ -462,7 +462,7 @@ export default function EmployeeInsight() {
           {/* Attendance Tab */}
           <TabsContent value="attendance" className="space-y-6">
             {/* Attendance KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Total Jam Kerja</CardTitle>
