@@ -23,8 +23,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Loader2, FileText, History, ExternalLink, Copy, Lock, FileDown } from "lucide-react";
+import { Loader2, FileText, History, ExternalLink, Copy, Lock, FileDown, Trash2 } from "lucide-react";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const STATUSES = [
   { value: "draft", label: "Draft" },
@@ -52,6 +53,7 @@ export function LetterDetailDialog({
   const [documentUrl, setDocumentUrl] = useState(letter.document_url || "");
   const [notes, setNotes] = useState(letter.notes || "");
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: companySettings } = useQuery({
     queryKey: ["company-settings-letter-detail"],
@@ -197,6 +199,23 @@ export function LetterDetailDialog({
     },
     onError: (error: any) => {
       toast.error(error.message || "Gagal memperbarui surat");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      // Delete activity logs first
+      await supabase.from("letter_activity_logs").delete().eq("letter_id", letter.id);
+      const { error } = await supabase.from("letters").delete().eq("id", letter.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Surat berhasil dihapus!");
+      onOpenChange(false);
+      onUpdate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Gagal menghapus surat");
     },
   });
 
@@ -404,7 +423,15 @@ export function LetterDetailDialog({
                   />
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Hapus Surat
+                  </Button>
                   <Button
                     onClick={() => updateMutation.mutate()}
                     disabled={updateMutation.isPending}
@@ -463,6 +490,26 @@ export function LetterDetailDialog({
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Surat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus surat <strong>{letter.letter_number}</strong>? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
