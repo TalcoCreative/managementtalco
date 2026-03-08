@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Home, LayoutDashboard, BarChart3, Camera, FileText,
-  Users, Video, Menu,
+  Users, Video, Menu, ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
