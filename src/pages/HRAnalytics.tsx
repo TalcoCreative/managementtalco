@@ -313,6 +313,13 @@ export default function HRAnalytics() {
         : autoClockoutCount > 0 ? 100 : 0)
       : null;
 
+    // Late stats
+    const lateCount = filteredAttendance.filter(a => a.late_status === 'Late').length;
+    const compareLateCount = filteredCompareAttendance.filter(a => a.late_status === 'Late').length;
+    const lateChange = hasComparison && compareLateCount > 0
+      ? Math.round((lateCount - compareLateCount) / compareLateCount * 100)
+      : hasComparison ? (lateCount > 0 ? 100 : 0) : null;
+
     return {
       totalEmployees,
       totalWorkHours,
@@ -327,6 +334,8 @@ export default function HRAnalytics() {
       avgProductivity,
       workHoursChange,
       autoClockoutChange,
+      lateCount,
+      lateChange,
     };
   }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth]);
 

@@ -283,6 +283,18 @@ export default function EmployeeInsight() {
       ? Math.round((daysPresent - compareDaysPresent) / compareDaysPresent * 100)
       : 0;
 
+    // Late stats
+    const lateCount = attendance?.filter(a => a.late_status === 'Late').length || 0;
+    const lateTotalMinutes = attendance?.filter(a => a.late_status === 'Late' && a.clock_in).reduce((sum, a) => {
+      // We need the threshold to calculate late minutes - approximate from clock_in
+      // For now, calculate based on late_status records
+      return sum;
+    }, 0) || 0;
+
+    // Calculate total late minutes by comparing clock_in with threshold
+    // We'll fetch the threshold separately - for now compute from the data
+    const lateRecords = attendance?.filter(a => a.late_status === 'Late' && a.clock_in) || [];
+
     return {
       totalHours,
       daysPresent,
@@ -292,6 +304,8 @@ export default function EmployeeInsight() {
       totalBreakMinutes,
       hoursChange,
       daysChange,
+      lateCount,
+      lateRecords,
     };
   }, [attendance, compareAttendance]);
 
