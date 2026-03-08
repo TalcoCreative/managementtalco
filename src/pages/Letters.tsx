@@ -123,6 +123,16 @@ export default function Letters() {
     enabled: hasAccess,
   });
 
+  const { data: companySettings } = useQuery({
+    queryKey: ["company-settings-letters"],
+    queryFn: async () => {
+      const { data } = await supabase.from("company_settings").select("*");
+      const map: Record<string, string | null> = {};
+      data?.forEach((s: any) => { map[s.setting_key] = s.setting_value; });
+      return map;
+    },
+  });
+
   const filteredLetters = letters?.filter(letter => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -132,6 +142,70 @@ export default function Letters() {
       letter.recipient_company?.toLowerCase().includes(query)
     );
   });
+
+  const handleDownloadSlipPDF = async (letter: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!letter.employee_id) {
+      toast.error("Data karyawan tidak ditemukan untuk surat ini");
+      return;
+    }
+    setDownloadingPDF(letter.id);
+    try {
+      // Fetch employee payroll data
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, gaji_pokok, tj_transport, tj_internet, tj_kpi, salary")
+        .eq("id", letter.employee_id)
+        .single();
+
+      // Fetch payroll entry for that month
+      const monthStart = `${letter.year}-${String(letter.month).padStart(2, "0")}-01`;
+      const nextMonth = letter.month === 12 ? `${letter.year + 1}-01-01` : `${letter.year}-${String(letter.month + 1).padStart(2, "0")}-01`;
+      
+      const { data: payrollData } = await supabase
+        .from("payroll")
+        .select("*")
+        .eq("employee_id", letter.employee_id)
+        .gte("month", monthStart)
+        .lt("month", nextMonth)
+        .maybeSingle();
+
+      // Get employee role
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", letter.employee_id);
+      const jabatan = roleData?.map(r => r.role.replace(/_/g, " ")).join(", ") || "-";
+
+      const periode = format(new Date(monthStart), "MMMM yyyy", { locale: idLocale });
+
+      await generatePayrollPDF(
+        {
+          employeeName: profile?.full_name || letter.recipient_name,
+          jabatan,
+          periode,
+          gajiPokok: Number(profile?.gaji_pokok) || 0,
+          tjTransport: Number(profile?.tj_transport) || 0,
+          tjInternet: Number(profile?.tj_internet) || 0,
+          tjKpi: Number(profile?.tj_kpi) || 0,
+          reimburse: Number(payrollData?.reimburse) || 0,
+          bonus: Number(payrollData?.bonus) || 0,
+          potonganTerlambat: Number(payrollData?.potongan_terlambat) || 0,
+          potonganKasbon: Number(payrollData?.potongan_kasbon) || 0,
+          adjustmentLainnya: Number(payrollData?.adjustment_lainnya) || 0,
+          totalGaji: Number(payrollData?.amount) || Number(profile?.salary) || 0,
+          payDate: payrollData?.pay_date || format(new Date(), "yyyy-MM-dd"),
+          letterNumber: letter.letter_number,
+        },
+        companySettings || {}
+      );
+      toast.success("PDF slip gaji berhasil di-download");
+    } catch (error: any) {
+      toast.error(error.message || "Gagal generate PDF");
+    } finally {
+      setDownloadingPDF(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusInfo = STATUSES.find(s => s.value === status);
