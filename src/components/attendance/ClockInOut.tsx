@@ -276,19 +276,42 @@ export function ClockInOut() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      const now = new Date().toISOString();
+      const now = new Date();
+      const nowIso = now.toISOString();
+
+      // Fetch late threshold setting
+      let lateStatus = "On Time";
+      try {
+        const { data: thresholdSetting } = await supabase
+          .from("company_settings")
+          .select("setting_value")
+          .eq("setting_key", "late_threshold_time")
+          .maybeSingle();
+        
+        if (thresholdSetting?.setting_value) {
+          const [threshHour, threshMin] = thresholdSetting.setting_value.split(":").map(Number);
+          const clockInHour = now.getHours();
+          const clockInMin = now.getMinutes();
+          if (clockInHour > threshHour || (clockInHour === threshHour && clockInMin > threshMin)) {
+            lateStatus = "Late";
+          }
+        }
+      } catch (e) {
+        console.error("Failed to check late threshold:", e);
+      }
 
       const { error } = await supabase.from("attendance").insert({
         user_id: session.session.user.id,
         date: today,
-        clock_in: now,
+        clock_in: nowIso,
         photo_clock_in: photoClockIn,
         notes: notes.trim() || null,
-      });
+        late_status: lateStatus,
+      } as any);
 
       if (error) throw error;
 
-      toast.success("Clock in berhasil!");
+      toast.success(`Clock in berhasil! (${lateStatus})`);
       setNotes("");
       setPhotoClockIn(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });

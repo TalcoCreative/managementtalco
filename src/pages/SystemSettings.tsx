@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Settings } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Settings, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AI_MODELS = [
