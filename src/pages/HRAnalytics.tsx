@@ -585,37 +585,33 @@ export default function HRAnalytics() {
             )}
           </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
-              <Clock className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{kpis.lateCount}x</div>
-              {kpis.lateChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.lateChange <= 0 ? (
-                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.lateChange}%</span></>
-                  ) : (
-                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.lateChange}%</span></>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Total keterlambatan</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': '0 62% 54%' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Terlambat</span>
+              <div className="kpi-icon w-8 h-8"><Clock className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.lateCount}x</div>
+            {kpis.lateChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.lateChange <= 0 ? (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">{kpis.lateChange}%</span></>
+                ) : (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">+{kpis.lateChange}%</span></>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Total keterlambatan</p>
+            )}
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Produktivitas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.avgProductivity}</div>
-              <p className="text-xs text-muted-foreground">Aktivitas/orang</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-finance)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Produktivitas</span>
+              <div className="kpi-icon w-8 h-8"><TrendingUp className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.avgProductivity}</div>
+            <p className="text-xs text-muted-foreground">Aktivitas/orang</p>
+          </div>
         </div>
 
         {/* Charts Section */}
