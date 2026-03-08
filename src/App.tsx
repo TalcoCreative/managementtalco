@@ -67,6 +67,7 @@ import HubLayout from "./components/public-hub/HubLayout";
 import PublishedContent from "./pages/PublishedContent";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
+import PublicMarketplace from "./pages/PublicMarketplace";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -159,6 +160,9 @@ const App = () => (
           </Route>
           <Route path="/shooting-list/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicShootingList />} />
+          </Route>
+          <Route path="/marketplace/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicMarketplace />} />
           </Route>
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />

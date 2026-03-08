@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Home, LayoutDashboard, BarChart3, Camera, FileText,
-  Users, Video, Menu,
+  Users, Video, Menu, ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -28,6 +28,7 @@ interface HubBottomNavProps {
     hasEditorialPlans: boolean;
     hasMeetings: boolean;
     hasShootings: boolean;
+    hasMarketplace?: boolean;
   };
 }
 
@@ -90,6 +91,14 @@ export function HubBottomNav({
       pathPrefix: "/shooting-list/",
       getPath: () => `/shooting-list/${dashboardSlug}`,
       enabled: availableFeatures.hasShootings && !!dashboardSlug,
+    },
+    {
+      title: "Marketplace",
+      icon: ShoppingBag,
+      gradient: "from-[hsl(152,48%,46%)] to-[hsl(140,60%,45%)]",
+      pathPrefix: "/marketplace/",
+      getPath: () => `/marketplace/${dashboardSlug}`,
+      enabled: !!availableFeatures.hasMarketplace && !!dashboardSlug,
     },
   ];
 

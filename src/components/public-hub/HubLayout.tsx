@@ -44,7 +44,21 @@ export default function HubLayout() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Determine which features exist (simplified — show all nav items, let HubBottomNav handle it)
+  // Check if marketplace data exists for this client
+  const { data: marketplaceCount } = useQuery({
+    queryKey: ["hub-layout-marketplace", client?.id],
+    queryFn: async () => {
+      if (!client?.id) return 0;
+      const { count } = await supabase
+        .from("marketplace_reports" as any)
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", client.id);
+      return count || 0;
+    },
+    enabled: !!client?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const hubSlug = client?.dashboard_slug || slug;
 
   return (
@@ -67,6 +81,7 @@ export default function HubLayout() {
             hasEditorialPlans: true,
             hasMeetings: true,
             hasShootings: true,
+            hasMarketplace: (marketplaceCount || 0) > 0,
           }}
         />
       )}
