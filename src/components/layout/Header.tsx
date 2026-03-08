@@ -84,16 +84,16 @@ export function Header() {
         {canManageAnnouncements && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" title="Pengumuman" className="h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" title="Announcements" className="h-9 w-9 rounded-xl">
                 <Megaphone className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="rounded-xl shadow-soft-lg border-border/30">
               <DropdownMenuItem onClick={() => setCreateAnnouncementOpen(true)}>
-                Buat Pengumuman
+                Create Announcement
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setManageAnnouncementsOpen(true)}>
-                Kelola Pengumuman
+                Manage Announcements
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
