@@ -14,8 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { DeletionNotifications } from "@/components/hr/DeletionNotifications";
 import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { ATTENDANCE_COLUMNS } from "@/lib/excel-utils";
 import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database, Cake, Image as ImageIcon } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -492,12 +490,6 @@ export default function HRDashboard() {
             <h1 className="text-3xl font-bold">HR Dashboard</h1>
             <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
           </div>
-          <ExcelActions
-            data={attendanceExportData}
-            columns={ATTENDANCE_COLUMNS}
-            filename="attendance"
-            onImport={handleImportAttendance}
-          />
         </div>
 
         {/* Date Range Filter */}

@@ -27,8 +27,6 @@ import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { CANDIDATE_COLUMNS } from "@/lib/excel-utils";
 import { usePositionOptions } from "@/hooks/usePositions";
 
 const STATUS_OPTIONS = [
@@ -216,12 +214,6 @@ export default function Recruitment() {
               <BarChart3 className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
-            <ExcelActions
-              data={exportData}
-              columns={CANDIDATE_COLUMNS}
-              filename="candidates"
-              onImport={handleImportCandidates}
-            />
             <Button onClick={() => setCreateDialogOpen(true)} className="flex-1 sm:flex-none h-12 sm:h-10">
               <Plus className="mr-2 h-4 w-4" />
               Tambah Kandidat

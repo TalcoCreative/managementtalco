@@ -11,8 +11,6 @@ import { DollarSign, Users, TrendingUp, Briefcase, Target, Receipt, AlertCircle 
 import { PerformanceOverview } from "@/components/performance/PerformanceOverview";
 import { TeamEffectiveness } from "@/components/performance/TeamEffectiveness";
 import { IndividualPerformance } from "@/components/performance/IndividualPerformance";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { PAYROLL_COLUMNS } from "@/lib/excel-utils";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -312,12 +310,6 @@ export default function Performance() {
             <p className="text-muted-foreground">Dashboard efektivitas biaya & kinerja tim</p>
           </div>
           <div className="flex gap-2 items-center">
-            <ExcelActions
-              data={payrollExportData}
-              columns={PAYROLL_COLUMNS}
-              filename="performance_payroll"
-              onImport={handleImportPayroll}
-            />
             <Badge variant="secondary" className="w-fit">Read-Only Dashboard</Badge>
           </div>
         </div>

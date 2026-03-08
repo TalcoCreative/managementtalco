@@ -21,8 +21,6 @@ import {
   getSubCategoryLabel,
   getSubCategories 
 } from "@/lib/finance-categories";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { EXPENSE_COLUMNS } from "@/lib/excel-utils";
 import { EditExpenseDialog } from "./EditExpenseDialog";
 
 export function FinanceExpenses() {
@@ -353,12 +351,6 @@ export function FinanceExpenses() {
           Expenses
         </CardTitle>
         <div className="flex gap-2">
-          <ExcelActions
-            data={exportData}
-            columns={EXPENSE_COLUMNS}
-            filename="expenses"
-            onImport={handleImportExpenses}
-          />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>

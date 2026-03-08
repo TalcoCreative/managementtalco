@@ -26,8 +26,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { KOL_COLUMNS } from "@/lib/excel-utils";
 
 const categoryColors: Record<string, string> = {
   nano: "bg-gray-500",
@@ -221,12 +219,6 @@ export default function KolDatabase() {
             </p>
           </div>
           <div className="flex gap-2">
-            <ExcelActions
-              data={exportData}
-              columns={KOL_COLUMNS}
-              filename="kol_database"
-              onImport={handleImportKol}
-            />
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Tambah KOL

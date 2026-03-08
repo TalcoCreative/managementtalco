@@ -14,8 +14,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
 import { ProspectDetailDialog } from "@/components/prospects/ProspectDetailDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { PROSPECT_COLUMNS } from "@/lib/excel-utils";
 
 const STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500" },
@@ -367,12 +365,6 @@ export default function Prospects() {
               <History className="h-4 w-4 mr-2" />
               History Log
             </Button>
-            <ExcelActions
-              data={exportData}
-              columns={PROSPECT_COLUMNS}
-              filename="prospects"
-              onImport={handleImportProspects}
-            />
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Prospect
