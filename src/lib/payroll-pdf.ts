@@ -447,6 +447,29 @@ export const generatePayrollPDF = async (
   doc.setTextColor(150, 150, 150);
   doc.text(settings.footerText, pageWidth / 2, yPos, { align: "center" });
 
+  // === COMPANY STAMP WATERMARK ===
+  if (settings.showStamp && settings.stampUrl) {
+    try {
+      const stampData = await loadImage(settings.stampUrl);
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const stampSize = 60; // mm
+      const ratio = stampData.naturalWidth / stampData.naturalHeight;
+      const stampW = ratio >= 1 ? stampSize : stampSize * ratio;
+      const stampH = ratio >= 1 ? stampSize / ratio : stampSize;
+      const stampX = (pageWidth - stampW) / 2;
+      const stampY = (pageHeight - stampH) / 2;
+      
+      // Add with low opacity for watermark effect
+      const gState = (doc as any).GState({ opacity: 0.08 });
+      doc.saveGraphicsState();
+      (doc as any).setGState(gState);
+      doc.addImage(stampData.dataUrl, "PNG", stampX, stampY, stampW, stampH);
+      doc.restoreGraphicsState();
+    } catch (error) {
+      console.log("Failed to load stamp:", error);
+    }
+  }
+
   // Save PDF
   const fileName = `SlipGaji_${payroll.employeeName.replace(/\s+/g, "_")}_${payroll.periode.replace(/\s+/g, "_")}.pdf`;
   doc.save(fileName);
