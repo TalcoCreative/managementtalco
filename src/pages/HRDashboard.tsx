@@ -452,7 +452,7 @@ export default function HRDashboard() {
       }
     }
     
-    queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+    queryClient.invalidateQueries({ queryKey: ["hr-attendance", startDate, endDate] });
   };
 
   const handleAutoClockout = async () => {
