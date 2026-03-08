@@ -543,21 +543,19 @@ export default function HRAnalytics() {
             <p className="text-xs text-muted-foreground">Per karyawan</p>
           </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Aktivitas</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalActivities}</div>
-              <div className="flex gap-1 flex-wrap text-xs text-muted-foreground">
-                <span>{kpis.taskCount} task</span>•
-                <span>{kpis.meetingCount} meet</span>•
-                <span>{kpis.shootingCount} shoot</span>•
-                <span>{kpis.eventCount} event</span>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Aktivitas</span>
+              <div className="kpi-icon w-8 h-8"><Activity className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalActivities}</div>
+            <div className="flex gap-1 flex-wrap text-xs text-muted-foreground">
+              <span>{kpis.taskCount} task</span>•
+              <span>{kpis.meetingCount} meet</span>•
+              <span>{kpis.shootingCount} shoot</span>•
+              <span>{kpis.eventCount} event</span>
+            </div>
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
