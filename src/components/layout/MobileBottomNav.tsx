@@ -10,7 +10,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const primaryTabs = [
@@ -207,14 +206,14 @@ export function MobileBottomNav() {
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl bg-background"
+          className="rounded-t-3xl pb-10 max-h-[85vh] border-0 shadow-soft-xl bg-background flex flex-col"
         >
-          <SheetHeader>
+          <SheetHeader className="shrink-0">
             <SheetTitle className="text-base font-semibold">
               All Modules
             </SheetTitle>
           </SheetHeader>
-          <ScrollArea className="mt-3 max-h-[65vh]">
+          <div className="mt-3 flex-1 overflow-y-auto overscroll-contain -mx-1 px-1">
             <div className="space-y-5 pr-2 pb-4">
               {visibleGroups.map((group) => (
                 <div key={group.label}>
@@ -262,7 +261,7 @@ export function MobileBottomNav() {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </SheetContent>
       </Sheet>
     </>
