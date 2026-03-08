@@ -246,11 +246,11 @@ export default function Projects() {
       const { error } = await supabase.from("projects").delete().eq("id", deleteProject.id);
       if (error) throw error;
 
-      toast.success("Project dihapus");
+      toast.success("Project deleted");
       setDeleteProject(null);
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus project");
+      toast.error(error.message || "Failed to delete project");
     } finally {
       setDeleting(false);
     }
