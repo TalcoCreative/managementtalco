@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DollarSign, Briefcase, CheckSquare, Video, Target, Calendar, ArrowUpDown } from "lucide-react";
+import { DollarSign, Briefcase, CheckSquare, Video, Target, Calendar, ArrowUpDown, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface IndividualPerformanceProps {
@@ -17,15 +17,18 @@ interface IndividualPerformanceProps {
   projects: any[];
   shootings: any[];
   prospects: any[];
+  meetings: any[];
   attendance: any[];
   leaveRequests: any[];
   selectedMonth: string;
   selectedEmployee: string | null;
   setSelectedEmployee: (id: string | null) => void;
   filterByMonth: (date: string | null) => boolean;
+  isUserAssignedToTask: (taskId: string, assignedTo: string | null, userId: string) => boolean;
+  isUserInMeeting: (meetingId: string, createdBy: string, userId: string) => boolean;
 }
 
-type SortField = 'name' | 'cost' | 'tasks' | 'projects' | 'efficiency';
+type SortField = 'name' | 'cost' | 'tasks' | 'projects' | 'meetings' | 'efficiency';
 type SortDirection = 'asc' | 'desc';
 
 export function IndividualPerformance({
@@ -37,12 +40,15 @@ export function IndividualPerformance({
   projects,
   shootings,
   prospects,
+  meetings,
   attendance,
   leaveRequests,
   selectedMonth,
   selectedEmployee,
   setSelectedEmployee,
   filterByMonth,
+  isUserAssignedToTask,
+  isUserInMeeting,
 }: IndividualPerformanceProps) {
   const [sortField, setSortField] = useState<SortField>('cost');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -69,13 +75,15 @@ export function IndividualPerformance({
       
       const totalCost = userPayroll + userReimburse;
 
+      // Tasks: use multi-assignee helper
       const userTasks = tasks.filter(t => 
-        t.assigned_to === profile.id && filterByMonth(t.created_at)
+        isUserAssignedToTask(t.id, t.assigned_to, profile.id) && filterByMonth(t.created_at)
       );
       const completedTasks = userTasks.filter(t => t.status === 'done').length;
 
+      // Projects: assigned_to OR created_by
       const userProjects = projects.filter(p => 
-        p.assigned_to === profile.id && filterByMonth(p.created_at)
+        (p.assigned_to === profile.id || p.created_by === profile.id) && filterByMonth(p.created_at)
       );
       const completedProjects = userProjects.filter(p => p.status === 'completed').length;
 
@@ -89,6 +97,11 @@ export function IndividualPerformance({
       );
       const wonProspects = userProspects.filter(p => p.status === 'closed-won').length;
 
+      // Meetings: created_by or participant
+      const userMeetings = meetings.filter(m =>
+        isUserInMeeting(m.id, m.created_by, profile.id) && filterByMonth(m.meeting_date)
+      ).length;
+
       const userAttendance = attendance.filter(a => 
         a.user_id === profile.id && filterByMonth(a.date)
       ).length;
@@ -99,7 +112,7 @@ export function IndividualPerformance({
 
       const roles = employeeRoles[profile.id] || [];
 
-      const totalOutput = userTasks.length + userProjects.length + userProspects.length;
+      const totalOutput = userTasks.length + userProjects.length + userProspects.length + userMeetings;
       const costPerTask = userTasks.length > 0 ? totalCost / userTasks.length : 0;
       const costPerProject = userProjects.length > 0 ? totalCost / userProjects.length : 0;
       const costPerProspect = userProspects.length > 0 ? totalCost / userProspects.length : 0;
@@ -120,6 +133,7 @@ export function IndividualPerformance({
         shootingCount: userShootings,
         prospectCount: userProspects.length,
         wonProspects,
+        meetingCount: userMeetings,
         attendanceCount: userAttendance,
         leaveCount: userLeaves,
         costPerTask,
@@ -129,7 +143,7 @@ export function IndividualPerformance({
         efficiency: totalOutput > 0 ? totalCost / totalOutput : Infinity,
       };
     });
-  }, [profiles, employeeRoles, payrollData, reimbursements, tasks, projects, shootings, prospects, attendance, leaveRequests, filterByMonth]);
+  }, [profiles, employeeRoles, payrollData, reimbursements, tasks, projects, shootings, prospects, meetings, attendance, leaveRequests, filterByMonth, isUserAssignedToTask, isUserInMeeting]);
 
   // Sort metrics
   const sortedMetrics = useMemo(() => {
@@ -147,6 +161,9 @@ export function IndividualPerformance({
           break;
         case 'projects':
           comparison = a.projectCount - b.projectCount;
+          break;
+        case 'meetings':
+          comparison = a.meetingCount - b.meetingCount;
           break;
         case 'efficiency':
           comparison = (a.efficiency === Infinity ? 999999999 : a.efficiency) - 
@@ -199,6 +216,7 @@ export function IndividualPerformance({
                   <TableHead className="text-right"><SortButton field="tasks">Tasks</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="projects">Projects</SortButton></TableHead>
                   <TableHead className="text-right">Prospects</TableHead>
+                  <TableHead className="text-right"><SortButton field="meetings">Meetings</SortButton></TableHead>
                   <TableHead className="text-right"><SortButton field="efficiency">Cost/Output</SortButton></TableHead>
                   <TableHead className="text-center">Detail</TableHead>
                 </TableRow>
@@ -238,6 +256,9 @@ export function IndividualPerformance({
                       <TableCell className="text-right">
                         {metric.wonProspects}/{metric.prospectCount}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {metric.meetingCount}
+                      </TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {metric.efficiency !== Infinity ? formatCurrency(metric.efficiency) : '-'}
                       </TableCell>
@@ -254,7 +275,7 @@ export function IndividualPerformance({
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Tidak ada data karyawan
                     </TableCell>
                   </TableRow>
@@ -322,7 +343,7 @@ export function IndividualPerformance({
                   <h4 className="font-semibold mb-3 flex items-center gap-2">
                     <CheckSquare className="h-4 w-4" /> Aktivitas
                   </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     <div className="p-3 rounded-lg border">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
                         <CheckSquare className="h-4 w-4" />
@@ -350,6 +371,13 @@ export function IndividualPerformance({
                         <span className="text-sm">Prospects</span>
                       </div>
                       <p className="text-xl font-bold">{selectedMetric.wonProspects}/{selectedMetric.prospectCount}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm">Meetings</span>
+                      </div>
+                      <p className="text-xl font-bold">{selectedMetric.meetingCount}</p>
                     </div>
                   </div>
                 </div>
