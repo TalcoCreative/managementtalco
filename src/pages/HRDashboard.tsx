@@ -468,7 +468,7 @@ export default function HRDashboard() {
         const count = data.results?.length || 0;
         if (count > 0) {
           toast.success(`Berhasil auto clock-out ${count} attendance yang lupa clock-out!`);
-          queryClient.invalidateQueries({ queryKey: ["hr-attendance"] });
+          queryClient.invalidateQueries({ queryKey: ["hr-attendance", startDate, endDate] });
         } else {
           toast.info("Tidak ada attendance yang perlu di-auto clock-out");
         }
