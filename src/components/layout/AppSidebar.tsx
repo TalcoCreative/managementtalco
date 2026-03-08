@@ -95,6 +95,7 @@ const executiveItems: NavItem[] = [
 
 // ── System ──────────────────────────────────────────────
 const systemItems: NavItem[] = [
+  { title: "Profile Settings", url: "/profile-settings", icon: User, featureKey: "profile_settings" },
   { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
   { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
