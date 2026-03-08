@@ -328,7 +328,7 @@ export default function EmployeeInsight() {
       totalLateMinutes,
       totalLateHours,
     };
-  }, [attendance, compareAttendance]);
+  }, [attendance, compareAttendance, lateThreshold]);
 
   // Calculate activity KPIs
   const activityKpis = useMemo(() => {
