@@ -15,12 +15,10 @@ import {
 import { ClientOverviewSection } from "@/components/clients/sections/ClientOverviewSection";
 import { ClientContractSection } from "@/components/clients/sections/ClientContractSection";
 import { ClientPaymentSection } from "@/components/clients/sections/ClientPaymentSection";
-import { ClientQuotaSection } from "@/components/clients/sections/ClientQuotaSection";
 import { ClientAccountSection } from "@/components/clients/sections/ClientAccountSection";
 import { ClientDocumentSection } from "@/components/clients/sections/ClientDocumentSection";
 import { ClientProjectTaskSection } from "@/components/clients/sections/ClientProjectTaskSection";
 import { ClientActivitySection } from "@/components/clients/sections/ClientActivitySection";
-import { ClientSocialMediaSection } from "@/components/clients/sections/ClientSocialMediaSection";
 
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
