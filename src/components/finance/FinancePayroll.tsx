@@ -15,8 +15,6 @@ import { Users, Edit, CheckCircle, Trash2, FileDown, Settings, Save } from "luci
 import { toast } from "sonner";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
 import { PayrollPdfSettingsDialog } from "./PayrollPdfSettingsDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { PAYROLL_COLUMNS } from "@/lib/excel-utils";
 
 interface PayrollEntry {
   id?: string;
