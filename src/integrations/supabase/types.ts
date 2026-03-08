@@ -3597,6 +3597,33 @@ export type Database = {
           },
         ]
       }
+      personal_notes: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_accounts: {
         Row: {
           account_name: string
