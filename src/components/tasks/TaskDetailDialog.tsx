@@ -27,10 +27,6 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-interface TableData {
-  headers: string[];
-  rows: string[][];
-}
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
   const [comment, setComment] = useState("");
