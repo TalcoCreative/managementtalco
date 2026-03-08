@@ -21,8 +21,6 @@ import {
   getSubCategoryLabel,
   getSubCategories 
 } from "@/lib/finance-categories";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { EXPENSE_COLUMNS } from "@/lib/excel-utils";
 import { EditExpenseDialog } from "./EditExpenseDialog";
 
 export function FinanceExpenses() {
