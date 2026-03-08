@@ -1199,13 +1199,13 @@ export default function Schedule() {
                 </Card>
               </TabsContent>
 
-              {/* Jadwal Post Tab */}
+              {/* Scheduled Posts Tab */}
               <TabsContent value="epSlides">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Send className="h-5 w-5" />
-                      Jadwal Post - {format(filterMonth, "MMMM yyyy")}
+                      Scheduled Posts - {format(filterMonth, "MMMM yyyy")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
