@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Send, Loader2, Bot, User, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,51 @@ export function AIChatPopup() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Drag state
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const getDefaultPos = useCallback(() => {
+    const isMobile = window.innerWidth < 768;
+    return {
+      x: window.innerWidth - (isMobile ? window.innerWidth - 16 + 8 : 420 + 32),
+      y: window.innerHeight - (isMobile ? window.innerHeight - 96 + 16 : 600 + 32),
+    };
+  }, []);
+
+  // Reset position when opening
+  useEffect(() => {
+    if (open && !position) setPosition(getDefaultPos());
+  }, [open, position, getDefaultPos]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: position?.x ?? 0,
+      origY: position?.y ?? 0,
+    };
+    setIsDragging(false);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [position]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (!isDragging && Math.abs(dx) + Math.abs(dy) > 5) setIsDragging(true);
+    setPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 100, dragRef.current.origX + dx)),
+      y: Math.max(0, Math.min(window.innerHeight - 100, dragRef.current.origY + dy)),
+    });
+  }, [isDragging]);
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -145,10 +190,20 @@ export function AIChatPopup() {
     );
   }
 
+  const pos = position ?? getDefaultPos();
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden md:bottom-8 md:right-8">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20">
+    <div
+      className="fixed z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
+      style={{ left: pos.x, top: pos.y }}
+    >
+      {/* Draggable Header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20 cursor-grab active:cursor-grabbing select-none touch-none"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center">
             <Bot className="h-5 w-5 text-white" />
