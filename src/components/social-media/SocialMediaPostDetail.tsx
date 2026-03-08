@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Share2,
   Instagram,
@@ -146,24 +147,16 @@ export function SocialMediaPostDetail({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Select
+                <SearchableSelect
+                  options={clients.map((c) => ({ value: c.id, label: c.name }))}
                   value={post.client_id || "unassigned"}
                   onValueChange={(value) => {
                     updateClientMutation.mutate(value === "unassigned" ? null : value);
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih Client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Pilih Client"
+                  searchPlaceholder="Cari client..."
+                  defaultOption={{ value: "unassigned", label: "Unassigned" }}
+                />
               </CardContent>
             </Card>
 

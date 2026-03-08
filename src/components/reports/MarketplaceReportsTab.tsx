@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -154,17 +155,15 @@ export function MarketplaceReportsTab() {
     <div className="space-y-6">
       {/* Header & Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="All Clients" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Client</SelectItem>
-            {clients?.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+          value={selectedClientId}
+          onValueChange={setSelectedClientId}
+          placeholder="All Clients"
+          searchPlaceholder="Cari client..."
+          defaultOption={{ value: "all", label: "Semua Client" }}
+          className="w-[200px]"
+        />
 
         <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
           <SelectTrigger className="w-[120px]">

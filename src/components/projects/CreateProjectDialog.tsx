@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -93,18 +94,13 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="client">Client *</Label>
-            <Select value={clientId} onValueChange={setClientId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+              value={clientId}
+              onValueChange={setClientId}
+              placeholder="Select a client"
+              searchPlaceholder="Cari client..."
+            />
           </div>
 
           <div className="space-y-2">

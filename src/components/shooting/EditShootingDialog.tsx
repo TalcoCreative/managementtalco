@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -301,41 +302,25 @@ export function EditShootingDialog({ shootingId, open, onOpenChange, onSuccess }
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Client *</Label>
-                  <Select
+                  <SearchableSelect
+                    options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
                     value={formData.client_id}
                     onValueChange={(value) => setFormData({ ...formData, client_id: value, project_id: "" })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients?.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select client"
+                    searchPlaceholder="Cari client..."
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label>Project *</Label>
-                  <Select
+                  <SearchableSelect
+                    options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
                     value={formData.project_id}
                     onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                    placeholder={formData.client_id ? "Select project" : "Select client first"}
+                    searchPlaceholder="Cari project..."
                     disabled={!formData.client_id}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={formData.client_id ? "Select project" : "Select client first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects?.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
               </div>
 

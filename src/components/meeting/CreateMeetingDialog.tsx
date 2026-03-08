@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
@@ -486,41 +487,25 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Client (Opsional)</Label>
-                  <Select 
-                    value={formData.client_id || "_none"} 
+                  <SearchableSelect
+                    options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+                    value={formData.client_id || "_none"}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value === "_none" ? "" : value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">Tidak ada</SelectItem>
-                      {clients?.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Pilih client"
+                    searchPlaceholder="Cari client..."
+                    defaultOption={{ value: "_none", label: "Tidak ada" }}
+                  />
                 </div>
                 <div>
                   <Label>Project (Opsional)</Label>
-                  <Select 
-                    value={formData.project_id || "_none"} 
+                  <SearchableSelect
+                    options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
+                    value={formData.project_id || "_none"}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, project_id: value === "_none" ? "" : value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="_none">Tidak ada</SelectItem>
-                      {projects?.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Pilih project"
+                    searchPlaceholder="Cari project..."
+                    defaultOption={{ value: "_none", label: "Tidak ada" }}
+                  />
                 </div>
 
                 {/* Task Selection */}

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface CompletedTasksFilterProps {
   projects: any[] | undefined;
@@ -110,19 +111,15 @@ export function CompletedTasksFilter({
         
         <div>
           <Label className="text-xs">Project</Label>
-          <Select value={project} onValueChange={(v) => handleChange({ project: v })}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="All Projects" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Projects</SelectItem>
-              {projects?.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
+            value={project}
+            onValueChange={(v) => handleChange({ project: v })}
+            placeholder="All Projects"
+            searchPlaceholder="Cari project..."
+            defaultOption={{ value: "all", label: "All Projects" }}
+            className="h-9"
+          />
         </div>
         
         <div>

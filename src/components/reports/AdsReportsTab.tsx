@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -262,19 +263,15 @@ export function AdsReportsTab() {
       <CardContent className="space-y-4">
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
-          <Select value={filterClient} onValueChange={setFilterClient}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Semua Client" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Client</SelectItem>
-              {clients.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={clients.map((c) => ({ value: c.id, label: c.name }))}
+            value={filterClient}
+            onValueChange={setFilterClient}
+            placeholder="Semua Client"
+            searchPlaceholder="Cari client..."
+            defaultOption={{ value: "all", label: "Semua Client" }}
+            className="w-[180px]"
+          />
           <Select value={filterPlatform} onValueChange={setFilterPlatform}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Semua Platform" />

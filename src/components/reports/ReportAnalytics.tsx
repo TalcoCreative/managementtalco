@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
@@ -184,19 +185,15 @@ export function ReportAnalytics() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterClient} onValueChange={setFilterClient}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Semua Client" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Client</SelectItem>
-            {clients.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          options={clients.map((c) => ({ value: c.id, label: c.name }))}
+          value={filterClient}
+          onValueChange={setFilterClient}
+          placeholder="Semua Client"
+          searchPlaceholder="Cari client..."
+          defaultOption={{ value: "all", label: "Semua Client" }}
+          className="w-[180px]"
+        />
       </div>
 
       {/* Summary Cards */}

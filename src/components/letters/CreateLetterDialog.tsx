@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { toast } from "sonner";
 import { Loader2, Lock } from "lucide-react";
 
@@ -211,19 +212,14 @@ export function CreateLetterDialog({
 
           <div className="space-y-2">
             <Label>Project Terkait (Opsional)</Label>
-            <Select value={projectId} onValueChange={(val) => setProjectId(val === "none" ? "" : val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Tidak ada</SelectItem>
-                {projects?.map(project => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
+              value={projectId || "none"}
+              onValueChange={(val) => setProjectId(val === "none" ? "" : val)}
+              placeholder="Pilih project"
+              searchPlaceholder="Cari project..."
+              defaultOption={{ value: "none", label: "Tidak ada" }}
+            />
           </div>
 
           <div className="space-y-2">

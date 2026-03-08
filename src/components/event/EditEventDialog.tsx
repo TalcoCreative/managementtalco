@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -205,34 +206,24 @@ export function EditEventDialog({ event, open, onOpenChange, onSuccess }: EditEv
 
             <div>
               <Label htmlFor="client">Client</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+                value={clientId}
+                onValueChange={setClientId}
+                placeholder="Pilih client"
+                searchPlaceholder="Cari client..."
+              />
             </div>
 
             <div>
               <Label htmlFor="project">Project</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
+                value={projectId}
+                onValueChange={setProjectId}
+                placeholder="Pilih project"
+                searchPlaceholder="Cari project..."
+              />
             </div>
 
             <div>
