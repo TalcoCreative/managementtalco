@@ -131,6 +131,7 @@ const App = () => (
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/system/roles" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
           <Route path="/system/settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
+          <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />
           <Route path="/share/project/:token" element={<SharedProject />} />
