@@ -154,6 +154,14 @@ export default function PublicClientHub() {
       onClick: () => navigate(`/shooting-list/${client.dashboard_slug}`),
       enabled: hasShootings,
     },
+    {
+      title: "Marketplace",
+      description: "Performa marketplace",
+      icon: ShoppingBag,
+      gradient: "from-[hsl(152,48%,46%)] to-[hsl(140,60%,45%)]",
+      onClick: () => navigate(`/marketplace/${client.dashboard_slug}`),
+      enabled: hasMarketplace,
+    },
   ];
 
   const availableCards = navigationCards.filter(card => card.enabled);
