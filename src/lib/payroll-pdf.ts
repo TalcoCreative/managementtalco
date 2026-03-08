@@ -234,7 +234,7 @@ export const generatePayrollPDF = async (
     addressY += 5;
   });
 
-  yPos = Math.max(margin + settings.logoHeight, addressY) + 10;
+  yPos = Math.max(margin + actualLogoHeight, addressY) + 10;
 
   // Separator line
   doc.setDrawColor(r, g, b);
