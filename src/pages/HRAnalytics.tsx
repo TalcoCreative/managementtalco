@@ -514,27 +514,25 @@ export default function HRAnalytics() {
             <p className="text-xs text-muted-foreground">Aktif periode ini</p>
           </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Jam Kerja</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalWorkHours}h</div>
-              {kpis.workHoursChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.workHoursChange >= 0 ? (
-                    <><ArrowUpRight className="h-3 w-3 text-green-500" /><span className="text-green-500">+{kpis.workHoursChange}%</span></>
-                  ) : (
-                    <><ArrowDownRight className="h-3 w-3 text-red-500" /><span className="text-red-500">{kpis.workHoursChange}%</span></>
-                  )}
-                  <span className="text-muted-foreground ml-1">vs {compareMonth}</span>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Pilih bulan bandingkan</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-projects)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Jam Kerja</span>
+              <div className="kpi-icon w-8 h-8"><Clock className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalWorkHours}h</div>
+            {kpis.workHoursChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.workHoursChange >= 0 ? (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">+{kpis.workHoursChange}%</span></>
+                ) : (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">{kpis.workHoursChange}%</span></>
+                )}
+                <span className="text-muted-foreground ml-1">vs {compareMonth}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Pilih bulan bandingkan</p>
+            )}
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
