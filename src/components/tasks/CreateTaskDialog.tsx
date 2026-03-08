@@ -618,7 +618,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             </div>
           </div>
 
-
+          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-2">
               <EyeOff className="h-4 w-4 text-muted-foreground" />
               <div>
