@@ -24,7 +24,7 @@ import { id as localeId } from "date-fns/locale";
 interface Slide {
   id: string;
   slide_order: number;
-  status: "proposed" | "approved" | "published";
+  status: "proposed" | "approved" | "revise" | "published";
   publish_date: string | null;
   channel: string | null;
   format: string | null;
