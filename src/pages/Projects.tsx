@@ -193,12 +193,12 @@ export default function Projects() {
 
       toast.success(
         !currentHidden
-          ? "Project disembunyikan dari client dashboard"
-          : "Project ditampilkan di client dashboard"
+          ? "Project hidden from client dashboard"
+          : "Project visible on client dashboard"
       );
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error("Gagal mengubah visibility");
+      toast.error("Failed to change visibility");
     }
   };
 
