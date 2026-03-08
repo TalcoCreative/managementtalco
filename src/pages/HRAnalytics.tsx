@@ -352,10 +352,15 @@ export default function HRAnalytics() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">HR Analytics Overview</h1>
-          <p className="text-muted-foreground">Gambaran besar performa SDM berdasarkan jam kerja, aktivitas, dan konsistensi</p>
+        {/* Header — Immersive section */}
+        <div className="section-header" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
+          <div className="section-icon">
+            <Activity className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="section-title">HR Analytics Overview</h1>
+            <p className="section-subtitle">Gambaran besar performa SDM berdasarkan jam kerja, aktivitas, dan konsistensi</p>
+          </div>
         </div>
 
         {/* Global Filters */}
@@ -495,134 +500,124 @@ export default function HRAnalytics() {
           </CardContent>
         </Card>
 
-        {/* KPI Summary Cards */}
+        {/* KPI Summary Cards — Colorful */}
+        <div className="section-divider">
+          <span className="divider-label">Key Metrics</span>
+        </div>
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalEmployees}</div>
-              <p className="text-xs text-muted-foreground">Aktif periode ini</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-hr)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Karyawan</span>
+              <div className="kpi-icon w-8 h-8"><Users className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalEmployees}</div>
+            <p className="text-xs text-muted-foreground">Aktif periode ini</p>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Jam Kerja</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalWorkHours}h</div>
-              {kpis.workHoursChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.workHoursChange >= 0 ? (
-                    <><ArrowUpRight className="h-3 w-3 text-green-500" /><span className="text-green-500">+{kpis.workHoursChange}%</span></>
-                  ) : (
-                    <><ArrowDownRight className="h-3 w-3 text-red-500" /><span className="text-red-500">{kpis.workHoursChange}%</span></>
-                  )}
-                  <span className="text-muted-foreground ml-1">vs {compareMonth}</span>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Pilih bulan bandingkan</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Rata-rata Jam</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.avgWorkHoursPerEmployee}h</div>
-              <p className="text-xs text-muted-foreground">Per karyawan</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Aktivitas</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalActivities}</div>
-              <div className="flex gap-1 flex-wrap text-xs text-muted-foreground">
-                <span>{kpis.taskCount} task</span>•
-                <span>{kpis.meetingCount} meet</span>•
-                <span>{kpis.shootingCount} shoot</span>•
-                <span>{kpis.eventCount} event</span>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-projects)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Jam Kerja</span>
+              <div className="kpi-icon w-8 h-8"><Clock className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalWorkHours}h</div>
+            {kpis.workHoursChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.workHoursChange >= 0 ? (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">+{kpis.workHoursChange}%</span></>
+                ) : (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">{kpis.workHoursChange}%</span></>
+                )}
+                <span className="text-muted-foreground ml-1">vs {compareMonth}</span>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <p className="text-xs text-muted-foreground">Pilih bulan bandingkan</p>
+            )}
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Task Overdue</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{kpis.overdueTaskCount}</div>
-              <p className="text-xs text-muted-foreground">Belum selesai</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-meeting)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Rata-rata Jam</span>
+              <div className="kpi-icon w-8 h-8"><Clock className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.avgWorkHoursPerEmployee}h</div>
+            <p className="text-xs text-muted-foreground">Per karyawan</p>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Auto Clock-out</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-500">{kpis.autoClockoutCount}</div>
-              {kpis.autoClockoutChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.autoClockoutChange <= 0 ? (
-                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.autoClockoutChange}%</span></>
-                  ) : (
-                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.autoClockoutChange}%</span></>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Periode ini</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Aktivitas</span>
+              <div className="kpi-icon w-8 h-8"><Activity className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalActivities}</div>
+            <div className="flex gap-1 flex-wrap text-xs text-muted-foreground">
+              <span>{kpis.taskCount} task</span>•
+              <span>{kpis.meetingCount} meet</span>•
+              <span>{kpis.shootingCount} shoot</span>•
+              <span>{kpis.eventCount} event</span>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
-              <Clock className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{kpis.lateCount}x</div>
-              {kpis.lateChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.lateChange <= 0 ? (
-                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.lateChange}%</span></>
-                  ) : (
-                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.lateChange}%</span></>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Total keterlambatan</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': '0 62% 54%' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Task Overdue</span>
+              <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.overdueTaskCount}</div>
+            <p className="text-xs text-muted-foreground">Belum selesai</p>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Produktivitas</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.avgProductivity}</div>
-              <p className="text-xs text-muted-foreground">Aktivitas/orang</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Auto Clock-out</span>
+              <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(var(--warning))' }}>{kpis.autoClockoutCount}</div>
+            {kpis.autoClockoutChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.autoClockoutChange <= 0 ? (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">{kpis.autoClockoutChange}%</span></>
+                ) : (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">+{kpis.autoClockoutChange}%</span></>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Periode ini</p>
+            )}
+          </div>
+
+          <div className="kpi-card p-4" style={{ '--kpi-color': '0 62% 54%' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Terlambat</span>
+              <div className="kpi-icon w-8 h-8"><Clock className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.lateCount}x</div>
+            {kpis.lateChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.lateChange <= 0 ? (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">{kpis.lateChange}%</span></>
+                ) : (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">+{kpis.lateChange}%</span></>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Total keterlambatan</p>
+            )}
+          </div>
+
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-finance)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Produktivitas</span>
+              <div className="kpi-icon w-8 h-8"><TrendingUp className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.avgProductivity}</div>
+            <p className="text-xs text-muted-foreground">Aktivitas/orang</p>
+          </div>
         </div>
 
         {/* Charts Section */}
+        <div className="section-divider">
+          <span className="divider-label">Charts & Analytics</span>
+        </div>
         <div className="grid gap-6 lg:grid-cols-2">
           <HRWorkHoursChart 
             attendance={attendance || []} 
@@ -659,6 +654,9 @@ export default function HRAnalytics() {
         </div>
 
         {/* Risk & Bottleneck Panel */}
+        <div className="section-divider">
+          <span className="divider-label">Risk & Performance</span>
+        </div>
         <HRRiskPanel 
           profiles={filteredProfiles}
           attendance={attendance || []}

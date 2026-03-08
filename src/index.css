@@ -101,6 +101,30 @@
 
     /* Atmospheric glow */
     --glow-primary: 222 72% 52%;
+
+    /* ClickUp-style section colors */
+    --section-tasks: 222 72% 52%;
+    --section-projects: 205 72% 52%;
+    --section-hr: 270 60% 55%;
+    --section-finance: 152 48% 46%;
+    --section-clients: 28 78% 52%;
+    --section-schedule: 38 82% 52%;
+    --section-shooting: 330 60% 55%;
+    --section-meeting: 240 60% 58%;
+    --section-reports: 190 70% 48%;
+    --section-social: 345 72% 55%;
+    --section-editorial: 280 60% 55%;
+    --section-sales: 16 72% 52%;
+    --section-recruitment: 170 60% 42%;
+    --section-marketplace: 160 55% 44%;
+
+    /* Chart palette */
+    --chart-1: 222 72% 52%;
+    --chart-2: 152 48% 46%;
+    --chart-3: 38 82% 52%;
+    --chart-4: 330 60% 55%;
+    --chart-5: 270 60% 55%;
+    --chart-6: 205 72% 52%;
   }
 
   .dark {
@@ -385,6 +409,122 @@
       0 4px 16px hsl(222 20% 20% / 0.08),
       0 12px 40px hsl(222 20% 20% / 0.06);
   }
+
+  /* ═══ ClickUp-style Section Headers ═══ */
+  .section-header {
+    @apply relative flex items-center gap-3 p-4 sm:p-5 rounded-2xl mb-4;
+    background: linear-gradient(135deg, hsl(var(--section-color, var(--primary)) / 0.08) 0%, hsl(var(--section-color, var(--primary)) / 0.02) 100%);
+    border-left: 4px solid hsl(var(--section-color, var(--primary)));
+  }
+  .section-header .section-icon {
+    @apply flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl shrink-0;
+    background: hsl(var(--section-color, var(--primary)) / 0.12);
+    color: hsl(var(--section-color, var(--primary)));
+  }
+  .section-header .section-title {
+    @apply text-lg sm:text-xl font-bold tracking-tight;
+    color: hsl(var(--section-color, var(--primary)));
+  }
+  .section-header .section-subtitle {
+    @apply text-xs sm:text-sm text-muted-foreground mt-0.5;
+  }
+
+  /* Color-coded card accents */
+  .card-accent {
+    @apply relative overflow-hidden;
+    border-left: 4px solid hsl(var(--accent-color, var(--primary)));
+  }
+  .card-accent::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(90deg, hsl(var(--accent-color, var(--primary)) / 0.04) 0%, transparent 40%);
+  }
+
+  /* KPI card with colored top bar */
+  .kpi-card {
+    @apply relative overflow-hidden rounded-2xl bg-card border-0 shadow-float;
+  }
+  .kpi-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-1;
+    background: hsl(var(--kpi-color, var(--primary)));
+  }
+  .kpi-card .kpi-icon {
+    @apply flex items-center justify-center w-10 h-10 rounded-xl;
+    background: hsl(var(--kpi-color, var(--primary)) / 0.1);
+    color: hsl(var(--kpi-color, var(--primary)));
+  }
+  .kpi-card .kpi-value {
+    @apply text-2xl sm:text-3xl font-bold tracking-tight;
+  }
+  .kpi-card .kpi-trend-up {
+    color: hsl(var(--success));
+  }
+  .kpi-card .kpi-trend-down {
+    color: hsl(var(--destructive));
+  }
+
+  /* Section divider with label */
+  .section-divider {
+    @apply flex items-center gap-3 my-6;
+  }
+  .section-divider::before,
+  .section-divider::after {
+    content: '';
+    @apply flex-1 h-px bg-border/60;
+  }
+  .section-divider .divider-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap px-2;
+  }
+
+  /* Colored category chip (ClickUp-style) */
+  .category-chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold;
+    background: hsl(var(--chip-color, var(--primary)) / 0.1);
+    color: hsl(var(--chip-color, var(--primary)));
+    border: 1px solid hsl(var(--chip-color, var(--primary)) / 0.2);
+  }
+  .category-chip .chip-dot {
+    @apply w-2 h-2 rounded-full;
+    background: hsl(var(--chip-color, var(--primary)));
+  }
+
+  /* Immersive stat grid */
+  .stat-grid-item {
+    @apply relative p-4 sm:p-5 rounded-2xl bg-card border-0 shadow-float overflow-hidden transition-all duration-200;
+  }
+  .stat-grid-item:hover {
+    @apply shadow-float-hover;
+    transform: translateY(-2px);
+  }
+  .stat-grid-item .stat-bg-glow {
+    @apply absolute -top-4 -right-4 w-20 h-20 rounded-full opacity-10 blur-2xl;
+    background: hsl(var(--stat-color, var(--primary)));
+  }
+
+  /* Colored tab indicator */
+  .tab-colored[data-state="active"] {
+    position: relative;
+  }
+  .tab-colored[data-state="active"]::after {
+    content: '';
+    @apply absolute bottom-0 left-2 right-2 h-0.5 rounded-full;
+    background: hsl(var(--tab-color, var(--primary)));
+  }
+
+  /* Priority stripe */
+  .priority-stripe-high { border-left: 4px solid hsl(var(--priority-high)); }
+  .priority-stripe-medium { border-left: 4px solid hsl(var(--priority-medium)); }
+  .priority-stripe-low { border-left: 4px solid hsl(var(--priority-low)); }
+
+  /* Status dot (ClickUp-style) */
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full ring-2 ring-card;
+  }
+  .status-dot-todo { background: hsl(var(--status-todo)); }
+  .status-dot-progress { background: hsl(var(--status-progress)); }
+  .status-dot-done { background: hsl(var(--status-done)); }
+  .status-dot-on-hold { background: hsl(var(--status-on-hold)); }
 }
 
 @layer utilities {
