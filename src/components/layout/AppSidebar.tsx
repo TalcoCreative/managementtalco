@@ -184,7 +184,8 @@ export function AppSidebar() {
           )}
         </div>
         
-        {renderGroup("Navigation", navItems)}
+        {renderGroup("Navigation", navigationItems)}
+        {renderGroup("KOL", kolItems)}
         {renderGroup("Form Builder", formBuilderItems)}
         {renderGroup("Social Media", socialMediaItems)}
         {renderGroup("HR", hrItems)}
