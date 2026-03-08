@@ -242,7 +242,7 @@ export function MobileBottomNav() {
                           </div>
                           <span
                             className={cn(
-                              "text-[10px] font-medium leading-tight text-center text-foreground",
+                              "text-[10px] font-medium leading-tight text-center text-foreground line-clamp-2 max-w-[64px]",
                               isActive && "text-primary"
                             )}
                           >
