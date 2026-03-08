@@ -355,6 +355,10 @@ const EmailSettings = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="templates">
+            <EmailTemplateEditor />
+          </TabsContent>
+
           <TabsContent value="logs">
             <Card>
               <CardHeader>

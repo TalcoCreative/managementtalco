@@ -46,151 +46,156 @@ interface ResendResponse {
   };
 }
 
+interface EmailTemplate {
+  notification_type: string;
+  label: string;
+  subject_template: string;
+  main_message: string;
+  footer_message: string;
+  button_text: string;
+  body_html: string | null;
+  is_active: boolean;
+}
+
 // Parse error messages to provide clear feedback
 const parseResendError = (error: any): string => {
   const message = error.message || error.toString();
-  
   console.log("Parsing error:", message);
   
-  // API key errors
   if (message.includes("API key") || message.includes("unauthorized") || message.includes("401") || message.includes("Missing API key")) {
     return "API Key Error: Resend API Key tidak valid atau belum dikonfigurasi. Periksa kembali API Key di Secrets.";
   }
-  
-  // Domain not verified
   if (message.includes("domain") || message.includes("verify") || message.includes("not allowed") || message.includes("You can only send")) {
     return "Domain Error: Domain email belum diverifikasi di Resend. Gunakan onboarding@resend.dev untuk testing atau verifikasi domain Anda di https://resend.com/domains";
   }
-  
-  // Rate limiting
   if (message.includes("rate") || message.includes("limit") || message.includes("429")) {
     return "Rate Limited: Terlalu banyak email dikirim. Tunggu beberapa menit dan coba lagi.";
   }
-  
-  // Invalid email
   if (message.includes("invalid") && message.includes("email")) {
     return "Invalid Email: Format email penerima tidak valid.";
   }
-  
   return `Error: ${message}`;
 };
 
-const getSubject = (type: string, name: string): string => {
+// Default subjects (fallback)
+const getDefaultSubject = (type: string, name: string): string => {
   const firstName = name.split(" ")[0];
   switch (type) {
-    case "task_assignment":
-      return `Hi @${firstName} – ada Task baru buat lo nih 👀`;
-    case "task_updated":
-      return `Hi @${firstName} – Task lo ada update nih 📝`;
-    case "task_completed":
-      return `Hi @${firstName} – Task selesai nih ✅`;
-    case "task_status_change":
-      return `Hi @${firstName} – status task berubah nih 🔄`;
-    case "task_overdue":
-      return `Hi @${firstName} – Task lo udah lewat nih 😬`;
-    case "task_mention":
-      return `Hi @${firstName} – lo di-mention di task nih 👀`;
-    case "project_assignment":
-      return `Hi @${firstName} – lo join project baru nih 🚀`;
-    case "shooting_assignment":
-      return `Hi @${firstName} – lo dijadwalkan shooting nih 🎥`;
-    case "shooting_status_update":
-      return `Hi @${firstName} – ada update shooting nih 🎬`;
-    case "event_assignment":
-      return `Hi @${firstName} – lo dijadwalkan event nih 🎥`;
-    case "meeting_invitation":
-      return `Hi @${firstName} – lo diundang meeting nih 📅`;
-    case "meeting_reminder":
-      return `Hi @${firstName} – reminder meeting nih 📅`;
-    case "announcement":
-      return `📢 Pengumuman: Ada info penting nih buat lo!`;
-    case "recruitment_pic_assigned":
-      return `Hi @${firstName} – lo ditunjuk jadi PIC kandidat nih 📋`;
-    default:
-      return `Hi @${firstName} – ada update buat lo nih 🚀`;
+    case "task_assignment": return `Hi @${firstName} – ada Task baru buat lo nih 👀`;
+    case "task_updated": return `Hi @${firstName} – Task lo ada update nih 📝`;
+    case "task_completed": return `Hi @${firstName} – Task selesai nih ✅`;
+    case "task_status_change": return `Hi @${firstName} – status task berubah nih 🔄`;
+    case "task_overdue": return `Hi @${firstName} – Task lo udah lewat nih 😬`;
+    case "task_mention": return `Hi @${firstName} – lo di-mention di task nih 👀`;
+    case "project_assignment": return `Hi @${firstName} – lo join project baru nih 🚀`;
+    case "shooting_assignment": return `Hi @${firstName} – lo dijadwalkan shooting nih 🎥`;
+    case "shooting_status_update": return `Hi @${firstName} – ada update shooting nih 🎬`;
+    case "event_assignment": return `Hi @${firstName} – lo dijadwalkan event nih 🎥`;
+    case "meeting_invitation": return `Hi @${firstName} – lo diundang meeting nih 📅`;
+    case "meeting_reminder": return `Hi @${firstName} – reminder meeting nih 📅`;
+    case "announcement": return `📢 Pengumuman: Ada info penting nih buat lo!`;
+    case "recruitment_pic_assigned": return `Hi @${firstName} – lo ditunjuk jadi PIC kandidat nih 📋`;
+    default: return `Hi @${firstName} – ada update buat lo nih 🚀`;
   }
 };
 
-const getNotificationLabel = (type: string): string => {
-  switch (type) {
-    case "task_assignment":
-    case "task_updated":
-    case "task_completed":
-    case "task_status_change":
-    case "task_overdue":
-    case "task_mention":
-      return "Task";
-    case "project_assignment":
-      return "Project";
-    case "shooting_assignment":
-    case "shooting_status_update":
-      return "Shooting";
-    case "event_assignment":
-      return "Event";
-    case "meeting_invitation":
-    case "meeting_reminder":
-      return "Meeting";
-    case "announcement":
-      return "Pengumuman";
-    case "recruitment_pic_assigned":
-      return "Recruitment";
-    default:
-      return "Notifikasi";
+const getSubject = (type: string, name: string, template?: EmailTemplate | null): string => {
+  const firstName = name.split(" ")[0];
+  if (template?.subject_template) {
+    return template.subject_template.replace(/\{\{firstName\}\}/g, firstName);
   }
+  return getDefaultSubject(type, name);
+};
+
+const getNotificationLabel = (type: string, template?: EmailTemplate | null): string => {
+  if (template?.label) return template.label;
+  switch (type) {
+    case "task_assignment": case "task_updated": case "task_completed":
+    case "task_status_change": case "task_overdue": case "task_mention": return "Task";
+    case "project_assignment": return "Project";
+    case "shooting_assignment": case "shooting_status_update": return "Shooting";
+    case "event_assignment": return "Event";
+    case "meeting_invitation": case "meeting_reminder": return "Meeting";
+    case "announcement": return "Pengumuman";
+    case "recruitment_pic_assigned": return "Recruitment";
+    default: return "Notifikasi";
+  }
+};
+
+const replaceVariables = (text: string, vars: Record<string, string>): string => {
+  let result = text;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value || "");
+  }
+  return result;
 };
 
 const buildEmailBody = (
   recipientName: string,
   notificationType: string,
-  data: EmailRequest["data"]
+  data: EmailRequest["data"],
+  template?: EmailTemplate | null
 ): string => {
   const firstName = recipientName.split(" ")[0];
-  const label = getNotificationLabel(notificationType);
-  
+  const label = getNotificationLabel(notificationType, template);
+
+  const vars: Record<string, string> = {
+    firstName,
+    label,
+    title: data?.title || "-",
+    description: data?.description || "",
+    deadline: data?.deadline || "",
+    creator_name: data?.creator_name || "",
+    status: data?.status || "",
+    priority: data?.priority || "",
+    location: data?.location || "",
+    participants: data?.participants || "",
+    link: data?.link || "",
+    comment_content: data?.comment_content || "",
+    updated_at: data?.updated_at || "",
+  };
+
+  // If template has custom HTML, use it
+  if (template?.body_html) {
+    return replaceVariables(template.body_html, vars);
+  }
+
+  // Use template fields or defaults
+  let mainMessage = template?.main_message || "Ada update baru buat lo nih:";
+  const footerMessage = template?.footer_message || "Kalau ini penting, jangan di-skip ya 😎";
+  const buttonText = template?.button_text || "🔗 Cek detailnya di sini";
+
+  // Custom messages per type (defaults)
+  if (!template?.main_message) {
+    if (notificationType === "task_mention") mainMessage = "Lo baru aja di-mention di sebuah task:";
+    if (notificationType === "task_status_change" || notificationType === "task_completed") mainMessage = "Ada update status task:";
+  }
+
   let additionalInfo = "";
-  let mainMessage = "Ada update baru buat lo nih:";
-  
-  // Custom messages for different notification types
-  if (notificationType === "task_mention") {
-    mainMessage = "Lo baru aja di-mention di sebuah task:";
-    if (data?.comment_content) {
-      additionalInfo += `
-        <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px; margin: 12px 0; border-radius: 0 8px 8px 0;">
-          <p style="margin: 0; font-style: italic; color: #0369a1;">"${data.comment_content}"</p>
-        </div>
-      `;
-    }
+
+  if (notificationType === "task_mention" && data?.comment_content) {
+    additionalInfo += `
+      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px; margin: 12px 0; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; font-style: italic; color: #0369a1;">"${data.comment_content}"</p>
+      </div>
+    `;
   }
-  
-  if (notificationType === "task_status_change" || notificationType === "task_completed") {
-    mainMessage = "Ada update status task:";
-    if (data?.updated_at) {
-      additionalInfo += `<p>📅 Waktu Update: <strong>${data.updated_at}</strong></p>`;
-    }
+
+  if ((notificationType === "task_status_change" || notificationType === "task_completed") && data?.updated_at) {
+    additionalInfo += `<p>📅 Waktu Update: <strong>${data.updated_at}</strong></p>`;
   }
-  
+
   if (notificationType === "task_overdue") {
     additionalInfo += `
       <p style="color: #e74c3c; font-weight: bold;">⚠️ Status: Overdue</p>
       <p>Segera cek & update ya 🙏</p>
     `;
   }
-  
-  if (data?.priority) {
-    additionalInfo += `<p>🔥 Prioritas: <strong>${data.priority}</strong></p>`;
-  }
-  
-  if (data?.status) {
-    additionalInfo += `<p>📊 Status: <strong>${data.status}</strong></p>`;
-  }
-  
-  if (data?.participants) {
-    additionalInfo += `<p>👥 Peserta: ${data.participants}</p>`;
-  }
-  
-  if (data?.location) {
-    additionalInfo += `<p>📍 Lokasi: ${data.location}</p>`;
-  }
+
+  if (data?.priority) additionalInfo += `<p>🔥 Prioritas: <strong>${data.priority}</strong></p>`;
+  if (data?.status) additionalInfo += `<p>📊 Status: <strong>${data.status}</strong></p>`;
+  if (data?.participants) additionalInfo += `<p>👥 Peserta: ${data.participants}</p>`;
+  if (data?.location) additionalInfo += `<p>📍 Lokasi: ${data.location}</p>`;
 
   return `
     <!DOCTYPE html>
@@ -221,11 +226,11 @@ const buildEmailBody = (
         
         ${data?.link ? `
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${data.link}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600;">🔗 Cek detailnya di sini</a>
+            <a href="${data.link}" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600;">${buttonText}</a>
           </div>
         ` : ""}
         
-        <p style="color: #555; font-style: italic;">Kalau ini penting, jangan di-skip ya 😎</p>
+        <p style="color: #555; font-style: italic;">${footerMessage}</p>
         
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
         
@@ -318,13 +323,31 @@ async function sendEmailWithResend(
   return data;
 }
 
+// Load email templates from DB
+async function loadTemplates(supabase: any): Promise<Map<string, EmailTemplate>> {
+  const map = new Map<string, EmailTemplate>();
+  try {
+    const { data, error } = await supabase
+      .from("email_templates")
+      .select("*")
+      .eq("is_active", true);
+    
+    if (!error && data) {
+      for (const t of data) {
+        map.set(t.notification_type, t as EmailTemplate);
+      }
+    }
+  } catch (e) {
+    console.log("Failed to load email templates, using defaults:", e);
+  }
+  return map;
+}
+
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Store request body for error logging
   let requestBody: EmailRequest | null = null;
   
   try {
@@ -340,23 +363,23 @@ serve(async (req: Request): Promise<Response> => {
     requestBody = await req.json();
     console.log("Email request received:", JSON.stringify(requestBody, null, 2));
 
-    // Get email settings for sender info
-    const { data: settings, error: settingsError } = await supabase
-      .from("email_settings")
-      .select("*")
-      .limit(1)
-      .single();
+    // Load settings and templates in parallel
+    const [settingsResult, templates] = await Promise.all([
+      supabase.from("email_settings").select("*").limit(1).single(),
+      loadTemplates(supabase),
+    ]);
 
-    if (settingsError) {
+    const settings = settingsResult.data;
+    if (settingsResult.error) {
       console.log("No email settings found, using defaults");
     }
 
     const senderName = settings?.sender_name || "Talco System";
-    // Use onboarding@resend.dev for testing, or your verified domain
     const senderEmail = settings?.smtp_email || "onboarding@resend.dev";
     const fromAddress = `${senderName} <${senderEmail}>`;
 
     console.log("Using sender:", fromAddress);
+    console.log("Loaded templates:", templates.size);
 
     let recipientEmail: string;
     let recipientName: string;
@@ -365,27 +388,23 @@ serve(async (req: Request): Promise<Response> => {
     
     const body = requestBody!;
     
-    // Normalize camelCase to snake_case for compatibility
     const normalizedRecipientEmail = body.recipient_email || body.recipientEmail;
     const normalizedRecipientName = body.recipient_name || body.recipientName;
     const normalizedNotificationType = body.notification_type || body.notificationType;
     const normalizedRelatedId = body.related_id || body.relatedId;
     
-    // Normalize data fields
     const normalizedData = body.data ? {
       ...body.data,
-      description: body.data.description || body.data.content, // For announcements
+      description: body.data.description || body.data.content,
       creator_name: body.data.creator_name || body.data.creatorName,
     } : undefined;
 
     if (body.type === "test") {
-      // Test email - send to the configured email or a test email
       recipientEmail = settings?.smtp_email || "delivered@resend.dev";
       recipientName = "Admin";
       subject = "✅ Talco System - Test Email Berhasil!";
       htmlBody = buildTestEmailBody(recipientEmail);
     } else if (body.type === "recruitment_pic_assigned") {
-      // Recruitment PIC assignment - resolve user email from ID
       if (!body.recipientUserId) {
         throw new Error("recipientUserId is required for recruitment_pic_assigned");
       }
@@ -400,13 +419,11 @@ serve(async (req: Request): Promise<Response> => {
         throw new Error("PIC profile not found");
       }
 
-      // Get user email from auth
       const { data: authUser } = await supabase.auth.admin.getUserById(body.recipientUserId);
       if (!authUser?.user?.email) {
         throw new Error("PIC email not found");
       }
 
-      // Get assigner name
       let assignerName = "Admin";
       if (body.assignedBy) {
         const { data: assignerProfile } = await supabase
@@ -419,7 +436,8 @@ serve(async (req: Request): Promise<Response> => {
 
       recipientEmail = authUser.user.email;
       recipientName = picProfile.full_name || "User";
-      subject = getSubject("recruitment_pic_assigned", recipientName);
+      const tmpl = templates.get("recruitment_pic_assigned");
+      subject = getSubject("recruitment_pic_assigned", recipientName, tmpl);
       htmlBody = buildEmailBody(
         recipientName,
         "recruitment_pic_assigned",
@@ -427,26 +445,38 @@ serve(async (req: Request): Promise<Response> => {
           title: `${body.candidateName || "Kandidat"} - ${body.candidatePosition || "Posisi"}`,
           description: `Lo ditunjuk sebagai PIC untuk kandidat ${body.candidateName} yang melamar posisi ${body.candidatePosition}.`,
           creator_name: assignerName,
-        }
+        },
+        tmpl
       );
     } else {
-      // Notification email
       if (!normalizedRecipientEmail) {
         throw new Error("Recipient email is required for notifications");
       }
       recipientEmail = normalizedRecipientEmail;
       recipientName = normalizedRecipientName || "User";
-      subject = getSubject(normalizedNotificationType || "general", recipientName);
+      
+      const tmpl = templates.get(normalizedNotificationType || "general");
+      
+      // Check if template is active (if template exists but is_active is false, skip)
+      if (tmpl && !tmpl.is_active) {
+        console.log(`Template ${normalizedNotificationType} is inactive, skipping email`);
+        return new Response(
+          JSON.stringify({ success: true, message: "Template inactive, email skipped" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      subject = getSubject(normalizedNotificationType || "general", recipientName, tmpl);
       htmlBody = buildEmailBody(
         recipientName,
         normalizedNotificationType || "general",
-        normalizedData
+        normalizedData,
+        tmpl
       );
     }
 
     console.log(`Sending email to: ${recipientEmail}, Subject: ${subject}`);
 
-    // Send email using Resend
     const emailResponse = await sendEmailWithResend(
       resendApiKey,
       fromAddress,
@@ -491,17 +521,14 @@ serve(async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error sending email:", error);
     
-    // Parse the error to provide clear feedback
     const errorMessage = parseResendError(error);
     console.log("Parsed error message:", errorMessage);
 
-    // Try to log the error and update status
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // Log failed attempt
       if (requestBody) {
         await supabase.from("email_logs").insert({
           recipient_email: requestBody.recipient_email || "unknown",
@@ -514,7 +541,6 @@ serve(async (req: Request): Promise<Response> => {
         });
       }
 
-      // Update connection status to false on error
       await supabase
         .from("email_settings")
         .update({ is_connected: false })
