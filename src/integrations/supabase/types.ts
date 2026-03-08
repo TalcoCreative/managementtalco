@@ -5392,7 +5392,7 @@ export type Database = {
         | "linkedin"
         | "other"
       ep_content_format: "feed" | "carousel" | "reels" | "story"
-      ep_slide_status: "proposed" | "approved" | "published"
+      ep_slide_status: "proposed" | "approved" | "revise" | "published"
       recruitment_status:
         | "applied"
         | "screening_hr"
@@ -5569,7 +5569,7 @@ export const Constants = {
         "other",
       ],
       ep_content_format: ["feed", "carousel", "reels", "story"],
-      ep_slide_status: ["proposed", "approved", "published"],
+      ep_slide_status: ["proposed", "approved", "revise", "published"],
       recruitment_status: [
         "applied",
         "screening_hr",

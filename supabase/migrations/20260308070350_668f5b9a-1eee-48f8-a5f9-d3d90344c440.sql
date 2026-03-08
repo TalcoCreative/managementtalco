@@ -1,0 +1,1 @@
+ALTER TYPE public.ep_slide_status ADD VALUE IF NOT EXISTS 'revise' AFTER 'approved';
