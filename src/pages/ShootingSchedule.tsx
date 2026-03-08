@@ -27,6 +27,9 @@ export default function ShootingSchedule() {
   const [rescheduleShooting, setRescheduleShooting] = useState<{ id: string; title: string; scheduled_date: string } | null>(null);
   const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [sortAsc, setSortAsc] = useState(true);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const queryClient = useQueryClient();
 
   // Fetch client name for header display
