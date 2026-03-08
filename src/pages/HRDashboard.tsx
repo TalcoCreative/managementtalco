@@ -259,6 +259,7 @@ export default function HRDashboard() {
     const userLetters = letters?.filter(l => l.created_by === profile.id) || [];
     const userProspects = prospects?.filter(p => p.created_by === profile.id) || [];
     const userKol = kolEntries?.filter(k => k.created_by === profile.id) || [];
+    const userPublished = publishedSlides?.filter(s => s.created_by === profile.id) || [];
     
     // Activity score calculation (all ×1)
     const activityScore = 
@@ -266,7 +267,8 @@ export default function HRDashboard() {
       tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length * 1 +
       userLetters.length * 1 +
       userProspects.length * 1 +
-      userKol.length * 1;
+      userKol.length * 1 +
+      userPublished.length * 1;
     
     return {
       ...profile,
@@ -277,6 +279,7 @@ export default function HRDashboard() {
       lettersCount: userLetters.length,
       prospectsCount: userProspects.length,
       kolCount: userKol.length,
+      publishedCount: userPublished.length,
       activityScore,
     };
   })?.sort((a, b) => b.activityScore - a.activityScore) || [];
