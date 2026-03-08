@@ -10,7 +10,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const primaryTabs = [
