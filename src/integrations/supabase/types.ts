@@ -2971,7 +2971,13 @@ export type Database = {
       }
       marketplace_reports: {
         Row: {
+          ads_clicks: number | null
+          ads_cpc: number | null
+          ads_impressions: number | null
+          ads_roas: number | null
+          ads_spend: number | null
           avg_order_value: number | null
+          bounce_rate: number | null
           client_id: string
           conversion_rate: number | null
           created_at: string
@@ -2979,16 +2985,24 @@ export type Database = {
           id: string
           marketplace: string
           notes: string | null
+          page_views: number | null
           report_month: number
           report_year: number
           store_visitors: number | null
           total_orders: number | null
           total_products_sold: number | null
           total_revenue: number | null
+          unique_visitors: number | null
           updated_at: string
         }
         Insert: {
+          ads_clicks?: number | null
+          ads_cpc?: number | null
+          ads_impressions?: number | null
+          ads_roas?: number | null
+          ads_spend?: number | null
           avg_order_value?: number | null
+          bounce_rate?: number | null
           client_id: string
           conversion_rate?: number | null
           created_at?: string
@@ -2996,16 +3010,24 @@ export type Database = {
           id?: string
           marketplace?: string
           notes?: string | null
+          page_views?: number | null
           report_month: number
           report_year: number
           store_visitors?: number | null
           total_orders?: number | null
           total_products_sold?: number | null
           total_revenue?: number | null
+          unique_visitors?: number | null
           updated_at?: string
         }
         Update: {
+          ads_clicks?: number | null
+          ads_cpc?: number | null
+          ads_impressions?: number | null
+          ads_roas?: number | null
+          ads_spend?: number | null
           avg_order_value?: number | null
+          bounce_rate?: number | null
           client_id?: string
           conversion_rate?: number | null
           created_at?: string
@@ -3013,12 +3035,14 @@ export type Database = {
           id?: string
           marketplace?: string
           notes?: string | null
+          page_views?: number | null
           report_month?: number
           report_year?: number
           store_visitors?: number | null
           total_orders?: number | null
           total_products_sold?: number | null
           total_revenue?: number | null
+          unique_visitors?: number | null
           updated_at?: string
         }
         Relationships: [
