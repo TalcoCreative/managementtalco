@@ -423,7 +423,15 @@ export function LetterDetailDialog({
                   />
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setDeleteDialogOpen(true)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Hapus Surat
+                  </Button>
                   <Button
                     onClick={() => updateMutation.mutate()}
                     disabled={updateMutation.isPending}
