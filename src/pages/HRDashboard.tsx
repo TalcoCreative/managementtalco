@@ -1014,7 +1014,7 @@ export default function HRDashboard() {
             <Card>
               <CardHeader className="flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between">
-                  <CardTitle>Recent Attendance</CardTitle>
+                  <CardTitle>Attendance ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})</CardTitle>
                   <Button 
                     variant="outline" 
                     size="sm"
