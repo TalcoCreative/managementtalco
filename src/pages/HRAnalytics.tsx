@@ -566,26 +566,24 @@ export default function HRAnalytics() {
             <p className="text-xs text-muted-foreground">Belum selesai</p>
           </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Auto Clock-out</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-500">{kpis.autoClockoutCount}</div>
-              {kpis.autoClockoutChange !== null ? (
-                <div className="flex items-center text-xs">
-                  {kpis.autoClockoutChange <= 0 ? (
-                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.autoClockoutChange}%</span></>
-                  ) : (
-                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.autoClockoutChange}%</span></>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Periode ini</p>
-              )}
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Auto Clock-out</span>
+              <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(var(--warning))' }}>{kpis.autoClockoutCount}</div>
+            {kpis.autoClockoutChange !== null ? (
+              <div className="flex items-center text-xs">
+                {kpis.autoClockoutChange <= 0 ? (
+                  <><ArrowDownRight className="h-3 w-3 kpi-trend-up" /><span className="kpi-trend-up">{kpis.autoClockoutChange}%</span></>
+                ) : (
+                  <><ArrowUpRight className="h-3 w-3 kpi-trend-down" /><span className="kpi-trend-down">+{kpis.autoClockoutChange}%</span></>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Periode ini</p>
+            )}
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
