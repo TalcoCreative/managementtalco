@@ -161,6 +161,9 @@ const App = () => (
           <Route path="/shooting-list/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicShootingList />} />
           </Route>
+          <Route path="/marketplace/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicMarketplace />} />
+          </Route>
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
