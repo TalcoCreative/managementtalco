@@ -870,6 +870,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 />
               </div>
 
+              {/* Sub-Tasks Section */}
+              {taskId && (
+                <SubTasksSection taskId={taskId} />
+              )}
+
               {/* Related Shooting Section */}
               {taskId && (
                 <RelatedShootingSection
