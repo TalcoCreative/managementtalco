@@ -142,40 +142,36 @@ export default function Event() {
           )}
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards — Colored KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Planning</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.planning}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">On Going</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.onGoing}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Selesai</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-600">{stats.done}</div>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Event</span>
+              <div className="kpi-icon w-8 h-8"><Calendar className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{stats.total}</div>
+          </div>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-projects)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Planning</span>
+              <div className="kpi-icon w-8 h-8"><Calendar className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(var(--section-projects))' }}>{stats.planning}</div>
+          </div>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-finance)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">On Going</span>
+              <div className="kpi-icon w-8 h-8"><Calendar className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(var(--section-finance))' }}>{stats.onGoing}</div>
+          </div>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--primary)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Selesai</span>
+              <div className="kpi-icon w-8 h-8"><Calendar className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{stats.done}</div>
+          </div>
         </div>
 
         {/* Filters */}
