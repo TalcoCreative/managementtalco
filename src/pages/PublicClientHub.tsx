@@ -191,7 +191,7 @@ export default function PublicClientHub() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 pb-8 space-y-6 sm:space-y-8">
+      <main className="container mx-auto px-4 pb-24 md:pb-8 space-y-6 sm:space-y-8">
         {/* Quick Access Cards */}
         {availableCards.length > 0 && (
           <div className="space-y-3">
@@ -250,6 +250,22 @@ export default function PublicClientHub() {
           </p>
         </div>
       </main>
+
+      {/* Mobile Bottom Nav */}
+      <HubBottomNav
+        clientName={client.name}
+        clientSlug={slug || ""}
+        dashboardSlug={client.dashboard_slug}
+        socialMediaSlug={client.social_media_slug}
+        availableFeatures={{
+          hasProjects,
+          hasReports,
+          hasSocialMedia,
+          hasEditorialPlans,
+          hasMeetings,
+          hasShootings,
+        }}
+      />
     </div>
   );
 }
