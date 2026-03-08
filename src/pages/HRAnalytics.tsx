@@ -557,16 +557,14 @@ export default function HRAnalytics() {
             </div>
           </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Task Overdue</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{kpis.overdueTaskCount}</div>
-              <p className="text-xs text-muted-foreground">Belum selesai</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': '0 62% 54%' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Task Overdue</span>
+              <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.overdueTaskCount}</div>
+            <p className="text-xs text-muted-foreground">Belum selesai</p>
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
