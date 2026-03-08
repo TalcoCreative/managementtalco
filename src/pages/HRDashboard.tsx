@@ -204,6 +204,23 @@ export default function HRDashboard() {
       return data || [];
     },
   });
+
+  // Fetch published EP slides with creator
+  const { data: publishedSlides } = useQuery({
+    queryKey: ["hr-published-slides", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select("id, created_by, published_at")
+        .eq("status", "published")
+        .not("published_at", "is", null)
+        .gte("published_at", `${startDate}T00:00:00`)
+        .lte("published_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch tasks for selected user detail view
   const { data: userTasks } = useQuery({
     queryKey: ["hr-user-tasks", selectedUser?.id, startDate, endDate],
