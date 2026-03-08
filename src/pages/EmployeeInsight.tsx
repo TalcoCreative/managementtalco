@@ -226,8 +226,21 @@ export default function EmployeeInsight() {
       return data || [];
     },
   });
+  // Fetch late threshold
+  const { data: lateThreshold } = useQuery({
+    queryKey: ["late-threshold-time"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "late_threshold_time")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.setting_value || "10:00";
+    },
+  });
 
-  // Calculate work minutes helper
+
   const calculateWorkMinutes = (clockIn: string | null, clockOut: string | null, breakMinutes: number = 0) => {
     if (!clockIn || !clockOut) return 0;
     const minutes = differenceInMinutes(parseISO(clockOut), parseISO(clockIn));
