@@ -211,7 +211,7 @@ export function MobileBottomNav() {
             <div className="space-y-5 pr-2 pb-4">
               {visibleGroups.map((group) => (
                 <div key={group.label}>
-                  <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
                     {group.label}
                   </p>
                   <div className="grid grid-cols-4 gap-2">
