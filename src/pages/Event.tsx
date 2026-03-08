@@ -125,9 +125,14 @@ export default function Event() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Event Management</h1>
-            <p className="text-muted-foreground">Kelola event perusahaan</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Event Management</h1>
+              <p className="section-subtitle">Kelola event perusahaan</p>
+            </div>
           </div>
           {canManageEvents && (
             <Button onClick={() => setCreateOpen(true)}>

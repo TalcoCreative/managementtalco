@@ -145,13 +145,13 @@ export default function EditorialPlan() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-8 w-8 text-primary" />
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-editorial)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <FileText className="h-5 w-5" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold">Editorial Plan</h1>
-              <p className="text-muted-foreground">
-                Buat dan kelola content plan untuk setiap client
-              </p>
+              <h1 className="section-title">Editorial Plan</h1>
+              <p className="section-subtitle">Buat dan kelola content plan untuk setiap client</p>
             </div>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)}>

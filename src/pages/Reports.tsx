@@ -27,11 +27,14 @@ export default function Reports() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Reports</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Multi-platform social media & marketplace reporting system
-            </p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-reports)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Reports</h1>
+              <p className="section-subtitle">Multi-platform social media & marketplace reporting system</p>
+            </div>
           </div>
           <Button
             variant="outline"
