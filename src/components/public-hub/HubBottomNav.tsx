@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Home, LayoutDashboard, BarChart3, Camera, FileText,
-  Users, Video, Menu, ShoppingBag,
+  Users, Video, Menu, ShoppingBag, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -29,6 +29,7 @@ interface HubBottomNavProps {
     hasMeetings: boolean;
     hasShootings: boolean;
     hasMarketplace?: boolean;
+    hasKolCampaigns?: boolean;
   };
 }
 
@@ -99,6 +100,14 @@ export function HubBottomNav({
       pathPrefix: "/marketplace/",
       getPath: () => `/marketplace/${dashboardSlug}`,
       enabled: !!availableFeatures.hasMarketplace && !!dashboardSlug,
+    },
+    {
+      title: "KOL",
+      icon: Megaphone,
+      gradient: "from-[hsl(28,78%,52%)] to-[hsl(18,72%,48%)]",
+      pathPrefix: "/kol-campaign/",
+      getPath: () => `/kol-campaign/${dashboardSlug}`,
+      enabled: !!availableFeatures.hasKolCampaigns && !!dashboardSlug,
     },
   ];
 

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, LayoutDashboard, BarChart3, Camera,
-  Users, FileText, ArrowRight, AlertCircle, Video, ShoppingBag,
+  Users, FileText, ArrowRight, AlertCircle, Video, ShoppingBag, Megaphone,
 } from "lucide-react";
 import { PublicClientSchedule } from "@/components/public-hub/PublicClientSchedule";
 
@@ -43,6 +43,7 @@ interface ClientHubData {
   hasMeetings: boolean;
   hasShootings: boolean;
   hasMarketplace: boolean;
+  hasKolCampaigns: boolean;
   schedule: ScheduleItem[];
   editorialPlans: EditorialPlanItem[];
 }
@@ -103,7 +104,7 @@ export default function PublicClientHub() {
     );
   }
 
-  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans, hasMeetings, hasShootings, hasMarketplace, schedule, editorialPlans } = data;
+  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans, hasMeetings, hasShootings, hasMarketplace, hasKolCampaigns, schedule, editorialPlans } = data;
 
   const navigationCards = [
     {
@@ -161,6 +162,14 @@ export default function PublicClientHub() {
       gradient: "from-[hsl(152,48%,46%)] to-[hsl(140,60%,45%)]",
       onClick: () => navigate(`/marketplace/${client.dashboard_slug}`),
       enabled: hasMarketplace,
+    },
+    {
+      title: "KOL Campaign",
+      description: "Aktivasi KOL & posting",
+      icon: Megaphone,
+      gradient: "from-[hsl(28,78%,52%)] to-[hsl(18,72%,48%)]",
+      onClick: () => navigate(`/kol-campaign/${client.dashboard_slug}`),
+      enabled: hasKolCampaigns,
     },
   ];
 

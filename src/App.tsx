@@ -68,6 +68,7 @@ import PublishedContent from "./pages/PublishedContent";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
 import PublicMarketplace from "./pages/PublicMarketplace";
+import PublicKolCampaign from "./pages/PublicKolCampaign";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -163,6 +164,9 @@ const App = () => (
           </Route>
           <Route path="/marketplace/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicMarketplace />} />
+          </Route>
+          <Route path="/kol-campaign/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicKolCampaign />} />
           </Route>
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
