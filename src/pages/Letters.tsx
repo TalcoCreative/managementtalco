@@ -285,6 +285,11 @@ export default function Letters() {
                           <Badge variant="outline">{letter.entity_code}</Badge>
                         </TableCell>
                         <TableCell>
+                          <Badge variant={letter.category_code === 'SLIP' ? 'default' : 'secondary'} className="text-xs">
+                            {letter.category_name || letter.category_code}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
                           <div>
                             <div className="font-medium">{letter.recipient_name}</div>
                             {letter.recipient_company && (
