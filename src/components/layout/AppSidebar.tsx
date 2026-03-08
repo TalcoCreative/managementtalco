@@ -2,7 +2,7 @@ import {
   Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
-  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings,
+  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -95,6 +95,7 @@ const executiveItems: NavItem[] = [
 
 // ── System ──────────────────────────────────────────────
 const systemItems: NavItem[] = [
+  { title: "Profile Settings", url: "/profile-settings", icon: User, featureKey: "profile_settings" },
   { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
   { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
@@ -139,7 +140,8 @@ export function AppSidebar() {
         : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
     }`;
 
-  const filterItems = (items: NavItem[]) => items.filter(i => canView(i.featureKey));
+  // profile_settings is always visible to all users
+  const filterItems = (items: NavItem[]) => items.filter(i => i.featureKey === "profile_settings" || canView(i.featureKey));
 
   const renderGroup = (label: string, items: NavItem[]) => {
     const visible = filterItems(items);
