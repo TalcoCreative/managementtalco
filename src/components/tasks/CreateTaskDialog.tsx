@@ -170,7 +170,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
       const { data: taskData, error } = await supabase.from("tasks").insert({
         title: formData.title.trim(),
-        table_data: tableData as any,
+        table_data: briefData as any,
         description: formData.notes.trim() || null,
         priority: formData.priority,
         project_id: formData.project_id,
