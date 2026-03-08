@@ -19,9 +19,10 @@ export function AIChatPopup() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Drag state
+  // Drag state - shared for both icon and chat window
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const dragInfo = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const [iconPos, setIconPos] = useState<{ x: number; y: number } | null>(null);
+  const dragInfo = useRef<{ startX: number; startY: number; origX: number; origY: number; dragged: boolean } | null>(null);
 
   const getDefaultPos = useCallback(() => {
     const isMd = window.innerWidth >= 768;
@@ -31,19 +32,28 @@ export function AIChatPopup() {
     };
   }, []);
 
+  const getDefaultIconPos = useCallback(() => ({
+    x: window.innerWidth >= 768 ? window.innerWidth - 56 - 32 : window.innerWidth - 56 - 24,
+    y: window.innerHeight >= 768 ? window.innerHeight - 56 - 32 : window.innerHeight - 56 - 24,
+  }), []);
+
   useEffect(() => {
     if (open && !position) setPosition(getDefaultPos());
   }, [open, position, getDefaultPos]);
 
-  // Use window-level listeners for reliable drag
+  // Window-level drag listeners
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!dragInfo.current) return;
       const dx = e.clientX - dragInfo.current.startX;
       const dy = e.clientY - dragInfo.current.startY;
-      setPosition({
-        x: Math.max(0, Math.min(window.innerWidth - 120, dragInfo.current.origX + dx)),
-        y: Math.max(0, Math.min(window.innerHeight - 120, dragInfo.current.origY + dy)),
+      if (!dragInfo.current.dragged && Math.abs(dx) + Math.abs(dy) > 5) {
+        dragInfo.current.dragged = true;
+      }
+      const setter = open ? setPosition : setIconPos;
+      setter({
+        x: Math.max(0, Math.min(window.innerWidth - 60, dragInfo.current.origX + dx)),
+        y: Math.max(0, Math.min(window.innerHeight - 60, dragInfo.current.origY + dy)),
       });
     };
     const onUp = () => { dragInfo.current = null; };
@@ -53,19 +63,36 @@ export function AIChatPopup() {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, []);
+  }, [open]);
 
-  const handleHeaderPointerDown = useCallback((e: React.PointerEvent) => {
-    // Don't drag when clicking buttons
-    if ((e.target as HTMLElement).closest("button")) return;
+  const startDrag = useCallback((e: React.PointerEvent, origX: number, origY: number) => {
     e.preventDefault();
     dragInfo.current = {
       startX: e.clientX,
       startY: e.clientY,
-      origX: position?.x ?? 0,
-      origY: position?.y ?? 0,
+      origX,
+      origY,
+      dragged: false,
     };
-  }, [position]);
+  }, []);
+
+  const handleIconPointerDown = useCallback((e: React.PointerEvent) => {
+    const ip = iconPos ?? getDefaultIconPos();
+    startDrag(e, ip.x, ip.y);
+  }, [iconPos, getDefaultIconPos, startDrag]);
+
+  const handleIconClick = useCallback(() => {
+    // Only open if we didn't drag
+    if (!dragInfo.current?.dragged) {
+      setOpen(true);
+    }
+  }, []);
+
+  const handleHeaderPointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    const p = position ?? getDefaultPos();
+    startDrag(e, p.x, p.y);
+  }, [position, getDefaultPos, startDrag]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -182,11 +209,15 @@ export function AIChatPopup() {
     }
   };
 
+  const ip = iconPos ?? getDefaultIconPos();
+
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center md:bottom-8 md:right-8"
+        onPointerDown={handleIconPointerDown}
+        onClick={handleIconClick}
+        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center touch-none select-none"
+        style={{ left: ip.x, top: ip.y }}
         title="Tassa — Talco Support Assistant"
       >
         <Bot className="h-6 w-6" />
