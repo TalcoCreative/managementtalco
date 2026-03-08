@@ -209,11 +209,15 @@ export function AIChatPopup() {
     }
   };
 
+  const ip = iconPos ?? getDefaultIconPos();
+
   if (!open) {
     return (
       <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center md:bottom-8 md:right-8"
+        onPointerDown={handleIconPointerDown}
+        onClick={handleIconClick}
+        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center touch-none select-none"
+        style={{ left: ip.x, top: ip.y }}
         title="Tassa — Talco Support Assistant"
       >
         <Bot className="h-6 w-6" />
