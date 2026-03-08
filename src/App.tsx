@@ -63,6 +63,7 @@ import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
 import PublicEditorialPlanList from "./pages/PublicEditorialPlanList";
 import PublicClientHub from "./pages/PublicClientHub";
+import HubLayout from "./components/public-hub/HubLayout";
 import PublishedContent from "./pages/PublishedContent";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
