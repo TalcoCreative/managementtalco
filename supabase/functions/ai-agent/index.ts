@@ -576,6 +576,146 @@ async function getSystemOverview(client: any): Promise<any> {
   };
 }
 
+// Finance category mapping (mirrors frontend finance-categories.ts)
+const SUB_CATEGORY_TO_MAIN: Record<string, string> = {
+  gaji_upah: "sdm_hr", freelance_parttimer: "sdm_hr", bpjs: "sdm_hr", thr_bonus: "sdm_hr",
+  rekrutmen: "sdm_hr", training_sertifikasi: "sdm_hr", kesehatan_karyawan: "sdm_hr", reimburse_karyawan: "sdm_hr",
+  honor_talent: "project", produksi_konten: "project", vendor_project: "project",
+  transport_project: "project", konsumsi_project: "project", sewa_lokasi: "project", equipment: "project",
+  pengeluaran_inside: "project",
+  ads: "marketing_growth", kol_influencer: "marketing_growth", event_aktivasi: "marketing_growth",
+  produksi_marketing: "marketing_growth", tools_marketing: "marketing_growth", sponsorship: "marketing_growth",
+  saas_subscription: "it_tools", domain_hosting: "it_tools", software_license: "it_tools",
+  hardware: "it_tools", maintenance_it: "it_tools", cloud_service: "it_tools",
+  transport: "operasional", transport_online: "operasional", konsumsi_meeting: "operasional",
+  maintenance: "operasional", service_ac: "operasional", logistik: "operasional",
+  office_supplies: "operasional", iuran: "operasional", parkir: "operasional",
+  atk: "administrasi_legal", listrik_air: "administrasi_legal", internet_komunikasi: "administrasi_legal",
+  kebersihan: "administrasi_legal", legalitas: "administrasi_legal", perizinan: "administrasi_legal",
+  pajak: "administrasi_legal", notaris: "administrasi_legal", konsultan: "administrasi_legal",
+  biaya_transfer: "finance", biaya_admin_bank: "finance", bunga_denda: "finance",
+  pajak_dibayar: "finance", audit: "finance", administrasi_bank: "finance",
+  reimburse_transport: "reimburse", reimburse_kesehatan: "reimburse", reimburse_lainnya: "reimburse",
+};
+
+const MAIN_CAT_LABELS: Record<string, string> = {
+  sdm_hr: "SDM / HR", project: "Project", marketing_growth: "Marketing & Growth",
+  it_tools: "IT & Tools", operasional: "Operasional", administrasi_legal: "Administrasi & Legal",
+  finance: "Finance", reimburse: "Reimburse & Request", lainnya: "Lain-lain",
+};
+
+const SDM_SUBS = ["gaji_upah", "freelance_parttimer", "bpjs", "thr_bonus", "rekrutmen", "training_sertifikasi", "kesehatan_karyawan", "reimburse_karyawan"];
+
+function deriveMainCat(sub: string | null): string {
+  return sub ? (SUB_CATEGORY_TO_MAIN[sub] || "lainnya") : "lainnya";
+}
+
+async function getFinanceDashboard(client: any, args: any): Promise<any> {
+  const now = new Date();
+  const year = args.year || now.getFullYear();
+  const month = (args.month !== undefined && args.month >= 0) ? args.month : -1;
+
+  const { data: allEntries, error } = await client
+    .from("ledger_entries")
+    .select("type, amount, date, sub_category, sub_type")
+    .order("date", { ascending: true });
+  if (error) return { error: error.message };
+  const entries = allEntries || [];
+
+  let periodStart: string, periodEnd: string;
+  if (month === -1) {
+    periodStart = `${year}-01-01`;
+    periodEnd = `${year}-12-31`;
+  } else {
+    const m = String(month + 1).padStart(2, "0");
+    periodStart = `${year}-${m}-01`;
+    periodEnd = `${year}-${m}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
+  }
+
+  let saldoAwal = 0;
+  entries.filter((e: any) => e.date < periodStart).forEach((e: any) => {
+    if (e.type === "income") saldoAwal += Number(e.amount);
+    else saldoAwal -= Math.abs(Number(e.amount));
+  });
+
+  const pe = entries.filter((e: any) => e.date >= periodStart && e.date <= periodEnd);
+  const totalIncome = pe.filter((e: any) => e.type === "income").reduce((s: number, e: any) => s + Number(e.amount), 0);
+  const totalExpenses = pe.filter((e: any) => e.type === "expense").reduce((s: number, e: any) => s + Math.abs(Number(e.amount)), 0);
+  const netCashflow = totalIncome - totalExpenses;
+  const saldoAkhir = saldoAwal + netCashflow;
+
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const dailyExpenses = pe.filter((e: any) => e.type === "expense" && e.date === todayStr)
+    .reduce((s: number, e: any) => s + Math.abs(Number(e.amount)), 0);
+
+  const payrollTotal = pe.filter((e: any) => e.type === "expense" && SDM_SUBS.includes(e.sub_category || ""))
+    .reduce((s: number, e: any) => s + Math.abs(Number(e.amount)), 0);
+
+  const catTotals: Record<string, number> = {};
+  pe.filter((e: any) => e.type === "expense").forEach((e: any) => {
+    const mc = deriveMainCat(e.sub_category);
+    catTotals[mc] = (catTotals[mc] || 0) + Math.abs(Number(e.amount));
+  });
+  const expByCat = Object.entries(catTotals)
+    .map(([k, v]) => ({ category: MAIN_CAT_LABELS[k] || k, amount: v }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const subTotals: Record<string, number> = {};
+  pe.filter((e: any) => e.type === "expense").forEach((e: any) => {
+    const sc = e.sub_category || "tidak_terklasifikasi";
+    subTotals[sc] = (subTotals[sc] || 0) + Math.abs(Number(e.amount));
+  });
+  const topSubs = Object.entries(subTotals)
+    .map(([k, v]) => ({ sub_category: k, amount: v }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 10);
+
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthlyTrend: any[] = [];
+  if (month === -1) {
+    for (let m = 0; m < 12; m++) {
+      const ms = String(m + 1).padStart(2, "0");
+      const mStart = `${year}-${ms}-01`;
+      const mEnd = `${year}-${ms}-${new Date(year, m + 1, 0).getDate()}`;
+      const me = pe.filter((e: any) => e.date >= mStart && e.date <= mEnd);
+      monthlyTrend.push({
+        month: monthNames[m],
+        income: me.filter((e: any) => e.type === "income").reduce((s: number, e: any) => s + Number(e.amount), 0),
+        expenses: me.filter((e: any) => e.type === "expense").reduce((s: number, e: any) => s + Math.abs(Number(e.amount)), 0),
+      });
+    }
+  }
+
+  let forecast: any[] = [];
+  try {
+    const { data: recurring } = await client.from("recurring_budget").select("type, amount, period").eq("status", "active");
+    const { data: payroll } = await client.from("payroll").select("amount, month").eq("status", "planned");
+    forecast = Array.from({ length: 3 }, (_, i) => {
+      const fd = new Date(now.getFullYear(), now.getMonth() + i + 1, 1);
+      const calcRec = (type: string) => (recurring || []).filter((r: any) => r.type === type).reduce((s: number, r: any) => {
+        if (r.period === "monthly") return s + Number(r.amount);
+        if (r.period === "yearly") return s + Number(r.amount) / 12;
+        if (r.period === "weekly") return s + Number(r.amount) * 4;
+        return s;
+      }, 0);
+      const pp = (payroll || []).filter((p: any) => {
+        const pm = new Date(p.month);
+        return pm.getMonth() === fd.getMonth() && pm.getFullYear() === fd.getFullYear();
+      }).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      return { month: `${monthNames[fd.getMonth()]} ${fd.getFullYear()}`, expected_income: calcRec("income"), expected_expenses: calcRec("expense") + pp };
+    });
+  } catch { /* ignore */ }
+
+  return {
+    period: month === -1 ? `${year} (All Months)` : `${monthNames[month]} ${year}`,
+    saldo_awal: saldoAwal, total_income: totalIncome, total_expenses: totalExpenses,
+    net_cashflow: netCashflow, saldo_akhir: saldoAkhir, daily_expenses_today: dailyExpenses,
+    payroll_vs_non_payroll: { payroll: payrollTotal, non_payroll: totalExpenses - payrollTotal, total: totalExpenses },
+    expense_by_main_category: expByCat, top_10_sub_categories: topSubs,
+    monthly_trend: monthlyTrend, forecast,
+  };
+}
+
 async function queryTable(client: any, args: any): Promise<any> {
   const { table, select = "*", filters = [], order_by, limit = 100, count_only = false } = args;
 
