@@ -952,6 +952,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          client_logo: string | null
           client_type: string
           company: string | null
           created_at: string | null
@@ -969,6 +970,7 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          client_logo?: string | null
           client_type?: string
           company?: string | null
           created_at?: string | null
@@ -986,6 +988,7 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          client_logo?: string | null
           client_type?: string
           company?: string | null
           created_at?: string | null
