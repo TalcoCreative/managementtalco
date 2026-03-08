@@ -663,6 +663,12 @@ export default function HRDashboard() {
                         <TableHead className="text-center">Tasks Completed</TableHead>
                         <TableHead className="text-center">
                           <div className="flex items-center justify-center gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            EP Published
+                          </div>
+                        </TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
                             <Star className="h-3 w-3 text-yellow-500" />
                             Total Score
                           </div>
