@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import {
   Building2, LayoutDashboard, BarChart3, Camera,
-  Users, FileText, ArrowRight, AlertCircle, Video,
+  Users, FileText, ArrowRight, AlertCircle, Video, ShoppingBag,
 } from "lucide-react";
 import { PublicClientSchedule } from "@/components/public-hub/PublicClientSchedule";
 
