@@ -329,12 +329,14 @@ export function FinancePayroll() {
     setGeneratingPDF(payroll.id);
     try {
       const profile = payroll.profiles;
+      const employeeName = profile?.full_name || "-";
+      const periode = format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale });
       
       await generatePayrollPDF(
         {
-          employeeName: profile?.full_name || "-",
+          employeeName,
           jabatan: getEmployeeRole(payroll.employee_id),
-          periode: format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale }),
+          periode,
           gajiPokok: Number(profile?.gaji_pokok) || 0,
           tjTransport: Number(profile?.tj_transport) || 0,
           tjInternet: Number(profile?.tj_internet) || 0,
@@ -350,7 +352,62 @@ export function FinancePayroll() {
         companySettings || {}
       );
 
-      toast.success("PDF berhasil di-download");
+      // Auto-create letter entry for this payroll slip
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = now.getMonth() + 1;
+
+          // Get next running number for SLIP category
+          const { data: nextNumber } = await supabase.rpc("get_next_letter_number", {
+            p_entity_code: "TCI",
+            p_category_code: "SLIP",
+            p_year: year,
+            p_month: month,
+          });
+
+          if (nextNumber) {
+            const monthStr = month.toString().padStart(2, "0");
+            const runningStr = nextNumber.toString().padStart(3, "0");
+            const letterNumber = `TCI/SLIP/PAYROLL/${monthStr}/${year}/${runningStr}`;
+
+            await supabase.from("letters").insert({
+              letter_number: letterNumber,
+              entity_code: "TCI",
+              entity_name: "Talco Creative Indonesia",
+              category_code: "SLIP",
+              category_name: "Slip Gaji",
+              project_label: "PAYROLL",
+              recipient_name: employeeName,
+              recipient_company: null,
+              notes: `Slip gaji ${employeeName} periode ${periode}`,
+              created_by: user.id,
+              running_number: nextNumber,
+              year,
+              month,
+              status: "sent",
+              is_confidential: true,
+              letter_type: "payroll_slip",
+              employee_id: payroll.employee_id,
+            });
+
+            // Log activity
+            await supabase.from("letter_activity_logs").insert({
+              letter_id: (await supabase.from("letters").select("id").eq("letter_number", letterNumber).single()).data?.id,
+              action: "created",
+              new_value: `Slip gaji otomatis: ${letterNumber} (Rahasia)`,
+              changed_by: user.id,
+            });
+          }
+        }
+      } catch (letterError) {
+        console.log("Failed to create letter entry:", letterError);
+        // Don't block PDF download if letter creation fails
+      }
+
+      toast.success("PDF berhasil di-download & surat tercatat");
     } catch (error: any) {
       toast.error(error.message || "Gagal generate PDF");
     } finally {
