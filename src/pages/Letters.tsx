@@ -386,6 +386,33 @@ export default function Letters() {
                         <TableCell>
                           {letter.created_by_profile?.full_name || "-"}
                         </TableCell>
+                        <TableCell>
+                          {letter.letter_type === 'payroll_slip' && letter.employee_id ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => handleDownloadSlipPDF(letter, e)}
+                              disabled={downloadingPDF === letter.id}
+                            >
+                              {downloadingPDF === letter.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <FileDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          ) : letter.document_url ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(letter.document_url, "_blank");
+                              }}
+                            >
+                              <FileDown className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
