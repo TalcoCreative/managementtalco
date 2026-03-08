@@ -183,12 +183,6 @@ export default function KolCampaign() {
             </p>
           </div>
           <div className="flex gap-2">
-            <ExcelActions
-              data={exportData}
-              columns={KOL_CAMPAIGN_COLUMNS}
-              filename="kol_campaigns"
-              onImport={handleImportCampaign}
-            />
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Assign KOL ke Campaign

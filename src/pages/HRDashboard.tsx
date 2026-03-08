@@ -490,12 +490,6 @@ export default function HRDashboard() {
             <h1 className="text-3xl font-bold">HR Dashboard</h1>
             <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
           </div>
-          <ExcelActions
-            data={attendanceExportData}
-            columns={ATTENDANCE_COLUMNS}
-            filename="attendance"
-            onImport={handleImportAttendance}
-          />
         </div>
 
         {/* Date Range Filter */}

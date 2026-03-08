@@ -219,12 +219,6 @@ export default function KolDatabase() {
             </p>
           </div>
           <div className="flex gap-2">
-            <ExcelActions
-              data={exportData}
-              columns={KOL_COLUMNS}
-              filename="kol_database"
-              onImport={handleImportKol}
-            />
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Tambah KOL

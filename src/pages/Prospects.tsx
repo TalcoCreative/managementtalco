@@ -365,12 +365,6 @@ export default function Prospects() {
               <History className="h-4 w-4 mr-2" />
               History Log
             </Button>
-            <ExcelActions
-              data={exportData}
-              columns={PROSPECT_COLUMNS}
-              filename="prospects"
-              onImport={handleImportProspects}
-            />
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Prospect

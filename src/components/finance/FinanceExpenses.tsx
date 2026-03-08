@@ -351,12 +351,6 @@ export function FinanceExpenses() {
           Expenses
         </CardTitle>
         <div className="flex gap-2">
-          <ExcelActions
-            data={exportData}
-            columns={EXPENSE_COLUMNS}
-            filename="expenses"
-            onImport={handleImportExpenses}
-          />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>

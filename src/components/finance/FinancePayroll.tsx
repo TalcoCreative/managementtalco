@@ -402,12 +402,6 @@ export function FinancePayroll() {
           Payroll
         </CardTitle>
         <div className="flex items-center gap-2 flex-wrap">
-          <ExcelActions
-            data={exportPayrollData}
-            columns={PAYROLL_COLUMNS}
-            filename="payroll"
-            onImport={handleImportPayroll}
-          />
           <Button variant="outline" size="sm" onClick={() => setSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4 mr-2" />
             Pengaturan PDF
