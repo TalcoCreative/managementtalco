@@ -212,7 +212,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           description: editDescription,
           assigned_to: primaryAssignee,
           deadline: editDeadline || null,
-          table_data: editTableData as any,
+          table_data: editBriefData as any,
           assigned_at: primaryAssignee ? new Date().toISOString() : null,
           title_edited_at: editTitle !== task?.title ? new Date().toISOString() : task?.title_edited_at,
           description_edited_at: editDescription !== task?.description ? new Date().toISOString() : task?.description_edited_at,

@@ -331,9 +331,9 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
 
           <div className="space-y-2">
             <Label>Brief / Deskripsi</Label>
-            <EditableTaskTable
-              data={tableData}
-              onChange={setTableData}
+            <RichBriefEditor
+              data={briefData}
+              onChange={setBriefData}
               readOnly={false}
             />
           </div>
