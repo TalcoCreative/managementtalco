@@ -214,7 +214,7 @@ export const generatePayrollPDF = async (
   }
 
   // Company Name - positioned to the right of logo
-  const textStartX = settings.logoUrl ? margin + settings.logoWidth + 7 : margin;
+  const textStartX = settings.logoUrl ? margin + actualLogoWidth + 7 : margin;
   
   doc.setFontSize(settings.headerFontSize);
   doc.setFont("helvetica", "bold");
