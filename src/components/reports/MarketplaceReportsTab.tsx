@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -42,9 +43,8 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Plus, ShoppingBag, TrendingUp, Package, Eye, DollarSign } from "lucide-react";
+import { Plus, Package, Eye, DollarSign, MousePointer, Megaphone, Users } from "lucide-react";
 import { toast } from "sonner";
-import { MonthYearPicker } from "./MonthYearPicker";
 
 const MARKETPLACES = [
   { value: "tokopedia", label: "Tokopedia", color: "bg-green-100 text-green-800" },
@@ -63,6 +63,7 @@ export function MarketplaceReportsTab() {
   const [selectedClientId, setSelectedClientId] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("selling");
   const [formData, setFormData] = useState({
     client_id: "",
     marketplace: "tokopedia",
@@ -74,6 +75,14 @@ export function MarketplaceReportsTab() {
     store_visitors: 0,
     conversion_rate: 0,
     avg_order_value: 0,
+    page_views: 0,
+    unique_visitors: 0,
+    bounce_rate: 0,
+    ads_spend: 0,
+    ads_impressions: 0,
+    ads_clicks: 0,
+    ads_roas: 0,
+    ads_cpc: 0,
     notes: "",
   });
 
@@ -120,12 +129,23 @@ export function MarketplaceReportsTab() {
       shopee_revenue: shopee?.total_revenue || 0,
       tokopedia_orders: tokopedia?.total_orders || 0,
       shopee_orders: shopee?.total_orders || 0,
+      tokopedia_visitors: tokopedia?.store_visitors || 0,
+      shopee_visitors: shopee?.store_visitors || 0,
+      tokopedia_page_views: tokopedia?.page_views || 0,
+      shopee_page_views: shopee?.page_views || 0,
+      tokopedia_ads_spend: tokopedia?.ads_spend || 0,
+      shopee_ads_spend: shopee?.ads_spend || 0,
+      tokopedia_ads_clicks: tokopedia?.ads_clicks || 0,
+      shopee_ads_clicks: shopee?.ads_clicks || 0,
     };
   });
 
   const totalRevenue = reports?.reduce((sum: number, r: any) => sum + (r.total_revenue || 0), 0) || 0;
   const totalOrders = reports?.reduce((sum: number, r: any) => sum + (r.total_orders || 0), 0) || 0;
   const totalVisitors = reports?.reduce((sum: number, r: any) => sum + (r.store_visitors || 0), 0) || 0;
+  const totalPageViews = reports?.reduce((sum: number, r: any) => sum + (r.page_views || 0), 0) || 0;
+  const totalAdsSpend = reports?.reduce((sum: number, r: any) => sum + (r.ads_spend || 0), 0) || 0;
+  const totalAdsClicks = reports?.reduce((sum: number, r: any) => sum + (r.ads_clicks || 0), 0) || 0;
 
   const handleSave = async () => {
     if (!formData.client_id) {
@@ -182,93 +202,292 @@ export function MarketplaceReportsTab() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100">
-                <DollarSign className="h-5 w-5 text-green-700" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-xl font-bold">{formatCurrency(totalRevenue)}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-green-100"><DollarSign className="h-4 w-4 text-green-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Revenue</p>
+                <p className="text-sm font-bold truncate">{formatCurrency(totalRevenue)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100">
-                <Package className="h-5 w-5 text-blue-700" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
-                <p className="text-xl font-bold">{formatNumber(totalOrders)}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-100"><Package className="h-4 w-4 text-blue-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Orders</p>
+                <p className="text-sm font-bold">{formatNumber(totalOrders)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100">
-                <Eye className="h-5 w-5 text-purple-700" />
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-purple-100"><Eye className="h-4 w-4 text-purple-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Visitors</p>
+                <p className="text-sm font-bold">{formatNumber(totalVisitors)}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Visitors</p>
-                <p className="text-xl font-bold">{formatNumber(totalVisitors)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-indigo-100"><Users className="h-4 w-4 text-indigo-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Page Views</p>
+                <p className="text-sm font-bold">{formatNumber(totalPageViews)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-red-100"><Megaphone className="h-4 w-4 text-red-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Ads Spend</p>
+                <p className="text-sm font-bold truncate">{formatCurrency(totalAdsSpend)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-100"><MousePointer className="h-4 w-4 text-amber-700" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground truncate">Ads Clicks</p>
+                <p className="text-sm font-bold">{formatNumber(totalAdsClicks)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Revenue Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Revenue Trend ({selectedYear})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="tokopedia_revenue" name="Tokopedia" fill="hsl(140, 60%, 45%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="shopee_revenue" name="Shopee" fill="hsl(25, 90%, 55%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Tabs for Selling / Traffic / Ads */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="selling">Selling</TabsTrigger>
+          <TabsTrigger value="traffic">Traffic</TabsTrigger>
+          <TabsTrigger value="ads">Ads</TabsTrigger>
+        </TabsList>
 
-      {/* Orders Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Orders Trend ({selectedYear})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="tokopedia_orders" name="Tokopedia" stroke="hsl(140, 60%, 45%)" strokeWidth={2} />
-              <Line type="monotone" dataKey="shopee_orders" name="Shopee" stroke="hsl(25, 90%, 55%)" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        {/* === SELLING TAB === */}
+        <TabsContent value="selling" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Revenue Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Legend />
+                  <Bar dataKey="tokopedia_revenue" name="Tokopedia" fill="hsl(140, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="shopee_revenue" name="Shopee" fill="hsl(25, 90%, 55%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-      {/* Table */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Orders Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="tokopedia_orders" name="Tokopedia" stroke="hsl(140, 60%, 45%)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="shopee_orders" name="Shopee" stroke="hsl(25, 90%, 55%)" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === TRAFFIC TAB === */}
+        <TabsContent value="traffic" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Visitors Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(v: number) => formatNumber(v)} />
+                  <Legend />
+                  <Bar dataKey="tokopedia_visitors" name="Tokopedia Visitors" fill="hsl(140, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="shopee_visitors" name="Shopee Visitors" fill="hsl(25, 90%, 55%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Page Views Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(v: number) => formatNumber(v)} />
+                  <Legend />
+                  <Line type="monotone" dataKey="tokopedia_page_views" name="Tokopedia" stroke="hsl(140, 60%, 45%)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="shopee_page_views" name="Shopee" stroke="hsl(25, 90%, 55%)" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Traffic detail table */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Detail Traffic</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>Bulan</TableHead>
+                      <TableHead className="text-right">Visitors</TableHead>
+                      <TableHead className="text-right">Page Views</TableHead>
+                      <TableHead className="text-right">Unique Visitors</TableHead>
+                      <TableHead className="text-right">Bounce Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reports?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          Belum ada data
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      reports?.map((r: any) => {
+                        const mp = MARKETPLACES.find(m => m.value === r.marketplace);
+                        return (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-medium">{r.clients?.name || "-"}</TableCell>
+                            <TableCell><Badge variant="outline" className={mp?.color}>{mp?.label || r.marketplace}</Badge></TableCell>
+                            <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                            <TableCell className="text-right">{formatNumber(r.store_visitors || 0)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(r.page_views || 0)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(r.unique_visitors || 0)}</TableCell>
+                            <TableCell className="text-right">{(r.bounce_rate || 0).toFixed(1)}%</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* === ADS TAB === */}
+        <TabsContent value="ads" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Ads Spend Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                  <Legend />
+                  <Bar dataKey="tokopedia_ads_spend" name="Tokopedia Ads" fill="hsl(140, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="shopee_ads_spend" name="Shopee Ads" fill="hsl(25, 90%, 55%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Ads Clicks Trend ({selectedYear})</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(v: number) => formatNumber(v)} />
+                  <Legend />
+                  <Line type="monotone" dataKey="tokopedia_ads_clicks" name="Tokopedia" stroke="hsl(140, 60%, 45%)" strokeWidth={2} />
+                  <Line type="monotone" dataKey="shopee_ads_clicks" name="Shopee" stroke="hsl(25, 90%, 55%)" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Ads detail table */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Detail Ads</CardTitle></CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>Bulan</TableHead>
+                      <TableHead className="text-right">Spend</TableHead>
+                      <TableHead className="text-right">Impressions</TableHead>
+                      <TableHead className="text-right">Clicks</TableHead>
+                      <TableHead className="text-right">CPC</TableHead>
+                      <TableHead className="text-right">ROAS</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reports?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                          Belum ada data
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      reports?.map((r: any) => {
+                        const mp = MARKETPLACES.find(m => m.value === r.marketplace);
+                        return (
+                          <TableRow key={r.id}>
+                            <TableCell className="font-medium">{r.clients?.name || "-"}</TableCell>
+                            <TableCell><Badge variant="outline" className={mp?.color}>{mp?.label || r.marketplace}</Badge></TableCell>
+                            <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(r.ads_spend || 0)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(r.ads_impressions || 0)}</TableCell>
+                            <TableCell className="text-right">{formatNumber(r.ads_clicks || 0)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(r.ads_cpc || 0)}</TableCell>
+                            <TableCell className="text-right">{(r.ads_roas || 0).toFixed(2)}x</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Selling Detail Table (always visible below tabs) */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Detail Report</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base">Detail Selling Report</CardTitle></CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
@@ -318,7 +537,7 @@ export function MarketplaceReportsTab() {
 
       {/* Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Tambah Marketplace Report</DialogTitle>
           </DialogHeader>
@@ -364,6 +583,9 @@ export function MarketplaceReportsTab() {
                 <Input type="number" value={formData.report_year} onChange={(e) => setFormData(p => ({ ...p, report_year: Number(e.target.value) }))} />
               </div>
             </div>
+
+            {/* Selling section */}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Selling</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Total Revenue (Rp)</Label>
@@ -376,16 +598,6 @@ export function MarketplaceReportsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Store Visitors</Label>
-                <Input type="number" value={formData.store_visitors} onChange={(e) => setFormData(p => ({ ...p, store_visitors: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Conversion Rate (%)</Label>
-                <Input type="number" step="0.01" value={formData.conversion_rate} onChange={(e) => setFormData(p => ({ ...p, conversion_rate: Number(e.target.value) }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
                 <Label>Products Sold</Label>
                 <Input type="number" value={formData.total_products_sold} onChange={(e) => setFormData(p => ({ ...p, total_products_sold: Number(e.target.value) }))} />
               </div>
@@ -394,6 +606,65 @@ export function MarketplaceReportsTab() {
                 <Input type="number" value={formData.avg_order_value} onChange={(e) => setFormData(p => ({ ...p, avg_order_value: Number(e.target.value) }))} />
               </div>
             </div>
+
+            {/* Traffic section */}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Traffic</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Store Visitors</Label>
+                <Input type="number" value={formData.store_visitors} onChange={(e) => setFormData(p => ({ ...p, store_visitors: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Page Views</Label>
+                <Input type="number" value={formData.page_views} onChange={(e) => setFormData(p => ({ ...p, page_views: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Unique Visitors</Label>
+                <Input type="number" value={formData.unique_visitors} onChange={(e) => setFormData(p => ({ ...p, unique_visitors: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Bounce Rate (%)</Label>
+                <Input type="number" step="0.01" value={formData.bounce_rate} onChange={(e) => setFormData(p => ({ ...p, bounce_rate: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Conversion Rate (%)</Label>
+                <Input type="number" step="0.01" value={formData.conversion_rate} onChange={(e) => setFormData(p => ({ ...p, conversion_rate: Number(e.target.value) }))} />
+              </div>
+            </div>
+
+            {/* Ads section */}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Ads</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Ads Spend (Rp)</Label>
+                <Input type="number" value={formData.ads_spend} onChange={(e) => setFormData(p => ({ ...p, ads_spend: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Impressions</Label>
+                <Input type="number" value={formData.ads_impressions} onChange={(e) => setFormData(p => ({ ...p, ads_impressions: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Clicks</Label>
+                <Input type="number" value={formData.ads_clicks} onChange={(e) => setFormData(p => ({ ...p, ads_clicks: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>CPC (Rp)</Label>
+                <Input type="number" step="0.01" value={formData.ads_cpc} onChange={(e) => setFormData(p => ({ ...p, ads_cpc: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>ROAS</Label>
+                <Input type="number" step="0.01" value={formData.ads_roas} onChange={(e) => setFormData(p => ({ ...p, ads_roas: Number(e.target.value) }))} />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea value={formData.notes} onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Catatan tambahan..." />
