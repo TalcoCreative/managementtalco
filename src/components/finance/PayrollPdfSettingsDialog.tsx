@@ -194,17 +194,19 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   };
 
-  const removeFile = async (type: "logo" | "signature") => {
+  const removeFile = async (type: "logo" | "signature" | "stamp") => {
     try {
-      const settingKey = type === "logo" ? "company_logo" : "hr_signature";
+      const settingKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       await saveSetting(settingKey, null);
       
+      const stateKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       setSettings(prev => ({
         ...prev,
-        [type === "logo" ? "company_logo" : "hr_signature"]: null
+        [stateKey]: null
       }));
 
-      toast.success(`${type === "logo" ? "Logo" : "Tanda tangan"} dihapus`);
+      const labels = { logo: "Logo", signature: "Tanda tangan", stamp: "Cap perusahaan" };
+      toast.success(`${labels[type]} dihapus`);
     } catch (error: any) {
       toast.error(error.message);
     }
