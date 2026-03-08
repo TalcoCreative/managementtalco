@@ -341,6 +341,7 @@ export default function Letters() {
                       <TableHead>Status</TableHead>
                       <TableHead>Tanggal</TableHead>
                       <TableHead>Pembuat</TableHead>
+                      <TableHead>Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
