@@ -349,7 +349,7 @@ export function IndividualPerformance({
                         <CheckSquare className="h-4 w-4" />
                         <span className="text-sm">Tasks</span>
                       </div>
-                      <p className="text-xl font-bold">{selectedMetric.completedTasks}/{selectedMetric.taskCount}</p>
+                      <p className="text-xl font-bold">{selectedMetric.completedTasks}<span className="text-sm text-muted-foreground">/{selectedMetric.taskCount}</span></p>
                     </div>
                     <div className="p-3 rounded-lg border">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
