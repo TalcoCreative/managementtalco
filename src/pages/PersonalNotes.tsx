@@ -11,7 +11,6 @@ import { Plus, Search, Trash2, StickyNote, Clock, FileText } from "lucide-react"
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { RichBriefEditor, BriefData, migrateLegacyData } from "@/components/tasks/RichBriefEditor";
-import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 interface PersonalNote {
   id: string;
