@@ -264,7 +264,7 @@ export function AIChatPopup() {
       {/* Draggable Header */}
       <div
         className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20 cursor-grab active:cursor-grabbing select-none touch-none"
-        ref={headerRef}
+        
         onPointerDown={handleHeaderPointerDown}
       >
         <div className="flex items-center gap-3">
