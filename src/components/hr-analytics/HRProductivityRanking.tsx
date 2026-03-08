@@ -14,6 +14,7 @@ interface HRProductivityRankingProps {
   meetings: any[];
   shootings: any[];
   events: any[];
+  publishedSlides?: any[];
   onViewEmployee: (id: string) => void;
 }
 
