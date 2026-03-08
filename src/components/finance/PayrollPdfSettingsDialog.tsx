@@ -43,6 +43,10 @@ interface PdfSettings {
   pdf_receiver_role: string;
   pdf_show_signature: boolean;
   
+  // Stamp
+  company_stamp?: string | null;
+  pdf_show_stamp: boolean;
+  
   // Styling
   pdf_logo_width: number;
   pdf_logo_height: number;
