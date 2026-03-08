@@ -365,6 +365,8 @@ Keep it conversational. Not every answer needs all sections.`;
           let result: any;
           if (funcName === "get_system_overview") {
             result = await getSystemOverview(adminClient);
+          } else if (funcName === "get_finance_dashboard") {
+            result = await getFinanceDashboard(adminClient, args);
           } else if (funcName === "query_table") {
             result = await queryTable(adminClient, args);
           } else {
