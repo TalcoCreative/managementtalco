@@ -718,6 +718,12 @@ export default function HRDashboard() {
                             <Badge className="bg-green-500">{user.completedCount}</Badge>
                           </TableCell>
                           <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-orange-500/10">
+                              <ImageIcon className="h-3 w-3 mr-1" />
+                              {user.publishedCount}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
                             <Badge className={`${
                               index === 0 ? "bg-yellow-500" : 
                               index === 1 ? "bg-gray-400" : 
