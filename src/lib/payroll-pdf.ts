@@ -102,7 +102,7 @@ const terbilang = (num: number): string => {
   return terbilang(Math.floor(num / 1000000000000)) + " Triliun " + terbilang(num % 1000000000000);
 };
 
-const loadImage = (url: string): Promise<string> => {
+const loadImage = (url: string): Promise<{ dataUrl: string; naturalWidth: number; naturalHeight: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -112,7 +112,11 @@ const loadImage = (url: string): Promise<string> => {
       canvas.height = img.height;
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      resolve({ 
+        dataUrl: canvas.toDataURL("image/png"), 
+        naturalWidth: img.width, 
+        naturalHeight: img.height 
+      });
     };
     img.onerror = reject;
     img.src = url;
