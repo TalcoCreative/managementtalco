@@ -68,7 +68,7 @@ const hrItems: NavItem[] = [
   { title: "Team", url: "/users", icon: Users, featureKey: "team" },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
   { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
-  { title: "Kalender Libur", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
+  { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
   { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
   { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
   { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
