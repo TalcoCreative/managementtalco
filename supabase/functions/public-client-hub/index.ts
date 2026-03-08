@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Find client by dashboard_slug (which is the hub slug)
     const { data: client, error: clientError } = await supabase
       .from("clients")
-      .select("id, name, company, dashboard_slug, social_media_slug, status")
+      .select("id, name, company, dashboard_slug, social_media_slug, status, client_logo")
       .eq("dashboard_slug", slug)
       .eq("status", "active")
       .maybeSingle();
@@ -161,6 +161,7 @@ Deno.serve(async (req) => {
         company: client.company,
         dashboard_slug: client.dashboard_slug,
         social_media_slug: client.social_media_slug,
+        client_logo: client.client_logo,
       },
       hasProjects: (projectCount || 0) > 0,
       hasReports: (platformCount || 0) > 0,
