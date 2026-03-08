@@ -276,7 +276,7 @@ const Holiday = () => {
       <div className="space-y-6">
         <div className="section-header" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>
           <div className="section-icon">
-            <CalendarDays className="h-5 w-5" />
+            <Calendar className="h-5 w-5" />
           </div>
           <div>
             <h1 className="section-title">Kalender Libur</h1>
