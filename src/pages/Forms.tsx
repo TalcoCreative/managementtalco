@@ -292,7 +292,12 @@ export default function Forms() {
                   <TableRow key={form.id} className="cursor-pointer" onClick={() => navigate(`/forms/${form.id}`)}>
                     <TableCell>
                       <div>
-                        <p className="font-semibold">{form.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{form.name}</p>
+                          {(form as any).form_template === "kol" && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">KOL</Badge>
+                          )}
+                        </div>
                         {form.description && <p className="text-xs text-muted-foreground line-clamp-1">{form.description}</p>}
                       </div>
                     </TableCell>
