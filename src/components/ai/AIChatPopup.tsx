@@ -17,29 +17,53 @@ export function AIChatPopup() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
+  
 
-  // Drag state - shared for both icon and chat window
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const [iconPos, setIconPos] = useState<{ x: number; y: number } | null>(null);
-  const dragInfo = useRef<{ startX: number; startY: number; origX: number; origY: number; dragged: boolean } | null>(null);
+  // Snap-to-corner drag state
+  const [iconCorner, setIconCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const [chatCorner, setChatCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const dragInfo = useRef<{ startX: number; startY: number; dragged: boolean; target: "icon" | "chat" } | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null);
 
-  const getDefaultPos = useCallback(() => {
-    const isMd = window.innerWidth >= 768;
-    return {
-      x: isMd ? window.innerWidth - 420 - 32 : 16,
-      y: isMd ? window.innerHeight - 600 - 32 : 80,
-    };
+  const ICON_SIZE = 56;
+  const ICON_MARGIN = 16;
+  const CHAT_MARGIN = 12;
+
+  // Corner positions for icon
+  const getIconCornerPos = useCallback((corner: string) => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const m = ICON_MARGIN;
+    const bottomOffset = window.innerWidth < 768 ? 80 : m; // above mobile nav
+    switch (corner) {
+      case "tl": return { x: m, y: m };
+      case "tr": return { x: w - ICON_SIZE - m, y: m };
+      case "bl": return { x: m, y: h - ICON_SIZE - bottomOffset };
+      case "br": default: return { x: w - ICON_SIZE - m, y: h - ICON_SIZE - bottomOffset };
+    }
   }, []);
 
-  const getDefaultIconPos = useCallback(() => ({
-    x: window.innerWidth >= 768 ? window.innerWidth - 56 - 32 : window.innerWidth - 56 - 24,
-    y: window.innerHeight >= 768 ? window.innerHeight - 56 - 32 : window.innerHeight - 56 - 24,
-  }), []);
+  // Corner positions for chat window
+  const getChatCornerStyle = useCallback((corner: string): React.CSSProperties => {
+    const m = CHAT_MARGIN;
+    const style: React.CSSProperties = {};
+    if (corner.includes("t")) { style.top = m; style.bottom = "auto"; }
+    else { style.bottom = window.innerWidth < 768 ? 72 : m; style.top = "auto"; }
+    if (corner.includes("l")) { style.left = m; style.right = "auto"; }
+    else { style.right = m; style.left = "auto"; }
+    return style;
+  }, []);
 
-  useEffect(() => {
-    if (open && !position) setPosition(getDefaultPos());
-  }, [open, position, getDefaultPos]);
+  const getNearestCorner = useCallback((cx: number, cy: number): "tl" | "tr" | "bl" | "br" => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isLeft = cx < w / 2;
+    const isTop = cy < h / 2;
+    if (isTop && isLeft) return "tl";
+    if (isTop && !isLeft) return "tr";
+    if (!isTop && isLeft) return "bl";
+    return "br";
+  }, []);
 
   // Window-level drag listeners
   useEffect(() => {
@@ -47,52 +71,48 @@ export function AIChatPopup() {
       if (!dragInfo.current) return;
       const dx = e.clientX - dragInfo.current.startX;
       const dy = e.clientY - dragInfo.current.startY;
-      if (!dragInfo.current.dragged && Math.abs(dx) + Math.abs(dy) > 5) {
+      if (!dragInfo.current.dragged && Math.abs(dx) + Math.abs(dy) > 8) {
         dragInfo.current.dragged = true;
       }
-      const setter = open ? setPosition : setIconPos;
-      setter({
-        x: Math.max(0, Math.min(window.innerWidth - 60, dragInfo.current.origX + dx)),
-        y: Math.max(0, Math.min(window.innerHeight - 60, dragInfo.current.origY + dy)),
-      });
+      if (dragInfo.current.dragged) {
+        setDragOffset({ dx, dy });
+      }
     };
-    const onUp = () => { dragInfo.current = null; };
+    const onUp = (e: PointerEvent) => {
+      if (!dragInfo.current) return;
+      if (dragInfo.current.dragged) {
+        const corner = getNearestCorner(e.clientX, e.clientY);
+        if (dragInfo.current.target === "icon") setIconCorner(corner);
+        else setChatCorner(corner);
+      }
+      dragInfo.current = null;
+      setDragOffset(null);
+    };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [open]);
+  }, [getNearestCorner]);
 
-  const startDrag = useCallback((e: React.PointerEvent, origX: number, origY: number) => {
+  const startDrag = useCallback((e: React.PointerEvent, target: "icon" | "chat") => {
     e.preventDefault();
-    dragInfo.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX,
-      origY,
-      dragged: false,
-    };
+    dragInfo.current = { startX: e.clientX, startY: e.clientY, dragged: false, target };
   }, []);
 
   const handleIconPointerDown = useCallback((e: React.PointerEvent) => {
-    const ip = iconPos ?? getDefaultIconPos();
-    startDrag(e, ip.x, ip.y);
-  }, [iconPos, getDefaultIconPos, startDrag]);
+    startDrag(e, "icon");
+  }, [startDrag]);
 
   const handleIconClick = useCallback(() => {
-    // Only open if we didn't drag
-    if (!dragInfo.current?.dragged) {
-      setOpen(true);
-    }
+    if (!dragInfo.current?.dragged) setOpen(true);
   }, []);
 
   const handleHeaderPointerDown = useCallback((e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    const p = position ?? getDefaultPos();
-    startDrag(e, p.x, p.y);
-  }, [position, getDefaultPos, startDrag]);
+    startDrag(e, "chat");
+  }, [startDrag]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -209,15 +229,21 @@ export function AIChatPopup() {
     }
   };
 
-  const ip = iconPos ?? getDefaultIconPos();
+  const iconBasePos = getIconCornerPos(iconCorner);
+  const isDraggingIcon = dragOffset && dragInfo.current?.target === "icon";
+  const isDraggingChat = dragOffset && dragInfo.current?.target === "chat";
 
   if (!open) {
+    const iconStyle: React.CSSProperties = isDraggingIcon
+      ? { left: iconBasePos.x + dragOffset.dx, top: iconBasePos.y + dragOffset.dy, transition: "none" }
+      : { left: iconBasePos.x, top: iconBasePos.y, transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" };
+
     return (
       <button
         onPointerDown={handleIconPointerDown}
         onClick={handleIconClick}
-        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center touch-none select-none"
-        style={{ left: ip.x, top: ip.y }}
+        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center touch-none select-none"
+        style={iconStyle}
         title="Tassa — Talco Support Assistant"
       >
         <Bot className="h-6 w-6" />
@@ -225,17 +251,20 @@ export function AIChatPopup() {
     );
   }
 
-  const pos = position ?? getDefaultPos();
+  const chatBaseStyle = getChatCornerStyle(chatCorner);
+  const chatStyle: React.CSSProperties = isDraggingChat
+    ? { ...chatBaseStyle, transform: `translate(${dragOffset.dx}px, ${dragOffset.dy}px)`, transition: "none" }
+    : { ...chatBaseStyle, transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" };
 
   return (
     <div
-      className="fixed z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
-      style={{ left: pos.x, top: pos.y }}
+      className="fixed z-50 w-[calc(100vw-1.5rem)] max-w-[420px] h-[min(520px,calc(100dvh-6rem))] sm:h-[min(600px,calc(100dvh-5rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
+      style={chatStyle}
     >
       {/* Draggable Header */}
       <div
         className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border-b border-border/20 cursor-grab active:cursor-grabbing select-none touch-none"
-        ref={headerRef}
+        
         onPointerDown={handleHeaderPointerDown}
       >
         <div className="flex items-center gap-3">
