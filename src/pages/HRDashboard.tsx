@@ -485,6 +485,125 @@ export default function HRDashboard() {
     }
   };
 
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const wb = XLSX.utils.book_new();
+      const periodLabel = `${format(new Date(startDate), 'dd MMM yyyy')} - ${format(new Date(endDate), 'dd MMM yyyy')}`;
+
+      // Sheet 1: Activity Score
+      const activityData = userActivityStats.map((u, i) => ({
+        '#': i + 1,
+        'Employee': u.full_name,
+        'Letters': u.lettersCount,
+        'Prospects': u.prospectsCount,
+        'KOL': u.kolCount,
+        'Tasks Created': u.tasksCreatedCount,
+        'Tasks Completed': u.completedCount,
+        'EP Published': u.publishedCount,
+        'Total Score': u.activityScore,
+      }));
+      const ws1 = XLSX.utils.json_to_sheet(activityData);
+      XLSX.utils.book_append_sheet(wb, ws1, "Activity Score");
+
+      // Sheet 2: Leave Approval
+      const leaveData = (allLeaveRequests || []).map((r: any) => ({
+        'Employee': r.profiles?.full_name || '-',
+        'Type': r.leave_type,
+        'Start Date': r.start_date,
+        'End Date': r.end_date,
+        'Reason': r.reason || '-',
+        'Status': r.status,
+        'Processed By': r.approver?.full_name || '-',
+      }));
+      const ws2 = XLSX.utils.json_to_sheet(leaveData);
+      XLSX.utils.book_append_sheet(wb, ws2, "Leave Approval");
+
+      // Sheet 3: Task Overview
+      const overviewData = userActivityStats.map(u => ({
+        'Employee': u.full_name,
+        'Tasks Created': u.tasksCreatedCount,
+        'Tasks Assigned': u.tasksAssignedCount,
+        'In Progress': u.inProgressCount,
+        'Completed': u.completedCount,
+      }));
+      const ws3 = XLSX.utils.json_to_sheet(overviewData);
+      XLSX.utils.book_append_sheet(wb, ws3, "Task Overview");
+
+      // Sheet 4: Shooting
+      const shootingData = (shootings || []).map((s: any) => ({
+        'Title': s.title,
+        'Client': s.clients?.name || '-',
+        'Project': s.projects?.title || '-',
+        'Date': s.scheduled_date,
+        'Time': s.scheduled_time || '-',
+        'Requested By': s.requested_by_profile?.full_name || '-',
+        'Status': s.status,
+        'Task Status': s.tasks?.status || '-',
+      }));
+      const ws4 = XLSX.utils.json_to_sheet(shootingData);
+      XLSX.utils.book_append_sheet(wb, ws4, "Shooting");
+
+      // Sheet 5: Attendance
+      const attendanceData2 = (attendance || []).map((a: any) => ({
+        'Employee': a.profiles?.full_name || '-',
+        'Date': a.date,
+        'Clock In': a.clock_in ? format(parseISO(a.clock_in), 'HH:mm') : '-',
+        'Late Status': a.late_status || '-',
+        'Clock Out': a.clock_out ? format(parseISO(a.clock_out), 'HH:mm') : '-',
+        'Auto Clock-Out': a.notes?.includes('[AUTO CLOCK-OUT') ? 'Ya' : '-',
+        'Work Hours': a.clock_in && a.clock_out ? `${differenceInHours(parseISO(a.clock_out), parseISO(a.clock_in))}h` : '-',
+        'Notes': a.notes?.replace('[AUTO CLOCK-OUT - LUPA CLOCK OUT]', '').trim() || '-',
+      }));
+      const ws5 = XLSX.utils.json_to_sheet(attendanceData2);
+      XLSX.utils.book_append_sheet(wb, ws5, "Attendance");
+
+      // Sheet 6: All Tasks
+      const allTasksData = (tasks || []).map((t: any) => ({
+        'Task': t.title,
+        'Created By': t.created_by_profile?.full_name || '-',
+        'Assigned To': t.assigned_profile?.full_name || 'Unassigned',
+        'Client': t.projects?.clients?.name || '-',
+        'Project': t.projects?.title || '-',
+        'Status': t.status,
+        'Priority': t.priority || '-',
+        'Requested': t.requested_at ? format(new Date(t.requested_at), 'dd MMM yyyy') : '-',
+        'Deadline': t.deadline ? format(new Date(t.deadline), 'dd MMM yyyy') : '-',
+      }));
+      const ws6 = XLSX.utils.json_to_sheet(allTasksData);
+      XLSX.utils.book_append_sheet(wb, ws6, "All Tasks");
+
+      // Sheet 7: Disciplinary (fetch fresh)
+      const { data: discCases } = await supabase
+        .from("disciplinary_cases")
+        .select(`*, employee:profiles!disciplinary_cases_employee_id_fkey(full_name), reporter:profiles!disciplinary_cases_reported_by_fkey(full_name)`)
+        .gte("case_date", startDate)
+        .lte("case_date", endDate)
+        .order("case_date", { ascending: false });
+
+      const discData = (discCases || []).map((c: any) => ({
+        'Employee': c.employee?.full_name || '-',
+        'Reported By': c.reporter?.full_name || '-',
+        'Date': c.case_date,
+        'Violation': c.violation_type,
+        'Description': c.description,
+        'Severity': c.severity,
+        'Status': c.status,
+        'Action Taken': c.action_taken || '-',
+        'Notes': c.notes || '-',
+      }));
+      const ws7 = XLSX.utils.json_to_sheet(discData);
+      XLSX.utils.book_append_sheet(wb, ws7, "Disciplinary");
+
+      XLSX.writeFile(wb, `HR_Dashboard_${startDate}_to_${endDate}.xlsx`);
+      toast.success("Export berhasil!");
+    } catch (err: any) {
+      toast.error("Export gagal: " + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -493,6 +612,10 @@ export default function HRDashboard() {
             <h1 className="text-3xl font-bold">HR Dashboard</h1>
             <p className="text-muted-foreground">Monitor employee attendance and productivity</p>
           </div>
+          <Button onClick={handleExportExcel} disabled={exporting} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" />
+            {exporting ? "Exporting..." : "Export Excel"}
+          </Button>
         </div>
 
         {/* Date Range Filter */}
