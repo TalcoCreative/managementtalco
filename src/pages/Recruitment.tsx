@@ -27,8 +27,6 @@ import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { CANDIDATE_COLUMNS } from "@/lib/excel-utils";
 import { usePositionOptions } from "@/hooks/usePositions";
 
 const STATUS_OPTIONS = [
