@@ -42,7 +42,7 @@ const employeeItems: NavItem[] = [
 // ── Reports & Letters ───────────────────────────────────
 const reportsItems: NavItem[] = [
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
+  { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
 ];
 
 // ── KOL ─────────────────────────────────────────────────
