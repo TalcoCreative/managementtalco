@@ -12,7 +12,7 @@ import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff, Bel
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
-import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { RichBriefEditor, BriefData } from "@/components/tasks/RichBriefEditor";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 
