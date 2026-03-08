@@ -158,7 +158,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
 
   // Update slide status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async (newStatus: "proposed" | "approved" | "published") => {
+    mutationFn: async (newStatus: "proposed" | "approved" | "revise" | "published") => {
       if (newStatus === "published") {
         // Open publish dialog to collect links
         setPublishDialogOpen(true);
