@@ -284,10 +284,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       setNotifyUsers([]);
       setSubTaskTitles([]);
       setNewSubTask("");
-      setTableData({
-        headers: ["No", "Item", "Keterangan", "Status"],
-        rows: [["1", "", "", ""]],
-      });
+      setBriefData(null);
       setFiles([]);
       setLinkAttachments([]);
       setShowLinkInput(false);
