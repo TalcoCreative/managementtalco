@@ -144,7 +144,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   }, [dbSettings]);
 
-  const uploadFile = async (file: File, type: "logo" | "signature") => {
+  const uploadFile = async (file: File, type: "logo" | "signature" | "stamp") => {
     try {
       setUploading(true);
       
@@ -165,15 +165,17 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         .from("company-assets")
         .getPublicUrl(filePath);
 
-      const settingKey = type === "logo" ? "company_logo" : "hr_signature";
+      const settingKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       await saveSetting(settingKey, publicUrl);
       
+      const stateKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       setSettings(prev => ({
         ...prev,
-        [type === "logo" ? "company_logo" : "hr_signature"]: publicUrl
+        [stateKey]: publicUrl
       }));
 
-      toast.success(`${type === "logo" ? "Logo" : "Tanda tangan"} berhasil diupload`);
+      const labels = { logo: "Logo", signature: "Tanda tangan", stamp: "Cap perusahaan" };
+      toast.success(`${labels[type]} berhasil diupload`);
     } catch (error: any) {
       toast.error(error.message || "Upload gagal");
     } finally {
