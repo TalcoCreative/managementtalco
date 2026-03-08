@@ -23,7 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Loader2, FileText, History, ExternalLink, Copy, Lock } from "lucide-react";
+import { Loader2, FileText, History, ExternalLink, Copy, Lock, FileDown } from "lucide-react";
+import { generatePayrollPDF } from "@/lib/payroll-pdf";
 
 const STATUSES = [
   { value: "draft", label: "Draft" },
@@ -50,6 +51,73 @@ export function LetterDetailDialog({
   const [status, setStatus] = useState(letter.status);
   const [documentUrl, setDocumentUrl] = useState(letter.document_url || "");
   const [notes, setNotes] = useState(letter.notes || "");
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  const { data: companySettings } = useQuery({
+    queryKey: ["company-settings-letter-detail"],
+    queryFn: async () => {
+      const { data } = await supabase.from("company_settings").select("*");
+      const map: Record<string, string | null> = {};
+      data?.forEach((s: any) => { map[s.setting_key] = s.setting_value; });
+      return map;
+    },
+  });
+
+  const handleDownloadSlipPDF = async () => {
+    if (!letter.employee_id) return;
+    setDownloadingPDF(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, gaji_pokok, tj_transport, tj_internet, tj_kpi, salary")
+        .eq("id", letter.employee_id)
+        .single();
+
+      const monthStart = `${letter.year}-${String(letter.month).padStart(2, "0")}-01`;
+      const nextMonth = letter.month === 12 ? `${letter.year + 1}-01-01` : `${letter.year}-${String(letter.month + 1).padStart(2, "0")}-01`;
+      
+      const { data: payrollData } = await supabase
+        .from("payroll")
+        .select("*")
+        .eq("employee_id", letter.employee_id)
+        .gte("month", monthStart)
+        .lt("month", nextMonth)
+        .maybeSingle();
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", letter.employee_id);
+      const jabatan = roleData?.map(r => r.role.replace(/_/g, " ")).join(", ") || "-";
+      const periode = format(new Date(monthStart), "MMMM yyyy", { locale: idLocale });
+
+      await generatePayrollPDF(
+        {
+          employeeName: profile?.full_name || letter.recipient_name,
+          jabatan,
+          periode,
+          gajiPokok: Number(profile?.gaji_pokok) || 0,
+          tjTransport: Number(profile?.tj_transport) || 0,
+          tjInternet: Number(profile?.tj_internet) || 0,
+          tjKpi: Number(profile?.tj_kpi) || 0,
+          reimburse: Number(payrollData?.reimburse) || 0,
+          bonus: Number(payrollData?.bonus) || 0,
+          potonganTerlambat: Number(payrollData?.potongan_terlambat) || 0,
+          potonganKasbon: Number(payrollData?.potongan_kasbon) || 0,
+          adjustmentLainnya: Number(payrollData?.adjustment_lainnya) || 0,
+          totalGaji: Number(payrollData?.amount) || Number(profile?.salary) || 0,
+          payDate: payrollData?.pay_date || format(new Date(), "yyyy-MM-dd"),
+          letterNumber: letter.letter_number,
+        },
+        companySettings || {}
+      );
+      toast.success("PDF slip gaji berhasil di-download");
+    } catch (error: any) {
+      toast.error(error.message || "Gagal generate PDF");
+    } finally {
+      setDownloadingPDF(false);
+    }
+  };
 
   const { data: activityLogs, refetch: refetchLogs } = useQuery({
     queryKey: ["letter-logs", letter.id],
@@ -195,6 +263,21 @@ export function LetterDetailDialog({
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
+                {letter.letter_type === 'payroll_slip' && letter.employee_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadSlipPDF}
+                    disabled={downloadingPDF}
+                  >
+                    {downloadingPDF ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="mr-2 h-4 w-4" />
+                    )}
+                    Download PDF
+                  </Button>
+                )}
               </div>
             </div>
 
