@@ -370,7 +370,18 @@ export default function Forms() {
               <Switch checked={newForm.is_public} onCheckedChange={v => setNewForm(p => ({ ...p, is_public: v }))} />
             </div>
             <div>
-              <Label>Theme</Label>
+              <Label>Template</Label>
+              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: v === "kol" && !p.name ? "KOL Registration Form" : p.name }))}>
+                <SelectTrigger><SelectValue placeholder="Kosong (form kosong)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Kosong (form kosong)</SelectItem>
+                  <SelectItem value="kol">📊 KOL Database</SelectItem>
+                </SelectContent>
+              </Select>
+              {newForm.form_template === "kol" && (
+                <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke KOL Database</p>
+              )}
+            </div>
               <Select value={newForm.theme} onValueChange={v => setNewForm(p => ({ ...p, theme: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
