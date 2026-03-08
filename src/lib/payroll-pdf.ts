@@ -319,12 +319,11 @@ export const generatePayrollPDF = async (
   doc.setFont("helvetica", "normal");
 
   // Salary rows - Income
-  const incomeItems = [
-    { label: "Gaji Pokok", value: payroll.gajiPokok },
-    { label: "Tunjangan Transport", value: payroll.tjTransport },
-    { label: "Tunjangan Internet", value: payroll.tjInternet },
-    { label: "Tunjangan KPI", value: payroll.tjKpi },
-  ];
+  const incomeItems: { label: string; value: number }[] = [];
+  if (payroll.gajiPokok > 0) incomeItems.push({ label: "Gaji Pokok", value: payroll.gajiPokok });
+  if (payroll.tjTransport > 0) incomeItems.push({ label: "Tunjangan Transport", value: payroll.tjTransport });
+  if (payroll.tjInternet > 0) incomeItems.push({ label: "Tunjangan Internet", value: payroll.tjInternet });
+  if (payroll.tjKpi > 0) incomeItems.push({ label: "Tunjangan KPI", value: payroll.tjKpi });
 
   // Add optional income items
   if (payroll.reimburse && payroll.reimburse > 0) {
