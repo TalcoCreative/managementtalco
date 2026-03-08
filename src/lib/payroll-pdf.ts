@@ -190,10 +190,24 @@ export const generatePayrollPDF = async (
   // === KOP SURAT / LETTERHEAD ===
   
   // Load and place logo if available
+  let actualLogoWidth = settings.logoWidth;
+  let actualLogoHeight = settings.logoHeight;
   if (settings.logoUrl) {
     try {
       const logoData = await loadImage(settings.logoUrl);
-      doc.addImage(logoData, "PNG", margin, yPos, settings.logoWidth, settings.logoHeight);
+      // Preserve aspect ratio: fit within the configured box
+      const ratio = logoData.naturalWidth / logoData.naturalHeight;
+      const boxRatio = settings.logoWidth / settings.logoHeight;
+      if (ratio > boxRatio) {
+        // wider than box → fit by width
+        actualLogoHeight = settings.logoWidth / ratio;
+        actualLogoWidth = settings.logoWidth;
+      } else {
+        // taller than box → fit by height
+        actualLogoWidth = settings.logoHeight * ratio;
+        actualLogoHeight = settings.logoHeight;
+      }
+      doc.addImage(logoData.dataUrl, "PNG", margin, yPos, actualLogoWidth, actualLogoHeight);
     } catch (error) {
       console.log("Failed to load logo:", error);
     }
