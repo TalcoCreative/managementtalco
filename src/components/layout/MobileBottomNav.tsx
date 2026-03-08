@@ -214,7 +214,7 @@ export function MobileBottomNav() {
                   <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
                     {group.label}
                   </p>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 min-[360px]:grid-cols-4 gap-2">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.url;
                       return (
