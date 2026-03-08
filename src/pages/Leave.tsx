@@ -88,12 +88,12 @@ export default function Leave() {
           {request.rejection_reason && (
             <div className="flex items-start gap-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 mt-0.5" />
-              <span>Alasan ditolak: {request.rejection_reason}</span>
+             <span>Rejection reason: {request.rejection_reason}</span>
             </div>
           )}
           {request.approver && (
             <p className="text-xs text-muted-foreground">
-              Diproses oleh: {request.approver.full_name}
+              Processed by: {request.approver.full_name}
             </p>
           )}
         </div>

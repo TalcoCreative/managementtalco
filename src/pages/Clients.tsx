@@ -260,8 +260,8 @@ export default function Clients() {
       <DeleteConfirmDialog
         open={!!deleteClient}
         onOpenChange={(open) => !open && setDeleteClient(null)}
-        title="Hapus Client"
-        description={`Apakah Anda yakin ingin menghapus client "${deleteClient?.name}"? Semua project dan task terkait mungkin akan terpengaruh.`}
+        title="Delete Client"
+        description={`Are you sure you want to delete client "${deleteClient?.name}"? All related projects and tasks may be affected.`}
         onConfirm={handleDelete}
         loading={deleting}
       />
