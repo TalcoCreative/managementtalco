@@ -133,10 +133,10 @@ export function MarketplaceReportsTab() {
     }
 
     const { data: user } = await supabase.auth.getUser();
-    const { error } = await supabase.from("marketplace_reports").insert({
+    const { error } = await supabase.from("marketplace_reports" as any).insert({
       ...formData,
       created_by: user?.user?.id,
-    });
+    } as any);
 
     if (error) {
       toast.error("Gagal menyimpan: " + error.message);
