@@ -104,7 +104,7 @@ export default function PublicClientHub() {
     );
   }
 
-  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans, hasMeetings, hasShootings, hasMarketplace, schedule, editorialPlans } = data;
+  const { client, hasProjects, hasReports, hasSocialMedia, hasEditorialPlans, hasMeetings, hasShootings, hasMarketplace, hasKolCampaigns, schedule, editorialPlans } = data;
 
   const navigationCards = [
     {
