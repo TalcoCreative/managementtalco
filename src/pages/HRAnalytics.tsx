@@ -615,6 +615,9 @@ export default function HRAnalytics() {
         </div>
 
         {/* Charts Section */}
+        <div className="section-divider">
+          <span className="divider-label">Charts & Analytics</span>
+        </div>
         <div className="grid gap-6 lg:grid-cols-2">
           <HRWorkHoursChart 
             attendance={attendance || []} 
