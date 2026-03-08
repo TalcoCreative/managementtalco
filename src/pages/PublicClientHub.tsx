@@ -163,6 +163,14 @@ export default function PublicClientHub() {
       onClick: () => navigate(`/marketplace/${client.dashboard_slug}`),
       enabled: hasMarketplace,
     },
+    {
+      title: "KOL Campaign",
+      description: "Aktivasi KOL & posting",
+      icon: Megaphone,
+      gradient: "from-[hsl(28,78%,52%)] to-[hsl(18,72%,48%)]",
+      onClick: () => navigate(`/kol-campaign/${client.dashboard_slug}`),
+      enabled: hasKolCampaigns,
+    },
   ];
 
   const availableCards = navigationCards.filter(card => card.enabled);
