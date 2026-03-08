@@ -179,6 +179,10 @@ const EmailSettings = () => {
               <Settings className="h-4 w-4" />
               Pengaturan
             </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Template Email
+            </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <History className="h-4 w-4" />
               Log Email
