@@ -370,7 +370,7 @@ export function IndividualPerformance({
                         <Target className="h-4 w-4" />
                         <span className="text-sm">Prospects</span>
                       </div>
-                      <p className="text-xl font-bold">{selectedMetric.wonProspects}/{selectedMetric.prospectCount}</p>
+                      <p className="text-xl font-bold">{selectedMetric.prospectCount}</p>
                     </div>
                     <div className="p-3 rounded-lg border">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
