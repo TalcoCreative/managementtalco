@@ -45,7 +45,7 @@ interface Slide {
   id: string;
   ep_id: string;
   slide_order: number;
-  status: "proposed" | "approved" | "published";
+  status: "proposed" | "approved" | "revise" | "published";
   approved_at: string | null;
   published_at: string | null;
   publish_date: string | null;
