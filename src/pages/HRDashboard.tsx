@@ -16,7 +16,7 @@ import { DisciplinaryCases } from "@/components/hr/DisciplinaryCases";
 import { LeaveApprovalDialog } from "@/components/leave/LeaveApprovalDialog";
 import { ExcelActions } from "@/components/shared/ExcelActions";
 import { ATTENDANCE_COLUMNS } from "@/lib/excel-utils";
-import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database, Cake } from "lucide-react";
+import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowUpFromLine, ArrowDownToLine, Video, Building2, CalendarOff, CheckCircle, XCircle, FileWarning, Users, FileText, Star, Database, Cake, Image as ImageIcon } from "lucide-react";
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
@@ -204,6 +204,23 @@ export default function HRDashboard() {
       return data || [];
     },
   });
+
+  // Fetch published EP slides with creator
+  const { data: publishedSlides } = useQuery({
+    queryKey: ["hr-published-slides", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select("id, created_by, published_at")
+        .eq("status", "published")
+        .not("published_at", "is", null)
+        .gte("published_at", `${startDate}T00:00:00`)
+        .lte("published_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Fetch tasks for selected user detail view
   const { data: userTasks } = useQuery({
     queryKey: ["hr-user-tasks", selectedUser?.id, startDate, endDate],
@@ -242,6 +259,7 @@ export default function HRDashboard() {
     const userLetters = letters?.filter(l => l.created_by === profile.id) || [];
     const userProspects = prospects?.filter(p => p.created_by === profile.id) || [];
     const userKol = kolEntries?.filter(k => k.created_by === profile.id) || [];
+    const userPublished = publishedSlides?.filter(s => s.created_by === profile.id) || [];
     
     // Activity score calculation (all ×1)
     const activityScore = 
@@ -249,7 +267,8 @@ export default function HRDashboard() {
       tasksAssigned.filter(t => t.status === 'done' || t.status === 'completed').length * 1 +
       userLetters.length * 1 +
       userProspects.length * 1 +
-      userKol.length * 1;
+      userKol.length * 1 +
+      userPublished.length * 1;
     
     return {
       ...profile,
@@ -260,6 +279,7 @@ export default function HRDashboard() {
       lettersCount: userLetters.length,
       prospectsCount: userProspects.length,
       kolCount: userKol.length,
+      publishedCount: userPublished.length,
       activityScore,
     };
   })?.sort((a, b) => b.activityScore - a.activityScore) || [];
@@ -611,7 +631,7 @@ export default function HRDashboard() {
                   Activity Score per Employee ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Skor: Task Created (×1) + Task Completed (×1) + Letters (×1) + KOL Database (×1) + Prospects (×1)
+                  Skor: Task Created (×1) + Task Completed (×1) + Letters (×1) + KOL Database (×1) + Prospects (×1) + EP Published (×1)
                 </p>
               </CardHeader>
               <CardContent>
@@ -641,6 +661,12 @@ export default function HRDashboard() {
                         </TableHead>
                         <TableHead className="text-center">Tasks Created</TableHead>
                         <TableHead className="text-center">Tasks Completed</TableHead>
+                        <TableHead className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            EP Published
+                          </div>
+                        </TableHead>
                         <TableHead className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <Star className="h-3 w-3 text-yellow-500" />
@@ -690,6 +716,12 @@ export default function HRDashboard() {
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className="bg-green-500">{user.completedCount}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="bg-orange-500/10">
+                              <ImageIcon className="h-3 w-3 mr-1" />
+                              {user.publishedCount}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             <Badge className={`${

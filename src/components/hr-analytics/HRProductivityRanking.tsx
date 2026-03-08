@@ -14,6 +14,7 @@ interface HRProductivityRankingProps {
   meetings: any[];
   shootings: any[];
   events: any[];
+  publishedSlides?: any[];
   onViewEmployee: (id: string) => void;
 }
 
@@ -24,6 +25,7 @@ export function HRProductivityRanking({
   meetings,
   shootings,
   events,
+  publishedSlides = [],
   onViewEmployee 
 }: HRProductivityRankingProps) {
   const rankings = useMemo(() => {
@@ -61,7 +63,8 @@ export function HRProductivityRanking({
       const tasksCompleted = userTasks.filter(t => 
         t.status === 'done' || t.status === 'completed'
       ).length;
-      const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length;
+      const userPublished = publishedSlides.filter(s => s.created_by === profile.id).length;
+      const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length + userPublished;
 
       // Overdue count
       const overdueCount = userTasks.filter(t => {
@@ -101,7 +104,7 @@ export function HRProductivityRanking({
         score: Math.max(0, score),
       };
     }).sort((a, b) => b.score - a.score);
-  }, [profiles, attendance, tasks, meetings, shootings, events]);
+  }, [profiles, attendance, tasks, meetings, shootings, events, publishedSlides]);
 
   const getRankBadge = (index: number) => {
     if (index === 0) return <Trophy className="h-5 w-5 text-yellow-500" />;

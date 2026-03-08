@@ -1311,6 +1311,7 @@ export type Database = {
           channel: string | null
           channels: string[] | null
           created_at: string
+          created_by: string | null
           ep_id: string
           format: string | null
           id: string
@@ -1327,6 +1328,7 @@ export type Database = {
           channel?: string | null
           channels?: string[] | null
           created_at?: string
+          created_by?: string | null
           ep_id: string
           format?: string | null
           id?: string
@@ -1343,6 +1345,7 @@ export type Database = {
           channel?: string | null
           channels?: string[] | null
           created_at?: string
+          created_by?: string | null
           ep_id?: string
           format?: string | null
           id?: string
@@ -1355,6 +1358,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "editorial_slides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "editorial_slides_ep_id_fkey"
             columns: ["ep_id"]

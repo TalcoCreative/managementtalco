@@ -166,6 +166,22 @@ export default function HRAnalytics() {
     },
   });
 
+  // Fetch published EP slides
+  const { data: publishedSlides } = useQuery({
+    queryKey: ["hr-analytics-published-slides", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select("id, created_by, published_at")
+        .eq("status", "published")
+        .not("published_at", "is", null)
+        .gte("published_at", `${startDate}T00:00:00`)
+        .lte("published_at", `${endDate}T23:59:59`);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
    // Fetch projects
   const { data: projects } = useQuery({
     queryKey: ["hr-analytics-projects"],
@@ -637,6 +653,7 @@ export default function HRAnalytics() {
           meetings={meetings || []}
           shootings={shootings || []}
           events={events || []}
+          publishedSlides={publishedSlides || []}
           onViewEmployee={handleViewEmployee}
         />
       </div>

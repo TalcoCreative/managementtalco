@@ -357,7 +357,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
   }, 500);
 
   const renderBlock = (block: Block) => {
-    const canEdit = isEditable && slide.status !== "published";
+    const canEdit = isEditable;
 
     switch (block.block_type) {
       case "status":
