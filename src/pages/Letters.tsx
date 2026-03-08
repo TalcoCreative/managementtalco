@@ -48,6 +48,7 @@ export default function Letters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user-letters"],
