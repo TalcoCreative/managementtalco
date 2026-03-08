@@ -203,32 +203,34 @@ export default function Index() {
         <ShootingNotifications />
         {isHR && <DeletionNotifications />}
 
-        {/* Stats Row */}
+        {/* Stats Row — Colorful KPI cards */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={<Users className="h-5 w-5" />} label="Clients" value={stats?.clients || 0} color="hsl(var(--primary))" />
-          <StatCard icon={<FolderKanban className="h-5 w-5" />} label="Active Projects" value={stats?.projects || 0} color="hsl(var(--info))" />
-          <StatCard icon={<ArrowDownToLine className="h-5 w-5" />} label="Tasks to Me" value={tasksAssignedToMe?.length || 0} color="hsl(var(--warning))" />
-          <StatCard icon={<ArrowUpFromLine className="h-5 w-5" />} label="Tasks I Gave" value={tasksAssignedByMe?.length || 0} color="hsl(var(--success))" />
+          <KpiCard icon={<Users className="h-5 w-5" />} label="Clients" value={stats?.clients || 0} color="var(--section-clients)" />
+          <KpiCard icon={<FolderKanban className="h-5 w-5" />} label="Active Projects" value={stats?.projects || 0} color="var(--section-projects)" />
+          <KpiCard icon={<ArrowDownToLine className="h-5 w-5" />} label="Tasks to Me" value={tasksAssignedToMe?.length || 0} color="var(--section-tasks)" />
+          <KpiCard icon={<ArrowUpFromLine className="h-5 w-5" />} label="Tasks I Gave" value={tasksAssignedByMe?.length || 0} color="var(--section-finance)" />
         </div>
 
-        {/* Quick Access Modules */}
+        {/* Quick Access Modules — Colorful grid */}
         {visibleModules.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground mb-3">Quick Access</h2>
+            <div className="section-divider">
+              <span className="divider-label">Quick Access</span>
+            </div>
             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2.5 sm:gap-3">
               {visibleModules.map((mod) => (
                 <button
                   key={mod.url}
                   onClick={() => navigate(mod.url)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-card hover:bg-accent/60 transition-all duration-200 hover:shadow-md active:scale-[0.97] group"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-card hover:bg-accent/60 transition-all duration-200 hover:shadow-soft-md hover:-translate-y-0.5 active:scale-[0.97] group"
                 >
                   <div
-                    className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-transform duration-200 group-hover:scale-105"
-                    style={{ backgroundColor: `${mod.color}15` }}
+                    className="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-transform duration-200 group-hover:scale-110"
+                    style={{ backgroundColor: `${mod.color}15`, boxShadow: `0 4px 12px ${mod.color}20` }}
                   >
                     <mod.icon className="h-5 w-5 sm:h-[22px] sm:w-[22px]" style={{ color: mod.color }} />
                   </div>
-                  <span className="text-[10px] sm:text-xs font-medium text-foreground/80 leading-tight text-center">
+                  <span className="text-[10px] sm:text-xs font-semibold text-foreground/80 leading-tight text-center">
                     {mod.title}
                   </span>
                 </button>
@@ -242,6 +244,7 @@ export default function Index() {
           <TaskSection
             icon={<ArrowDownToLine className="h-4 w-4 sm:h-5 sm:w-5" />}
             title="Assigned to Me"
+            accentColor="var(--section-tasks)"
             tasks={tasksAssignedToMe || []}
             emptyText="No tasks assigned to you"
             getSubtext={(task: any) => `From: ${task.created_by_profile?.full_name || "Unknown"}`}
@@ -251,6 +254,7 @@ export default function Index() {
           <TaskSection
             icon={<ArrowUpFromLine className="h-4 w-4 sm:h-5 sm:w-5" />}
             title="Tasks I Assigned"
+            accentColor="var(--section-finance)"
             tasks={tasksAssignedByMe || []}
             emptyText="No tasks assigned by you"
             getSubtext={(task: any) => `To: ${task.assigned_profile?.full_name || "Unassigned"}`}
@@ -269,22 +273,17 @@ export default function Index() {
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function KpiCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   return (
-    <Card className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <CardContent className="p-3.5 sm:p-4 flex items-center gap-3">
-        <div
-          className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0"
-          style={{ backgroundColor: `${color}12` }}
-        >
-          <div style={{ color }}>{icon}</div>
-        </div>
+    <div className="kpi-card p-3.5 sm:p-4" style={{ '--kpi-color': color } as React.CSSProperties}>
+      <div className="flex items-center gap-3">
+        <div className="kpi-icon">{icon}</div>
         <div className="min-w-0">
-          <p className="text-xl sm:text-2xl font-bold leading-none">{value}</p>
+          <p className="kpi-value leading-none">{value}</p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">{label}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
