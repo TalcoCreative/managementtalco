@@ -17,51 +17,55 @@ export function AIChatPopup() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   // Drag state
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const dragInfo = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
 
   const getDefaultPos = useCallback(() => {
-    const isMobile = window.innerWidth < 768;
+    const isMd = window.innerWidth >= 768;
     return {
-      x: window.innerWidth - (isMobile ? window.innerWidth - 16 + 8 : 420 + 32),
-      y: window.innerHeight - (isMobile ? window.innerHeight - 96 + 16 : 600 + 32),
+      x: isMd ? window.innerWidth - 420 - 32 : 16,
+      y: isMd ? window.innerHeight - 600 - 32 : 80,
     };
   }, []);
 
-  // Reset position when opening
   useEffect(() => {
     if (open && !position) setPosition(getDefaultPos());
   }, [open, position, getDefaultPos]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+  // Use window-level listeners for reliable drag
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragInfo.current) return;
+      const dx = e.clientX - dragInfo.current.startX;
+      const dy = e.clientY - dragInfo.current.startY;
+      setPosition({
+        x: Math.max(0, Math.min(window.innerWidth - 120, dragInfo.current.origX + dx)),
+        y: Math.max(0, Math.min(window.innerHeight - 120, dragInfo.current.origY + dy)),
+      });
+    };
+    const onUp = () => { dragInfo.current = null; };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  const handleHeaderPointerDown = useCallback((e: React.PointerEvent) => {
+    // Don't drag when clicking buttons
+    if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
-    dragRef.current = {
+    dragInfo.current = {
       startX: e.clientX,
       startY: e.clientY,
       origX: position?.x ?? 0,
       origY: position?.y ?? 0,
     };
-    setIsDragging(false);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [position]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    if (!isDragging && Math.abs(dx) + Math.abs(dy) > 5) setIsDragging(true);
-    setPosition({
-      x: Math.max(0, Math.min(window.innerWidth - 100, dragRef.current.origX + dx)),
-      y: Math.max(0, Math.min(window.innerHeight - 100, dragRef.current.origY + dy)),
-    });
-  }, [isDragging]);
-
-  const handlePointerUp = useCallback(() => {
-    dragRef.current = null;
-  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
