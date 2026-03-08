@@ -16,10 +16,10 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 type NavItem = { title: string; url: string; icon: any; featureKey: string };
 
-const navItems: NavItem[] = [
+// ── Navigation ──────────────────────────────────────────
+const navigationItems: NavItem[] = [
   { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
   { title: "Clients", url: "/clients", icon: Building2, featureKey: "clients" },
-  
   { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
   { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
   { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
@@ -30,21 +30,28 @@ const navItems: NavItem[] = [
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
   { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
-  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
   { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
 ];
 
+// ── KOL ─────────────────────────────────────────────────
+const kolItems: NavItem[] = [
+  { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
+  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
+];
+
+// ── Form Builder ────────────────────────────────────────
 const formBuilderItems: NavItem[] = [
   { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
 ];
 
+// ── Social Media ────────────────────────────────────────
 const socialMediaItems: NavItem[] = [
   { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
   { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
   { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
 ];
 
+// ── HR ──────────────────────────────────────────────────
 const hrItems: NavItem[] = [
   { title: "Team", url: "/users", icon: Users, featureKey: "team" },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
@@ -53,24 +60,28 @@ const hrItems: NavItem[] = [
   { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
   { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
   { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
-  { title: "Form Builder", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
+  { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
 ];
 
+// ── Finance ─────────────────────────────────────────────
 const financeItems: NavItem[] = [
   { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
   { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
   { title: "Neraca", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
 ];
 
+// ── Sales ───────────────────────────────────────────────
 const salesItems: NavItem[] = [
   { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
   { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
 ];
 
+// ── Executive ───────────────────────────────────────────
 const executiveItems: NavItem[] = [
   { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
 ];
 
+// ── System ──────────────────────────────────────────────
 const systemItems: NavItem[] = [
   { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
