@@ -262,13 +262,25 @@ export default function PersonalNotes() {
         </div>
       </div>
 
-      <DeleteConfirmDialog
-        open={!!deleteNote}
-        onOpenChange={(open) => !open && setDeleteNote(null)}
-        onConfirm={() => deleteNote && deleteMutation.mutate(deleteNote.id)}
-        title="Delete Note"
-        description={`Are you sure you want to delete "${deleteNote?.title || "Untitled Note"}"? This action cannot be undone.`}
-      />
+      <AlertDialog open={!!deleteNote} onOpenChange={(open) => !open && setDeleteNote(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Note</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteNote?.title || "Untitled Note"}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteNote && deleteMutation.mutate(deleteNote.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
