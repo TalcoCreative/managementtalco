@@ -267,6 +267,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         pdf_giver_role: settings.pdf_giver_role,
         pdf_receiver_role: settings.pdf_receiver_role,
         pdf_show_signature: String(settings.pdf_show_signature),
+        pdf_show_stamp: String(settings.pdf_show_stamp),
         pdf_logo_width: String(settings.pdf_logo_width),
         pdf_logo_height: String(settings.pdf_logo_height),
         pdf_primary_color: settings.pdf_primary_color,
