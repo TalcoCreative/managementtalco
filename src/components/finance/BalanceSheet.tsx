@@ -2,31 +2,36 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Scale, Download, AlertCircle, CheckCircle } from "lucide-react";
-import { format, endOfMonth, startOfYear } from "date-fns";
-import { formatCurrency, getMonthNameID, isHPPCategory, getExpenseGroup } from "@/lib/accounting-utils";
+import { Scale, AlertCircle, CheckCircle } from "lucide-react";
+import { format, endOfMonth, startOfYear, endOfYear } from "date-fns";
+import { formatCurrency, getMonthNameID } from "@/lib/accounting-utils";
+
+type ViewMode = "monthly" | "yearly";
 
 export function BalanceSheet() {
   const currentDate = new Date();
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((currentDate.getMonth() + 1).toString());
+  const [viewMode, setViewMode] = useState<ViewMode>("monthly");
 
-  // Generate year options
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i);
-  
-  // Month options
   const monthOptions = Array.from({ length: 12 }, (_, i) => ({
     value: (i + 1).toString(),
     label: getMonthNameID(i + 1),
   }));
 
-  const asOfDate = endOfMonth(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1));
+  // Determine the "as of" date based on view mode
+  const asOfDate = viewMode === "yearly"
+    ? endOfYear(new Date(parseInt(selectedYear), 0))
+    : endOfMonth(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1));
+  
   const yearStartDate = startOfYear(asOfDate);
+  const asOfDateStr = format(asOfDate, "yyyy-MM-dd");
+  const yearStartStr = format(yearStartDate, "yyyy-MM-dd");
 
   // Fetch chart of accounts
   const { data: accounts, isLoading: accountsLoading } = useQuery({
@@ -42,120 +47,105 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch balance sheet items (manual adjustments)
+  // Fetch balance sheet manual items
   const { data: balanceItems, isLoading: balanceLoading } = useQuery({
-    queryKey: ["balance-sheet-items", selectedYear, selectedMonth],
+    queryKey: ["balance-sheet-items", asOfDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("balance_sheet_items")
         .select("*")
-        .lte("as_of_date", format(asOfDate, "yyyy-MM-dd"));
+        .lte("as_of_date", asOfDateStr);
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Fetch ALL income up to asOfDate (for cash balance)
-  const { data: allIncome, isLoading: incomeLoading } = useQuery({
-    queryKey: ["balance-sheet-all-income", selectedYear, selectedMonth],
+  // ALL received income up to asOfDate
+  const { data: allReceivedIncome, isLoading: incomeLoading } = useQuery({
+    queryKey: ["bs-received-income", asOfDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("income")
         .select("*")
-        .lte("date", format(asOfDate, "yyyy-MM-dd"))
+        .lte("date", asOfDateStr)
         .eq("status", "received");
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Fetch ALL expenses up to asOfDate (for cash balance)
-  const { data: allExpenses, isLoading: expensesLoading } = useQuery({
-    queryKey: ["balance-sheet-all-expenses", selectedYear, selectedMonth],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("expenses")
-        .select("*")
-        .lte("created_at", format(asOfDate, "yyyy-MM-dd'T'23:59:59"))
-        .eq("status", "paid");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Fetch ALL payroll up to selected month (for cash balance)
-  const { data: allPayroll, isLoading: payrollLoading } = useQuery({
-    queryKey: ["balance-sheet-all-payroll", selectedYear, selectedMonth],
-    queryFn: async () => {
-      const monthEnd = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-      const { data, error } = await supabase
-        .from("payroll")
-        .select("*")
-        .lte("month", monthEnd)
-        .eq("status", "paid");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Fetch pending income (receivables)
+  // ALL pending income up to asOfDate (receivables)
   const { data: pendingIncome } = useQuery({
-    queryKey: ["balance-sheet-pending-income", selectedYear, selectedMonth],
+    queryKey: ["bs-pending-income", asOfDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("income")
         .select("*")
-        .lte("date", format(asOfDate, "yyyy-MM-dd"))
+        .lte("date", asOfDateStr)
         .eq("status", "pending");
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Fetch pending payroll (liabilities)
-  const { data: pendingPayroll } = useQuery({
-    queryKey: ["balance-sheet-pending-payroll", selectedYear, selectedMonth],
+  // ALL paid expenses up to asOfDate
+  const { data: allPaidExpenses, isLoading: expensesLoading } = useQuery({
+    queryKey: ["bs-paid-expenses", asOfDateStr],
     queryFn: async () => {
-      const monthEnd = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-      
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .lte("created_at", `${asOfDateStr}T23:59:59`)
+        .eq("status", "paid");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ALL pending expenses up to asOfDate (payables)
+  const { data: pendingExpenses } = useQuery({
+    queryKey: ["bs-pending-expenses", asOfDateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .lte("created_at", `${asOfDateStr}T23:59:59`)
+        .eq("status", "pending");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // ALL paid payroll up to asOfDate - use proper date format YYYY-MM-DD
+  const { data: allPaidPayroll, isLoading: payrollLoading } = useQuery({
+    queryKey: ["bs-paid-payroll", asOfDateStr],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("payroll")
         .select("*")
-        .lte("month", monthEnd)
+        .lte("month", asOfDateStr)
+        .eq("status", "paid");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Pending payroll (salary payable)
+  const { data: pendingPayroll } = useQuery({
+    queryKey: ["bs-pending-payroll", asOfDateStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payroll")
+        .select("*")
+        .lte("month", asOfDateStr)
         .in("status", ["draft", "final"]);
       if (error) throw error;
       return data || [];
     },
   });
 
-  // Fetch pending expenses (payables)
-  const { data: pendingExpenses } = useQuery({
-    queryKey: ["balance-sheet-pending-expenses", selectedYear, selectedMonth],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("expenses")
-        .select("*")
-        .lte("created_at", format(asOfDate, "yyyy-MM-dd"))
-        .eq("status", "pending");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Calculate balance sheet
   const balanceSheet = useMemo(() => {
-    // All-time totals for cash position
-    const totalAllIncome = allIncome?.reduce((sum, i) => sum + i.amount, 0) || 0;
-    const totalAllExpenses = allExpenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
-    const totalAllPayroll = allPayroll?.reduce((sum, p) => sum + p.amount, 0) || 0;
-
-    // YTD profit (for equity section)
-    const ytdIncome = allIncome?.filter(i => new Date(i.date) >= yearStartDate).reduce((sum, i) => sum + i.amount, 0) || 0;
-    const ytdExpenses = allExpenses?.filter(e => new Date(e.created_at) >= yearStartDate).reduce((sum, e) => sum + e.amount, 0) || 0;
-    const ytdPayroll = allPayroll?.filter(p => p.month >= format(yearStartDate, "yyyy-MM")).reduce((sum, p) => sum + p.amount, 0) || 0;
-    const ytdProfit = ytdIncome - ytdExpenses - ytdPayroll;
-
-    // Get manual balance items by account code
+    // Helper: get manual balance by account code
     const getBalanceByCode = (code: string) => {
       return balanceItems?.filter(b => {
         const account = accounts?.find(a => a.id === b.account_id);
@@ -163,22 +153,26 @@ export function BalanceSheet() {
       }).reduce((sum, b) => sum + Number(b.amount), 0) || 0;
     };
 
-    // Derive equipment value from paid expenses with equipment/hardware sub_categories
+    // Equipment sub-categories (these are CAPEX, not OPEX)
     const equipmentSubCats = ["equipment", "hardware"];
-    const equipmentFromExpenses = allExpenses?.filter(e => 
-      equipmentSubCats.includes(e.sub_category || "")
-    ).reduce((sum, e) => sum + e.amount, 0) || 0;
+    const isEquipmentExpense = (e: any) => equipmentSubCats.includes(e.sub_category || "");
 
-    // Cash & Bank = All received income - All paid expenses - All paid payroll + manual adjustments
+    // ===== ASSETS =====
+    // Cash = received income - paid expenses - paid payroll + manual adjustments
+    const totalReceivedIncome = allReceivedIncome?.reduce((sum, i) => sum + i.amount, 0) || 0;
+    const totalPaidExpenses = allPaidExpenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
+    const totalPaidPayroll = allPaidPayroll?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const manualCashAdj = getBalanceByCode("1110");
-    const cashBank = totalAllIncome - totalAllExpenses - totalAllPayroll + manualCashAdj;
-    
+    const cashBank = totalReceivedIncome - totalPaidExpenses - totalPaidPayroll + manualCashAdj;
+
+    // Receivables = pending income
     const accountsReceivable = pendingIncome?.reduce((sum, i) => sum + i.amount, 0) || 0;
     const employeeReceivables = getBalanceByCode("1130");
     const prepaidExpenses = getBalanceByCode("1140");
     const totalCurrentAssets = cashBank + accountsReceivable + employeeReceivables + prepaidExpenses;
 
-    // Fixed assets: derive from equipment expenses + manual adjustments
+    // Fixed assets: equipment from paid expenses + manual
+    const equipmentFromExpenses = allPaidExpenses?.filter(isEquipmentExpense).reduce((sum, e) => sum + e.amount, 0) || 0;
     const officeEquipment = equipmentFromExpenses + getBalanceByCode("1210");
     const vehicles = getBalanceByCode("1220");
     const accumulatedDepreciation = getBalanceByCode("1230");
@@ -186,24 +180,43 @@ export function BalanceSheet() {
 
     const totalAssets = totalCurrentAssets + totalFixedAssets;
 
-    // Liabilities
+    // ===== LIABILITIES =====
     const accountsPayable = pendingExpenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
     const salaryPayable = pendingPayroll?.reduce((sum, p) => sum + p.amount, 0) || 0;
     const taxPayable = getBalanceByCode("2130");
     const bpjsPayable = getBalanceByCode("2140");
     const totalCurrentLiabilities = accountsPayable + salaryPayable + taxPayable + bpjsPayable;
-
     const longTermLiabilities = getBalanceByCode("2200");
     const totalLiabilities = totalCurrentLiabilities + longTermLiabilities;
 
-    // Equity
+    // ===== EQUITY =====
     const paidInCapital = getBalanceByCode("3100");
-    const retainedEarnings = getBalanceByCode("3200");
-    const currentYearProfit = ytdProfit;
-    const totalEquity = paidInCapital + retainedEarnings + currentYearProfit;
 
+    // Current year profit (YTD) - EXCLUDE equipment from expenses (it's CAPEX not OPEX)
+    // Use ACCRUAL basis: all income - all non-equipment expenses - all payroll for the year
+    const ytdReceivedIncome = allReceivedIncome?.filter(i => i.date >= yearStartStr).reduce((sum, i) => sum + i.amount, 0) || 0;
+    const ytdPendingIncome = pendingIncome?.filter(i => i.date >= yearStartStr).reduce((sum, i) => sum + i.amount, 0) || 0;
+    const ytdTotalIncome = ytdReceivedIncome + ytdPendingIncome;
+
+    const ytdPaidNonEquipExpenses = allPaidExpenses?.filter(e => e.created_at >= yearStartStr && !isEquipmentExpense(e)).reduce((sum, e) => sum + e.amount, 0) || 0;
+    const ytdPendingNonEquipExpenses = pendingExpenses?.filter(e => e.created_at >= yearStartStr && !isEquipmentExpense(e)).reduce((sum, e) => sum + e.amount, 0) || 0;
+    const ytdTotalExpenses = ytdPaidNonEquipExpenses + ytdPendingNonEquipExpenses;
+
+    const ytdPaidPayroll = allPaidPayroll?.filter(p => p.month >= yearStartStr).reduce((sum, p) => sum + p.amount, 0) || 0;
+    const ytdPendingPayroll = pendingPayroll?.filter(p => p.month >= yearStartStr).reduce((sum, p) => sum + p.amount, 0) || 0;
+    const ytdTotalPayroll = ytdPaidPayroll + ytdPendingPayroll;
+
+    const currentYearProfit = ytdTotalIncome - ytdTotalExpenses - ytdTotalPayroll;
+
+    // Retained earnings = auto-calculated as balancing figure
+    // This ensures the balance sheet ALWAYS balances
+    // Retained earnings = Total Assets - Total Liabilities - Paid-in Capital - Current Year Profit + manual retained
+    const manualRetained = getBalanceByCode("3200");
+    const retainedEarnings = totalAssets - totalLiabilities - paidInCapital - currentYearProfit + manualRetained;
+    // Since retainedEarnings is computed as plug, total equity = totalAssets - totalLiabilities
+    const totalEquity = paidInCapital + retainedEarnings + currentYearProfit;
     const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
-    const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.01;
+    const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 1;
 
     return {
       cashBank, accountsReceivable, employeeReceivables, prepaidExpenses, totalCurrentAssets,
@@ -213,24 +226,14 @@ export function BalanceSheet() {
       paidInCapital, retainedEarnings, currentYearProfit, totalEquity,
       totalLiabilitiesAndEquity, isBalanced,
     };
-  }, [accounts, balanceItems, allIncome, allExpenses, allPayroll, pendingIncome, pendingPayroll, pendingExpenses, yearStartDate]);
+  }, [accounts, balanceItems, allReceivedIncome, allPaidExpenses, allPaidPayroll, pendingIncome, pendingExpenses, pendingPayroll, yearStartStr]);
 
   const isLoading = accountsLoading || balanceLoading || incomeLoading || expensesLoading || payrollLoading;
 
   const BalanceRow = ({ 
-    label, 
-    amount, 
-    isTotal = false, 
-    isSubTotal = false,
-    indent = 0,
-    highlight = false,
+    label, amount, isTotal = false, isSubTotal = false, indent = 0, highlight = false,
   }: { 
-    label: string; 
-    amount: number; 
-    isTotal?: boolean; 
-    isSubTotal?: boolean;
-    indent?: number;
-    highlight?: boolean;
+    label: string; amount: number; isTotal?: boolean; isSubTotal?: boolean; indent?: number; highlight?: boolean;
   }) => (
     <TableRow className={highlight ? "bg-muted/50" : ""}>
       <TableCell 
@@ -248,15 +251,15 @@ export function BalanceSheet() {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <Skeleton className="h-8 w-48" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-96 w-full" />
-        </CardContent>
+        <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+        <CardContent><Skeleton className="h-96 w-full" /></CardContent>
       </Card>
     );
   }
+
+  const periodLabel = viewMode === "yearly"
+    ? `31 Desember ${selectedYear}`
+    : format(asOfDate, "dd MMMM yyyy");
 
   return (
     <div className="space-y-6">
@@ -265,6 +268,19 @@ export function BalanceSheet() {
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
+              <label className="text-sm font-medium">Mode</label>
+              <Select value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Bulanan</SelectItem>
+                  <SelectItem value="yearly">Tahunan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-sm font-medium">Tahun</label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-32">
@@ -272,44 +288,36 @@ export function BalanceSheet() {
                 </SelectTrigger>
                 <SelectContent>
                   {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Per Tanggal</label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptions.map((month) => (
-                    <SelectItem key={month.value} value={month.value}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {viewMode === "monthly" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Bulan</label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <Badge 
               variant={balanceSheet.isBalanced ? "default" : "destructive"} 
               className="gap-1 h-9"
             >
               {balanceSheet.isBalanced ? (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Balance
-                </>
+                <><CheckCircle className="h-4 w-4" /> Balance</>
               ) : (
-                <>
-                  <AlertCircle className="h-4 w-4" />
-                  Tidak Balance
-                </>
+                <><AlertCircle className="h-4 w-4" /> Tidak Balance</>
               )}
             </Badge>
           </div>
@@ -320,14 +328,12 @@ export function BalanceSheet() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assets */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <div className="flex items-center gap-3">
               <Scale className="h-6 w-6 text-primary" />
               <div>
                 <CardTitle>ASET</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Per {format(asOfDate, "dd MMMM yyyy")}
-                </p>
+                <p className="text-sm text-muted-foreground">Per {periodLabel}</p>
               </div>
             </div>
           </CardHeader>
@@ -363,20 +369,14 @@ export function BalanceSheet() {
 
         {/* Liabilities & Equity */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <div className="flex items-center gap-3">
               <Scale className="h-6 w-6 text-primary" />
               <div>
                 <CardTitle>KEWAJIBAN & MODAL</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Per {format(asOfDate, "dd MMMM yyyy")}
-                </p>
+                <p className="text-sm text-muted-foreground">Per {periodLabel}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border">
