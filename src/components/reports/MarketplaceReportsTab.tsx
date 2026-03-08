@@ -93,7 +93,7 @@ export function MarketplaceReportsTab() {
     queryKey: ["marketplace-reports", selectedYear, selectedClientId],
     queryFn: async () => {
       let query = supabase
-        .from("marketplace_reports")
+        .from("marketplace_reports" as any)
         .select("*, clients(id, name)")
         .eq("report_year", selectedYear)
         .order("report_month", { ascending: true });
@@ -104,7 +104,7 @@ export function MarketplaceReportsTab() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
