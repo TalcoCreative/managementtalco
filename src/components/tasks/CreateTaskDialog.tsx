@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff, BellRing } from "lucide-react";
+import { Plus, Upload, X, Link as LinkIcon, Paperclip, ExternalLink, EyeOff, BellRing, ListChecks, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { z } from "zod";
 import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
@@ -56,6 +57,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
   });
   const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
   const [notifyUsers, setNotifyUsers] = useState<string[]>([]);
+  const [subTaskTitles, setSubTaskTitles] = useState<string[]>([]);
+  const [newSubTask, setNewSubTask] = useState("");
   const [tableData, setTableData] = useState<TableData>({
     headers: ["No", "Item", "Keterangan", "Status"],
     rows: [["1", "", "", ""]],
@@ -212,6 +215,16 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         await supabase.from("task_watchers").insert(watcherInserts);
       }
 
+      // Insert sub-tasks if any
+      if (taskData && subTaskTitles.length > 0) {
+        const subTaskInserts = subTaskTitles.map((title, idx) => ({
+          task_id: taskData.id,
+          title,
+          sort_order: idx,
+        }));
+        await supabase.from("sub_tasks").insert(subTaskInserts);
+      }
+
       // Log task creation as activity
       await supabase.from("task_activities").insert({
         user_id: session.session.user.id,
@@ -276,6 +289,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       });
       setAssignedUsers([]);
       setNotifyUsers([]);
+      setSubTaskTitles([]);
+      setNewSubTask("");
       setTableData({
         headers: ["No", "Item", "Keterangan", "Status"],
         rows: [["1", "", "", ""]],
@@ -542,6 +557,65 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Sub-Tasks */}
+          <div className="space-y-2">
+            <Label>
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4" />
+                Sub-Tasks
+              </div>
+            </Label>
+            {subTaskTitles.length > 0 && (
+              <div className="space-y-1">
+                {subTaskTitles.map((title, idx) => (
+                  <div key={idx} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/50">
+                    <Checkbox checked={false} disabled />
+                    <span className="flex-1 text-sm">{title}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setSubTaskTitles(prev => prev.filter((_, i) => i !== idx))}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Tambah sub-task..."
+                value={newSubTask}
+                onChange={(e) => setNewSubTask(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newSubTask.trim()) {
+                    e.preventDefault();
+                    setSubTaskTitles(prev => [...prev, newSubTask.trim()]);
+                    setNewSubTask("");
+                  }
+                }}
+                className="h-8 text-sm"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (newSubTask.trim()) {
+                    setSubTaskTitles(prev => [...prev, newSubTask.trim()]);
+                    setNewSubTask("");
+                  }
+                }}
+                disabled={!newSubTask.trim()}
+                className="h-8"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">

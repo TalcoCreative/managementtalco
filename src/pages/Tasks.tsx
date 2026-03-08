@@ -6,6 +6,7 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Archive, AlertTriangle, Clock } from "lucide-react";
+import { SubTaskIndicator } from "@/components/tasks/SubTasksSection";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { Input } from "@/components/ui/input";
@@ -465,6 +466,7 @@ export default function Tasks() {
                         {task.description}
                       </p>
                     )}
+                    <SubTaskIndicator taskId={task.id} />
                     <div onClick={(e) => e.stopPropagation()}>
                       <Select
                         value={task.status}

@@ -19,6 +19,7 @@ import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
 import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
+import { SubTasksSection } from "@/components/tasks/SubTasksSection";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -868,6 +869,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                   }}
                 />
               </div>
+
+              {/* Sub-Tasks Section */}
+              {taskId && (
+                <SubTasksSection taskId={taskId} />
+              )}
 
               {/* Related Shooting Section */}
               {taskId && (
