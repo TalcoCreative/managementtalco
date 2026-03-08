@@ -13,7 +13,7 @@ import { Calendar, Building2, User, Users, MessageSquare, Paperclip, Upload, Lin
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
-import { EditableTaskTable } from "@/components/tasks/EditableTaskTable";
+import { RichBriefEditor, BriefData, migrateLegacyData } from "@/components/tasks/RichBriefEditor";
 import { MentionInput, extractMentions, renderCommentWithMentions } from "@/components/tasks/MentionInput";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
