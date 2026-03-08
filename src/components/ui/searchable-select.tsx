@@ -41,7 +41,7 @@ export function SearchableSelect({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
-  const allOptions = defaultOption ? [defaultOption, ...options] : options;
+  const allOptions: SearchableSelectOption[] = defaultOption ? [defaultOption, ...options] : options;
 
   const filtered = search.trim()
     ? allOptions.filter(
