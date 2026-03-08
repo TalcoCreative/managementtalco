@@ -83,7 +83,7 @@ export function SearchableSelect({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="max-h-[200px] overflow-y-auto p-1">
+        <div className="max-h-[250px] overflow-y-auto overscroll-contain p-1">
           {filtered.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">{emptyText}</p>
           ) : (
