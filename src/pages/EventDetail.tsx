@@ -394,13 +394,13 @@ export default function EventDetail() {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Event?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Event?</AlertDialogTitle>
             <AlertDialogDescription>
-              Event "{event.name}" akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+              Event "{event.name}" will be permanently deleted. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate()}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
