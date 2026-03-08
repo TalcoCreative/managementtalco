@@ -100,6 +100,27 @@ const DATA_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_finance_dashboard",
+      description: `Get real-time Finance Center dashboard data matching the Finance Dashboard UI exactly. Returns: Saldo Awal (opening balance), Total Income, Total Expenses, Net Cashflow, Saldo Akhir (ending balance), Daily Expenses (today), Payroll vs Non-Payroll breakdown, Expense by Main Category, Top 10 Sub-Categories, Monthly Trend (12 months), and Forecast (next 3 months). Optionally filter by year and month.`,
+      parameters: {
+        type: "object",
+        properties: {
+          year: {
+            type: "number",
+            description: "Year to filter. Default: current year.",
+          },
+          month: {
+            type: "number",
+            description: "Month (0-11, Jan=0). Omit or -1 for all months of the year.",
+          },
+        },
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 serve(async (req) => {
