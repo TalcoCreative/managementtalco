@@ -19,7 +19,7 @@ type NavItem = { title: string; url: string; icon: any; featureKey: string };
 const navItems: NavItem[] = [
   { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
   { title: "Clients", url: "/clients", icon: Building2, featureKey: "clients" },
-  { title: "Client Hub", url: "/client-hub", icon: Building2, featureKey: "client_hub" },
+  
   { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
   { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
   { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },

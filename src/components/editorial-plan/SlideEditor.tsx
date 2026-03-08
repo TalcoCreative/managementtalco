@@ -45,7 +45,7 @@ interface Slide {
   id: string;
   ep_id: string;
   slide_order: number;
-  status: "proposed" | "approved" | "published";
+  status: "proposed" | "approved" | "revise" | "published";
   approved_at: string | null;
   published_at: string | null;
   publish_date: string | null;
@@ -158,7 +158,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
 
   // Update slide status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async (newStatus: "proposed" | "approved" | "published") => {
+    mutationFn: async (newStatus: "proposed" | "approved" | "revise" | "published") => {
       if (newStatus === "published") {
         // Open publish dialog to collect links
         setPublishDialogOpen(true);
@@ -379,6 +379,7 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
                   <SelectContent>
                     <SelectItem value="proposed">Proposed</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="revise">Revise</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
                   </SelectContent>
                 </Select>

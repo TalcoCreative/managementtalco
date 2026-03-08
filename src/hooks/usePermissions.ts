@@ -97,7 +97,7 @@ export const ALL_FEATURE_KEYS = FEATURE_GROUPS.flatMap(g => g.features.map(f => 
 export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/": "dashboard",
   "/clients": "clients",
-  "/client-hub": "client_hub",
+  "/reports/published-content": "reports",
   "/projects": "projects",
   "/tasks": "tasks",
   "/schedule": "schedule",

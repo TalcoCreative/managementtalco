@@ -16,7 +16,7 @@ const primaryTabs = [
 
 const moreItems = [
   { title: "Clients", url: "/clients", featureKey: "clients" },
-  { title: "Client Hub", url: "/client-hub", featureKey: "client_hub" },
+  
   { title: "Shooting", url: "/shooting", featureKey: "shooting" },
   { title: "Meeting", url: "/meeting", featureKey: "meeting" },
   { title: "Leave", url: "/leave", featureKey: "leave" },

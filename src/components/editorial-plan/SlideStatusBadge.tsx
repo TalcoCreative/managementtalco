@@ -2,13 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface SlideStatusBadgeProps {
-  status: "proposed" | "approved" | "published";
+  status: "proposed" | "approved" | "revise" | "published";
   size?: "sm" | "default";
   variant?: "default" | "light";
 }
 
 export function SlideStatusBadge({ status, size = "default", variant = "default" }: SlideStatusBadgeProps) {
-  const statusConfig = {
+  const statusConfig: Record<string, { label: string; className: string }> = {
     proposed: {
       label: "Proposed",
       className: variant === "light" 
@@ -20,6 +20,12 @@ export function SlideStatusBadge({ status, size = "default", variant = "default"
       className: variant === "light"
         ? "bg-green-500/20 text-green-100 border-green-400/30"
         : "bg-green-100 text-green-800 border-green-200",
+    },
+    revise: {
+      label: "Revise",
+      className: variant === "light"
+        ? "bg-orange-500/20 text-orange-100 border-orange-400/30"
+        : "bg-orange-100 text-orange-800 border-orange-200",
     },
     published: {
       label: "Published",

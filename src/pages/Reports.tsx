@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlatformAccountsTab } from "@/components/reports/PlatformAccountsTab";
@@ -6,17 +7,21 @@ import { OrganicReportsTab } from "@/components/reports/OrganicReportsTab";
 import { AdsReportsTab } from "@/components/reports/AdsReportsTab";
 import { ClientAnalyticsDashboard } from "@/components/reports/ClientAnalyticsDashboard";
 import { AuditLogsTab } from "@/components/reports/AuditLogsTab";
+import { MarketplaceReportsTab } from "@/components/reports/MarketplaceReportsTab";
+import { Button } from "@/components/ui/button";
 import {
-  BarChart3,
   Users,
   FileText,
   DollarSign,
   History,
   Building2,
+  ShoppingBag,
+  FileCheck,
 } from "lucide-react";
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("client-analytics");
+  const navigate = useNavigate();
 
   return (
     <AppLayout>
@@ -25,9 +30,17 @@ export default function Reports() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Reports</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Multi-platform social media reporting system
+              Multi-platform social media & marketplace reporting system
             </p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/reports/published-content")}
+            className="gap-2"
+          >
+            <FileCheck className="h-4 w-4" />
+            Published Content
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -47,6 +60,10 @@ export default function Reports() {
             <TabsTrigger value="ads" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               <span className="hidden sm:inline">Ads</span>
+            </TabsTrigger>
+            <TabsTrigger value="marketplace" className="flex items-center gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              <span className="hidden sm:inline">Marketplace</span>
             </TabsTrigger>
             <TabsTrigger value="audit" className="flex items-center gap-2">
               <History className="h-4 w-4" />
@@ -68,6 +85,10 @@ export default function Reports() {
 
           <TabsContent value="ads" className="mt-4">
             <AdsReportsTab />
+          </TabsContent>
+
+          <TabsContent value="marketplace" className="mt-4">
+            <MarketplaceReportsTab />
           </TabsContent>
 
           <TabsContent value="audit" className="mt-4">

@@ -61,8 +61,8 @@ import EditorialPlan from "./pages/EditorialPlan";
 import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
 import PublicEditorialPlanList from "./pages/PublicEditorialPlanList";
-import ClientHub from "./pages/ClientHub";
 import PublicClientHub from "./pages/PublicClientHub";
+import PublishedContent from "./pages/PublishedContent";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
 import RoleManagement from "./pages/RoleManagement";
@@ -124,7 +124,7 @@ const App = () => (
           <Route path="/ep/:clientSlug/:epSlug" element={<PublicEditorialPlan />} />
           <Route path="/ep-list/:clientSlug" element={<PublicEditorialPlanList />} />
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
-          <Route path="/client-hub" element={<ProtectedRoute><ClientHub /></ProtectedRoute>} />
+          <Route path="/reports/published-content" element={<ProtectedRoute><PublishedContent /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/system/roles" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
           <Route path="/system/settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
