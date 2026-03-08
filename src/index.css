@@ -101,6 +101,30 @@
 
     /* Atmospheric glow */
     --glow-primary: 222 72% 52%;
+
+    /* ClickUp-style section colors */
+    --section-tasks: 222 72% 52%;
+    --section-projects: 205 72% 52%;
+    --section-hr: 270 60% 55%;
+    --section-finance: 152 48% 46%;
+    --section-clients: 28 78% 52%;
+    --section-schedule: 38 82% 52%;
+    --section-shooting: 330 60% 55%;
+    --section-meeting: 240 60% 58%;
+    --section-reports: 190 70% 48%;
+    --section-social: 345 72% 55%;
+    --section-editorial: 280 60% 55%;
+    --section-sales: 16 72% 52%;
+    --section-recruitment: 170 60% 42%;
+    --section-marketplace: 160 55% 44%;
+
+    /* Chart palette */
+    --chart-1: 222 72% 52%;
+    --chart-2: 152 48% 46%;
+    --chart-3: 38 82% 52%;
+    --chart-4: 330 60% 55%;
+    --chart-5: 270 60% 55%;
+    --chart-6: 205 72% 52%;
   }
 
   .dark {
