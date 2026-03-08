@@ -654,6 +654,9 @@ export default function HRAnalytics() {
         </div>
 
         {/* Risk & Bottleneck Panel */}
+        <div className="section-divider">
+          <span className="divider-label">Risk & Performance</span>
+        </div>
         <HRRiskPanel 
           profiles={filteredProfiles}
           attendance={attendance || []}
