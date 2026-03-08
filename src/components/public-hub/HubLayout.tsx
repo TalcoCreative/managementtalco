@@ -82,6 +82,7 @@ export default function HubLayout() {
             hasMeetings: true,
             hasShootings: true,
             hasMarketplace: (marketplaceCount || 0) > 0,
+            hasKolCampaigns: true,
           }}
         />
       )}
