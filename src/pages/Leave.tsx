@@ -55,11 +55,11 @@ export default function Leave() {
   const getLeaveTypeBadge = (type: string) => {
     switch (type) {
       case "sakit":
-        return <Badge className="bg-red-500">Sakit</Badge>;
+        return <Badge className="bg-red-500">Sick Leave</Badge>;
       case "cuti":
-        return <Badge className="bg-blue-500">Cuti</Badge>;
+        return <Badge className="bg-blue-500">Annual Leave</Badge>;
       case "izin":
-        return <Badge className="bg-yellow-500">Izin</Badge>;
+        return <Badge className="bg-yellow-500">Permission</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
@@ -88,12 +88,12 @@ export default function Leave() {
           {request.rejection_reason && (
             <div className="flex items-start gap-2 text-sm text-destructive">
               <AlertCircle className="h-4 w-4 mt-0.5" />
-              <span>Alasan ditolak: {request.rejection_reason}</span>
+             <span>Rejection reason: {request.rejection_reason}</span>
             </div>
           )}
           {request.approver && (
             <p className="text-xs text-muted-foreground">
-              Diproses oleh: {request.approver.full_name}
+              Processed by: {request.approver.full_name}
             </p>
           )}
         </div>

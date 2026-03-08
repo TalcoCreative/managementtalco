@@ -193,12 +193,12 @@ export default function Projects() {
 
       toast.success(
         !currentHidden
-          ? "Project disembunyikan dari client dashboard"
-          : "Project ditampilkan di client dashboard"
+          ? "Project hidden from client dashboard"
+          : "Project visible on client dashboard"
       );
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error("Gagal mengubah visibility");
+      toast.error("Failed to change visibility");
     }
   };
 
@@ -211,10 +211,10 @@ export default function Projects() {
 
       if (error) throw error;
 
-      toast.success("Status project diperbarui");
+      toast.success("Project status updated");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error("Gagal mengubah status");
+      toast.error("Failed to change status");
     }
   };
 
@@ -246,11 +246,11 @@ export default function Projects() {
       const { error } = await supabase.from("projects").delete().eq("id", deleteProject.id);
       if (error) throw error;
 
-      toast.success("Project dihapus");
+      toast.success("Project deleted");
       setDeleteProject(null);
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus project");
+      toast.error(error.message || "Failed to delete project");
     } finally {
       setDeleting(false);
     }
@@ -599,8 +599,8 @@ export default function Projects() {
       <DeleteConfirmDialog
         open={!!deleteProject}
         onOpenChange={(open) => !open && setDeleteProject(null)}
-        title="Hapus Project"
-        description={`Apakah Anda yakin ingin menghapus project "${deleteProject?.title}"? Semua task terkait mungkin akan terpengaruh.`}
+        title="Delete Project"
+        description={`Are you sure you want to delete project "${deleteProject?.title}"? All related tasks may be affected.`}
         onConfirm={handleDelete}
         loading={deleting}
       />

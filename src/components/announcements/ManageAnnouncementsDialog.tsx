@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import { Trash2, ToggleLeft, ToggleRight } from "lucide-react";
 import {
   Dialog,
@@ -60,12 +59,12 @@ export function ManageAnnouncementsDialog({
       if (error) throw error;
 
       toast.success(
-        currentStatus ? "Pengumuman dinonaktifkan" : "Pengumuman diaktifkan"
+        currentStatus ? "Announcement deactivated" : "Announcement activated"
       );
       queryClient.invalidateQueries({ queryKey: ["all-announcements"] });
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
     } catch (error: any) {
-      toast.error("Gagal mengubah status: " + error.message);
+      toast.error("Failed to update status: " + error.message);
     }
   };
 
@@ -80,12 +79,12 @@ export function ManageAnnouncementsDialog({
 
       if (error) throw error;
 
-      toast.success("Pengumuman berhasil dihapus");
+      toast.success("Announcement deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["all-announcements"] });
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       setDeleteId(null);
     } catch (error: any) {
-      toast.error("Gagal menghapus: " + error.message);
+      toast.error("Failed to delete: " + error.message);
     }
   };
 
@@ -94,11 +93,11 @@ export function ManageAnnouncementsDialog({
       case "urgent":
         return <Badge variant="destructive">Urgent</Badge>;
       case "high":
-        return <Badge className="bg-orange-500 hover:bg-orange-600">Tinggi</Badge>;
+        return <Badge className="bg-orange-500 hover:bg-orange-600">High</Badge>;
       case "normal":
         return <Badge variant="secondary">Normal</Badge>;
       default:
-        return <Badge variant="outline">Rendah</Badge>;
+        return <Badge variant="outline">Low</Badge>;
     }
   };
 
@@ -107,23 +106,23 @@ export function ManageAnnouncementsDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Kelola Pengumuman</DialogTitle>
+            <DialogTitle>Manage Announcements</DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="h-[60vh]">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">Memuat...</p>
+                <p className="text-muted-foreground">Loading...</p>
               </div>
             ) : announcements && announcements.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Judul</TableHead>
-                    <TableHead>Prioritas</TableHead>
-                    <TableHead>Dibuat</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -141,9 +140,7 @@ export function ManageAnnouncementsDialog({
                       <TableCell>
                         <div className="text-sm">
                           <p>
-                            {format(new Date(announcement.created_at), "dd MMM yyyy", {
-                              locale: id,
-                            })}
+                            {format(new Date(announcement.created_at), "dd MMM yyyy")}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {announcement.profiles?.full_name}
@@ -154,7 +151,7 @@ export function ManageAnnouncementsDialog({
                         <Badge
                           variant={announcement.is_active ? "default" : "outline"}
                         >
-                          {announcement.is_active ? "Aktif" : "Nonaktif"}
+                          {announcement.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -166,7 +163,7 @@ export function ManageAnnouncementsDialog({
                               handleToggleActive(announcement.id, announcement.is_active)
                             }
                             title={
-                              announcement.is_active ? "Nonaktifkan" : "Aktifkan"
+                              announcement.is_active ? "Deactivate" : "Activate"
                             }
                           >
                             {announcement.is_active ? (
@@ -190,7 +187,7 @@ export function ManageAnnouncementsDialog({
               </Table>
             ) : (
               <div className="flex items-center justify-center py-8">
-                <p className="text-muted-foreground">Belum ada pengumuman</p>
+                <p className="text-muted-foreground">No announcements yet</p>
               </div>
             )}
           </ScrollArea>
@@ -201,8 +198,8 @@ export function ManageAnnouncementsDialog({
         open={!!deleteId}
         onOpenChange={() => setDeleteId(null)}
         onConfirm={handleDelete}
-        title="Hapus Pengumuman"
-        description="Apakah Anda yakin ingin menghapus pengumuman ini? Tindakan ini tidak dapat dibatalkan."
+        title="Delete Announcement"
+        description="Are you sure you want to delete this announcement? This action cannot be undone."
       />
     </>
   );

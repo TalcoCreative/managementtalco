@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Settings, Clock } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Globe, Lock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AI_MODELS = [
@@ -17,27 +18,25 @@ const AI_MODELS = [
   { value: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
 ];
 
-export default function SystemSettings() {
+function AIConfigCard() {
   const { isSuperAdmin, userId } = usePermissions();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [showKey, setShowKey] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("gpt-4o-mini");
   const [temperature, setTemperature] = useState("0.2");
   const [maxTokens, setMaxTokens] = useState("1200");
-  const [lateThreshold, setLateThreshold] = useState("10:00");
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: ["ai-settings"],
     queryFn: async () => {
       const { data } = await supabase
         .from("company_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count", "late_threshold_time"]);
+        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count"]);
       const map: Record<string, string> = {};
-      data?.forEach((s) => {
-        map[s.setting_key] = s.setting_value || "";
-      });
+      data?.forEach((s) => { map[s.setting_key] = s.setting_value || ""; });
       return map;
     },
     enabled: isSuperAdmin,
@@ -49,7 +48,6 @@ export default function SystemSettings() {
       setModel(settings["ai_model"] || "gpt-4o-mini");
       setTemperature(settings["ai_temperature"] || "0.2");
       setMaxTokens(settings["ai_max_tokens"] || "1200");
-      setLateThreshold(settings["late_threshold_time"] || "10:00");
     }
   }, [settings]);
 
@@ -72,181 +70,311 @@ export default function SystemSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ai-settings"] });
-      toast.success("AI configuration saved");
+      toast.success(t("AI configuration saved", "Konfigurasi AI berhasil disimpan"));
     },
-    onError: () => toast.error("Failed to save configuration"),
+    onError: () => toast.error(t("Failed to save configuration", "Gagal menyimpan konfigurasi")),
   });
-
-  if (!isSuperAdmin) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <p className="text-muted-foreground">Access restricted to Super Admin.</p>
-        </div>
-      </AppLayout>
-    );
-  }
 
   const hasApiKey = !!settings?.["ai_api_key"];
   const usageCount = settings?.["ai_usage_count"] || "0";
 
   return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600/15 to-indigo-600/15 flex items-center justify-center">
+            <Bot className="h-5 w-5 text-violet-600" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{t("AI Configuration", "Konfigurasi AI")}</CardTitle>
+            <CardDescription>{t("Configure OpenAI integration for AI Operations", "Konfigurasi integrasi OpenAI untuk AI Operations")}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {!hasApiKey && !apiKey && (
+          <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-700 dark:text-amber-400">{t("API Key not configured", "API Key belum dikonfigurasi")}</p>
+              <p className="text-muted-foreground text-xs mt-0.5">{t("Set your OpenAI API key to enable AI Operations chat.", "Atur API key OpenAI untuk mengaktifkan chat AI Operations.")}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>OpenAI API Key</Label>
+          <div className="relative">
+            <Input
+              type={showKey ? "text" : "password"}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-..."
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t("Model", "Model")}</Label>
+          <Select value={model} onValueChange={setModel}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {AI_MODELS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>{t("Temperature", "Temperatur")}</Label>
+            <Input type="number" step="0.1" min="0" max="2" value={temperature} onChange={(e) => setTemperature(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Max Tokens</Label>
+            <Input type="number" step="100" min="100" max="4096" value={maxTokens} onChange={(e) => setMaxTokens(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">
+            {t("Total AI queries", "Total query AI")}: <span className="font-medium text-foreground">{usageCount}</span>
+          </p>
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2">
+            <Save className="h-4 w-4" />
+            {t("Save Configuration", "Simpan Konfigurasi")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function HRSettingsCard() {
+  const { userId } = usePermissions();
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+  const [lateThreshold, setLateThreshold] = useState("10:00");
+
+  const { data: settings } = useQuery({
+    queryKey: ["hr-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("setting_key, setting_value")
+        .eq("setting_key", "late_threshold_time");
+      return data?.[0]?.setting_value || "10:00";
+    },
+  });
+
+  useEffect(() => {
+    if (settings) setLateThreshold(settings);
+  }, [settings]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-600/15 to-teal-600/15 flex items-center justify-center">
+            <Clock className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{t("HR Settings", "Pengaturan HR")}</CardTitle>
+            <CardDescription>{t("Configure attendance and HR-related rules", "Konfigurasi aturan kehadiran dan HR")}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <Label>{t("Late Threshold Time", "Batas Waktu Terlambat")}</Label>
+          <p className="text-xs text-muted-foreground">
+            {t("Employees who clock in after this time will be automatically marked as Late.", "Karyawan yang clock-in setelah jam ini akan otomatis ditandai sebagai Late.")}
+          </p>
+          <Input type="time" value={lateThreshold} onChange={(e) => setLateThreshold(e.target.value)} className="w-40" />
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={async () => {
+              try {
+                await supabase
+                  .from("company_settings")
+                  .upsert(
+                    { setting_key: "late_threshold_time", setting_value: lateThreshold, updated_by: userId, updated_at: new Date().toISOString() },
+                    { onConflict: "setting_key" }
+                  );
+                queryClient.invalidateQueries({ queryKey: ["hr-settings"] });
+                toast.success(t("HR settings saved", "Pengaturan HR disimpan"));
+              } catch {
+                toast.error(t("Failed to save HR settings", "Gagal menyimpan pengaturan HR"));
+              }
+            }}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {t("Save HR Settings", "Simpan Pengaturan HR")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LanguageCard() {
+  const { language, setLanguage, t } = useLanguage();
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600/15 to-cyan-600/15 flex items-center justify-center">
+            <Globe className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{t("Language", "Bahasa")}</CardTitle>
+            <CardDescription>{t("Choose your preferred system language", "Pilih bahasa sistem yang diinginkan")}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-3">
+          <Button
+            variant={language === "en" ? "default" : "outline"}
+            onClick={() => setLanguage("en")}
+            className="flex-1 gap-2"
+          >
+            🇬🇧 English
+          </Button>
+          <Button
+            variant={language === "id" ? "default" : "outline"}
+            onClick={() => setLanguage("id")}
+            className="flex-1 gap-2"
+          >
+            🇮🇩 Bahasa Indonesia
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChangePasswordCard() {
+  const { t } = useLanguage();
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error(t("Password must be at least 6 characters", "Password minimal 6 karakter"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("Passwords do not match", "Password tidak cocok"));
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success(t("Password updated successfully", "Password berhasil diubah"));
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(error.message || t("Failed to update password", "Gagal mengubah password"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-600/15 to-red-600/15 flex items-center justify-center">
+            <Lock className="h-5 w-5 text-orange-600" />
+          </div>
+          <div>
+            <CardTitle className="text-base">{t("Change Password", "Ubah Password")}</CardTitle>
+            <CardDescription>{t("Update your account password", "Perbarui password akun Anda")}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>{t("New Password", "Password Baru")}</Label>
+          <div className="relative">
+            <Input
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNew(!showNew)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t("Confirm Password", "Konfirmasi Password")}</Label>
+          <Input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button onClick={handleChangePassword} disabled={loading || !newPassword || !confirmPassword} className="gap-2">
+            <Lock className="h-4 w-4" />
+            {loading ? t("Updating...", "Mengubah...") : t("Update Password", "Ubah Password")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function SystemSettings() {
+  const { isSuperAdmin } = usePermissions();
+  const { t } = useLanguage();
+
+  return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">System Settings</h1>
-          <p className="text-sm text-muted-foreground mt-1">Configure system-wide settings</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("System Settings", "Pengaturan Sistem")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("Configure system-wide settings", "Konfigurasi pengaturan seluruh sistem")}</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600/15 to-indigo-600/15 flex items-center justify-center">
-                <Bot className="h-5 w-5 text-violet-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">AI Configuration</CardTitle>
-                <CardDescription>Configure OpenAI integration for Talco AI Operations</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {!hasApiKey && !apiKey && (
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-amber-700 dark:text-amber-400">API Key not configured</p>
-                  <p className="text-muted-foreground text-xs mt-0.5">Set your OpenAI API key to enable AI Operations chat.</p>
-                </div>
-              </div>
-            )}
+        <LanguageCard />
+        <ChangePasswordCard />
 
-            <div className="space-y-2">
-              <Label>OpenAI API Key</Label>
-              <div className="relative">
-                <Input
-                  type={showKey ? "text" : "password"}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Model</Label>
-              <Select value={model} onValueChange={setModel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_MODELS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Temperature</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="2"
-                  value={temperature}
-                  onChange={(e) => setTemperature(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Max Tokens</Label>
-                <Input
-                  type="number"
-                  step="100"
-                  min="100"
-                  max="4096"
-                  value={maxTokens}
-                  onChange={(e) => setMaxTokens(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-muted-foreground">
-                Total AI queries: <span className="font-medium text-foreground">{usageCount}</span>
-              </p>
-              <Button
-                onClick={() => saveMutation.mutate()}
-                disabled={saveMutation.isPending}
-                className="gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save Configuration
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* HR Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-600/15 to-teal-600/15 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">HR Settings</CardTitle>
-                <CardDescription>Configure attendance and HR-related rules</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Late Threshold Time</Label>
-              <p className="text-xs text-muted-foreground">
-                Karyawan yang clock-in setelah jam ini akan otomatis ditandai sebagai <strong>Late</strong>.
-              </p>
-              <Input
-                type="time"
-                value={lateThreshold}
-                onChange={(e) => setLateThreshold(e.target.value)}
-                className="w-40"
-              />
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button
-                onClick={async () => {
-                  try {
-                    await supabase
-                      .from("company_settings")
-                      .upsert(
-                        { setting_key: "late_threshold_time", setting_value: lateThreshold, updated_by: userId, updated_at: new Date().toISOString() },
-                        { onConflict: "setting_key" }
-                      );
-                    queryClient.invalidateQueries({ queryKey: ["ai-settings"] });
-                    toast.success("HR settings saved");
-                  } catch {
-                    toast.error("Failed to save HR settings");
-                  }
-                }}
-                className="gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save HR Settings
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {isSuperAdmin && (
+          <>
+            <AIConfigCard />
+            <HRSettingsCard />
+          </>
+        )}
       </div>
     </AppLayout>
   );

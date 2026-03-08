@@ -277,8 +277,8 @@ export function EmployeeDetailDialog({ open, onOpenChange, employee, canEdit }: 
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Status Karyawan</Label>
-                  <p className="text-sm text-muted-foreground">Aktifkan atau nonaktifkan karyawan</p>
+                  <Label>Employee Status</Label>
+                  <p className="text-sm text-muted-foreground">Activate or deactivate employee</p>
                 </div>
                 <Switch
                   checked={formData.status === 'active'}

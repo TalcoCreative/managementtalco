@@ -54,27 +54,27 @@ export function DeleteConfirmDialog({
         </AlertDialogHeader>
         
         <div className="space-y-2 py-4">
-          <Label htmlFor="reason">Alasan penghapusan *</Label>
+          <Label htmlFor="reason">Reason for deletion *</Label>
           <Textarea
             id="reason"
-            placeholder="Masukkan alasan mengapa Anda ingin menghapus ini..."
+            placeholder="Enter the reason why you want to delete this..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
           />
           <p className="text-xs text-muted-foreground">
-            Alasan ini akan dikirimkan ke HR untuk ditinjau.
+            This reason will be sent to HR for review.
           </p>
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={!reason.trim() || loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {loading ? "Menghapus..." : "Hapus"}
+            {loading ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

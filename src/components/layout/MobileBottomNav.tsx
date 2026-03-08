@@ -54,7 +54,7 @@ const moreGroups: MoreGroup[] = [
     label: "Reports & Letters",
     items: [
       { title: "Reports", url: "/reports", featureKey: "reports", icon: BarChart3, color: "hsl(205,72%,52%)" },
-      { title: "Surat", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
+      { title: "Letters", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
     ],
   },
   {
@@ -84,19 +84,19 @@ const moreGroups: MoreGroup[] = [
       { title: "Team", url: "/users", featureKey: "team", icon: UserCog, color: "hsl(205,72%,52%)" },
       { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard", icon: LayoutDashboard, color: "hsl(280,60%,55%)" },
       { title: "HR Analytics", url: "/hr/analytics", featureKey: "hr_analytics", icon: PieChart, color: "hsl(330,60%,55%)" },
-      { title: "Kalender Libur", url: "/hr/holiday", featureKey: "holiday_calendar", icon: CalendarHeart, color: "hsl(38,82%,52%)" },
+      { title: "Holiday Calendar", url: "/hr/holiday", featureKey: "holiday_calendar", icon: CalendarHeart, color: "hsl(38,82%,52%)" },
       { title: "Performance", url: "/performance", featureKey: "performance", icon: TrendingUp, color: "hsl(152,48%,46%)" },
       { title: "Recruitment", url: "/recruitment", featureKey: "recruitment", icon: GraduationCap, color: "hsl(152,48%,46%)" },
-      { title: "Rekrut Dashboard", url: "/recruitment/dashboard", featureKey: "recruitment_dashboard", icon: BarChart3, color: "hsl(222,72%,52%)" },
-      { title: "Rekrut Forms", url: "/recruitment/forms", featureKey: "recruitment_forms", icon: FileText, color: "hsl(205,72%,52%)" },
+      { title: "Recruit Dashboard", url: "/recruitment/dashboard", featureKey: "recruitment_dashboard", icon: BarChart3, color: "hsl(222,72%,52%)" },
+      { title: "Recruit Forms", url: "/recruitment/forms", featureKey: "recruitment_forms", icon: FileText, color: "hsl(205,72%,52%)" },
     ],
   },
   {
     label: "Finance",
     items: [
       { title: "Finance", url: "/finance", featureKey: "finance", icon: DollarSign, color: "hsl(152,48%,46%)" },
-      { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
-      { title: "Neraca", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
+      { title: "Income Statement", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
+      { title: "Balance Sheet", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
     ],
   },
   {

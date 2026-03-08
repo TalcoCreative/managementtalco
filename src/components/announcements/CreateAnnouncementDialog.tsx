@@ -39,7 +39,7 @@ export function CreateAnnouncementDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
-      toast.error("Judul dan konten harus diisi");
+      toast.error("Title and content are required");
       return;
     }
 
@@ -47,11 +47,10 @@ export function CreateAnnouncementDialog({
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        toast.error("Anda harus login");
+        toast.error("You must be logged in");
         return;
       }
 
-      // Create announcement
       const { data: announcement, error: announcementError } = await supabase
         .from("announcements")
         .insert({
@@ -66,13 +65,11 @@ export function CreateAnnouncementDialog({
 
       if (announcementError) throw announcementError;
 
-      // Get all profiles with email
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, user_id")
         .not("user_id", "is", null);
 
-      // Send email to all users
       if (profiles && profiles.length > 0) {
         for (const profile of profiles) {
           if (profile.user_id) {
@@ -98,13 +95,13 @@ export function CreateAnnouncementDialog({
         }
       }
 
-      toast.success("Pengumuman berhasil dibuat dan dikirim ke semua anggota tim");
+      toast.success("Announcement created and sent to all team members");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       onOpenChange(false);
       resetForm();
     } catch (error: any) {
       console.error("Error creating announcement:", error);
-      toast.error("Gagal membuat pengumuman: " + error.message);
+      toast.error("Failed to create announcement: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -121,27 +118,27 @@ export function CreateAnnouncementDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Buat Pengumuman Baru</DialogTitle>
+          <DialogTitle>Create New Announcement</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Judul</Label>
+            <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Judul pengumuman"
+              placeholder="Announcement title"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Konten</Label>
+            <Label htmlFor="content">Content</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Isi pengumuman..."
+              placeholder="Announcement content..."
               rows={5}
               required
             />
@@ -149,22 +146,22 @@ export function CreateAnnouncementDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="priority">Prioritas</Label>
+              <Label htmlFor="priority">Priority</Label>
               <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Rendah</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
-                  <SelectItem value="high">Tinggi</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
                   <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="expires">Kadaluarsa (Opsional)</Label>
+              <Label htmlFor="expires">Expires (Optional)</Label>
               <Input
                 id="expires"
                 type="datetime-local"
@@ -180,10 +177,10 @@ export function CreateAnnouncementDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Batal
+              Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Mengirim..." : "Kirim Pengumuman"}
+              {loading ? "Sending..." : "Send Announcement"}
             </Button>
           </div>
         </form>

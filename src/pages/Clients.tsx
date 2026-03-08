@@ -127,11 +127,11 @@ export default function Clients() {
       const { error } = await supabase.from("clients").delete().eq("id", deleteClient.id);
       if (error) throw error;
 
-      toast.success("Client dihapus");
+      toast.success("Client deleted");
       setDeleteClient(null);
       queryClient.invalidateQueries({ queryKey: ["clients"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal menghapus client");
+      toast.error(error.message || "Failed to delete client");
     } finally {
       setDeleting(false);
     }
@@ -260,8 +260,8 @@ export default function Clients() {
       <DeleteConfirmDialog
         open={!!deleteClient}
         onOpenChange={(open) => !open && setDeleteClient(null)}
-        title="Hapus Client"
-        description={`Apakah Anda yakin ingin menghapus client "${deleteClient?.name}"? Semua project dan task terkait mungkin akan terpengaruh.`}
+        title="Delete Client"
+        description={`Are you sure you want to delete client "${deleteClient?.name}"? All related projects and tasks may be affected.`}
         onConfirm={handleDelete}
         loading={deleting}
       />

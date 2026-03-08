@@ -42,7 +42,7 @@ const employeeItems: NavItem[] = [
 // ── Reports & Letters ───────────────────────────────────
 const reportsItems: NavItem[] = [
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
+  { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
 ];
 
 // ── KOL ─────────────────────────────────────────────────
@@ -68,7 +68,7 @@ const hrItems: NavItem[] = [
   { title: "Team", url: "/users", icon: Users, featureKey: "team" },
   { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
   { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
-  { title: "Kalender Libur", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
+  { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
   { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
   { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
   { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
@@ -78,8 +78,8 @@ const hrItems: NavItem[] = [
 // ── Finance ─────────────────────────────────────────────
 const financeItems: NavItem[] = [
   { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
-  { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
-  { title: "Neraca", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
+  { title: "Income Statement", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
+  { title: "Balance Sheet", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
 ];
 
 // ── Sales ───────────────────────────────────────────────

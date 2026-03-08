@@ -315,14 +315,14 @@ export default function RecruitmentForms() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Form?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Form?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin menghapus form "{formToDelete?.name}"?
-              Tindakan ini tidak dapat dibatalkan.
+              Are you sure you want to delete form "{formToDelete?.name}"?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => formToDelete && deleteMutation.mutate(formToDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

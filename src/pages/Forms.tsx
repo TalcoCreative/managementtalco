@@ -66,7 +66,6 @@ export default function Forms() {
         .order("created_at", { ascending: false });
       if (error) throw error;
 
-      // Get response counts
       const { data: counts } = await supabase
         .from("form_responses")
         .select("form_id");
@@ -109,9 +108,9 @@ export default function Forms() {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
       setCreateOpen(false);
       setNewForm({ name: "", description: "", is_public: true, theme: "clean" });
-      toast.success("Form berhasil dibuat");
+      toast.success("Form created successfully");
     },
-    onError: (e) => toast.error("Gagal membuat form: " + e.message),
+    onError: (e) => toast.error("Failed to create form: " + e.message),
   });
 
   const updateMutation = useMutation({
@@ -125,23 +124,22 @@ export default function Forms() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
       setEditForm(null);
-      toast.success("Form diperbarui");
+      toast.success("Form updated");
     },
-    onError: (e) => toast.error("Gagal memperbarui: " + e.message),
+    onError: (e) => toast.error("Failed to update: " + e.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Soft delete - archive instead
       const { error } = await supabase.from("forms").update({ status: "archived" }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
       setDeleteForm(null);
-      toast.success("Form diarsipkan");
+      toast.success("Form archived");
     },
-    onError: (e) => toast.error("Gagal menghapus: " + e.message),
+    onError: (e) => toast.error("Failed to archive: " + e.message),
   });
 
   const duplicateMutation = useMutation({
@@ -150,7 +148,6 @@ export default function Forms() {
       if (!session.session) throw new Error("Not authenticated");
       const slug = generateSlug(form.name + " copy");
 
-      // Create form
       const { data: newFormData, error: formError } = await supabase.from("forms").insert({
         name: form.name + " (Copy)",
         description: form.description,
@@ -160,7 +157,6 @@ export default function Forms() {
       }).select().single();
       if (formError) throw formError;
 
-      // Copy questions
       const { data: questions } = await supabase
         .from("form_questions")
         .select("*")
@@ -181,14 +177,14 @@ export default function Forms() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
-      toast.success("Form berhasil diduplikasi");
+      toast.success("Form duplicated successfully");
     },
-    onError: (e) => toast.error("Gagal menduplikasi: " + e.message),
+    onError: (e) => toast.error("Failed to duplicate: " + e.message),
   });
 
   const copyLink = (slug: string) => {
     navigator.clipboard.writeText(`https://ms.talco.id/forms/${slug}`);
-    toast.success("Link disalin!");
+    toast.success("Link copied!");
   };
 
   const filtered = forms?.filter(f =>
@@ -205,18 +201,18 @@ export default function Forms() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">Form Builder</h1>
             <p className="text-muted-foreground text-sm">
-              Buat form untuk rekrutmen, survey, intake klien, dan lainnya
+              Create forms for recruitment, surveys, client intake, and more
             </p>
           </div>
           <Button onClick={() => setCreateOpen(true)} className="h-12 sm:h-10">
             <Plus className="mr-2 h-4 w-4" />
-            Buat Form
+            Create Form
           </Button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Form</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Forms</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{filtered.length}</div></CardContent>
           </Card>
           <Card>
@@ -224,14 +220,14 @@ export default function Forms() {
             <CardContent><div className="text-2xl font-bold text-green-600">{filtered.filter(f => f.is_public).length}</div></CardContent>
           </Card>
           <Card className="col-span-2 sm:col-span-1">
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Respons</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Total Responses</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold text-primary">{filtered.reduce((s, f) => s + (f._response_count || 0), 0)}</div></CardContent>
           </Card>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Cari form..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-12 sm:h-10" />
+          <Input placeholder="Search forms..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-12 sm:h-10" />
         </div>
 
         <Card>
@@ -239,11 +235,11 @@ export default function Forms() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Nama Form</TableHead>
-                  <TableHead className="min-w-[80px]">Respons</TableHead>
-                  <TableHead className="min-w-[80px]">Akses</TableHead>
-                  <TableHead className="min-w-[120px]">Dibuat</TableHead>
-                  <TableHead className="min-w-[80px] text-right">Aksi</TableHead>
+                  <TableHead className="min-w-[200px]">Form Name</TableHead>
+                  <TableHead className="min-w-[80px]">Responses</TableHead>
+                  <TableHead className="min-w-[80px]">Access</TableHead>
+                  <TableHead className="min-w-[120px]">Created</TableHead>
+                  <TableHead className="min-w-[80px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,7 +247,7 @@ export default function Forms() {
                   <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    {searchQuery ? "Tidak ditemukan" : "Belum ada form."}
+                    {searchQuery ? "No results found" : "No forms yet."}
                   </TableCell></TableRow>
                 ) : filtered.map(form => (
                   <TableRow key={form.id} className="cursor-pointer" onClick={() => navigate(`/forms/${form.id}`)}>
@@ -282,7 +278,7 @@ export default function Forms() {
                             <FileText className="mr-2 h-4 w-4" />Edit Form
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => navigate(`/forms/${form.id}/responses`)}>
-                            <BarChart3 className="mr-2 h-4 w-4" />Lihat Respons
+                            <BarChart3 className="mr-2 h-4 w-4" />View Responses
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditForm({ ...form })}>
                             <Pencil className="mr-2 h-4 w-4" />Edit Info
@@ -293,7 +289,7 @@ export default function Forms() {
                                 <ExternalLink className="mr-2 h-4 w-4" />Preview
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => copyLink(form.slug)}>
-                                <Copy className="mr-2 h-4 w-4" />Salin Link
+                                <Copy className="mr-2 h-4 w-4" />Copy Link
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setEmbedForm(form)}>
                                 <FileText className="mr-2 h-4 w-4" />Embed Code
@@ -301,10 +297,10 @@ export default function Forms() {
                             </>
                           )}
                           <DropdownMenuItem onClick={() => duplicateMutation.mutate(form)}>
-                            <Copy className="mr-2 h-4 w-4" />Duplikasi
+                            <Copy className="mr-2 h-4 w-4" />Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onClick={() => setDeleteForm(form)}>
-                            <Trash2 className="mr-2 h-4 w-4" />Hapus
+                            <Trash2 className="mr-2 h-4 w-4" />Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -320,34 +316,34 @@ export default function Forms() {
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Buat Form Baru</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Create New Form</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nama Form *</Label>
-              <Input value={newForm.name} onChange={e => setNewForm(p => ({ ...p, name: e.target.value }))} placeholder="Contoh: Survey Kepuasan Klien" />
+              <Label>Form Name *</Label>
+              <Input value={newForm.name} onChange={e => setNewForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Client Satisfaction Survey" />
             </div>
             <div>
-              <Label>Deskripsi</Label>
-              <Textarea value={newForm.description} onChange={e => setNewForm(p => ({ ...p, description: e.target.value }))} placeholder="Deskripsi form (opsional)" />
+              <Label>Description</Label>
+              <Textarea value={newForm.description} onChange={e => setNewForm(p => ({ ...p, description: e.target.value }))} placeholder="Form description (optional)" />
             </div>
             <div className="flex items-center justify-between">
-              <Label>Form Publik</Label>
+              <Label>Public Form</Label>
               <Switch checked={newForm.is_public} onCheckedChange={v => setNewForm(p => ({ ...p, is_public: v }))} />
             </div>
             <div>
-              <Label>Tema</Label>
+              <Label>Theme</Label>
               <Select value={newForm.theme} onValueChange={v => setNewForm(p => ({ ...p, theme: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="clean">Clean (Terang)</SelectItem>
+                  <SelectItem value="clean">Clean (Light)</SelectItem>
                   <SelectItem value="dark">Dark Mode</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
-            <Button onClick={() => createMutation.mutate()} disabled={!newForm.name.trim()}>Buat</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button onClick={() => createMutation.mutate()} disabled={!newForm.name.trim()}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -359,22 +355,22 @@ export default function Forms() {
           {editForm && (
             <div className="space-y-4">
               <div>
-                <Label>Nama Form</Label>
+                <Label>Form Name</Label>
                 <Input value={editForm.name} onChange={e => setEditForm(p => p ? { ...p, name: e.target.value } : null)} />
               </div>
               <div>
-                <Label>Deskripsi</Label>
+                <Label>Description</Label>
                 <Textarea value={editForm.description || ""} onChange={e => setEditForm(p => p ? { ...p, description: e.target.value } : null)} />
               </div>
               <div className="flex items-center justify-between">
-                <Label>Form Publik</Label>
+                <Label>Public Form</Label>
                 <Switch checked={editForm.is_public} onCheckedChange={v => setEditForm(p => p ? { ...p, is_public: v } : null)} />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditForm(null)}>Batal</Button>
-            <Button onClick={() => editForm && updateMutation.mutate(editForm)}>Simpan</Button>
+            <Button variant="outline" onClick={() => setEditForm(null)}>Cancel</Button>
+            <Button onClick={() => editForm && updateMutation.mutate(editForm)}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -383,15 +379,15 @@ export default function Forms() {
       <AlertDialog open={!!deleteForm} onOpenChange={o => !o && setDeleteForm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Arsipkan Form?</AlertDialogTitle>
+            <AlertDialogTitle>Archive Form?</AlertDialogTitle>
             <AlertDialogDescription>
-              Form "{deleteForm?.name}" akan diarsipkan. Respons yang sudah masuk tetap tersimpan.
+              Form "{deleteForm?.name}" will be archived. Existing responses will be preserved.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => deleteForm && deleteMutation.mutate(deleteForm.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Arsipkan
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -403,47 +399,36 @@ export default function Forms() {
           {embedForm && (() => {
             const shortDomain = "https://ms.talco.id";
             const publicUrl = `${shortDomain}/forms/${embedForm.slug}`;
-            const iframeCode = `<iframe\n  src="${publicUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; min-height: 600px;">\n</iframe>`;
-            const scriptCode = `<div id="talco-form" data-form="${embedForm.slug}"></div>\n<script src="${shortDomain}/embed-form.js" async></script>`;
-            const copyText = (text: string, label: string) => { navigator.clipboard.writeText(text); toast.success(`${label} disalin!`); };
+            const embedCode = `<iframe src="${publicUrl}" width="100%" height="700" frameborder="0" style="border:none;border-radius:12px;"></iframe>`;
+            const scriptEmbed = `<div id="talco-form-${embedForm.slug}"></div>\n<script src="${shortDomain}/embed-form.js" data-form-slug="${embedForm.slug}"></script>`;
             return (
-              <Tabs defaultValue="link" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="link">Link</TabsTrigger>
-                  <TabsTrigger value="iframe">Iframe</TabsTrigger>
-                  <TabsTrigger value="script">Script</TabsTrigger>
-                </TabsList>
-                <TabsContent value="link" className="space-y-3 mt-3">
-                  <p className="text-sm text-muted-foreground">Bagikan link ini:</p>
-                  <div className="flex gap-2">
-                    <code className="flex-1 p-3 bg-muted rounded-md text-sm break-all">{publicUrl}</code>
-                    <Button variant="outline" size="icon" onClick={() => copyText(publicUrl, "Link")}><Copy className="h-4 w-4" /></Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="iframe" className="space-y-3 mt-3">
-                  <p className="text-sm text-muted-foreground">Embed menggunakan iframe:</p>
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-md text-xs overflow-x-auto">{iframeCode}</pre>
-                    <Button variant="outline" size="sm" className="absolute top-2 right-2" onClick={() => copyText(iframeCode, "Iframe code")}>
-                      <Copy className="h-3 w-3 mr-1" />Copy
+              <div className="space-y-4">
+                <div>
+                  <Label>Direct Link</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input readOnly value={publicUrl} />
+                    <Button variant="outline" onClick={() => { navigator.clipboard.writeText(publicUrl); toast.success("Link copied!"); }}>
+                      <Copy className="h-4 w-4" />
                     </Button>
                   </div>
-                </TabsContent>
-                <TabsContent value="script" className="space-y-3 mt-3">
-                  <p className="text-sm text-muted-foreground">Embed dengan script:</p>
-                  <div className="relative">
-                    <pre className="p-4 bg-muted rounded-md text-xs overflow-x-auto">{scriptCode}</pre>
-                    <Button variant="outline" size="sm" className="absolute top-2 right-2" onClick={() => copyText(scriptCode, "Script code")}>
-                      <Copy className="h-3 w-3 mr-1" />Copy
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+                <div>
+                  <Label>Iframe Embed</Label>
+                  <Textarea readOnly value={embedCode} rows={3} className="font-mono text-xs mt-1" />
+                  <Button variant="outline" size="sm" className="mt-1" onClick={() => { navigator.clipboard.writeText(embedCode); toast.success("Embed code copied!"); }}>
+                    <Copy className="h-3 w-3 mr-1" />Copy
+                  </Button>
+                </div>
+                <div>
+                  <Label>Script Embed</Label>
+                  <Textarea readOnly value={scriptEmbed} rows={3} className="font-mono text-xs mt-1" />
+                  <Button variant="outline" size="sm" className="mt-1" onClick={() => { navigator.clipboard.writeText(scriptEmbed); toast.success("Script code copied!"); }}>
+                    <Copy className="h-3 w-3 mr-1" />Copy
+                  </Button>
+                </div>
+              </div>
             );
           })()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEmbedForm(null)}>Tutup</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppLayout>

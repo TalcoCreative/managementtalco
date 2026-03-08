@@ -483,8 +483,8 @@ export default function ShootingSchedule() {
       <DeleteConfirmDialog
         open={!!deleteShooting}
         onOpenChange={(open) => !open && setDeleteShooting(null)}
-        title="Hapus Shooting Schedule"
-        description={`Apakah Anda yakin ingin menghapus shooting "${deleteShooting?.title}"?`}
+        title="Delete Shooting Schedule"
+        description={`Are you sure you want to delete shooting "${deleteShooting?.title}"?`}
         onConfirm={handleDelete}
         loading={deleting}
       />
