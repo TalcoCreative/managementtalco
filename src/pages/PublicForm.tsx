@@ -21,6 +21,7 @@ interface FormData {
   description: string | null;
   slug: string;
   theme?: string;
+  form_template?: string | null;
 }
 
 interface Question {
@@ -151,6 +152,21 @@ export default function PublicForm() {
       if (answerRows.length > 0) {
         const { error: aErr } = await supabase.from("form_answers").insert(answerRows);
         if (aErr) throw aErr;
+      }
+
+      // Auto-insert into KOL Database if form_template is 'kol'
+      if (form!.form_template === "kol") {
+        try {
+          await supabase.functions.invoke("kol-form-submit", {
+            body: {
+              form_id: form!.id,
+              answers,
+              questions,
+            },
+          });
+        } catch (kolErr) {
+          console.error("KOL auto-insert error:", kolErr);
+        }
       }
 
       setSubmitted(true);

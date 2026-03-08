@@ -52,7 +52,7 @@ export default function Forms() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editForm, setEditForm] = useState<Form | null>(null);
   const [deleteForm, setDeleteForm] = useState<Form | null>(null);
-  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true, theme: "clean" });
+  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true, theme: "clean", form_template: "" });
   const [embedForm, setEmbedForm] = useState<Form | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -89,25 +89,64 @@ export default function Forms() {
       .replace(/(^-|-$)/g, "") + "-" + Math.random().toString(36).substring(2, 6);
   };
 
+  const KOL_TEMPLATE_QUESTIONS = [
+    { label: "Nama Lengkap", field_type: "short_text", is_required: true, placeholder: "Nama lengkap KOL" },
+    { label: "Username", field_type: "short_text", is_required: true, placeholder: "@username" },
+    { label: "Industry / Niche", field_type: "short_text", is_required: false, placeholder: "e.g. Beauty, Tech, Food" },
+    { label: "Link Instagram", field_type: "short_text", is_required: false, placeholder: "https://instagram.com/..." },
+    { label: "Jumlah Followers Instagram", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Link TikTok", field_type: "short_text", is_required: false, placeholder: "https://tiktok.com/@..." },
+    { label: "Jumlah Followers TikTok", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Link Twitter/X", field_type: "short_text", is_required: false, placeholder: "https://x.com/..." },
+    { label: "Jumlah Followers Twitter/X", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Link YouTube", field_type: "short_text", is_required: false, placeholder: "https://youtube.com/..." },
+    { label: "Jumlah Subscribers YouTube", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Link LinkedIn", field_type: "short_text", is_required: false, placeholder: "https://linkedin.com/in/..." },
+    { label: "Jumlah Followers LinkedIn", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Link Threads", field_type: "short_text", is_required: false, placeholder: "https://threads.net/@..." },
+    { label: "Jumlah Followers Threads", field_type: "number", is_required: false, placeholder: "0" },
+    { label: "Rate IG Story", field_type: "number", is_required: false, placeholder: "Rp" },
+    { label: "Rate IG Feed", field_type: "number", is_required: false, placeholder: "Rp" },
+    { label: "Rate IG Reels", field_type: "number", is_required: false, placeholder: "Rp" },
+    { label: "Rate TikTok Video", field_type: "number", is_required: false, placeholder: "Rp" },
+    { label: "Rate YouTube Video", field_type: "number", is_required: false, placeholder: "Rp" },
+    { label: "Catatan", field_type: "long_text", is_required: false, placeholder: "Info tambahan..." },
+  ];
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
       const slug = generateSlug(newForm.name);
-      const { error } = await supabase.from("forms").insert({
+      const { data: newFormData, error } = await supabase.from("forms").insert({
         name: newForm.name,
         description: newForm.description || null,
         is_public: newForm.is_public,
         theme: newForm.theme,
+        form_template: newForm.form_template || null,
         slug,
         created_by: session.session.user.id,
-      } as any);
+      } as any).select().single();
       if (error) throw error;
+
+      // Auto-create KOL template questions
+      if (newForm.form_template === "kol" && newFormData) {
+        const templateQs = KOL_TEMPLATE_QUESTIONS.map((q, idx) => ({
+          form_id: newFormData.id,
+          label: q.label,
+          field_type: q.field_type,
+          is_required: q.is_required,
+          field_order: idx,
+          options: null,
+          placeholder: q.placeholder,
+        }));
+        await supabase.from("form_questions").insert(templateQs);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
       setCreateOpen(false);
-      setNewForm({ name: "", description: "", is_public: true, theme: "clean" });
+      setNewForm({ name: "", description: "", is_public: true, theme: "clean", form_template: "" });
       toast.success("Form created successfully");
     },
     onError: (e) => toast.error("Failed to create form: " + e.message),
@@ -253,7 +292,12 @@ export default function Forms() {
                   <TableRow key={form.id} className="cursor-pointer" onClick={() => navigate(`/forms/${form.id}`)}>
                     <TableCell>
                       <div>
-                        <p className="font-semibold">{form.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{form.name}</p>
+                          {(form as any).form_template === "kol" && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">KOL</Badge>
+                          )}
+                        </div>
                         {form.description && <p className="text-xs text-muted-foreground line-clamp-1">{form.description}</p>}
                       </div>
                     </TableCell>
@@ -329,6 +373,19 @@ export default function Forms() {
             <div className="flex items-center justify-between">
               <Label>Public Form</Label>
               <Switch checked={newForm.is_public} onCheckedChange={v => setNewForm(p => ({ ...p, is_public: v }))} />
+            </div>
+            <div>
+              <Label>Template</Label>
+              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: v === "kol" && !p.name ? "KOL Registration Form" : p.name }))}>
+                <SelectTrigger><SelectValue placeholder="Kosong (form kosong)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Kosong (form kosong)</SelectItem>
+                  <SelectItem value="kol">📊 KOL Database</SelectItem>
+                </SelectContent>
+              </Select>
+              {newForm.form_template === "kol" && (
+                <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke KOL Database</p>
+              )}
             </div>
             <div>
               <Label>Theme</Label>

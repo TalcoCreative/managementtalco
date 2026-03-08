@@ -2146,6 +2146,7 @@ export type Database = {
           created_at: string | null
           created_by: string
           description: string | null
+          form_template: string | null
           id: string
           is_public: boolean | null
           name: string
@@ -2158,6 +2159,7 @@ export type Database = {
           created_at?: string | null
           created_by: string
           description?: string | null
+          form_template?: string | null
           id?: string
           is_public?: boolean | null
           name: string
@@ -2170,6 +2172,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           description?: string | null
+          form_template?: string | null
           id?: string
           is_public?: boolean | null
           name?: string
