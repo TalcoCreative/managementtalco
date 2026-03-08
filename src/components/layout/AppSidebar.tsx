@@ -78,8 +78,8 @@ const hrItems: NavItem[] = [
 // ── Finance ─────────────────────────────────────────────
 const financeItems: NavItem[] = [
   { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
-  { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
-  { title: "Neraca", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
+  { title: "Income Statement", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
+  { title: "Balance Sheet", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
 ];
 
 // ── Sales ───────────────────────────────────────────────
