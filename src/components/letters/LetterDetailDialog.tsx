@@ -263,6 +263,21 @@ export function LetterDetailDialog({
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
+                {letter.letter_type === 'payroll_slip' && letter.employee_id && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadSlipPDF}
+                    disabled={downloadingPDF}
+                  >
+                    {downloadingPDF ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="mr-2 h-4 w-4" />
+                    )}
+                    Download PDF
+                  </Button>
+                )}
               </div>
             </div>
 
