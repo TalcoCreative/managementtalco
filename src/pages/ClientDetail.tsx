@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { toast } from "sonner";
 import { 
   ArrowLeft, Building2, ChevronDown, FileText, CreditCard, 
-  Lock, FolderOpen, Activity, CheckCircle2
+  Lock, FolderOpen, Activity, CheckCircle2, Camera
 } from "lucide-react";
 import { ClientOverviewSection } from "@/components/clients/sections/ClientOverviewSection";
 import { ClientContractSection } from "@/components/clients/sections/ClientContractSection";
