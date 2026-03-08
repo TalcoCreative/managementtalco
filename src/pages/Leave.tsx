@@ -105,7 +105,15 @@ export default function Leave() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Leave Requests</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Leave Requests</h1>
+              <p className="section-subtitle">Pengajuan & status cuti</p>
+            </div>
+          </div>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Request Leave

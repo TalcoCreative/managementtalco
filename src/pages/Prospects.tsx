@@ -356,9 +356,14 @@ export default function Prospects() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Prospects</h1>
-            <p className="text-muted-foreground">Manage your sales leads and prospects</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-sales)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Target className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Prospects</h1>
+              <p className="section-subtitle">Manage your sales leads and prospects</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate("/prospects/history")}>

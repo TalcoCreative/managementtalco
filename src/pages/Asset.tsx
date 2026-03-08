@@ -139,9 +139,14 @@ export default function Asset() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Asset Management</h1>
-            <p className="text-muted-foreground">Kelola dan tracking barang kantor dengan QR Code</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <QrCode className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Asset Management</h1>
+              <p className="section-subtitle">Kelola dan tracking barang kantor dengan QR Code</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button 

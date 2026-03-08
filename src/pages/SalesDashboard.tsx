@@ -282,9 +282,14 @@ export default function SalesDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Sales Analytics</h1>
-            <p className="text-muted-foreground">Track performance and analyze your sales pipeline</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-sales)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Sales Analytics</h1>
+              <p className="section-subtitle">Track performance and analyze your sales pipeline</p>
+            </div>
           </div>
           <Button variant="outline" onClick={() => navigate("/prospects")}>
             <Users className="h-4 w-4 mr-2" />

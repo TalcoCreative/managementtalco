@@ -458,7 +458,15 @@ export default function Projects() {
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Projects</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-projects)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <FolderKanban className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Projects</h1>
+              <p className="section-subtitle">Kelola semua project</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Popover>
               <PopoverTrigger asChild>
