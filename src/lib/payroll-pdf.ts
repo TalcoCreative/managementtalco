@@ -257,7 +257,15 @@ export const generatePayrollPDF = async (
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
   doc.text(`Periode: ${payroll.periode}`, pageWidth / 2, yPos, { align: "center" });
-  yPos += 15;
+  yPos += 6;
+  
+  if (payroll.letterNumber) {
+    doc.setFontSize(9);
+    doc.text(`No: ${payroll.letterNumber}`, pageWidth / 2, yPos, { align: "center" });
+    yPos += 9;
+  } else {
+    yPos += 9;
+  }
 
   // === EMPLOYEE DATA ===
   doc.setTextColor(0, 0, 0);
