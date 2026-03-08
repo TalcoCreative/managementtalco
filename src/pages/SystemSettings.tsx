@@ -25,6 +25,7 @@ export default function SystemSettings() {
   const [model, setModel] = useState("gpt-4o-mini");
   const [temperature, setTemperature] = useState("0.2");
   const [maxTokens, setMaxTokens] = useState("1200");
+  const [lateThreshold, setLateThreshold] = useState("10:00");
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["ai-settings"],
