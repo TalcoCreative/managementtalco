@@ -19,9 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const getHolidayTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    national: 'Libur Nasional',
-    office: 'Libur Kantor',
-    special: 'Libur Khusus',
+    national: 'National Holiday',
+    office: 'Office Holiday',
+    special: 'Special Holiday',
     wfh: 'WFH',
   };
   return labels[type] || type;
