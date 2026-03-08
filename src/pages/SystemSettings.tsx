@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Settings } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Settings, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AI_MODELS = [
@@ -25,6 +25,7 @@ export default function SystemSettings() {
   const [model, setModel] = useState("gpt-4o-mini");
   const [temperature, setTemperature] = useState("0.2");
   const [maxTokens, setMaxTokens] = useState("1200");
+  const [lateThreshold, setLateThreshold] = useState("10:00");
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["ai-settings"],
@@ -32,7 +33,7 @@ export default function SystemSettings() {
       const { data } = await supabase
         .from("company_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count"]);
+        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count", "late_threshold_time"]);
       const map: Record<string, string> = {};
       data?.forEach((s) => {
         map[s.setting_key] = s.setting_value || "";
@@ -48,6 +49,7 @@ export default function SystemSettings() {
       setModel(settings["ai_model"] || "gpt-4o-mini");
       setTemperature(settings["ai_temperature"] || "0.2");
       setMaxTokens(settings["ai_max_tokens"] || "1200");
+      setLateThreshold(settings["late_threshold_time"] || "10:00");
     }
   }, [settings]);
 
@@ -189,6 +191,58 @@ export default function SystemSettings() {
               >
                 <Save className="h-4 w-4" />
                 Save Configuration
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* HR Settings */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-600/15 to-teal-600/15 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">HR Settings</CardTitle>
+                <CardDescription>Configure attendance and HR-related rules</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label>Late Threshold Time</Label>
+              <p className="text-xs text-muted-foreground">
+                Karyawan yang clock-in setelah jam ini akan otomatis ditandai sebagai <strong>Late</strong>.
+              </p>
+              <Input
+                type="time"
+                value={lateThreshold}
+                onChange={(e) => setLateThreshold(e.target.value)}
+                className="w-40"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    await supabase
+                      .from("company_settings")
+                      .upsert(
+                        { setting_key: "late_threshold_time", setting_value: lateThreshold, updated_by: userId, updated_at: new Date().toISOString() },
+                        { onConflict: "setting_key" }
+                      );
+                    queryClient.invalidateQueries({ queryKey: ["ai-settings"] });
+                    toast.success("HR settings saved");
+                  } catch {
+                    toast.error("Failed to save HR settings");
+                  }
+                }}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                Save HR Settings
               </Button>
             </div>
           </CardContent>

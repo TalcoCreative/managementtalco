@@ -239,6 +239,7 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          late_status: string | null
           notes: string | null
           photo_clock_in: string | null
           photo_clock_out: string | null
@@ -254,6 +255,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          late_status?: string | null
           notes?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null
@@ -269,6 +271,7 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          late_status?: string | null
           notes?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null

@@ -982,6 +982,7 @@ export default function HRDashboard() {
                         <TableHead>Employee</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Clock In</TableHead>
+                        <TableHead>Late Status</TableHead>
                         <TableHead>Clock Out</TableHead>
                         <TableHead>Work Hours</TableHead>
                         <TableHead>Notes</TableHead>
@@ -996,6 +997,15 @@ export default function HRDashboard() {
                           <TableCell>{format(new Date(record.date), 'PPP')}</TableCell>
                           <TableCell>
                             {record.clock_in ? format(new Date(record.clock_in), 'HH:mm') : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {record.late_status === 'Late' ? (
+                              <Badge variant="destructive">Late</Badge>
+                            ) : record.late_status === 'On Time' ? (
+                              <Badge className="bg-green-500 text-white">On Time</Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
