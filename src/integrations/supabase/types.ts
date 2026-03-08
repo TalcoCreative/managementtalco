@@ -1466,6 +1466,48 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body_html: string | null
+          button_text: string
+          created_at: string | null
+          footer_message: string
+          id: string
+          is_active: boolean | null
+          label: string
+          main_message: string
+          notification_type: string
+          subject_template: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_html?: string | null
+          button_text?: string
+          created_at?: string | null
+          footer_message?: string
+          id?: string
+          is_active?: boolean | null
+          label: string
+          main_message?: string
+          notification_type: string
+          subject_template: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string | null
+          button_text?: string
+          created_at?: string | null
+          footer_message?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          main_message?: string
+          notification_type?: string
+          subject_template?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       ep_activity_logs: {
         Row: {
           action: string
