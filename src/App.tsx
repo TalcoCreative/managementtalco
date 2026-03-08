@@ -63,6 +63,7 @@ import EditorialPlanEditor from "./pages/EditorialPlanEditor";
 import PublicEditorialPlan from "./pages/PublicEditorialPlan";
 import PublicEditorialPlanList from "./pages/PublicEditorialPlanList";
 import PublicClientHub from "./pages/PublicClientHub";
+import HubLayout from "./components/public-hub/HubLayout";
 import PublishedContent from "./pages/PublishedContent";
 import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
@@ -121,12 +122,16 @@ const App = () => (
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
           <Route path="/social-media" element={<ProtectedRoute><SocialMediaModule /></ProtectedRoute>} />
           <Route path="/social-media/settings" element={<ProtectedRoute><SocialMediaSettings /></ProtectedRoute>} />
-          <Route path="/social-media/client/:slug" element={<SharedSocialMedia />} />
+          <Route path="/social-media/client/:slug" element={<HubLayout />}>
+            <Route index element={<SharedSocialMedia />} />
+          </Route>
           <Route path="/content-builder" element={<ProtectedRoute><ContentBuilder /></ProtectedRoute>} />
           <Route path="/editorial-plan" element={<ProtectedRoute><EditorialPlan /></ProtectedRoute>} />
           <Route path="/ep/:clientSlug/:epSlug/edit" element={<ProtectedRoute><EditorialPlanEditor /></ProtectedRoute>} />
           <Route path="/ep/:clientSlug/:epSlug" element={<PublicEditorialPlan />} />
-          <Route path="/ep-list/:clientSlug" element={<PublicEditorialPlanList />} />
+          <Route path="/ep-list/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicEditorialPlanList />} />
+          </Route>
           <Route path="/ceo-dashboard" element={<ProtectedRoute><CEODashboard /></ProtectedRoute>} />
           <Route path="/reports/published-content" element={<ProtectedRoute><PublishedContent /></ProtectedRoute>} />
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
@@ -139,12 +144,22 @@ const App = () => (
           <Route path="/share/project/:token" element={<SharedProject />} />
           <Route path="/share/shooting/:token" element={<SharedShooting />} />
           <Route path="/share/meeting/:token" element={<SharedMeeting />} />
-          <Route path="/dashboard/:slug" element={<SharedClientDashboard />} />
+          <Route path="/dashboard/:slug" element={<HubLayout />}>
+            <Route index element={<SharedClientDashboard />} />
+          </Route>
           <Route path="/clients/public/:slug" element={<SharedClientDashboard />} />
-          <Route path="/reports/:slug" element={<SharedClientReports />} />
-          <Route path="/hub/:slug" element={<PublicClientHub />} />
-          <Route path="/meeting-list/:clientSlug" element={<PublicMeetingList />} />
-          <Route path="/shooting-list/:clientSlug" element={<PublicShootingList />} />
+          <Route path="/reports/:slug" element={<HubLayout />}>
+            <Route index element={<SharedClientReports />} />
+          </Route>
+          <Route path="/hub/:slug" element={<HubLayout />}>
+            <Route index element={<PublicClientHub />} />
+          </Route>
+          <Route path="/meeting-list/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicMeetingList />} />
+          </Route>
+          <Route path="/shooting-list/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicShootingList />} />
+          </Route>
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
