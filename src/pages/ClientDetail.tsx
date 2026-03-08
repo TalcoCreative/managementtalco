@@ -24,6 +24,9 @@ import { ClientActivitySection } from "@/components/clients/sections/ClientActiv
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     overview: true,
     contract: true,
