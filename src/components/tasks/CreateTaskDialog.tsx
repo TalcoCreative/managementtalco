@@ -352,21 +352,17 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="project">Project *</Label>
-              <Select
+              <SearchableSelect
+                options={(projects || []).map((p) => ({
+                  value: p.id,
+                  label: p.title,
+                  sublabel: p.clients?.name,
+                }))}
                 value={formData.project_id}
                 onValueChange={(value) => setFormData({ ...formData, project_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title} {project.clients && `(${project.clients.name})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select project"
+                searchPlaceholder="Cari project..."
+              />
             </div>
 
             <div className="space-y-2">
