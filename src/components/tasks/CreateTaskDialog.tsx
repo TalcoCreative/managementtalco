@@ -57,6 +57,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
   });
   const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
   const [notifyUsers, setNotifyUsers] = useState<string[]>([]);
+  const [subTaskTitles, setSubTaskTitles] = useState<string[]>([]);
+  const [newSubTask, setNewSubTask] = useState("");
   const [tableData, setTableData] = useState<TableData>({
     headers: ["No", "Item", "Keterangan", "Status"],
     rows: [["1", "", "", ""]],
