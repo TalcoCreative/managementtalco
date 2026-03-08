@@ -1,36 +1,9 @@
 import {
-  Home,
-  CheckSquare,
-  Briefcase,
-  Calendar,
-  Menu,
-  Users,
-  Camera,
-  Video,
-  CalendarOff,
-  Receipt,
-  Package,
-  PartyPopper,
-  BarChart3,
-  FileText,
-  Megaphone,
-  Palette,
-  Hammer,
-  UserCog,
-  LayoutDashboard,
-  TrendingUp,
-  DollarSign,
-  Settings,
-  Mail,
-  Shield,
-  Wrench,
-  Target,
-  Search,
-  Building2,
-  PieChart,
-  GraduationCap,
-  Star,
-  Sparkles,
+  Home, CheckSquare, Briefcase, Calendar, Menu, Users, Camera, Video,
+  CalendarOff, Receipt, Package, PartyPopper, BarChart3, FileText, Megaphone,
+  Palette, Hammer, UserCog, LayoutDashboard, TrendingUp, DollarSign, Settings,
+  Mail, Shield, Wrench, Target, Search, Building2, PieChart, GraduationCap,
+  Star, Sparkles, Share2, CalendarHeart, Crown, Scale, UserPlus, CalendarClock,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -62,58 +35,80 @@ interface MoreGroup {
 
 const moreGroups: MoreGroup[] = [
   {
-    label: "Work",
+    label: "Navigation",
     items: [
-      { title: "Clients", url: "/clients", featureKey: "clients", icon: Users, color: "hsl(222,72%,52%)" },
+      { title: "Clients", url: "/clients", featureKey: "clients", icon: Building2, color: "hsl(222,72%,52%)" },
       { title: "Shooting", url: "/shooting", featureKey: "shooting", icon: Camera, color: "hsl(152,48%,46%)" },
-      { title: "Meeting", url: "/meeting", featureKey: "meeting", icon: Video, color: "hsl(280,60%,55%)" },
-      { title: "Event", url: "/event", featureKey: "event", icon: PartyPopper, color: "hsl(330,60%,55%)" },
-    ],
-  },
-  {
-    label: "HR & Team",
-    items: [
+      { title: "Meeting", url: "/meeting", featureKey: "meeting", icon: CalendarClock, color: "hsl(280,60%,55%)" },
       { title: "Leave", url: "/leave", featureKey: "leave", icon: CalendarOff, color: "hsl(38,82%,52%)" },
       { title: "Reimburse", url: "/my-reimbursement", featureKey: "reimburse", icon: Receipt, color: "hsl(152,48%,46%)" },
       { title: "Asset", url: "/asset", featureKey: "asset", icon: Package, color: "hsl(222,72%,52%)" },
+      { title: "Event", url: "/event", featureKey: "event", icon: PartyPopper, color: "hsl(330,60%,55%)" },
+      { title: "Reports", url: "/reports", featureKey: "reports", icon: BarChart3, color: "hsl(205,72%,52%)" },
+      { title: "Surat", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
+    ],
+  },
+  {
+    label: "KOL",
+    items: [
+      { title: "KOL Database", url: "/kol-database", featureKey: "kol_database", icon: Star, color: "hsl(38,82%,52%)" },
+      { title: "KOL Campaign", url: "/kol-campaign", featureKey: "kol_campaign", icon: Megaphone, color: "hsl(0,62%,54%)" },
+    ],
+  },
+  {
+    label: "Form Builder",
+    items: [
+      { title: "Form Builder", url: "/forms", featureKey: "form_builder", icon: FileText, color: "hsl(280,60%,55%)" },
+    ],
+  },
+  {
+    label: "Social Media",
+    items: [
+      { title: "Social Media", url: "/social-media", featureKey: "social_media", icon: Share2, color: "hsl(330,60%,55%)" },
+      { title: "Editorial Plan", url: "/editorial-plan", featureKey: "editorial_plan", icon: Palette, color: "hsl(280,60%,55%)" },
+      { title: "Content Builder", url: "/content-builder", featureKey: "content_builder", icon: Sparkles, color: "hsl(222,72%,52%)" },
+    ],
+  },
+  {
+    label: "HR",
+    items: [
       { title: "Team", url: "/users", featureKey: "team", icon: UserCog, color: "hsl(205,72%,52%)" },
       { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard", icon: LayoutDashboard, color: "hsl(280,60%,55%)" },
       { title: "HR Analytics", url: "/hr/analytics", featureKey: "hr_analytics", icon: PieChart, color: "hsl(330,60%,55%)" },
-      { title: "Holiday", url: "/holiday", featureKey: "holiday", icon: Sparkles, color: "hsl(38,82%,52%)" },
+      { title: "Kalender Libur", url: "/hr/holiday", featureKey: "holiday_calendar", icon: CalendarHeart, color: "hsl(38,82%,52%)" },
+      { title: "Performance", url: "/performance", featureKey: "performance", icon: TrendingUp, color: "hsl(152,48%,46%)" },
       { title: "Recruitment", url: "/recruitment", featureKey: "recruitment", icon: GraduationCap, color: "hsl(152,48%,46%)" },
-      { title: "Performance", url: "/performance", featureKey: "performance", icon: Star, color: "hsl(38,82%,52%)" },
+      { title: "Rekrut Dashboard", url: "/recruitment/dashboard", featureKey: "recruitment_dashboard", icon: BarChart3, color: "hsl(222,72%,52%)" },
+      { title: "Rekrut Forms", url: "/recruitment/forms", featureKey: "recruitment_forms", icon: FileText, color: "hsl(205,72%,52%)" },
     ],
   },
   {
-    label: "Content & Media",
-    items: [
-      { title: "Social Media", url: "/social-media", featureKey: "social_media", icon: Megaphone, color: "hsl(330,60%,55%)" },
-      { title: "Editorial Plan", url: "/editorial-plan", featureKey: "editorial_plan", icon: Palette, color: "hsl(280,60%,55%)" },
-      { title: "Content Builder", url: "/content-builder", featureKey: "content_builder", icon: Hammer, color: "hsl(222,72%,52%)" },
-      { title: "KOL Database", url: "/kol-database", featureKey: "kol_database", icon: Search, color: "hsl(205,72%,52%)" },
-      { title: "KOL Campaign", url: "/kol-campaign", featureKey: "kol_campaign", icon: Target, color: "hsl(0,62%,54%)" },
-    ],
-  },
-  {
-    label: "Finance & Sales",
+    label: "Finance",
     items: [
       { title: "Finance", url: "/finance", featureKey: "finance", icon: DollarSign, color: "hsl(152,48%,46%)" },
-      { title: "Laba Rugi", url: "/income-statement", featureKey: "finance", icon: TrendingUp, color: "hsl(38,82%,52%)" },
-      { title: "Neraca", url: "/balance-sheet", featureKey: "finance", icon: Building2, color: "hsl(222,72%,52%)" },
-      { title: "Sales", url: "/sales/dashboard", featureKey: "sales_analytics", icon: BarChart3, color: "hsl(205,72%,52%)" },
-      { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: Target, color: "hsl(330,60%,55%)" },
+      { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
+      { title: "Neraca", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      { title: "Sales Analytics", url: "/sales/dashboard", featureKey: "sales_analytics", icon: BarChart3, color: "hsl(205,72%,52%)" },
+      { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: UserPlus, color: "hsl(330,60%,55%)" },
+    ],
+  },
+  {
+    label: "Executive",
+    items: [
+      { title: "CEO Dashboard", url: "/ceo-dashboard", featureKey: "ceo_dashboard", icon: Crown, color: "hsl(0,62%,54%)" },
     ],
   },
   {
     label: "System",
     items: [
-      { title: "Reports", url: "/reports", featureKey: "reports", icon: FileText, color: "hsl(222,72%,52%)" },
-      { title: "Form Builder", url: "/forms", featureKey: "form_builder", icon: FileText, color: "hsl(280,60%,55%)" },
-      { title: "Letters", url: "/letters", featureKey: "letters", icon: Mail, color: "hsl(38,82%,52%)" },
-      { title: "CEO Dashboard", url: "/ceo-dashboard", featureKey: "ceo_dashboard", icon: LayoutDashboard, color: "hsl(0,62%,54%)" },
+      { title: "Email Settings", url: "/system/email-settings", featureKey: "email_settings", icon: Mail, color: "hsl(222,10%,48%)" },
       { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
-      { title: "Email Settings", url: "/email-settings", featureKey: "email_settings", icon: Settings, color: "hsl(222,10%,48%)" },
-      { title: "System Settings", url: "/system-settings", featureKey: "system_settings", icon: Wrench, color: "hsl(222,10%,48%)" },
+      { title: "System Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
     ],
   },
 ];
