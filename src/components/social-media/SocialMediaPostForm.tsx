@@ -414,42 +414,26 @@ export function SocialMediaPostForm() {
             {/* Client Selection */}
             <div className="space-y-2">
               <Label>Klien</Label>
-              <Select
+              <SearchableSelect
+                options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
                 value={formData.clientId}
                 onValueChange={(value) => setFormData({ ...formData, clientId: value, projectId: "" })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih klien" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Pilih klien"
+                searchPlaceholder="Cari klien..."
+              />
             </div>
 
             {/* Project Selection */}
             <div className="space-y-2">
               <Label>Project</Label>
-              <Select
+              <SearchableSelect
+                options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
                 value={formData.projectId}
                 onValueChange={(value) => setFormData({ ...formData, projectId: value })}
+                placeholder="Pilih project"
+                searchPlaceholder="Cari project..."
                 disabled={!formData.clientId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
           </div>
 

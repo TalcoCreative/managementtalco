@@ -94,16 +94,13 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-client">Client *</Label>
-            <Select value={clientId} onValueChange={setClientId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+              value={clientId}
+              onValueChange={setClientId}
+              placeholder="Select a client"
+              searchPlaceholder="Cari client..."
+            />
           </div>
 
           <div className="space-y-2">

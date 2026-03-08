@@ -192,21 +192,13 @@ export function CreateEditorialPlanDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="client">Client *</Label>
-            <Select
+            <SearchableSelect
+              options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
               value={formData.clientId}
               onValueChange={(value) => setFormData({ ...formData, clientId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Pilih client"
+              searchPlaceholder="Cari client..."
+            />
           </div>
 
           <div className="space-y-2">
