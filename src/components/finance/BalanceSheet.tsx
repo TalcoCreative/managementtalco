@@ -55,14 +55,13 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch income (YTD for retained earnings calculation)
-  const { data: income, isLoading: incomeLoading } = useQuery({
-    queryKey: ["balance-sheet-income", selectedYear, selectedMonth],
+  // Fetch ALL income up to asOfDate (for cash balance)
+  const { data: allIncome, isLoading: incomeLoading } = useQuery({
+    queryKey: ["balance-sheet-all-income", selectedYear, selectedMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("income")
         .select("*")
-        .gte("date", format(yearStartDate, "yyyy-MM-dd"))
         .lte("date", format(asOfDate, "yyyy-MM-dd"))
         .eq("status", "received");
       if (error) throw error;
@@ -70,14 +69,13 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch expenses (YTD for retained earnings calculation)
-  const { data: expenses, isLoading: expensesLoading } = useQuery({
-    queryKey: ["balance-sheet-expenses", selectedYear, selectedMonth],
+  // Fetch ALL expenses up to asOfDate (for cash balance)
+  const { data: allExpenses, isLoading: expensesLoading } = useQuery({
+    queryKey: ["balance-sheet-all-expenses", selectedYear, selectedMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
-        .gte("created_at", format(yearStartDate, "yyyy-MM-dd"))
         .lte("created_at", format(asOfDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
       if (error) throw error;
@@ -85,17 +83,14 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch payroll (YTD)
-  const { data: payroll, isLoading: payrollLoading } = useQuery({
-    queryKey: ["balance-sheet-payroll", selectedYear, selectedMonth],
+  // Fetch ALL payroll up to selected month (for cash balance)
+  const { data: allPayroll, isLoading: payrollLoading } = useQuery({
+    queryKey: ["balance-sheet-all-payroll", selectedYear, selectedMonth],
     queryFn: async () => {
-      const yearStart = format(yearStartDate, "yyyy-MM");
       const monthEnd = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-      
       const { data, error } = await supabase
         .from("payroll")
         .select("*")
-        .gte("month", yearStart)
         .lte("month", monthEnd)
         .eq("status", "paid");
       if (error) throw error;
@@ -149,13 +144,18 @@ export function BalanceSheet() {
 
   // Calculate balance sheet
   const balanceSheet = useMemo(() => {
-    // Calculate YTD profit
-    const totalIncome = income?.reduce((sum, i) => sum + i.amount, 0) || 0;
-    const totalExpenses = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
-    const totalPayroll = payroll?.reduce((sum, p) => sum + p.amount, 0) || 0;
-    const ytdProfit = totalIncome - totalExpenses - totalPayroll;
+    // All-time totals for cash position
+    const totalAllIncome = allIncome?.reduce((sum, i) => sum + i.amount, 0) || 0;
+    const totalAllExpenses = allExpenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
+    const totalAllPayroll = allPayroll?.reduce((sum, p) => sum + p.amount, 0) || 0;
 
-    // Get balance items by account type
+    // YTD profit (for equity section)
+    const ytdIncome = allIncome?.filter(i => new Date(i.date) >= yearStartDate).reduce((sum, i) => sum + i.amount, 0) || 0;
+    const ytdExpenses = allExpenses?.filter(e => new Date(e.created_at) >= yearStartDate).reduce((sum, e) => sum + e.amount, 0) || 0;
+    const ytdPayroll = allPayroll?.filter(p => p.month >= format(yearStartDate, "yyyy-MM")).reduce((sum, p) => sum + p.amount, 0) || 0;
+    const ytdProfit = ytdIncome - ytdExpenses - ytdPayroll;
+
+    // Get manual balance items by account code
     const getBalanceByCode = (code: string) => {
       return balanceItems?.filter(b => {
         const account = accounts?.find(a => a.id === b.account_id);
@@ -163,14 +163,23 @@ export function BalanceSheet() {
       }).reduce((sum, b) => sum + Number(b.amount), 0) || 0;
     };
 
-    // Assets
-    const cashBank = getBalanceByCode("1110");
+    // Derive equipment value from paid expenses with equipment/hardware sub_categories
+    const equipmentSubCats = ["equipment", "hardware"];
+    const equipmentFromExpenses = allExpenses?.filter(e => 
+      equipmentSubCats.includes(e.sub_category || "")
+    ).reduce((sum, e) => sum + e.amount, 0) || 0;
+
+    // Cash & Bank = All received income - All paid expenses - All paid payroll + manual adjustments
+    const manualCashAdj = getBalanceByCode("1110");
+    const cashBank = totalAllIncome - totalAllExpenses - totalAllPayroll + manualCashAdj;
+    
     const accountsReceivable = pendingIncome?.reduce((sum, i) => sum + i.amount, 0) || 0;
     const employeeReceivables = getBalanceByCode("1130");
     const prepaidExpenses = getBalanceByCode("1140");
     const totalCurrentAssets = cashBank + accountsReceivable + employeeReceivables + prepaidExpenses;
 
-    const officeEquipment = getBalanceByCode("1210");
+    // Fixed assets: derive from equipment expenses + manual adjustments
+    const officeEquipment = equipmentFromExpenses + getBalanceByCode("1210");
     const vehicles = getBalanceByCode("1220");
     const accumulatedDepreciation = getBalanceByCode("1230");
     const totalFixedAssets = officeEquipment + vehicles - accumulatedDepreciation;
@@ -197,34 +206,14 @@ export function BalanceSheet() {
     const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.01;
 
     return {
-      // Assets
-      cashBank,
-      accountsReceivable,
-      employeeReceivables,
-      prepaidExpenses,
-      totalCurrentAssets,
-      officeEquipment,
-      vehicles,
-      accumulatedDepreciation,
-      totalFixedAssets,
-      totalAssets,
-      // Liabilities
-      accountsPayable,
-      salaryPayable,
-      taxPayable,
-      bpjsPayable,
-      totalCurrentLiabilities,
-      longTermLiabilities,
-      totalLiabilities,
-      // Equity
-      paidInCapital,
-      retainedEarnings,
-      currentYearProfit,
-      totalEquity,
-      totalLiabilitiesAndEquity,
-      isBalanced,
+      cashBank, accountsReceivable, employeeReceivables, prepaidExpenses, totalCurrentAssets,
+      officeEquipment, vehicles, accumulatedDepreciation, totalFixedAssets, totalAssets,
+      accountsPayable, salaryPayable, taxPayable, bpjsPayable, totalCurrentLiabilities,
+      longTermLiabilities, totalLiabilities,
+      paidInCapital, retainedEarnings, currentYearProfit, totalEquity,
+      totalLiabilitiesAndEquity, isBalanced,
     };
-  }, [accounts, balanceItems, income, expenses, payroll, pendingIncome, pendingPayroll, pendingExpenses]);
+  }, [accounts, balanceItems, allIncome, allExpenses, allPayroll, pendingIncome, pendingPayroll, pendingExpenses, yearStartDate]);
 
   const isLoading = accountsLoading || balanceLoading || incomeLoading || expensesLoading || payrollLoading;
 
