@@ -787,35 +787,37 @@ export default function Schedule() {
             </Card>
 
             <Tabs defaultValue="all" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-7">
-                <TabsTrigger value="all">
-                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.epSlides.length + monthEvents.holidays.length})
-                </TabsTrigger>
-                <TabsTrigger value="shootings">
-                  <Video className="h-4 w-4 mr-1" />
-                  Shootings ({monthEvents.shootings.length})
-                </TabsTrigger>
-                <TabsTrigger value="meetings">
-                  <Users className="h-4 w-4 mr-1" />
-                  Meetings ({monthEvents.meetings.length})
-                </TabsTrigger>
-                <TabsTrigger value="epSlides">
-                  <Send className="h-4 w-4 mr-1" />
-                  Jadwal Post ({monthEvents.epSlides.length})
-                </TabsTrigger>
-                <TabsTrigger value="tasks">
-                  <CheckSquare className="h-4 w-4 mr-1" />
-                  Tasks ({monthEvents.tasks.length})
-                </TabsTrigger>
-                <TabsTrigger value="projects">
-                  <FolderOpen className="h-4 w-4 mr-1" />
-                  Projects ({monthEvents.projects.length})
-                </TabsTrigger>
-                <TabsTrigger value="holidays">
-                  <PartyPopper className="h-4 w-4 mr-1" />
-                  Holidays ({monthEvents.holidays.length})
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-1 px-1 pb-1">
+                <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-7 md:w-full gap-0.5">
+                  <TabsTrigger value="all" className="whitespace-nowrap text-xs px-3">
+                    All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.epSlides.length + monthEvents.holidays.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="shootings" className="whitespace-nowrap text-xs px-3">
+                    <Video className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Shoots ({monthEvents.shootings.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="meetings" className="whitespace-nowrap text-xs px-3">
+                    <Users className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Meets ({monthEvents.meetings.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="epSlides" className="whitespace-nowrap text-xs px-3">
+                    <Send className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Posts ({monthEvents.epSlides.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks" className="whitespace-nowrap text-xs px-3">
+                    <CheckSquare className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Tasks ({monthEvents.tasks.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="projects" className="whitespace-nowrap text-xs px-3">
+                    <FolderOpen className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Projects ({monthEvents.projects.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="holidays" className="whitespace-nowrap text-xs px-3">
+                    <PartyPopper className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Holidays ({monthEvents.holidays.length})
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* All Events */}
               <TabsContent value="all">
