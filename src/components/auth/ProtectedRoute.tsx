@@ -65,7 +65,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     if (featureKey && !canView(featureKey)) {
       hasCheckedRef.current = path;
-      toast.error("Anda tidak memiliki akses ke halaman ini.");
+      toast.error("You do not have access to this page.");
       navigate("/");
     }
   }, [location.pathname, loading, permLoading, session, isSuperAdmin, canView, navigate]);
