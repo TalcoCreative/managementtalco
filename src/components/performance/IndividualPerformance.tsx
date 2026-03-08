@@ -254,7 +254,7 @@ export function IndividualPerformance({
                         {metric.completedProjects}/{metric.projectCount}
                       </TableCell>
                       <TableCell className="text-right">
-                        {metric.wonProspects}/{metric.prospectCount}
+                        {metric.prospectCount}
                       </TableCell>
                       <TableCell className="text-right">
                         {metric.meetingCount}
