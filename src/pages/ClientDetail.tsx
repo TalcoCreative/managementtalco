@@ -10,17 +10,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Building2, ChevronDown, FileText, CreditCard, 
-  Package, Lock, FolderOpen, Activity, Calendar, Users, CheckCircle2, Share2
+  Lock, FolderOpen, Activity, CheckCircle2
 } from "lucide-react";
 import { ClientOverviewSection } from "@/components/clients/sections/ClientOverviewSection";
 import { ClientContractSection } from "@/components/clients/sections/ClientContractSection";
 import { ClientPaymentSection } from "@/components/clients/sections/ClientPaymentSection";
-import { ClientQuotaSection } from "@/components/clients/sections/ClientQuotaSection";
 import { ClientAccountSection } from "@/components/clients/sections/ClientAccountSection";
 import { ClientDocumentSection } from "@/components/clients/sections/ClientDocumentSection";
 import { ClientProjectTaskSection } from "@/components/clients/sections/ClientProjectTaskSection";
 import { ClientActivitySection } from "@/components/clients/sections/ClientActivitySection";
-import { ClientSocialMediaSection } from "@/components/clients/sections/ClientSocialMediaSection";
 
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -29,7 +27,6 @@ export default function ClientDetail() {
     overview: true,
     contract: true,
     payment: true,
-    quota: true,
     accounts: false,
     documents: true,
     projects: true,
@@ -108,11 +105,9 @@ export default function ClientDetail() {
     { id: "overview", title: "Overview", icon: Building2, component: ClientOverviewSection, superAdminOnly: false },
     { id: "contract", title: "Kontrak", icon: FileText, component: ClientContractSection, superAdminOnly: true },
     { id: "payment", title: "Pembayaran", icon: CreditCard, component: ClientPaymentSection, superAdminOnly: true },
-    { id: "quota", title: "Kuota & Pemakaian", icon: Package, component: ClientQuotaSection, superAdminOnly: false },
     { id: "accounts", title: "Data Akun Client", icon: Lock, component: ClientAccountSection, sensitive: true, superAdminOnly: true },
     { id: "documents", title: "Dokumen", icon: FolderOpen, component: ClientDocumentSection, superAdminOnly: true },
     { id: "projects", title: "Project & Task", icon: CheckCircle2, component: ClientProjectTaskSection, superAdminOnly: false },
-    { id: "socialmedia", title: "Social Media Activity", icon: Share2, component: ClientSocialMediaSection, superAdminOnly: false },
     { id: "activity", title: "Activity Log", icon: Activity, component: ClientActivitySection },
   ];
 
