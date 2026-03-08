@@ -49,6 +49,7 @@ export default function SystemSettings() {
       setModel(settings["ai_model"] || "gpt-4o-mini");
       setTemperature(settings["ai_temperature"] || "0.2");
       setMaxTokens(settings["ai_max_tokens"] || "1200");
+      setLateThreshold(settings["late_threshold_time"] || "10:00");
     }
   }, [settings]);
 
