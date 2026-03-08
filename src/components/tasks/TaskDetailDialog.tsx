@@ -701,12 +701,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
                 </div>
               )}
 
-              {/* Task Brief Table */}
+              {/* Task Brief */}
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-3">Brief / Deskripsi</h3>
-                <EditableTaskTable
-                  data={isEditing ? editTableData : (task.table_data as TableData | null)}
-                  onChange={setEditTableData}
+                <RichBriefEditor
+                  data={isEditing ? editBriefData : task.table_data}
+                  onChange={setEditBriefData}
                   readOnly={!isEditing}
                 />
               </div>
