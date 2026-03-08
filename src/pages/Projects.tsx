@@ -599,8 +599,8 @@ export default function Projects() {
       <DeleteConfirmDialog
         open={!!deleteProject}
         onOpenChange={(open) => !open && setDeleteProject(null)}
-        title="Hapus Project"
-        description={`Apakah Anda yakin ingin menghapus project "${deleteProject?.title}"? Semua task terkait mungkin akan terpengaruh.`}
+        title="Delete Project"
+        description={`Are you sure you want to delete project "${deleteProject?.title}"? All related tasks may be affected.`}
         onConfirm={handleDelete}
         loading={deleting}
       />
