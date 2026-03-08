@@ -104,7 +104,7 @@ export function HRProductivityRanking({
         score: Math.max(0, score),
       };
     }).sort((a, b) => b.score - a.score);
-  }, [profiles, attendance, tasks, meetings, shootings, events]);
+  }, [profiles, attendance, tasks, meetings, shootings, events, publishedSlides]);
 
   const getRankBadge = (index: number) => {
     if (index === 0) return <Trophy className="h-5 w-5 text-yellow-500" />;
