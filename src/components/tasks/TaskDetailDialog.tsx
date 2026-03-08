@@ -130,7 +130,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         : (task.assigned_to ? [task.assigned_to] : []);
       setEditAssignees(assignees);
       setEditDeadline(task.deadline || "");
-      setEditTableData(task.table_data || null);
+      setEditBriefData(migrateLegacyData(task.table_data) || null);
       setEditWatchers(watcherIds);
       setIsEditing(false);
     }
