@@ -95,8 +95,8 @@ const moreGroups: MoreGroup[] = [
     label: "Finance",
     items: [
       { title: "Finance", url: "/finance", featureKey: "finance", icon: DollarSign, color: "hsl(152,48%,46%)" },
-      { title: "Laba Rugi", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
-      { title: "Neraca", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
+      { title: "Income Statement", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
+      { title: "Balance Sheet", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
     ],
   },
   {
