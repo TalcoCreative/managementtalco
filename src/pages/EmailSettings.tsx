@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, Send, CheckCircle, XCircle, Loader2, Settings, History, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
+import { Mail, Send, CheckCircle, XCircle, Loader2, Settings, History, AlertCircle, RefreshCw, ExternalLink, Palette } from "lucide-react";
+import EmailTemplateEditor from "@/components/email/EmailTemplateEditor";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -178,6 +179,10 @@ const EmailSettings = () => {
               <Settings className="h-4 w-4" />
               Pengaturan
             </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Template Email
+            </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <History className="h-4 w-4" />
               Log Email
@@ -328,22 +333,30 @@ const EmailSettings = () => {
                   </div>
 
                   <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">Notifikasi yang akan dikirim:</h4>
+                    <h4 className="font-medium mb-2">Notifikasi yang dikirim:</h4>
                     <ul className="text-sm space-y-1 text-muted-foreground">
                       <li>✅ Task Assignment</li>
                       <li>✅ Task Updated</li>
                       <li>✅ Task Completed</li>
                       <li>✅ Task Overdue</li>
+                      <li>✅ Task Mention</li>
                       <li>✅ Project Assignment</li>
                       <li>✅ Shooting Assignment</li>
+                      <li>✅ Shooting Status Update</li>
                       <li>✅ Event Assignment</li>
                       <li>✅ Meeting Invitation</li>
                       <li>✅ Meeting Reminder</li>
+                      <li>✅ Announcement</li>
+                      <li>✅ Recruitment PIC</li>
                     </ul>
                   </div>
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="templates">
+            <EmailTemplateEditor />
           </TabsContent>
 
           <TabsContent value="logs">
