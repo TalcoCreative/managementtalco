@@ -13,8 +13,6 @@ import { AddUserRoleDialog } from "@/components/users/AddUserRoleDialog";
 import { EmployeeDetailDialog } from "@/components/users/EmployeeDetailDialog";
 import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { USER_COLUMNS } from "@/lib/excel-utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePositions, getPositionColor, getRoleLabel } from "@/hooks/usePositions";
