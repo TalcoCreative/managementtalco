@@ -535,6 +535,7 @@ export default function EmployeeInsight() {
                 </CardContent>
               </Card>
 
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Rata-rata Masuk</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
