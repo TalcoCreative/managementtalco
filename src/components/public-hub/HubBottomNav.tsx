@@ -101,6 +101,14 @@ export function HubBottomNav({
       getPath: () => `/marketplace/${dashboardSlug}`,
       enabled: !!availableFeatures.hasMarketplace && !!dashboardSlug,
     },
+    {
+      title: "KOL",
+      icon: Megaphone,
+      gradient: "from-[hsl(28,78%,52%)] to-[hsl(18,72%,48%)]",
+      pathPrefix: "/kol-campaign/",
+      getPath: () => `/kol-campaign/${dashboardSlug}`,
+      enabled: !!availableFeatures.hasKolCampaigns && !!dashboardSlug,
+    },
   ];
 
   const available = allFeatures.filter((f) => f.enabled);
