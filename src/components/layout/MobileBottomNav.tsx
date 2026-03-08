@@ -54,7 +54,7 @@ const moreGroups: MoreGroup[] = [
     label: "Reports & Letters",
     items: [
       { title: "Reports", url: "/reports", featureKey: "reports", icon: BarChart3, color: "hsl(205,72%,52%)" },
-      { title: "Surat", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
+      { title: "Letters", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
     ],
   },
   {
