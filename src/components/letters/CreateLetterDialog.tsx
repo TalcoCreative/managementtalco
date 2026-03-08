@@ -35,6 +35,7 @@ const CATEGORIES = [
   { code: "MKT", name: "Marketing" },
   { code: "PRJ", name: "Project" },
   { code: "GEN", name: "General" },
+  { code: "SLIP", name: "Slip Gaji" },
 ];
 
 interface CreateLetterDialogProps {
