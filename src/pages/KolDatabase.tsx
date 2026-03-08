@@ -26,8 +26,6 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
-import { ExcelActions } from "@/components/shared/ExcelActions";
-import { KOL_COLUMNS } from "@/lib/excel-utils";
 
 const categoryColors: Record<string, string> = {
   nano: "bg-gray-500",
