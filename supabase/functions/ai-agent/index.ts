@@ -35,6 +35,7 @@ const ALLOWED_TABLES = [
   "deletion_logs",
   "payroll_records",
   "reimbursements",
+  "marketplace_reports",
 ];
 
 // Tool definitions for the AI to call
