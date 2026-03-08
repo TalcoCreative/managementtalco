@@ -23,7 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Loader2, FileText, History, ExternalLink, Copy, Lock } from "lucide-react";
+import { Loader2, FileText, History, ExternalLink, Copy, Lock, FileDown } from "lucide-react";
+import { generatePayrollPDF } from "@/lib/payroll-pdf";
 
 const STATUSES = [
   { value: "draft", label: "Draft" },
