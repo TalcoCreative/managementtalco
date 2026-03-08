@@ -17,7 +17,7 @@ export function AIChatPopup() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
+  
 
   // Snap-to-corner drag state
   const [iconCorner, setIconCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
