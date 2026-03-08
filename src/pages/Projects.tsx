@@ -211,10 +211,10 @@ export default function Projects() {
 
       if (error) throw error;
 
-      toast.success("Status project diperbarui");
+      toast.success("Project status updated");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     } catch (error: any) {
-      toast.error("Gagal mengubah status");
+      toast.error("Failed to change status");
     }
   };
 
