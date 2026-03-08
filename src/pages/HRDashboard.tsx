@@ -108,7 +108,7 @@ function LateThresholdSetting() {
   );
 }
 
-
+export default function HRDashboard() {
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [selectedUser, setSelectedUser] = useState<any>(null);
