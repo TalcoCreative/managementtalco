@@ -4,6 +4,7 @@ import {
   Palette, Hammer, UserCog, LayoutDashboard, TrendingUp, DollarSign, Settings,
   Mail, Shield, Wrench, Target, Search, Building2, PieChart, GraduationCap,
   Star, Sparkles, Share2, CalendarHeart, Crown, Scale, UserPlus, CalendarClock,
+  Wallet, UserSearch, ClipboardCheck, BarChart2,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,12 @@ interface MoreGroup {
 }
 
 const moreGroups: MoreGroup[] = [
+  {
+    label: "Main",
+    items: [
+      { title: "Clients", url: "/clients", featureKey: "clients", icon: Building2, color: "hsl(222,72%,52%)" },
+    ],
+  },
   {
     label: "Operations",
     items: [
@@ -81,28 +88,28 @@ const moreGroups: MoreGroup[] = [
   {
     label: "HR",
     items: [
-      { title: "Team", url: "/users", featureKey: "team", icon: UserCog, color: "hsl(205,72%,52%)" },
-      { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard", icon: LayoutDashboard, color: "hsl(280,60%,55%)" },
-      { title: "HR Analytics", url: "/hr/analytics", featureKey: "hr_analytics", icon: PieChart, color: "hsl(330,60%,55%)" },
-      { title: "Holiday Calendar", url: "/hr/holiday", featureKey: "holiday_calendar", icon: CalendarHeart, color: "hsl(38,82%,52%)" },
+      { title: "Team", url: "/users", featureKey: "team", icon: Users, color: "hsl(205,72%,52%)" },
+      { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard", icon: ClipboardCheck, color: "hsl(280,60%,55%)" },
+      { title: "HR Analytics", url: "/hr/analytics", featureKey: "hr_analytics", icon: BarChart2, color: "hsl(330,60%,55%)" },
+      { title: "Holidays", url: "/hr/holiday", featureKey: "holiday_calendar", icon: CalendarHeart, color: "hsl(38,82%,52%)" },
       { title: "Performance", url: "/performance", featureKey: "performance", icon: TrendingUp, color: "hsl(152,48%,46%)" },
-      { title: "Recruitment", url: "/recruitment", featureKey: "recruitment", icon: GraduationCap, color: "hsl(152,48%,46%)" },
-      { title: "Recruit Dashboard", url: "/recruitment/dashboard", featureKey: "recruitment_dashboard", icon: BarChart3, color: "hsl(222,72%,52%)" },
+      { title: "Recruitment", url: "/recruitment", featureKey: "recruitment", icon: UserSearch, color: "hsl(152,48%,46%)" },
+      { title: "Recruit Board", url: "/recruitment/dashboard", featureKey: "recruitment_dashboard", icon: BarChart3, color: "hsl(222,72%,52%)" },
       { title: "Recruit Forms", url: "/recruitment/forms", featureKey: "recruitment_forms", icon: FileText, color: "hsl(205,72%,52%)" },
     ],
   },
   {
     label: "Finance",
     items: [
-      { title: "Finance", url: "/finance", featureKey: "finance", icon: DollarSign, color: "hsl(152,48%,46%)" },
-      { title: "Income Statement", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: TrendingUp, color: "hsl(38,82%,52%)" },
+      { title: "Finance", url: "/finance", featureKey: "finance", icon: Wallet, color: "hsl(152,48%,46%)" },
+      { title: "Income Stmt", url: "/finance/laporan-laba-rugi", featureKey: "income_statement", icon: PieChart, color: "hsl(38,82%,52%)" },
       { title: "Balance Sheet", url: "/finance/neraca", featureKey: "balance_sheet", icon: Scale, color: "hsl(222,72%,52%)" },
     ],
   },
   {
     label: "Sales",
     items: [
-      { title: "Sales Analytics", url: "/sales/dashboard", featureKey: "sales_analytics", icon: BarChart3, color: "hsl(205,72%,52%)" },
+      { title: "Sales Analytics", url: "/sales/dashboard", featureKey: "sales_analytics", icon: TrendingUp, color: "hsl(205,72%,52%)" },
       { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: UserPlus, color: "hsl(330,60%,55%)" },
     ],
   },
@@ -117,7 +124,7 @@ const moreGroups: MoreGroup[] = [
     items: [
       { title: "Email Settings", url: "/system/email-settings", featureKey: "email_settings", icon: Mail, color: "hsl(222,10%,48%)" },
       { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
-      { title: "System Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
+      { title: "Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
     ],
   },
 ];
