@@ -215,6 +215,16 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         await supabase.from("task_watchers").insert(watcherInserts);
       }
 
+      // Insert sub-tasks if any
+      if (taskData && subTaskTitles.length > 0) {
+        const subTaskInserts = subTaskTitles.map((title, idx) => ({
+          task_id: taskData.id,
+          title,
+          sort_order: idx,
+        }));
+        await supabase.from("sub_tasks").insert(subTaskInserts);
+      }
+
       // Log task creation as activity
       await supabase.from("task_activities").insert({
         user_id: session.session.user.id,
