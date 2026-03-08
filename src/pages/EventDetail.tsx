@@ -124,12 +124,12 @@ export default function EventDetail() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Event berhasil dihapus");
+      toast.success("Event deleted successfully");
       navigate("/event");
     },
     onError: (error) => {
       console.error("Error deleting event:", error);
-      toast.error("Gagal menghapus event");
+      toast.error("Failed to delete event");
     },
   });
 
