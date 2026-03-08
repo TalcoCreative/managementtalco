@@ -27,7 +27,6 @@ export default function ClientDetail() {
     overview: true,
     contract: true,
     payment: true,
-    quota: true,
     accounts: false,
     documents: true,
     projects: true,
