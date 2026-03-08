@@ -115,6 +115,7 @@ export default function HRDashboard() {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [selectedLeaveRequest, setSelectedLeaveRequest] = useState<any>(null);
   const [autoClockoutLoading, setAutoClockoutLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch all profiles
