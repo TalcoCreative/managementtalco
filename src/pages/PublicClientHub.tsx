@@ -42,6 +42,7 @@ interface ClientHubData {
   hasEditorialPlans: boolean;
   hasMeetings: boolean;
   hasShootings: boolean;
+  hasMarketplace: boolean;
   schedule: ScheduleItem[];
   editorialPlans: EditorialPlanItem[];
 }
