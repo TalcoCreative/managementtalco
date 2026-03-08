@@ -92,6 +92,14 @@ export function HubBottomNav({
       getPath: () => `/shooting-list/${dashboardSlug}`,
       enabled: availableFeatures.hasShootings && !!dashboardSlug,
     },
+    {
+      title: "Marketplace",
+      icon: ShoppingBag,
+      gradient: "from-[hsl(152,48%,46%)] to-[hsl(140,60%,45%)]",
+      pathPrefix: "/marketplace/",
+      getPath: () => `/marketplace/${dashboardSlug}`,
+      enabled: !!availableFeatures.hasMarketplace && !!dashboardSlug,
+    },
   ];
 
   const available = allFeatures.filter((f) => f.enabled);
