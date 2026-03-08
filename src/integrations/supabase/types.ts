@@ -2818,11 +2818,13 @@ export type Database = {
           created_at: string
           created_by: string
           document_url: string | null
+          employee_id: string | null
           entity_code: string
           entity_name: string
           id: string
           is_confidential: boolean
           letter_number: string
+          letter_type: string
           month: number
           notes: string | null
           project_id: string | null
@@ -2842,11 +2844,13 @@ export type Database = {
           created_at?: string
           created_by: string
           document_url?: string | null
+          employee_id?: string | null
           entity_code: string
           entity_name: string
           id?: string
           is_confidential?: boolean
           letter_number: string
+          letter_type?: string
           month: number
           notes?: string | null
           project_id?: string | null
@@ -2866,11 +2870,13 @@ export type Database = {
           created_at?: string
           created_by?: string
           document_url?: string | null
+          employee_id?: string | null
           entity_code?: string
           entity_name?: string
           id?: string
           is_confidential?: boolean
           letter_number?: string
+          letter_type?: string
           month?: number
           notes?: string | null
           project_id?: string | null
@@ -2888,6 +2894,13 @@ export type Database = {
           {
             foreignKeyName: "letters_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "letters_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
