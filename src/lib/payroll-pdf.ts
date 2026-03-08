@@ -41,6 +41,10 @@ interface PdfSettings {
   receiverRole: string;
   showSignature: boolean;
   
+  // Stamp
+  stampUrl?: string | null;
+  showStamp: boolean;
+  
   // Styling
   logoWidth: number;
   logoHeight: number;
@@ -69,7 +73,8 @@ const defaultPdfSettings: PdfSettings = {
   giverRole: "Human Resources",
   receiverRole: "Karyawan",
   showSignature: true,
-  logoWidth: 40,  // Larger default for better visibility
+  showStamp: false,
+  logoWidth: 40,
   logoHeight: 40,
   primaryColor: [41, 128, 185],
   headerFontSize: 18,
@@ -102,7 +107,7 @@ const terbilang = (num: number): string => {
   return terbilang(Math.floor(num / 1000000000000)) + " Triliun " + terbilang(num % 1000000000000);
 };
 
-const loadImage = (url: string): Promise<string> => {
+const loadImage = (url: string): Promise<{ dataUrl: string; naturalWidth: number; naturalHeight: number }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -112,7 +117,11 @@ const loadImage = (url: string): Promise<string> => {
       canvas.height = img.height;
       const ctx = canvas.getContext("2d");
       ctx?.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      resolve({ 
+        dataUrl: canvas.toDataURL("image/png"), 
+        naturalWidth: img.width, 
+        naturalHeight: img.height 
+      });
     };
     img.onerror = reject;
     img.src = url;
@@ -149,6 +158,8 @@ export const mapCompanySettingsToPdfSettings = (
     giverRole: settingsMap.pdf_giver_role || defaultPdfSettings.giverRole,
     receiverRole: settingsMap.pdf_receiver_role || defaultPdfSettings.receiverRole,
     showSignature: settingsMap.pdf_show_signature !== "false",
+    stampUrl: settingsMap.company_stamp,
+    showStamp: settingsMap.pdf_show_stamp === "true",
     logoWidth: Number(settingsMap.pdf_logo_width) || defaultPdfSettings.logoWidth,
     logoHeight: Number(settingsMap.pdf_logo_height) || defaultPdfSettings.logoHeight,
     primaryColor: parseColorFromSettings(settingsMap.pdf_primary_color ?? undefined),
@@ -179,17 +190,31 @@ export const generatePayrollPDF = async (
   // === KOP SURAT / LETTERHEAD ===
   
   // Load and place logo if available
+  let actualLogoWidth = settings.logoWidth;
+  let actualLogoHeight = settings.logoHeight;
   if (settings.logoUrl) {
     try {
       const logoData = await loadImage(settings.logoUrl);
-      doc.addImage(logoData, "PNG", margin, yPos, settings.logoWidth, settings.logoHeight);
+      // Preserve aspect ratio: fit within the configured box
+      const ratio = logoData.naturalWidth / logoData.naturalHeight;
+      const boxRatio = settings.logoWidth / settings.logoHeight;
+      if (ratio > boxRatio) {
+        // wider than box → fit by width
+        actualLogoHeight = settings.logoWidth / ratio;
+        actualLogoWidth = settings.logoWidth;
+      } else {
+        // taller than box → fit by height
+        actualLogoWidth = settings.logoHeight * ratio;
+        actualLogoHeight = settings.logoHeight;
+      }
+      doc.addImage(logoData.dataUrl, "PNG", margin, yPos, actualLogoWidth, actualLogoHeight);
     } catch (error) {
       console.log("Failed to load logo:", error);
     }
   }
 
   // Company Name - positioned to the right of logo
-  const textStartX = settings.logoUrl ? margin + settings.logoWidth + 7 : margin;
+  const textStartX = settings.logoUrl ? margin + actualLogoWidth + 7 : margin;
   
   doc.setFontSize(settings.headerFontSize);
   doc.setFont("helvetica", "bold");
@@ -209,7 +234,7 @@ export const generatePayrollPDF = async (
     addressY += 5;
   });
 
-  yPos = Math.max(margin + settings.logoHeight, addressY) + 10;
+  yPos = Math.max(margin + actualLogoHeight, addressY) + 10;
 
   // Separator line
   doc.setDrawColor(r, g, b);
@@ -389,7 +414,7 @@ export const generatePayrollPDF = async (
     if (settings.signatureUrl) {
       try {
         const sigData = await loadImage(settings.signatureUrl);
-        doc.addImage(sigData, "PNG", sigCol1 - 10, yPos, 45, 22);
+        doc.addImage(sigData.dataUrl, "PNG", sigCol1 - 10, yPos, 45, 22);
       } catch (error) {
         console.log("Failed to load signature:", error);
       }
@@ -421,6 +446,29 @@ export const generatePayrollPDF = async (
   doc.setFontSize(7);
   doc.setTextColor(150, 150, 150);
   doc.text(settings.footerText, pageWidth / 2, yPos, { align: "center" });
+
+  // === COMPANY STAMP WATERMARK ===
+  if (settings.showStamp && settings.stampUrl) {
+    try {
+      const stampData = await loadImage(settings.stampUrl);
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const stampSize = 60; // mm
+      const ratio = stampData.naturalWidth / stampData.naturalHeight;
+      const stampW = ratio >= 1 ? stampSize : stampSize * ratio;
+      const stampH = ratio >= 1 ? stampSize / ratio : stampSize;
+      const stampX = (pageWidth - stampW) / 2;
+      const stampY = (pageHeight - stampH) / 2;
+      
+      // Add with low opacity for watermark effect
+      const gState = (doc as any).GState({ opacity: 0.08 });
+      doc.saveGraphicsState();
+      (doc as any).setGState(gState);
+      doc.addImage(stampData.dataUrl, "PNG", stampX, stampY, stampW, stampH);
+      doc.restoreGraphicsState();
+    } catch (error) {
+      console.log("Failed to load stamp:", error);
+    }
+  }
 
   // Save PDF
   const fileName = `SlipGaji_${payroll.employeeName.replace(/\s+/g, "_")}_${payroll.periode.replace(/\s+/g, "_")}.pdf`;

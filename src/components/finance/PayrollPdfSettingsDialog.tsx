@@ -43,6 +43,10 @@ interface PdfSettings {
   pdf_receiver_role: string;
   pdf_show_signature: boolean;
   
+  // Stamp
+  company_stamp?: string | null;
+  pdf_show_stamp: boolean;
+  
   // Styling
   pdf_logo_width: number;
   pdf_logo_height: number;
@@ -73,7 +77,8 @@ const defaultSettings: PdfSettings = {
   pdf_giver_role: "Human Resources",
   pdf_receiver_role: "Karyawan",
   pdf_show_signature: true,
-  pdf_logo_width: 40,  // mm - larger default for better visibility
+  pdf_show_stamp: false,
+  pdf_logo_width: 40,
   pdf_logo_height: 40,
   pdf_primary_color: "41,128,185",
   pdf_header_font_size: 18,
@@ -124,6 +129,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         pdf_giver_role: dbSettings.pdf_giver_role || defaultSettings.pdf_giver_role,
         pdf_receiver_role: dbSettings.pdf_receiver_role || defaultSettings.pdf_receiver_role,
         pdf_show_signature: dbSettings.pdf_show_signature !== "false",
+        company_stamp: dbSettings.company_stamp,
+        pdf_show_stamp: dbSettings.pdf_show_stamp === "true",
         pdf_logo_width: Number(dbSettings.pdf_logo_width) || defaultSettings.pdf_logo_width,
         pdf_logo_height: Number(dbSettings.pdf_logo_height) || defaultSettings.pdf_logo_height,
         pdf_primary_color: dbSettings.pdf_primary_color || defaultSettings.pdf_primary_color,
@@ -137,7 +144,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   }, [dbSettings]);
 
-  const uploadFile = async (file: File, type: "logo" | "signature") => {
+  const uploadFile = async (file: File, type: "logo" | "signature" | "stamp") => {
     try {
       setUploading(true);
       
@@ -158,15 +165,17 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         .from("company-assets")
         .getPublicUrl(filePath);
 
-      const settingKey = type === "logo" ? "company_logo" : "hr_signature";
+      const settingKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       await saveSetting(settingKey, publicUrl);
       
+      const stateKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       setSettings(prev => ({
         ...prev,
-        [type === "logo" ? "company_logo" : "hr_signature"]: publicUrl
+        [stateKey]: publicUrl
       }));
 
-      toast.success(`${type === "logo" ? "Logo" : "Tanda tangan"} berhasil diupload`);
+      const labels = { logo: "Logo", signature: "Tanda tangan", stamp: "Cap perusahaan" };
+      toast.success(`${labels[type]} berhasil diupload`);
     } catch (error: any) {
       toast.error(error.message || "Upload gagal");
     } finally {
@@ -174,7 +183,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "signature") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "signature" | "stamp") => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
@@ -185,17 +194,19 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   };
 
-  const removeFile = async (type: "logo" | "signature") => {
+  const removeFile = async (type: "logo" | "signature" | "stamp") => {
     try {
-      const settingKey = type === "logo" ? "company_logo" : "hr_signature";
+      const settingKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       await saveSetting(settingKey, null);
       
+      const stateKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       setSettings(prev => ({
         ...prev,
-        [type === "logo" ? "company_logo" : "hr_signature"]: null
+        [stateKey]: null
       }));
 
-      toast.success(`${type === "logo" ? "Logo" : "Tanda tangan"} dihapus`);
+      const labels = { logo: "Logo", signature: "Tanda tangan", stamp: "Cap perusahaan" };
+      toast.success(`${labels[type]} dihapus`);
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -256,6 +267,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         pdf_giver_role: settings.pdf_giver_role,
         pdf_receiver_role: settings.pdf_receiver_role,
         pdf_show_signature: String(settings.pdf_show_signature),
+        pdf_show_stamp: String(settings.pdf_show_stamp),
         pdf_logo_width: String(settings.pdf_logo_width),
         pdf_logo_height: String(settings.pdf_logo_height),
         pdf_primary_color: settings.pdf_primary_color,
@@ -549,6 +561,54 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   </p>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Company Stamp */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Cap / Stempel Perusahaan</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Akan ditampilkan sebagai watermark tipis di tengah slip gaji
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.pdf_show_stamp}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, pdf_show_stamp: checked }))}
+                  />
+                </div>
+
+                {settings.company_stamp ? (
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={settings.company_stamp} 
+                      alt="Company Stamp" 
+                      className="h-20 w-20 object-contain border rounded p-2"
+                    />
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeFile("stamp")}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Hapus
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, "stamp")}
+                      disabled={uploading}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Gunakan logo atau stempel perusahaan. Format: PNG (transparan lebih baik). Max 2MB
+                    </p>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Styling Tab */}
@@ -669,9 +729,19 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
 
             {/* Preview Tab */}
             <TabsContent value="preview" className="px-1">
-              <div className="border rounded-lg p-4 bg-white">
-              <div className="max-w-md mx-auto space-y-4">
-                  {/* Header Preview - scaled to match PDF proportions */}
+              <div className="border rounded-lg p-4 bg-white relative overflow-hidden">
+                {/* Stamp watermark overlay */}
+                {settings.pdf_show_stamp && settings.company_stamp && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <img 
+                      src={settings.company_stamp} 
+                      alt="Stamp" 
+                      className="w-40 h-40 object-contain opacity-[0.08]"
+                    />
+                  </div>
+                )}
+                <div className="max-w-md mx-auto space-y-4 relative z-0">
+                  {/* Header Preview */}
                   <div className="flex items-start gap-3">
                     {settings.company_logo ? (
                       <img 
@@ -679,8 +749,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                         alt="Logo" 
                         className="object-contain flex-shrink-0"
                         style={{ 
-                          width: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
-                          height: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
+                          maxWidth: `${settings.pdf_logo_width * PDF_PREVIEW_SCALE}px`, 
+                          maxHeight: `${settings.pdf_logo_height * PDF_PREVIEW_SCALE}px` 
                         }}
                       />
                     ) : (
@@ -704,8 +774,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                       >
                         {settings.pdf_company_name}
                       </h2>
-                      <p className="text-gray-500 text-sm">{settings.pdf_company_tagline}</p>
-                      <p className="text-gray-500 text-xs">{settings.pdf_company_address}</p>
+                      <p className="text-muted-foreground text-sm">{settings.pdf_company_tagline}</p>
+                      <p className="text-muted-foreground text-xs">{settings.pdf_company_address}</p>
                     </div>
                   </div>
 
@@ -715,11 +785,11 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   />
 
                   <h3 className="text-center font-bold">{settings.pdf_document_title}</h3>
-                  <p className="text-center text-sm text-gray-500">Periode: Januari 2025</p>
+                  <p className="text-center text-sm text-muted-foreground">Periode: Januari 2025</p>
 
-                  <div className="bg-gray-50 rounded p-3 text-sm">
-                    <p><span className="text-gray-500">Nama Karyawan:</span> <strong>John Doe</strong></p>
-                    <p><span className="text-gray-500">Jabatan:</span> <strong>Developer</strong></p>
+                  <div className="bg-muted/50 rounded p-3 text-sm">
+                    <p><span className="text-muted-foreground">Nama Karyawan:</span> <strong>John Doe</strong></p>
+                    <p><span className="text-muted-foreground">Jabatan:</span> <strong>Developer</strong></p>
                   </div>
 
                   <div className="text-sm">
@@ -749,7 +819,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   </div>
 
                   {settings.pdf_show_terbilang && (
-                    <p className="text-xs italic text-gray-500">
+                    <p className="text-xs italic text-muted-foreground">
                       Terbilang: Enam Juta Rupiah
                     </p>
                   )}
@@ -764,18 +834,18 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                           <div className="h-12 my-2" />
                         )}
                         <p className="font-bold underline">{settings.hr_name}</p>
-                        <p className="text-xs text-gray-500">{settings.pdf_giver_role}</p>
+                        <p className="text-xs text-muted-foreground">{settings.pdf_giver_role}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium">{settings.pdf_receiver_label}</p>
                         <div className="h-12 my-2" />
                         <p className="font-bold underline">John Doe</p>
-                        <p className="text-xs text-gray-500">{settings.pdf_receiver_role}</p>
+                        <p className="text-xs text-muted-foreground">{settings.pdf_receiver_role}</p>
                       </div>
                     </div>
                   )}
 
-                  <p className="text-center text-xs text-gray-400 pt-4">
+                  <p className="text-center text-xs text-muted-foreground/60 pt-4">
                     {settings.pdf_footer_text}
                   </p>
                 </div>

@@ -79,13 +79,13 @@ export function IndividualPerformance({
       const userTasks = tasks.filter(t => 
         isUserAssignedToTask(t.id, t.assigned_to, profile.id) && filterByMonth(t.created_at)
       );
-      const completedTasks = userTasks.filter(t => t.status === 'done').length;
+      const completedTasks = userTasks.filter(t => t.status === 'done' || t.status === 'completed').length;
 
       // Projects: assigned_to OR created_by
       const userProjects = projects.filter(p => 
         (p.assigned_to === profile.id || p.created_by === profile.id) && filterByMonth(p.created_at)
       );
-      const completedProjects = userProjects.filter(p => p.status === 'completed').length;
+      const completedProjects = userProjects.filter(p => p.status === 'completed' || p.status === 'done').length;
 
       const userShootings = shootings.filter(s => 
         (s.director === profile.id || s.runner === profile.id || s.requested_by === profile.id) && 
@@ -254,7 +254,7 @@ export function IndividualPerformance({
                         {metric.completedProjects}/{metric.projectCount}
                       </TableCell>
                       <TableCell className="text-right">
-                        {metric.wonProspects}/{metric.prospectCount}
+                        {metric.prospectCount}
                       </TableCell>
                       <TableCell className="text-right">
                         {metric.meetingCount}
@@ -349,7 +349,7 @@ export function IndividualPerformance({
                         <CheckSquare className="h-4 w-4" />
                         <span className="text-sm">Tasks</span>
                       </div>
-                      <p className="text-xl font-bold">{selectedMetric.completedTasks}/{selectedMetric.taskCount}</p>
+                      <p className="text-xl font-bold">{selectedMetric.completedTasks}<span className="text-sm text-muted-foreground">/{selectedMetric.taskCount}</span></p>
                     </div>
                     <div className="p-3 rounded-lg border">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -370,7 +370,7 @@ export function IndividualPerformance({
                         <Target className="h-4 w-4" />
                         <span className="text-sm">Prospects</span>
                       </div>
-                      <p className="text-xl font-bold">{selectedMetric.wonProspects}/{selectedMetric.prospectCount}</p>
+                      <p className="text-xl font-bold">{selectedMetric.prospectCount}</p>
                     </div>
                     <div className="p-3 rounded-lg border">
                       <div className="flex items-center gap-2 text-muted-foreground mb-1">
