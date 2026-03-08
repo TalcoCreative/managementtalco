@@ -382,6 +382,8 @@ export default function Forms() {
                 <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke KOL Database</p>
               )}
             </div>
+            <div>
+              <Label>Theme</Label>
               <Select value={newForm.theme} onValueChange={v => setNewForm(p => ({ ...p, theme: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
