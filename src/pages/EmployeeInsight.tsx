@@ -298,15 +298,22 @@ export default function EmployeeInsight() {
 
     // Late stats
     const lateCount = attendance?.filter(a => a.late_status === 'Late').length || 0;
-    const lateTotalMinutes = attendance?.filter(a => a.late_status === 'Late' && a.clock_in).reduce((sum, a) => {
-      // We need the threshold to calculate late minutes - approximate from clock_in
-      // For now, calculate based on late_status records
-      return sum;
-    }, 0) || 0;
+    
+    // Calculate total late minutes using threshold
+    let totalLateMinutes = 0;
+    if (lateThreshold) {
+      const [threshH, threshM] = lateThreshold.split(':').map(Number);
+      const threshTotalMin = threshH * 60 + threshM;
+      attendance?.filter(a => a.late_status === 'Late' && a.clock_in).forEach(a => {
+        const clockIn = parseISO(a.clock_in!);
+        const clockInTotalMin = clockIn.getHours() * 60 + clockIn.getMinutes();
+        if (clockInTotalMin > threshTotalMin) {
+          totalLateMinutes += (clockInTotalMin - threshTotalMin);
+        }
+      });
+    }
 
-    // Calculate total late minutes by comparing clock_in with threshold
-    // We'll fetch the threshold separately - for now compute from the data
-    const lateRecords = attendance?.filter(a => a.late_status === 'Late' && a.clock_in) || [];
+    const totalLateHours = Math.round(totalLateMinutes / 60 * 10) / 10;
 
     return {
       totalHours,
@@ -318,7 +325,8 @@ export default function EmployeeInsight() {
       hoursChange,
       daysChange,
       lateCount,
-      lateRecords,
+      totalLateMinutes,
+      totalLateHours,
     };
   }, [attendance, compareAttendance]);
 
