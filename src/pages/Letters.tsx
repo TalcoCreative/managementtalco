@@ -48,6 +48,7 @@ export default function Letters() {
   const [searchQuery, setSearchQuery] = useState("");
   const [entityFilter, setEntityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user-letters"],
@@ -79,7 +80,7 @@ export default function Letters() {
   );
 
   const { data: letters, isLoading, refetch } = useQuery({
-    queryKey: ["letters", entityFilter, statusFilter, currentUser?.id, isSuperAdmin],
+    queryKey: ["letters", entityFilter, statusFilter, categoryFilter, currentUser?.id, isSuperAdmin],
     queryFn: async () => {
       let query = supabase
         .from("letters")
@@ -97,15 +98,22 @@ export default function Letters() {
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
+      if (categoryFilter && categoryFilter !== "all") {
+        query = query.eq("category_code", categoryFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
       
-      // Filter confidential letters - only creator and super_admin can see
+      // Filter confidential letters - only creator, super_admin, hr, finance can see
       return data?.filter(letter => {
         if (!letter.is_confidential) return true;
         if (isSuperAdmin) return true;
         if (letter.created_by === currentUser?.id) return true;
+        // For payroll slips, also allow HR and Finance
+        if (letter.letter_type === 'payroll_slip') {
+          return userRoles?.some(role => ['hr', 'finance'].includes(role));
+        }
         return false;
       });
     },
@@ -209,6 +217,21 @@ export default function Letters() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Semua Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="FIN">Finance</SelectItem>
+                  <SelectItem value="ADM">Admin</SelectItem>
+                  <SelectItem value="MKT">Marketing</SelectItem>
+                  <SelectItem value="PRJ">Project</SelectItem>
+                  <SelectItem value="GEN">General</SelectItem>
+                  <SelectItem value="SLIP">Slip Gaji</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -236,6 +259,7 @@ export default function Letters() {
                     <TableRow>
                       <TableHead>Nomor Surat</TableHead>
                       <TableHead>Entitas</TableHead>
+                      <TableHead>Kategori</TableHead>
                       <TableHead>Penerima</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Tanggal</TableHead>
@@ -259,6 +283,11 @@ export default function Letters() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{letter.entity_code}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={letter.category_code === 'SLIP' ? 'default' : 'secondary'} className="text-xs">
+                            {letter.category_name || letter.category_code}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div>
