@@ -29,7 +29,8 @@ import {
   ArrowDownRight,
   Coffee,
   Briefcase,
-  Filter
+  Filter,
+  XCircle
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, differenceInMinutes, differenceInHours, eachDayOfInterval } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
