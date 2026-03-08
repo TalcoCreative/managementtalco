@@ -50,7 +50,65 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export default function HRDashboard() {
+function LateThresholdSetting() {
+  const [threshold, setThreshold] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: setting, refetch } = useQuery({
+    queryKey: ["late-threshold-setting"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "late_threshold_time")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.setting_value || "10:00";
+    },
+  });
+
+  useEffect(() => {
+    if (setting) setThreshold(setting);
+  }, [setting]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("company_settings")
+        .update({ setting_value: threshold })
+        .eq("setting_key", "late_threshold_time");
+      if (error) throw error;
+      toast.success("Late threshold time updated");
+      refetch();
+    } catch {
+      toast.error("Failed to update threshold");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+      <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Label className="text-sm font-medium whitespace-nowrap">Late Threshold Time:</Label>
+        <Input
+          type="time"
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          className="w-[120px] h-8"
+        />
+        <Button size="sm" className="h-8" onClick={handleSave} disabled={saving || threshold === setting}>
+          {saving ? "Saving..." : "Save"}
+        </Button>
+        <span className="text-xs text-muted-foreground">Clock-in after this time = Late</span>
+      </div>
+    </div>
+  );
+}
+
+
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [selectedUser, setSelectedUser] = useState<any>(null);
