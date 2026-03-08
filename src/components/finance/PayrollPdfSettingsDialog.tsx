@@ -183,7 +183,7 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "signature") => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "signature" | "stamp") => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
