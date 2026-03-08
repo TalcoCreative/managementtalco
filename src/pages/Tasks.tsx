@@ -466,6 +466,7 @@ export default function Tasks() {
                         {task.description}
                       </p>
                     )}
+                    <SubTaskIndicator taskId={task.id} />
                     <div onClick={(e) => e.stopPropagation()}>
                       <Select
                         value={task.status}
