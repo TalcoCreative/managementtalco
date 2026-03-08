@@ -332,27 +332,8 @@ export function FinancePayroll() {
       const employeeName = profile?.full_name || "-";
       const periode = format(new Date(payroll.month), "MMMM yyyy", { locale: idLocale });
       
-      await generatePayrollPDF(
-        {
-          employeeName,
-          jabatan: getEmployeeRole(payroll.employee_id),
-          periode,
-          gajiPokok: Number(profile?.gaji_pokok) || 0,
-          tjTransport: Number(profile?.tj_transport) || 0,
-          tjInternet: Number(profile?.tj_internet) || 0,
-          tjKpi: Number(profile?.tj_kpi) || 0,
-          reimburse: Number((payroll as any).reimburse) || 0,
-          bonus: Number((payroll as any).bonus) || 0,
-          potonganTerlambat: Number((payroll as any).potongan_terlambat) || 0,
-          potonganKasbon: Number((payroll as any).potongan_kasbon) || 0,
-          adjustmentLainnya: Number((payroll as any).adjustment_lainnya) || 0,
-          totalGaji: Number(payroll.amount),
-          payDate: payroll.pay_date || format(new Date(), "yyyy-MM-dd"),
-        },
-        companySettings || {}
-      );
-
-      // Auto-create letter entry for this payroll slip
+      // Generate letter number first
+      let letterNumber = "";
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -360,7 +341,6 @@ export function FinancePayroll() {
           const year = now.getFullYear();
           const month = now.getMonth() + 1;
 
-          // Get next running number for SLIP category
           const { data: nextNumber } = await supabase.rpc("get_next_letter_number", {
             p_entity_code: "TCI",
             p_category_code: "SLIP",
@@ -371,9 +351,9 @@ export function FinancePayroll() {
           if (nextNumber) {
             const monthStr = month.toString().padStart(2, "0");
             const runningStr = nextNumber.toString().padStart(3, "0");
-            const letterNumber = `TCI/SLIP/PAYROLL/${monthStr}/${year}/${runningStr}`;
+            letterNumber = `TCI/SLIP/PAYROLL/${monthStr}/${year}/${runningStr}`;
 
-            await supabase.from("letters").insert({
+            const { data: letterData, error: letterErr } = await supabase.from("letters").insert({
               letter_number: letterNumber,
               entity_code: "TCI",
               entity_name: "Talco Creative Indonesia",
@@ -391,23 +371,45 @@ export function FinancePayroll() {
               is_confidential: true,
               letter_type: "payroll_slip",
               employee_id: payroll.employee_id,
-            });
+            }).select("id").single();
 
-            // Log activity
-            await supabase.from("letter_activity_logs").insert({
-              letter_id: (await supabase.from("letters").select("id").eq("letter_number", letterNumber).single()).data?.id,
-              action: "created",
-              new_value: `Slip gaji otomatis: ${letterNumber} (Rahasia)`,
-              changed_by: user.id,
-            });
+            if (letterData) {
+              await supabase.from("letter_activity_logs").insert({
+                letter_id: letterData.id,
+                action: "created",
+                new_value: `Slip gaji otomatis: ${letterNumber} (Rahasia)`,
+                changed_by: user.id,
+              });
+            }
+            if (letterErr) console.log("Letter insert error:", letterErr);
           }
         }
       } catch (letterError) {
         console.log("Failed to create letter entry:", letterError);
-        // Don't block PDF download if letter creation fails
       }
 
-      toast.success("PDF berhasil di-download & surat tercatat");
+      await generatePayrollPDF(
+        {
+          employeeName,
+          jabatan: getEmployeeRole(payroll.employee_id),
+          periode,
+          gajiPokok: Number(profile?.gaji_pokok) || 0,
+          tjTransport: Number(profile?.tj_transport) || 0,
+          tjInternet: Number(profile?.tj_internet) || 0,
+          tjKpi: Number(profile?.tj_kpi) || 0,
+          reimburse: Number((payroll as any).reimburse) || 0,
+          bonus: Number((payroll as any).bonus) || 0,
+          potonganTerlambat: Number((payroll as any).potongan_terlambat) || 0,
+          potonganKasbon: Number((payroll as any).potongan_kasbon) || 0,
+          adjustmentLainnya: Number((payroll as any).adjustment_lainnya) || 0,
+          totalGaji: Number(payroll.amount),
+          payDate: payroll.pay_date || format(new Date(), "yyyy-MM-dd"),
+          letterNumber: letterNumber || undefined,
+        },
+        companySettings || {}
+      );
+
+      toast.success(letterNumber ? `PDF berhasil di-download & surat ${letterNumber} tercatat` : "PDF berhasil di-download");
     } catch (error: any) {
       toast.error(error.message || "Gagal generate PDF");
     } finally {
