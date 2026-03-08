@@ -126,8 +126,55 @@ export default function ClientDetail() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-gradient-primary p-2">
-                  <Building2 className="h-6 w-6 text-primary-foreground" />
+                {/* Client Logo - clickable to upload */}
+                <div
+                  className="relative rounded-xl w-12 h-12 overflow-hidden cursor-pointer group shrink-0"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {client.client_logo ? (
+                    <img src={client.client_logo} alt="" className="w-full h-full object-contain bg-muted" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-primary flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="h-4 w-4 text-white" />
+                  </div>
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    disabled={uploadingLogo}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingLogo(true);
+                      try {
+                        const ext = file.name.split(".").pop();
+                        const path = `${clientId}/${Date.now()}.${ext}`;
+                        const { error: uploadError } = await supabase.storage
+                          .from("client-logos")
+                          .upload(path, file, { upsert: true });
+                        if (uploadError) throw uploadError;
+                        const { data: urlData } = supabase.storage
+                          .from("client-logos")
+                          .getPublicUrl(path);
+                        await supabase
+                          .from("clients")
+                          .update({ client_logo: urlData.publicUrl })
+                          .eq("id", clientId);
+                        queryClient.invalidateQueries({ queryKey: ["client", clientId] });
+                        toast.success("Logo berhasil diperbarui");
+                      } catch (err: any) {
+                        toast.error("Gagal upload logo: " + err.message);
+                      } finally {
+                        setUploadingLogo(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold">{client.name}</h1>
