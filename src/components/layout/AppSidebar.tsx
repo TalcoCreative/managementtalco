@@ -2,7 +2,7 @@ import {
   Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
-  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User,
+  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -37,6 +37,7 @@ const employeeItems: NavItem[] = [
   { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
+  { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
 ];
 
 // ── Reports & Letters ───────────────────────────────────
@@ -140,8 +141,8 @@ export function AppSidebar() {
         : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
     }`;
 
-  // profile_settings is always visible to all users
-  const filterItems = (items: NavItem[]) => items.filter(i => i.featureKey === "profile_settings" || canView(i.featureKey));
+  // profile_settings and personal_notes are always visible to all users
+  const filterItems = (items: NavItem[]) => items.filter(i => i.featureKey === "profile_settings" || i.featureKey === "personal_notes" || canView(i.featureKey));
 
   const renderGroup = (label: string, items: NavItem[]) => {
     const visible = filterItems(items);
