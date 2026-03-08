@@ -158,6 +158,8 @@ export const mapCompanySettingsToPdfSettings = (
     giverRole: settingsMap.pdf_giver_role || defaultPdfSettings.giverRole,
     receiverRole: settingsMap.pdf_receiver_role || defaultPdfSettings.receiverRole,
     showSignature: settingsMap.pdf_show_signature !== "false",
+    stampUrl: settingsMap.company_stamp,
+    showStamp: settingsMap.pdf_show_stamp === "true",
     logoWidth: Number(settingsMap.pdf_logo_width) || defaultPdfSettings.logoWidth,
     logoHeight: Number(settingsMap.pdf_logo_height) || defaultPdfSettings.logoHeight,
     primaryColor: parseColorFromSettings(settingsMap.pdf_primary_color ?? undefined),
