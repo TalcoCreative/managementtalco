@@ -262,7 +262,7 @@ export function MobileBottomNav() {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </SheetContent>
       </Sheet>
     </>
