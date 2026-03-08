@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Home, LayoutDashboard, BarChart3, Camera, FileText,
   Users, Video, Menu,
@@ -11,7 +11,9 @@ interface HubNavItem {
   title: string;
   icon: React.ElementType;
   gradient: string;
-  onClick: () => void;
+  pathPrefix: string;
+  getPath: () => string;
+  enabled: boolean;
 }
 
 interface HubBottomNavProps {
@@ -37,58 +39,68 @@ export function HubBottomNav({
   availableFeatures,
 }: HubBottomNavProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const allFeatures: (HubNavItem & { enabled: boolean })[] = [
+  const allFeatures: HubNavItem[] = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
       gradient: "from-[hsl(222,72%,52%)] to-[hsl(222,60%,62%)]",
-      onClick: () => { navigate(`/dashboard/${dashboardSlug}`); setMoreOpen(false); },
+      pathPrefix: "/dashboard/",
+      getPath: () => `/dashboard/${dashboardSlug}`,
       enabled: availableFeatures.hasProjects && !!dashboardSlug,
     },
     {
       title: "Reports",
       icon: BarChart3,
       gradient: "from-[hsl(152,48%,46%)] to-[hsl(152,48%,56%)]",
-      onClick: () => { navigate(`/reports/${dashboardSlug}`); setMoreOpen(false); },
+      pathPrefix: "/reports/",
+      getPath: () => `/reports/${dashboardSlug}`,
       enabled: availableFeatures.hasReports && !!dashboardSlug,
     },
     {
       title: "Social Media",
       icon: Camera,
       gradient: "from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)]",
-      onClick: () => { navigate(`/social-media/client/${socialMediaSlug}`); setMoreOpen(false); },
+      pathPrefix: "/social-media/client/",
+      getPath: () => `/social-media/client/${socialMediaSlug}`,
       enabled: availableFeatures.hasSocialMedia && !!socialMediaSlug,
     },
     {
-      title: "Editorial Plan",
+      title: "Editorial",
       icon: FileText,
       gradient: "from-[hsl(270,60%,55%)] to-[hsl(280,50%,65%)]",
-      onClick: () => { navigate(`/ep-list/${dashboardSlug}`); setMoreOpen(false); },
+      pathPrefix: "/ep-list/",
+      getPath: () => `/ep-list/${dashboardSlug}`,
       enabled: availableFeatures.hasEditorialPlans && !!dashboardSlug,
     },
     {
       title: "Meeting",
       icon: Users,
       gradient: "from-[hsl(240,60%,58%)] to-[hsl(250,50%,68%)]",
-      onClick: () => { navigate(`/meeting-list/${dashboardSlug}`); setMoreOpen(false); },
+      pathPrefix: "/meeting-list/",
+      getPath: () => `/meeting-list/${dashboardSlug}`,
       enabled: availableFeatures.hasMeetings && !!dashboardSlug,
     },
     {
       title: "Shooting",
       icon: Video,
       gradient: "from-[hsl(330,60%,55%)] to-[hsl(340,50%,65%)]",
-      onClick: () => { navigate(`/shooting-list/${dashboardSlug}`); setMoreOpen(false); },
+      pathPrefix: "/shooting-list/",
+      getPath: () => `/shooting-list/${dashboardSlug}`,
       enabled: availableFeatures.hasShootings && !!dashboardSlug,
     },
   ];
 
   const available = allFeatures.filter((f) => f.enabled);
+  const isHubHome = location.pathname.startsWith(`/hub/`);
 
-  // Show up to 2 primary items in the bar + Home + Back + More
+  // Show up to 2 primary items in the bar + Hub + Back + More
   const primaryItems = available.slice(0, 2);
   const hasMore = available.length > 2;
+
+  const isActive = (item: HubNavItem) => location.pathname.startsWith(item.pathPrefix);
 
   return (
     <>
@@ -109,27 +121,50 @@ export function HubBottomNav({
           {/* Home (Hub) */}
           <button
             onClick={() => navigate(`/hub/${clientSlug}`)}
-            className="flex flex-col items-center justify-center gap-1 w-full h-full text-primary transition-all duration-200 active:scale-95"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 active:scale-95",
+              isHubHome ? "text-primary" : "text-muted-foreground"
+            )}
           >
-            <div className="flex items-center justify-center w-10 h-7 rounded-full bg-primary/10">
+            <div className={cn(
+              "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
+              isHubHome && "bg-primary/10"
+            )}>
               <Home className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-semibold tracking-wide">Hub</span>
+            <span className={cn(
+              "text-[10px] font-medium tracking-wide",
+              isHubHome && "font-semibold"
+            )}>Hub</span>
           </button>
 
           {/* Primary feature shortcuts */}
-          {primaryItems.map((item) => (
-            <button
-              key={item.title}
-              onClick={item.onClick}
-              className="flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground transition-all duration-200 active:scale-95"
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium tracking-wide truncate max-w-[56px]">
-                {item.title}
-              </span>
-            </button>
-          ))}
+          {primaryItems.map((item) => {
+            const active = isActive(item);
+            return (
+              <button
+                key={item.title}
+                onClick={() => navigate(item.getPath())}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 active:scale-95",
+                  active ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <div className={cn(
+                  "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
+                  active && "bg-primary/10"
+                )}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium tracking-wide truncate max-w-[56px]",
+                  active && "font-semibold"
+                )}>
+                  {item.title}
+                </span>
+              </button>
+            );
+          })}
 
           {/* More */}
           {hasMore && (
@@ -160,22 +195,31 @@ export function HubBottomNav({
           </SheetHeader>
           <div className="mt-4 flex-1 overflow-y-auto overscroll-contain">
             <div className="grid grid-cols-3 gap-3 pb-4">
-              {available.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={item.onClick}
-                  className="flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 hover:bg-muted/50 active:scale-[0.96]"
-                >
-                  <div
-                    className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center shadow-lg`}
+              {available.map((item) => {
+                const active = isActive(item);
+                return (
+                  <button
+                    key={item.title}
+                    onClick={() => { navigate(item.getPath()); setMoreOpen(false); }}
+                    className={cn(
+                      "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-200 hover:bg-muted/50 active:scale-[0.96]",
+                      active && "bg-primary/8"
+                    )}
                   >
-                    <item.icon className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-[11px] font-medium text-foreground text-center leading-tight line-clamp-2">
-                    {item.title}
-                  </span>
-                </button>
-              ))}
+                    <div
+                      className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${item.gradient} flex items-center justify-center shadow-lg`}
+                    >
+                      <item.icon className="h-5 w-5 text-white" />
+                    </div>
+                    <span className={cn(
+                      "text-[11px] font-medium text-foreground text-center leading-tight line-clamp-2",
+                      active && "text-primary font-semibold"
+                    )}>
+                      {item.title}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </SheetContent>
