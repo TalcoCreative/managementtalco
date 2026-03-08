@@ -18,6 +18,7 @@ import { Clock, UserCheck, Briefcase, TrendingUp, Calendar, ChevronRight, ArrowU
 import { format, differenceInHours, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 const statusLabels: Record<string, string> = {
   pending: "Pending",
