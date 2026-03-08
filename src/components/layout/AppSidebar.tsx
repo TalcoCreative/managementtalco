@@ -16,19 +16,31 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 type NavItem = { title: string; url: string; icon: any; featureKey: string };
 
-// ── Navigation ──────────────────────────────────────────
-const navigationItems: NavItem[] = [
+// ── Main ────────────────────────────────────────────────
+const mainItems: NavItem[] = [
   { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
   { title: "Clients", url: "/clients", icon: Building2, featureKey: "clients" },
   { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
   { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
   { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
+];
+
+// ── Operations ──────────────────────────────────────────
+const operationsItems: NavItem[] = [
   { title: "Shooting", url: "/shooting", icon: Video, featureKey: "shooting" },
   { title: "Meeting", url: "/meeting", icon: CalendarClock, featureKey: "meeting" },
+  { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
+];
+
+// ── Employee ────────────────────────────────────────────
+const employeeItems: NavItem[] = [
   { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
-  { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
+];
+
+// ── Reports & Letters ───────────────────────────────────
+const reportsItems: NavItem[] = [
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
   { title: "Surat", url: "/letters", icon: FileText, featureKey: "letters" },
 ];
