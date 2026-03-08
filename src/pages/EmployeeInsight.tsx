@@ -510,6 +510,32 @@ export default function EmployeeInsight() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
+                  <XCircle className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">{attendanceKpis.lateCount}x</div>
+                  <p className="text-xs text-muted-foreground">Kali terlambat</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Total Jam Telat</CardTitle>
+                  <Clock className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">
+                    {attendanceKpis.totalLateMinutes >= 60 
+                      ? `${attendanceKpis.totalLateHours}h`
+                      : `${attendanceKpis.totalLateMinutes}m`
+                    }
+                  </div>
+                  <p className="text-xs text-muted-foreground">{attendanceKpis.totalLateMinutes} menit total</p>
+                </CardContent>
+              </Card>
+
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Rata-rata Masuk</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
