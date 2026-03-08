@@ -1,0 +1,2 @@
+ALTER TABLE public.letters DROP CONSTRAINT letters_category_code_check;
+ALTER TABLE public.letters ADD CONSTRAINT letters_category_code_check CHECK (category_code = ANY (ARRAY['HR'::text, 'FIN'::text, 'ADM'::text, 'MKT'::text, 'PRJ'::text, 'GEN'::text, 'SLIP'::text]));
