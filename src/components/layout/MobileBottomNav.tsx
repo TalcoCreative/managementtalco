@@ -1,4 +1,37 @@
-import { Home, CheckSquare, Briefcase, Calendar, Menu } from "lucide-react";
+import {
+  Home,
+  CheckSquare,
+  Briefcase,
+  Calendar,
+  Menu,
+  Users,
+  Camera,
+  Video,
+  CalendarOff,
+  Receipt,
+  Package,
+  PartyPopper,
+  BarChart3,
+  FileText,
+  Megaphone,
+  Palette,
+  Hammer,
+  UserCog,
+  LayoutDashboard,
+  TrendingUp,
+  DollarSign,
+  Settings,
+  Mail,
+  Shield,
+  Wrench,
+  Target,
+  Search,
+  Building2,
+  PieChart,
+  GraduationCap,
+  Star,
+  Sparkles,
+} from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -14,31 +47,75 @@ const primaryTabs = [
   { title: "More", url: "#more", icon: Menu, featureKey: "__more__" },
 ];
 
-const moreItems = [
-  { title: "Clients", url: "/clients", featureKey: "clients" },
-  
-  { title: "Shooting", url: "/shooting", featureKey: "shooting" },
-  { title: "Meeting", url: "/meeting", featureKey: "meeting" },
-  { title: "Leave", url: "/leave", featureKey: "leave" },
-  { title: "Reimburse", url: "/my-reimbursement", featureKey: "reimburse" },
-  { title: "Asset", url: "/asset", featureKey: "asset" },
-  { title: "Event", url: "/event", featureKey: "event" },
-  { title: "Reports", url: "/reports", featureKey: "reports" },
-  { title: "Form Builder", url: "/forms", featureKey: "form_builder" },
-  { title: "KOL Database", url: "/kol-database", featureKey: "kol_database" },
-  { title: "KOL Campaign", url: "/kol-campaign", featureKey: "kol_campaign" },
-  { title: "Surat", url: "/letters", featureKey: "letters" },
-  { title: "Social Media", url: "/social-media", featureKey: "social_media" },
-  { title: "Editorial Plan", url: "/editorial-plan", featureKey: "editorial_plan" },
-  { title: "Content Builder", url: "/content-builder", featureKey: "content_builder" },
-  { title: "Team", url: "/users", featureKey: "team" },
-  { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard" },
-  { title: "Finance", url: "/finance", featureKey: "finance" },
-  { title: "Recruitment", url: "/recruitment", featureKey: "recruitment" },
-  { title: "Sales", url: "/sales/dashboard", featureKey: "sales_analytics" },
-  { title: "Performance", url: "/performance", featureKey: "performance" },
-  { title: "CEO Dashboard", url: "/ceo-dashboard", featureKey: "ceo_dashboard" },
-  { title: "Role & Access", url: "/system/roles", featureKey: "role_management" },
+interface MoreItem {
+  title: string;
+  url: string;
+  featureKey: string;
+  icon: any;
+  color: string;
+}
+
+interface MoreGroup {
+  label: string;
+  items: MoreItem[];
+}
+
+const moreGroups: MoreGroup[] = [
+  {
+    label: "Work",
+    items: [
+      { title: "Clients", url: "/clients", featureKey: "clients", icon: Users, color: "hsl(222,72%,52%)" },
+      { title: "Shooting", url: "/shooting", featureKey: "shooting", icon: Camera, color: "hsl(152,48%,46%)" },
+      { title: "Meeting", url: "/meeting", featureKey: "meeting", icon: Video, color: "hsl(280,60%,55%)" },
+      { title: "Event", url: "/event", featureKey: "event", icon: PartyPopper, color: "hsl(330,60%,55%)" },
+    ],
+  },
+  {
+    label: "HR & Team",
+    items: [
+      { title: "Leave", url: "/leave", featureKey: "leave", icon: CalendarOff, color: "hsl(38,82%,52%)" },
+      { title: "Reimburse", url: "/my-reimbursement", featureKey: "reimburse", icon: Receipt, color: "hsl(152,48%,46%)" },
+      { title: "Asset", url: "/asset", featureKey: "asset", icon: Package, color: "hsl(222,72%,52%)" },
+      { title: "Team", url: "/users", featureKey: "team", icon: UserCog, color: "hsl(205,72%,52%)" },
+      { title: "HR Dashboard", url: "/hr-dashboard", featureKey: "hr_dashboard", icon: LayoutDashboard, color: "hsl(280,60%,55%)" },
+      { title: "HR Analytics", url: "/hr/analytics", featureKey: "hr_analytics", icon: PieChart, color: "hsl(330,60%,55%)" },
+      { title: "Holiday", url: "/holiday", featureKey: "holiday", icon: Sparkles, color: "hsl(38,82%,52%)" },
+      { title: "Recruitment", url: "/recruitment", featureKey: "recruitment", icon: GraduationCap, color: "hsl(152,48%,46%)" },
+      { title: "Performance", url: "/performance", featureKey: "performance", icon: Star, color: "hsl(38,82%,52%)" },
+    ],
+  },
+  {
+    label: "Content & Media",
+    items: [
+      { title: "Social Media", url: "/social-media", featureKey: "social_media", icon: Megaphone, color: "hsl(330,60%,55%)" },
+      { title: "Editorial Plan", url: "/editorial-plan", featureKey: "editorial_plan", icon: Palette, color: "hsl(280,60%,55%)" },
+      { title: "Content Builder", url: "/content-builder", featureKey: "content_builder", icon: Hammer, color: "hsl(222,72%,52%)" },
+      { title: "KOL Database", url: "/kol-database", featureKey: "kol_database", icon: Search, color: "hsl(205,72%,52%)" },
+      { title: "KOL Campaign", url: "/kol-campaign", featureKey: "kol_campaign", icon: Target, color: "hsl(0,62%,54%)" },
+    ],
+  },
+  {
+    label: "Finance & Sales",
+    items: [
+      { title: "Finance", url: "/finance", featureKey: "finance", icon: DollarSign, color: "hsl(152,48%,46%)" },
+      { title: "Laba Rugi", url: "/income-statement", featureKey: "finance", icon: TrendingUp, color: "hsl(38,82%,52%)" },
+      { title: "Neraca", url: "/balance-sheet", featureKey: "finance", icon: Building2, color: "hsl(222,72%,52%)" },
+      { title: "Sales", url: "/sales/dashboard", featureKey: "sales_analytics", icon: BarChart3, color: "hsl(205,72%,52%)" },
+      { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: Target, color: "hsl(330,60%,55%)" },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { title: "Reports", url: "/reports", featureKey: "reports", icon: FileText, color: "hsl(222,72%,52%)" },
+      { title: "Form Builder", url: "/forms", featureKey: "form_builder", icon: FileText, color: "hsl(280,60%,55%)" },
+      { title: "Letters", url: "/letters", featureKey: "letters", icon: Mail, color: "hsl(38,82%,52%)" },
+      { title: "CEO Dashboard", url: "/ceo-dashboard", featureKey: "ceo_dashboard", icon: LayoutDashboard, color: "hsl(0,62%,54%)" },
+      { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
+      { title: "Email Settings", url: "/email-settings", featureKey: "email_settings", icon: Settings, color: "hsl(222,10%,48%)" },
+      { title: "System Settings", url: "/system-settings", featureKey: "system_settings", icon: Wrench, color: "hsl(222,10%,48%)" },
+    ],
+  },
 ];
 
 export function MobileBottomNav() {
@@ -46,8 +123,16 @@ export function MobileBottomNav() {
   const location = useLocation();
   const { canView } = usePermissions();
 
-  const visiblePrimary = primaryTabs.filter(t => t.featureKey === "__more__" || canView(t.featureKey));
-  const visibleMore = moreItems.filter(i => canView(i.featureKey));
+  const visiblePrimary = primaryTabs.filter(
+    (t) => t.featureKey === "__more__" || canView(t.featureKey)
+  );
+
+  const visibleGroups = moreGroups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((i) => canView(i.featureKey)),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <>
@@ -68,11 +153,15 @@ export function MobileBottomNav() {
                   )}
                 >
                   <tab.icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium tracking-wide">{tab.title}</span>
+                  <span className="text-[10px] font-medium tracking-wide">
+                    {tab.title}
+                  </span>
                 </button>
               );
             }
-            const isActive = location.pathname === tab.url || (tab.url === "/" && location.pathname === "/");
+            const isActive =
+              location.pathname === tab.url ||
+              (tab.url === "/" && location.pathname === "/");
             return (
               <NavLink
                 key={tab.url}
@@ -82,16 +171,22 @@ export function MobileBottomNav() {
                   isActive ? "text-primary" : "text-muted-foreground/60"
                 )}
               >
-                <div className={cn(
-                  "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
-                  isActive && "bg-primary/10"
-                )}>
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
+                    isActive && "bg-primary/10"
+                  )}
+                >
                   <tab.icon className="h-5 w-5" />
                 </div>
-                <span className={cn(
-                  "text-[10px] font-medium tracking-wide",
-                  isActive && "font-semibold"
-                )}>{tab.title}</span>
+                <span
+                  className={cn(
+                    "text-[10px] font-medium tracking-wide",
+                    isActive && "font-semibold"
+                  )}
+                >
+                  {tab.title}
+                </span>
               </NavLink>
             );
           })}
@@ -99,26 +194,63 @@ export function MobileBottomNav() {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl pb-10 max-h-[70vh] border-0 shadow-soft-xl">
+        <SheetContent
+          side="bottom"
+          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl"
+        >
           <SheetHeader>
-            <SheetTitle className="text-base font-semibold">Menu Lainnya</SheetTitle>
+            <SheetTitle className="text-base font-semibold">
+              All Modules
+            </SheetTitle>
           </SheetHeader>
-          <ScrollArea className="mt-4 max-h-[55vh]">
-            <div className="grid grid-cols-3 gap-2.5 pr-2">
-              {visibleMore.map((item) => (
-                <NavLink
-                  key={item.url}
-                  to={item.url}
-                  onClick={() => setMoreOpen(false)}
-                  className={cn(
-                    "flex items-center justify-center rounded-2xl px-3 py-3.5 text-xs font-medium transition-all duration-200 text-center tap-target",
-                    location.pathname === item.url
-                      ? "bg-primary/8 text-primary shadow-soft"
-                      : "bg-muted/30 text-foreground hover:bg-muted/50 hover:shadow-soft"
-                  )}
-                >
-                  {item.title}
-                </NavLink>
+          <ScrollArea className="mt-3 max-h-[65vh]">
+            <div className="space-y-5 pr-2 pb-4">
+              {visibleGroups.map((group) => (
+                <div key={group.label}>
+                  <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2 px-1">
+                    {group.label}
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {group.items.map((item) => {
+                      const isActive = location.pathname === item.url;
+                      return (
+                        <NavLink
+                          key={item.url}
+                          to={item.url}
+                          onClick={() => setMoreOpen(false)}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all duration-200 tap-target active:scale-[0.96]",
+                            isActive
+                              ? "bg-primary/8 shadow-sm"
+                              : "hover:bg-muted/50"
+                          )}
+                        >
+                          <div
+                            className="flex items-center justify-center w-10 h-10 rounded-xl"
+                            style={{
+                              backgroundColor: `${item.color}15`,
+                            }}
+                          >
+                            <item.icon
+                              className="h-5 w-5"
+                              style={{ color: item.color }}
+                            />
+                          </div>
+                          <span
+                            className={cn(
+                              "text-[10px] font-medium leading-tight text-center",
+                              isActive
+                                ? "text-primary"
+                                : "text-foreground/80"
+                            )}
+                          >
+                            {item.title}
+                          </span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           </ScrollArea>
