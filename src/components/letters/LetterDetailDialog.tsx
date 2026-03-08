@@ -53,6 +53,7 @@ export function LetterDetailDialog({
   const [documentUrl, setDocumentUrl] = useState(letter.document_url || "");
   const [notes, setNotes] = useState(letter.notes || "");
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: companySettings } = useQuery({
     queryKey: ["company-settings-letter-detail"],
