@@ -129,6 +129,8 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
         pdf_giver_role: dbSettings.pdf_giver_role || defaultSettings.pdf_giver_role,
         pdf_receiver_role: dbSettings.pdf_receiver_role || defaultSettings.pdf_receiver_role,
         pdf_show_signature: dbSettings.pdf_show_signature !== "false",
+        company_stamp: dbSettings.company_stamp,
+        pdf_show_stamp: dbSettings.pdf_show_stamp === "true",
         pdf_logo_width: Number(dbSettings.pdf_logo_width) || defaultSettings.pdf_logo_width,
         pdf_logo_height: Number(dbSettings.pdf_logo_height) || defaultSettings.pdf_logo_height,
         pdf_primary_color: dbSettings.pdf_primary_color || defaultSettings.pdf_primary_color,
