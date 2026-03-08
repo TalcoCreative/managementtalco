@@ -313,6 +313,13 @@ export default function HRAnalytics() {
         : autoClockoutCount > 0 ? 100 : 0)
       : null;
 
+    // Late stats
+    const lateCount = filteredAttendance.filter(a => a.late_status === 'Late').length;
+    const compareLateCount = filteredCompareAttendance.filter(a => a.late_status === 'Late').length;
+    const lateChange = hasComparison && compareLateCount > 0
+      ? Math.round((lateCount - compareLateCount) / compareLateCount * 100)
+      : hasComparison ? (lateCount > 0 ? 100 : 0) : null;
+
     return {
       totalEmployees,
       totalWorkHours,
@@ -327,6 +334,8 @@ export default function HRAnalytics() {
       avgProductivity,
       workHoursChange,
       autoClockoutChange,
+      lateCount,
+      lateChange,
     };
   }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth]);
 
@@ -487,7 +496,7 @@ export default function HRAnalytics() {
         </Card>
 
         {/* KPI Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-7">
+        <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
@@ -576,6 +585,27 @@ export default function HRAnalytics() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">Periode ini</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
+              <Clock className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{kpis.lateCount}x</div>
+              {kpis.lateChange !== null ? (
+                <div className="flex items-center text-xs">
+                  {kpis.lateChange <= 0 ? (
+                    <><ArrowDownRight className="h-3 w-3 text-green-500" /><span className="text-green-500">{kpis.lateChange}%</span></>
+                  ) : (
+                    <><ArrowUpRight className="h-3 w-3 text-red-500" /><span className="text-red-500">+{kpis.lateChange}%</span></>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Total keterlambatan</p>
               )}
             </CardContent>
           </Card>

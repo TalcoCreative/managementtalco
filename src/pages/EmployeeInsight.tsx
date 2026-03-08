@@ -29,7 +29,8 @@ import {
   ArrowDownRight,
   Coffee,
   Briefcase,
-  Filter
+  Filter,
+  XCircle
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, differenceInMinutes, differenceInHours, eachDayOfInterval } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -226,8 +227,21 @@ export default function EmployeeInsight() {
       return data || [];
     },
   });
+  // Fetch late threshold
+  const { data: lateThreshold } = useQuery({
+    queryKey: ["late-threshold-time"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "late_threshold_time")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.setting_value || "10:00";
+    },
+  });
 
-  // Calculate work minutes helper
+
   const calculateWorkMinutes = (clockIn: string | null, clockOut: string | null, breakMinutes: number = 0) => {
     if (!clockIn || !clockOut) return 0;
     const minutes = differenceInMinutes(parseISO(clockOut), parseISO(clockIn));
@@ -283,6 +297,25 @@ export default function EmployeeInsight() {
       ? Math.round((daysPresent - compareDaysPresent) / compareDaysPresent * 100)
       : 0;
 
+    // Late stats
+    const lateCount = attendance?.filter(a => a.late_status === 'Late').length || 0;
+    
+    // Calculate total late minutes using threshold
+    let totalLateMinutes = 0;
+    if (lateThreshold) {
+      const [threshH, threshM] = lateThreshold.split(':').map(Number);
+      const threshTotalMin = threshH * 60 + threshM;
+      attendance?.filter(a => a.late_status === 'Late' && a.clock_in).forEach(a => {
+        const clockIn = parseISO(a.clock_in!);
+        const clockInTotalMin = clockIn.getHours() * 60 + clockIn.getMinutes();
+        if (clockInTotalMin > threshTotalMin) {
+          totalLateMinutes += (clockInTotalMin - threshTotalMin);
+        }
+      });
+    }
+
+    const totalLateHours = Math.round(totalLateMinutes / 60 * 10) / 10;
+
     return {
       totalHours,
       daysPresent,
@@ -292,8 +325,11 @@ export default function EmployeeInsight() {
       totalBreakMinutes,
       hoursChange,
       daysChange,
+      lateCount,
+      totalLateMinutes,
+      totalLateHours,
     };
-  }, [attendance, compareAttendance]);
+  }, [attendance, compareAttendance, lateThreshold]);
 
   // Calculate activity KPIs
   const activityKpis = useMemo(() => {
@@ -427,7 +463,7 @@ export default function EmployeeInsight() {
           {/* Attendance Tab */}
           <TabsContent value="attendance" className="space-y-6">
             {/* Attendance KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+            <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Total Jam Kerja</CardTitle>
@@ -470,6 +506,33 @@ export default function EmployeeInsight() {
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-500">{attendanceKpis.autoClockoutDays}</div>
                   <p className="text-xs text-muted-foreground">Hari lupa clock-out</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Terlambat</CardTitle>
+                  <XCircle className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">{attendanceKpis.lateCount}x</div>
+                  <p className="text-xs text-muted-foreground">Kali terlambat</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Total Jam Telat</CardTitle>
+                  <Clock className="h-4 w-4 text-destructive" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-destructive">
+                    {attendanceKpis.totalLateMinutes >= 60 
+                      ? `${attendanceKpis.totalLateHours}h`
+                      : `${attendanceKpis.totalLateMinutes}m`
+                    }
+                  </div>
+                  <p className="text-xs text-muted-foreground">{attendanceKpis.totalLateMinutes} menit total</p>
                 </CardContent>
               </Card>
 
