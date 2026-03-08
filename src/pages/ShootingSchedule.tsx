@@ -497,7 +497,57 @@ export default function ShootingSchedule() {
           </TabsContent>
 
           <TabsContent value="list" className="space-y-4">
-            {shootings?.map(renderShootingCard)}
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Rentang:</span>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-2 text-sm", !dateFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="h-4 w-4" />
+                    {dateFrom ? format(dateFrom, "dd MMM yyyy") : "Dari tanggal"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground">—</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("gap-2 text-sm", !dateTo && "text-muted-foreground")}>
+                    <CalendarIcon className="h-4 w-4" />
+                    {dateTo ? format(dateTo, "dd MMM yyyy") : "Sampai tanggal"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateTo} onSelect={setDateTo} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              {(dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+                  Reset
+                </Button>
+              )}
+              <div className="ml-auto">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setSortAsc(!sortAsc)}>
+                  <ArrowUpDown className="h-4 w-4" />
+                  {sortAsc ? "Terlama → Terbaru" : "Terbaru → Terlama"}
+                </Button>
+              </div>
+            </div>
+
+            {listShootings.length > 0 ? (
+              listShootings.map(renderShootingCard)
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  Tidak ada shooting ditemukan untuk rentang tanggal ini
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
