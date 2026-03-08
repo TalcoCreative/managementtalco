@@ -202,6 +202,23 @@ export function LetterDetailDialog({
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      // Delete activity logs first
+      await supabase.from("letter_activity_logs").delete().eq("letter_id", letter.id);
+      const { error } = await supabase.from("letters").delete().eq("id", letter.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Surat berhasil dihapus!");
+      onOpenChange(false);
+      onUpdate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Gagal menghapus surat");
+    },
+  });
+
   const copyLetterNumber = () => {
     navigator.clipboard.writeText(letter.letter_number);
     toast.success("Nomor surat disalin!");
