@@ -33,7 +33,7 @@ export default function SystemSettings() {
       const { data } = await supabase
         .from("company_settings")
         .select("setting_key, setting_value")
-        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count"]);
+        .in("setting_key", ["ai_api_key", "ai_model", "ai_temperature", "ai_max_tokens", "ai_usage_count", "late_threshold_time"]);
       const map: Record<string, string> = {};
       data?.forEach((s) => {
         map[s.setting_key] = s.setting_value || "";
