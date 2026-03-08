@@ -561,6 +561,54 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
                   </p>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Company Stamp */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Cap / Stempel Perusahaan</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Akan ditampilkan sebagai watermark tipis di tengah slip gaji
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.pdf_show_stamp}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, pdf_show_stamp: checked }))}
+                  />
+                </div>
+
+                {settings.company_stamp ? (
+                  <div className="flex items-center gap-4">
+                    <img 
+                      src={settings.company_stamp} 
+                      alt="Company Stamp" 
+                      className="h-20 w-20 object-contain border rounded p-2"
+                    />
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeFile("stamp")}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Hapus
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, "stamp")}
+                      disabled={uploading}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Gunakan logo atau stempel perusahaan. Format: PNG (transparan lebih baik). Max 2MB
+                    </p>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Styling Tab */}
