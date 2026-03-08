@@ -120,6 +120,7 @@ export function CreateEditorialPlanDialog({
           ep_id: ep.id,
           slide_order: 0,
           status: "proposed",
+          created_by: currentUser.id,
         })
         .select()
         .single();
