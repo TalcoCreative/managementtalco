@@ -69,6 +69,7 @@ import PublicShootingList from "./pages/PublicShootingList";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
+import PersonalNotes from "./pages/PersonalNotes";
 
 const queryClient = new QueryClient();
 
