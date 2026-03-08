@@ -81,6 +81,12 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id);
 
+    // Check for marketplace reports
+    const { count: marketplaceCount } = await supabase
+      .from("marketplace_reports")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
+
     // --- Fetch schedule items (upcoming/recent) ---
     const today = new Date().toISOString().split("T")[0];
 
@@ -169,6 +175,7 @@ Deno.serve(async (req) => {
       hasEditorialPlans: (epCount || 0) > 0,
       hasMeetings: (meetingCount || 0) > 0,
       hasShootings: (shootingCount || 0) > 0,
+      hasMarketplace: (marketplaceCount || 0) > 0,
       schedule: scheduleItems,
       editorialPlans: editorialPlans || [],
     };
@@ -177,6 +184,7 @@ Deno.serve(async (req) => {
       client: client.name,
       scheduleItems: scheduleItems.length,
       editorialPlans: (editorialPlans || []).length,
+      hasMarketplace: response.hasMarketplace,
     });
 
     return new Response(
