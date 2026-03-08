@@ -29,6 +29,7 @@ interface HubBottomNavProps {
     hasMeetings: boolean;
     hasShootings: boolean;
     hasMarketplace?: boolean;
+    hasKolCampaigns?: boolean;
   };
 }
 
