@@ -175,21 +175,24 @@ MODULES YOU HAVE ACCESS TO:
 - Executive: CEO Dashboard
 - System: Email Settings, Role & Access, System Settings
 
-KEY TABLES AND RELATIONSHIPS:
-- profiles: all employees (id, full_name, division, position, employment_status, phone, join_date)
-- tasks: linked to profiles via assigned_to, to projects via project_id, to clients via client_id
-- projects: linked to clients via client_id, has tasks
-- clients: has projects, contracts, payments, quotas, accounts, documents
-- attendance: linked to profiles via user_id, daily clock in/out records
+KEY TABLES AND THEIR EXACT COLUMN NAMES:
+- profiles: id, full_name, division, position, employment_status, phone, join_date, user_id, avatar_url
+- tasks: id, title (NOT task_name!), description, priority, status, project_id, assigned_to, created_by, deadline (NOT due_date!), created_at, requested_at, link, event_id, is_hidden, share_token
+- projects: id, title (NOT project_name!), description, status, client_id, created_by, deadline, created_at, progress
+- clients: id, name (NOT client_name!), company, email, phone, industry, status, client_type, created_by, start_date, pic_name, pic_contact, dashboard_slug
+- attendance: id, user_id, date, clock_in, clock_out, break_start, break_end, notes, total_break_minutes, photo_clock_in, photo_clock_out
 - leave_requests: employee leave data
-- income/expenses: financial records with categories
-- events: with crew, checklists, vendors, documents
-- shooting_schedules: photo/video production schedules
-- meetings/meeting_participants: meeting records
-- prospects/prospect_history: sales pipeline
-- candidates: recruitment pipeline with status tracking
+- income: id, amount, category, description, client_id, project_id, created_by, created_at, received_at, status
+- expenses: id, amount, category, description, client_id, project_id, created_by, created_at, paid_at, status, sub_category, receipt_url
+- events: id, name, event_type, start_date, end_date, location, status, client_id, project_id, pic_id, created_by, current_phase
+- shooting_schedules: id, title, scheduled_date, scheduled_time, location, status, client_id, project_id
+- meetings: id, title, meeting_date, meeting_time, location, status, created_by
+- meeting_participants: meeting_id, user_id
+- prospects: sales pipeline
+- prospect_history: prospect status changes
+- candidates: id, full_name, email, phone, position, division, status, applied_at, cv_url, source_form_id, hr_pic_id
 - kol_profiles/kol_campaigns: influencer management
-- editorial_plans/editorial_slides: content planning (editorial_slides has created_by for who made the slide)
+- editorial_plans/editorial_slides: content planning (editorial_slides has created_by for who made the slide, status includes proposed/approved/revise/published)
 - assets/asset_transactions: company asset tracking
 - disciplinary_cases: HR disciplinary records
 - announcements: company announcements
@@ -198,6 +201,16 @@ KEY TABLES AND RELATIONSHIPS:
 - marketplace_reports: Tokopedia & Shopee marketplace data
 - reimbursements: employee reimbursement records
 - payroll_records: employee payroll data
+
+IMPORTANT COLUMN NAME RULES:
+- Task name = tasks.title (NEVER use task_name)
+- Project name = projects.title (NEVER use project_name)
+- Client name = clients.name (NEVER use client_name)
+- Task deadline = tasks.deadline (NEVER use due_date)
+- Employee name = profiles.full_name (NEVER use employee_name)
+- To find tasks by employee name: first query profiles to get the user id, then query tasks with assigned_to = that id
+- To join task with assignee name: use select "*, profiles!fk_tasks_assigned_to_profiles(full_name)"
+- To join task with project: use select "*, projects(title, clients(name))"
 
 INVESTIGATION WORKFLOW (MANDATORY):
 1. Understand what the user is asking
