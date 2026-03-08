@@ -631,7 +631,7 @@ export default function HRDashboard() {
                   Activity Score per Employee ({format(new Date(startDate), 'dd MMM yyyy')} - {format(new Date(endDate), 'dd MMM yyyy')})
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Skor: Task Created (×1) + Task Completed (×1) + Letters (×1) + KOL Database (×1) + Prospects (×1)
+                  Skor: Task Created (×1) + Task Completed (×1) + Letters (×1) + KOL Database (×1) + Prospects (×1) + EP Published (×1)
                 </p>
               </CardHeader>
               <CardContent>
