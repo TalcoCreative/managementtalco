@@ -217,6 +217,21 @@ export default function Letters() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Semua Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kategori</SelectItem>
+                  <SelectItem value="HR">HR</SelectItem>
+                  <SelectItem value="FIN">Finance</SelectItem>
+                  <SelectItem value="ADM">Admin</SelectItem>
+                  <SelectItem value="MKT">Marketing</SelectItem>
+                  <SelectItem value="PRJ">Project</SelectItem>
+                  <SelectItem value="GEN">General</SelectItem>
+                  <SelectItem value="SLIP">Slip Gaji</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
