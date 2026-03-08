@@ -129,15 +129,16 @@ export default function HRDashboard() {
     },
   });
 
-  // Fetch all users with their attendance
+  // Fetch all users with their attendance (filtered by period)
   const { data: attendance } = useQuery({
-    queryKey: ["hr-attendance"],
+    queryKey: ["hr-attendance", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendance")
         .select("*, profiles(full_name)")
-        .order("date", { ascending: false })
-        .limit(50);
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
