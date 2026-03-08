@@ -229,15 +229,21 @@ export function AIChatPopup() {
     }
   };
 
-  const ip = iconPos ?? getDefaultIconPos();
+  const iconBasePos = getIconCornerPos(iconCorner);
+  const isDraggingIcon = dragOffset && dragInfo.current?.target === "icon";
+  const isDraggingChat = dragOffset && dragInfo.current?.target === "chat";
 
   if (!open) {
+    const iconStyle: React.CSSProperties = isDraggingIcon
+      ? { left: iconBasePos.x + dragOffset.dx, top: iconBasePos.y + dragOffset.dy, transition: "none" }
+      : { left: iconBasePos.x, top: iconBasePos.y, transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" };
+
     return (
       <button
         onPointerDown={handleIconPointerDown}
         onClick={handleIconClick}
-        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center touch-none select-none"
-        style={{ left: ip.x, top: ip.y }}
+        className="fixed z-50 h-14 w-14 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center touch-none select-none"
+        style={iconStyle}
         title="Tassa — Talco Support Assistant"
       >
         <Bot className="h-6 w-6" />
@@ -245,12 +251,15 @@ export function AIChatPopup() {
     );
   }
 
-  const pos = position ?? getDefaultPos();
+  const chatBaseStyle = getChatCornerStyle(chatCorner);
+  const chatStyle: React.CSSProperties = isDraggingChat
+    ? { ...chatBaseStyle, transform: `translate(${dragOffset.dx}px, ${dragOffset.dy}px)`, transition: "none" }
+    : { ...chatBaseStyle, transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)" };
 
   return (
     <div
-      className="fixed z-50 w-[calc(100vw-2rem)] max-w-[420px] h-[min(600px,calc(100vh-6rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
-      style={{ left: pos.x, top: pos.y }}
+      className="fixed z-50 w-[calc(100vw-1.5rem)] max-w-[420px] h-[min(520px,calc(100dvh-6rem))] sm:h-[min(600px,calc(100dvh-5rem))] rounded-2xl border border-border/30 bg-card/95 backdrop-blur-2xl shadow-2xl flex flex-col overflow-hidden"
+      style={chatStyle}
     >
       {/* Draggable Header */}
       <div
