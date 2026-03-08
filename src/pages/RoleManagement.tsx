@@ -277,18 +277,18 @@ export default function RoleManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Nama Role</Label>
+              <Label>Role Name</Label>
               <Input value={newRoleName} onChange={e => setNewRoleName(e.target.value)} placeholder="e.g. Project Manager" />
             </div>
             <div>
-              <Label>Deskripsi (opsional)</Label>
-              <Input value={newRoleDesc} onChange={e => setNewRoleDesc(e.target.value)} placeholder="Deskripsi role..." />
+              <Label>Description (optional)</Label>
+              <Input value={newRoleDesc} onChange={e => setNewRoleDesc(e.target.value)} placeholder="Role description..." />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Batal</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateRole} disabled={saving || !newRoleName.trim()}>
-              {saving ? "Menyimpan..." : "Buat Role"}
+              {saving ? "Saving..." : "Create Role"}
             </Button>
           </DialogFooter>
         </DialogContent>
