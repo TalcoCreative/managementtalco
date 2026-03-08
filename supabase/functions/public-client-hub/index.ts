@@ -87,6 +87,12 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id);
 
+    // Check for KOL campaigns
+    const { count: kolCampaignCount } = await supabase
+      .from("kol_campaigns")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
+
     // --- Fetch schedule items (upcoming/recent) ---
     const today = new Date().toISOString().split("T")[0];
 
