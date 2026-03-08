@@ -434,36 +434,28 @@ export function IncomeStatement() {
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Klien</label>
-              <Select value={selectedClient} onValueChange={(v) => { setSelectedClient(v); setSelectedProject("all"); }}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Semua Klien" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Klien</SelectItem>
-                  {clients?.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={(clients || []).map((c) => ({ value: c.id, label: c.name }))}
+                value={selectedClient}
+                onValueChange={(v) => { setSelectedClient(v); setSelectedProject("all"); }}
+                placeholder="Semua Klien"
+                searchPlaceholder="Cari klien..."
+                defaultOption={{ value: "all", label: "Semua Klien" }}
+                className="w-48"
+              />
             </div>
             
             <div className="space-y-2">
               <label className="text-sm font-medium">Project</label>
-              <Select value={selectedProject} onValueChange={setSelectedProject}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Semua Project" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Project</SelectItem>
-                  {projects?.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={(projects || []).map((p) => ({ value: p.id, label: p.title }))}
+                value={selectedProject}
+                onValueChange={setSelectedProject}
+                placeholder="Semua Project"
+                searchPlaceholder="Cari project..."
+                defaultOption={{ value: "all", label: "Semua Project" }}
+                className="w-48"
+              />
             </div>
             
             <Button
