@@ -172,13 +172,13 @@ export default function SocialMediaModule() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Share2 className="h-8 w-8 text-primary" />
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-social)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Share2 className="h-5 w-5" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold">Social Media</h1>
-              <p className="text-muted-foreground">
-                Monitoring & reporting aktivitas social media
-              </p>
+              <h1 className="section-title">Social Media</h1>
+              <p className="section-subtitle">Monitoring & reporting aktivitas social media</p>
             </div>
           </div>
           <div className="flex gap-2">
