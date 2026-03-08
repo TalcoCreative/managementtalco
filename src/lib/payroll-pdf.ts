@@ -41,6 +41,10 @@ interface PdfSettings {
   receiverRole: string;
   showSignature: boolean;
   
+  // Stamp
+  stampUrl?: string | null;
+  showStamp: boolean;
+  
   // Styling
   logoWidth: number;
   logoHeight: number;
