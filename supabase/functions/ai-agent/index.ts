@@ -411,6 +411,7 @@ async function getSystemOverview(client: any): Promise<any> {
     "assets", "leave_requests", "income", "expenses",
     "editorial_plans", "kol_profiles", "kol_campaigns",
     "announcements", "letters", "disciplinary_cases",
+    "reimbursements", "payroll_records",
   ];
 
   const counts: Record<string, number> = {};
@@ -420,28 +421,31 @@ async function getSystemOverview(client: any): Promise<any> {
         const { count } = await client.from(table).select("*", { count: "exact", head: true });
         counts[table] = count || 0;
       } catch {
-        counts[table] = -1; // table may not exist
+        counts[table] = -1;
       }
     })
   );
 
-  // Today's attendance
   const today = new Date().toISOString().split("T")[0];
+  const thisMonth = new Date();
+  const monthStart = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, "0")}-01`;
+
+  // Today's attendance
   let attendanceSummary: any = {};
   try {
-    const { data: att } = await client.from("attendance").select("clock_in, clock_out").eq("date", today);
+    const { data: att } = await client.from("attendance").select("clock_in, clock_out, notes").eq("date", today);
+    const autoClockout = att?.filter((a: any) => a.notes?.includes("[AUTO CLOCK-OUT")).length || 0;
     attendanceSummary = {
       total: att?.length || 0,
       clocked_in: att?.filter((a: any) => a.clock_in && !a.clock_out).length || 0,
       completed: att?.filter((a: any) => a.clock_in && a.clock_out).length || 0,
+      auto_clockout_today: autoClockout,
     };
   } catch { /* ignore */ }
 
-  // Recent finance
+  // Finance this month
   let financeSummary: any = {};
   try {
-    const thisMonth = new Date();
-    const monthStart = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, "0")}-01`;
     const { data: inc } = await client.from("income").select("amount").gte("created_at", monthStart);
     const { data: exp } = await client.from("expenses").select("amount").gte("created_at", monthStart);
     const totalInc = inc?.reduce((s: number, i: any) => s + (i.amount || 0), 0) || 0;
@@ -454,7 +458,6 @@ async function getSystemOverview(client: any): Promise<any> {
   try {
     const { data: tasks } = await client.from("tasks").select("status");
     if (tasks) {
-      taskSummary = {};
       tasks.forEach((t: any) => {
         const s = t.status || "unknown";
         taskSummary[s] = (taskSummary[s] || 0) + 1;
@@ -462,12 +465,90 @@ async function getSystemOverview(client: any): Promise<any> {
     }
   } catch { /* ignore */ }
 
+  // HR Dashboard: leave requests this month, attendance this month
+  let hrSummary: any = {};
+  try {
+    const { data: leaves } = await client.from("leave_requests").select("status").gte("created_at", monthStart);
+    const leaveCounts: Record<string, number> = {};
+    leaves?.forEach((l: any) => { leaveCounts[l.status] = (leaveCounts[l.status] || 0) + 1; });
+    
+    const { data: monthAtt } = await client.from("attendance").select("clock_in, clock_out, notes").gte("date", monthStart);
+    const totalAutoClockout = monthAtt?.filter((a: any) => a.notes?.includes("[AUTO CLOCK-OUT")).length || 0;
+    
+    const { data: discCases } = await client.from("disciplinary_cases").select("status").gte("created_at", monthStart);
+    
+    hrSummary = {
+      leave_requests_this_month: leaveCounts,
+      attendance_records_this_month: monthAtt?.length || 0,
+      auto_clockouts_this_month: totalAutoClockout,
+      disciplinary_cases_this_month: discCases?.length || 0,
+    };
+  } catch { /* ignore */ }
+
+  // Sales / Prospects summary
+  let salesSummary: any = {};
+  try {
+    const { data: prospects } = await client.from("prospects").select("status, created_at");
+    const prospectCounts: Record<string, number> = {};
+    let thisMonthProspects = 0;
+    prospects?.forEach((p: any) => {
+      prospectCounts[p.status] = (prospectCounts[p.status] || 0) + 1;
+      if (p.created_at >= monthStart) thisMonthProspects++;
+    });
+    salesSummary = {
+      total_prospects: prospects?.length || 0,
+      by_status: prospectCounts,
+      new_this_month: thisMonthProspects,
+    };
+  } catch { /* ignore */ }
+
+  // Recruitment summary
+  let recruitmentSummary: any = {};
+  try {
+    const { data: candidates } = await client.from("candidates").select("status, applied_at");
+    const candCounts: Record<string, number> = {};
+    let thisMonthApplicants = 0;
+    candidates?.forEach((c: any) => {
+      candCounts[c.status] = (candCounts[c.status] || 0) + 1;
+      if (c.applied_at >= monthStart) thisMonthApplicants++;
+    });
+    recruitmentSummary = {
+      total_candidates: candidates?.length || 0,
+      by_status: candCounts,
+      new_applicants_this_month: thisMonthApplicants,
+    };
+  } catch { /* ignore */ }
+
+  // Editorial Plan summary
+  let editorialSummary: any = {};
+  try {
+    const { count: totalPlans } = await client.from("editorial_plans").select("*", { count: "exact", head: true });
+    const { data: slides } = await client.from("editorial_slides").select("status, created_at");
+    const slideCounts: Record<string, number> = {};
+    let thisMonthSlides = 0;
+    slides?.forEach((s: any) => {
+      slideCounts[s.status] = (slideCounts[s.status] || 0) + 1;
+      if (s.created_at >= monthStart) thisMonthSlides++;
+    });
+    editorialSummary = {
+      total_plans: totalPlans || 0,
+      total_slides: slides?.length || 0,
+      slides_by_status: slideCounts,
+      slides_created_this_month: thisMonthSlides,
+    };
+  } catch { /* ignore */ }
+
   return {
     entity_counts: counts,
     today_attendance: attendanceSummary,
     this_month_finance: financeSummary,
     task_status_breakdown: taskSummary,
+    hr_dashboard: hrSummary,
+    sales_analytics: salesSummary,
+    recruitment: recruitmentSummary,
+    editorial_plan: editorialSummary,
     date: today,
+    month_start: monthStart,
   };
 }
 
