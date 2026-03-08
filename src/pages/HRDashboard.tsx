@@ -961,18 +961,21 @@ export default function HRDashboard() {
           {/* Attendance Tab */}
           <TabsContent value="attendance">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Recent Attendance</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleAutoClockout}
-                  disabled={autoClockoutLoading}
-                  className="gap-2"
-                >
-                  <Clock className="h-4 w-4" />
-                  {autoClockoutLoading ? "Processing..." : "Auto Clock-Out yang Lupa"}
-                </Button>
+              <CardHeader className="flex flex-col gap-4">
+                <div className="flex flex-row items-center justify-between">
+                  <CardTitle>Recent Attendance</CardTitle>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleAutoClockout}
+                    disabled={autoClockoutLoading}
+                    className="gap-2"
+                  >
+                    <Clock className="h-4 w-4" />
+                    {autoClockoutLoading ? "Processing..." : "Auto Clock-Out yang Lupa"}
+                  </Button>
+                </div>
+                <LateThresholdSetting />
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[500px]">
