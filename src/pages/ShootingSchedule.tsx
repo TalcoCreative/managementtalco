@@ -217,6 +217,23 @@ export default function ShootingSchedule() {
   // Get dates that have shootings for calendar highlighting
   const shootingDates = shootings?.map(s => new Date(s.scheduled_date)) || [];
   
+  // Filtered & sorted shootings for list view
+  const listShootings = useMemo(() => {
+    let filtered = shootings || [];
+    if (dateFrom) {
+      filtered = filtered.filter(s => new Date(s.scheduled_date) >= dateFrom);
+    }
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(s => new Date(s.scheduled_date) <= endOfDay);
+    }
+    return [...filtered].sort((a, b) => {
+      const diff = new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime();
+      return sortAsc ? diff : -diff;
+    });
+  }, [shootings, dateFrom, dateTo, sortAsc]);
+
   // Filter shootings for selected date
   const selectedDateShootings = selectedDate 
     ? shootings?.filter(s => isSameDay(new Date(s.scheduled_date), selectedDate))
