@@ -290,6 +290,7 @@ function KpiCard({ icon, label, value, color }: { icon: React.ReactNode; label: 
 function TaskSection({
   icon,
   title,
+  accentColor,
   tasks,
   emptyText,
   getSubtext,
@@ -298,6 +299,7 @@ function TaskSection({
 }: {
   icon: React.ReactNode;
   title: string;
+  accentColor?: string;
   tasks: any[];
   emptyText: string;
   getSubtext: (task: any) => string;
@@ -305,10 +307,10 @@ function TaskSection({
   formatDate: (d: string | null) => string;
 }) {
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="border-0 shadow-float overflow-hidden card-accent" style={{ '--accent-color': accentColor || 'var(--primary)' } as React.CSSProperties}>
       <div className="flex items-center justify-between p-4 pb-2">
         <div className="flex items-center gap-2">
-          <div className="text-muted-foreground">{icon}</div>
+          <div style={{ color: `hsl(${accentColor || 'var(--primary)'})` }}>{icon}</div>
           <h3 className="font-semibold text-sm sm:text-base">{title}</h3>
           {tasks.length > 0 && (
             <Badge variant="secondary" className="text-xs h-5 px-1.5 rounded-full">
