@@ -52,7 +52,7 @@ export default function Forms() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editForm, setEditForm] = useState<Form | null>(null);
   const [deleteForm, setDeleteForm] = useState<Form | null>(null);
-  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true, theme: "clean" });
+  const [newForm, setNewForm] = useState({ name: "", description: "", is_public: true, theme: "clean", form_template: "" });
   const [embedForm, setEmbedForm] = useState<Form | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
