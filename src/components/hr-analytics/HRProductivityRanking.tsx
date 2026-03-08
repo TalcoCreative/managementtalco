@@ -25,6 +25,7 @@ export function HRProductivityRanking({
   meetings,
   shootings,
   events,
+  publishedSlides = [],
   onViewEmployee 
 }: HRProductivityRankingProps) {
   const rankings = useMemo(() => {
