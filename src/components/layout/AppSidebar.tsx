@@ -140,7 +140,8 @@ export function AppSidebar() {
         : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
     }`;
 
-  const filterItems = (items: NavItem[]) => items.filter(i => canView(i.featureKey));
+  // profile_settings is always visible to all users
+  const filterItems = (items: NavItem[]) => items.filter(i => i.featureKey === "profile_settings" || canView(i.featureKey));
 
   const renderGroup = (label: string, items: NavItem[]) => {
     const visible = filterItems(items);
