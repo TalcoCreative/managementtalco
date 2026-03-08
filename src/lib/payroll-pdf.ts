@@ -73,7 +73,8 @@ const defaultPdfSettings: PdfSettings = {
   giverRole: "Human Resources",
   receiverRole: "Karyawan",
   showSignature: true,
-  logoWidth: 40,  // Larger default for better visibility
+  showStamp: false,
+  logoWidth: 40,
   logoHeight: 40,
   primaryColor: [41, 128, 185],
   headerFontSize: 18,
