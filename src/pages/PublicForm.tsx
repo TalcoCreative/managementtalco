@@ -154,6 +154,56 @@ export default function PublicForm() {
         if (aErr) throw aErr;
       }
 
+      // Auto-insert into KOL Database if form_template is 'kol'
+      if (form!.form_template === "kol") {
+        try {
+          const getAnswer = (labelKey: string) => {
+            const q = questions.find(q => q.label.toLowerCase().includes(labelKey.toLowerCase()));
+            return q ? (answers[q.id] || "").trim() : "";
+          };
+          const getNum = (labelKey: string) => {
+            const val = getAnswer(labelKey);
+            return val ? parseInt(val, 10) || 0 : null;
+          };
+
+          const kolName = getAnswer("nama lengkap");
+          const kolUsername = getAnswer("username");
+
+          if (kolName && kolUsername) {
+            // Use a system user ID for created_by since this is public
+            const kolData: any = {
+              name: kolName,
+              username: kolUsername.replace(/^@/, ""),
+              industry: getAnswer("industry") || null,
+              instagram_url: getAnswer("link instagram") || null,
+              ig_followers: getNum("followers instagram"),
+              tiktok_url: getAnswer("link tiktok") || null,
+              tiktok_followers: getNum("followers tiktok"),
+              twitter_url: getAnswer("link twitter") || null,
+              twitter_followers: getNum("followers twitter"),
+              youtube_url: getAnswer("link youtube") || null,
+              youtube_followers: getNum("subscribers youtube"),
+              linkedin_url: getAnswer("link linkedin") || null,
+              linkedin_followers: getNum("followers linkedin"),
+              threads_url: getAnswer("link threads") || null,
+              threads_followers: getNum("followers threads"),
+              rate_ig_story: getNum("rate ig story"),
+              rate_ig_feed: getNum("rate ig feed"),
+              rate_ig_reels: getNum("rate ig reels"),
+              rate_tiktok_video: getNum("rate tiktok"),
+              rate_youtube_video: getNum("rate youtube"),
+              notes: getAnswer("catatan") || null,
+              created_by: form!.id, // use form id as reference
+              updated_by: form!.id,
+            };
+
+            await supabase.from("kol_database").insert(kolData);
+          }
+        } catch (kolErr) {
+          console.error("KOL auto-insert error:", kolErr);
+        }
+      }
+
       setSubmitted(true);
     } catch (err: any) {
       toast.error("Gagal mengirim: " + err.message);
