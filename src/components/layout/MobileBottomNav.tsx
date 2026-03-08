@@ -35,15 +35,24 @@ interface MoreGroup {
 
 const moreGroups: MoreGroup[] = [
   {
-    label: "Navigation",
+    label: "Operations",
     items: [
-      { title: "Clients", url: "/clients", featureKey: "clients", icon: Building2, color: "hsl(222,72%,52%)" },
       { title: "Shooting", url: "/shooting", featureKey: "shooting", icon: Camera, color: "hsl(152,48%,46%)" },
       { title: "Meeting", url: "/meeting", featureKey: "meeting", icon: CalendarClock, color: "hsl(280,60%,55%)" },
+      { title: "Event", url: "/event", featureKey: "event", icon: PartyPopper, color: "hsl(330,60%,55%)" },
+    ],
+  },
+  {
+    label: "Employee",
+    items: [
       { title: "Leave", url: "/leave", featureKey: "leave", icon: CalendarOff, color: "hsl(38,82%,52%)" },
       { title: "Reimburse", url: "/my-reimbursement", featureKey: "reimburse", icon: Receipt, color: "hsl(152,48%,46%)" },
       { title: "Asset", url: "/asset", featureKey: "asset", icon: Package, color: "hsl(222,72%,52%)" },
-      { title: "Event", url: "/event", featureKey: "event", icon: PartyPopper, color: "hsl(330,60%,55%)" },
+    ],
+  },
+  {
+    label: "Reports & Letters",
+    items: [
       { title: "Reports", url: "/reports", featureKey: "reports", icon: BarChart3, color: "hsl(205,72%,52%)" },
       { title: "Surat", url: "/letters", featureKey: "letters", icon: FileText, color: "hsl(38,82%,52%)" },
     ],
