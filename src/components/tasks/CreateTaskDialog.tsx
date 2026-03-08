@@ -16,10 +16,6 @@ import { RichBriefEditor, BriefData } from "@/components/tasks/RichBriefEditor";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 
-interface TableData {
-  headers: string[];
-  rows: string[][];
-}
 
 interface LinkAttachment {
   name: string;
