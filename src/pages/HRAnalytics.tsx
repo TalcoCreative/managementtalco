@@ -505,16 +505,14 @@ export default function HRAnalytics() {
           <span className="divider-label">Key Metrics</span>
         </div>
         <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Karyawan</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpis.totalEmployees}</div>
-              <p className="text-xs text-muted-foreground">Aktif periode ini</p>
-            </CardContent>
-          </Card>
+          <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-hr)' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Total Karyawan</span>
+              <div className="kpi-icon w-8 h-8"><Users className="h-4 w-4" /></div>
+            </div>
+            <div className="kpi-value">{kpis.totalEmployees}</div>
+            <p className="text-xs text-muted-foreground">Aktif periode ini</p>
+          </div>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
