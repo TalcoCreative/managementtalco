@@ -414,7 +414,7 @@ export const generatePayrollPDF = async (
     if (settings.signatureUrl) {
       try {
         const sigData = await loadImage(settings.signatureUrl);
-        doc.addImage(sigData, "PNG", sigCol1 - 10, yPos, 45, 22);
+        doc.addImage(sigData.dataUrl, "PNG", sigCol1 - 10, yPos, 45, 22);
       } catch (error) {
         console.log("Failed to load signature:", error);
       }
