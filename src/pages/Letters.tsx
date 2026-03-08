@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { CreateLetterDialog } from "@/components/letters/CreateLetterDialog";
 import { LetterDetailDialog } from "@/components/letters/LetterDetailDialog";
-import { generatePayrollPDF, mapCompanySettingsToPdfSettings } from "@/lib/payroll-pdf";
+import { generatePayrollPDF } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
 
 const ENTITIES = [
