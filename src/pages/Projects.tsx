@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff, Pencil, Archive, Filter } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Clock, Eye, EyeOff, Pencil, Archive, Filter, FolderKanban } from "lucide-react";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
 import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectDetailDialog } from "@/components/projects/ProjectDetailDialog";
@@ -458,7 +458,15 @@ export default function Projects() {
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Projects</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-projects)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <FolderKanban className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Projects</h1>
+              <p className="section-subtitle">Kelola semua project</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Popover>
               <PopoverTrigger asChild>

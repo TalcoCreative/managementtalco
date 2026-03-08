@@ -314,16 +314,21 @@ const Meeting = () => {
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold">
-              Meeting Management
-              {filterClient && (
-                <span className="text-primary text-lg ml-2 font-normal">
-                  - {filterClient.name}
-                </span>
-              )}
-            </h1>
-            <p className="text-muted-foreground text-sm truncate">Kelola jadwal meeting</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-meeting)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">
+                Meeting Management
+                {filterClient && (
+                  <span className="text-foreground/60 text-base ml-2 font-normal">
+                    - {filterClient.name}
+                  </span>
+                )}
+              </h1>
+              <p className="section-subtitle">Kelola jadwal meeting</p>
+            </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
             <MeetingNotifications onMeetingClick={setSelectedMeeting} />

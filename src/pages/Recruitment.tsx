@@ -205,9 +205,14 @@ export default function Recruitment() {
       <div className="space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Recruitment</h1>
-            <p className="text-muted-foreground text-sm sm:text-base">Database kandidat karyawan</p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-recruitment)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Recruitment</h1>
+              <p className="section-subtitle">Database kandidat karyawan</p>
+            </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={() => navigate("/recruitment/dashboard")} className="h-12 sm:h-10">

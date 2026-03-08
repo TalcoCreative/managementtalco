@@ -442,7 +442,15 @@ export default function Schedule() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Schedule</h1>
+            <div className="section-header !mb-0" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>
+              <div className="section-icon">
+                <CalendarIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="section-title">Schedule</h1>
+                <p className="section-subtitle">Kalender semua aktivitas</p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <Button
                 variant={viewMode === "calendar" ? "default" : "outline"}

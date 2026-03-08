@@ -17,13 +17,13 @@ export default function SocialMedia() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Share2 className="h-8 w-8 text-primary" />
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-social)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Share2 className="h-5 w-5" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold">Social Media Management</h1>
-              <p className="text-muted-foreground">
-                Post, schedule, dan monitor konten social media
-              </p>
+              <h1 className="section-title">Social Media Management</h1>
+              <p className="section-subtitle">Post, schedule, dan monitor konten social media</p>
             </div>
           </div>
           <Button variant="outline" onClick={() => navigate("/social-media/settings")}>

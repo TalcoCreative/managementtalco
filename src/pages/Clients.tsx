@@ -141,7 +141,15 @@ export default function Clients() {
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Clients</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-clients)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Clients</h1>
+              <p className="section-subtitle">Kelola semua client & internal</p>
+            </div>
+          </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[120px] sm:w-[150px] h-10 sm:h-9">

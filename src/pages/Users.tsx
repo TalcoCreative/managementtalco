@@ -210,7 +210,15 @@ export default function Users() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Team Members</h1>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <User className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Team Members</h1>
+              <p className="section-subtitle">Kelola tim perusahaan</p>
+            </div>
+          </div>
           <div className="flex gap-2">
             {isSuperAdmin && (
               <Button onClick={() => setCreateDialogOpen(true)}>

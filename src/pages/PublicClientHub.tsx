@@ -203,9 +203,9 @@ export default function PublicClientHub() {
         {/* Quick Access Cards */}
         {availableCards.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
-              Akses Cepat
-            </h2>
+            <div className="section-divider !my-2">
+              <span className="divider-label">Akses Cepat</span>
+            </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 sm:gap-4">
               {availableCards.map((card) => (
                 <button

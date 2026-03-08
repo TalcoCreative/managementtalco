@@ -236,11 +236,14 @@ export default function Letters() {
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Manajemen Surat</h1>
-            <p className="text-muted-foreground">
-              Kelola surat dengan nomor otomatis terstruktur
-            </p>
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-meeting)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">Manajemen Surat</h1>
+              <p className="section-subtitle">Buat, kelola, dan kirim surat perusahaan</p>
+            </div>
           </div>
           {canManage && (
             <Button onClick={() => setCreateDialogOpen(true)}>

@@ -433,17 +433,22 @@ export default function ShootingSchedule() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">
-              Shooting Schedule
-              {filterClient && (
-                <span className="text-primary text-xl ml-2 font-normal">
-                  - {filterClient.name}
-                </span>
-              )}
-            </h1>
-            <p className="text-muted-foreground">Manage shooting requests and schedules</p>
+        <div className="flex justify-between items-start">
+          <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-shooting)' } as React.CSSProperties}>
+            <div className="section-icon">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="section-title">
+                Shooting Schedule
+                {filterClient && (
+                  <span className="text-foreground/60 text-base ml-2 font-normal">
+                    - {filterClient.name}
+                  </span>
+                )}
+              </h1>
+              <p className="section-subtitle">Manage shooting requests and schedules</p>
+            </div>
           </div>
           <CreateShootingDialog />
         </div>
