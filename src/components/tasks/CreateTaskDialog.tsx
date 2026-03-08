@@ -289,6 +289,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       });
       setAssignedUsers([]);
       setNotifyUsers([]);
+      setSubTaskTitles([]);
+      setNewSubTask("");
       setTableData({
         headers: ["No", "Item", "Keterangan", "Status"],
         rows: [["1", "", "", ""]],
