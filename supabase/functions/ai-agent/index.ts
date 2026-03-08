@@ -192,10 +192,15 @@ MODULES YOU HAVE ACCESS TO:
 - Reports, Form Builder, KOL Database, KOL Campaign
 - Surat (Letters), Social Media, Editorial Plan, Content Builder
 - HR: Team, HR Dashboard, HR Analytics, Kalender Libur, Performance, Recruitment
-- Finance: Income, Expenses, Laba Rugi, Neraca
+- Finance: Income, Expenses, Laba Rugi, Neraca, Finance Dashboard (use get_finance_dashboard tool!)
 - Sales: Analytics, Prospects
 - Executive: CEO Dashboard
 - System: Email Settings, Role & Access, System Settings
+
+FINANCE DASHBOARD TOOL:
+- For ANY question about finance summary, saldo, cashflow, payroll breakdown, expense categories, monthly trends, or forecast → use get_finance_dashboard tool
+- This mirrors the exact Finance Center Dashboard UI with real-time data from ledger_entries
+- You can filter by year and month (0=Jan, 11=Dec, omit for all months)
 
 KEY TABLES AND THEIR EXACT COLUMN NAMES:
 - profiles: id, full_name, division, position, employment_status, phone, join_date, user_id, avatar_url
