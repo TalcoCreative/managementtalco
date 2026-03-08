@@ -55,14 +55,13 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch income (YTD for retained earnings calculation)
-  const { data: income, isLoading: incomeLoading } = useQuery({
-    queryKey: ["balance-sheet-income", selectedYear, selectedMonth],
+  // Fetch ALL income up to asOfDate (for cash balance)
+  const { data: allIncome, isLoading: incomeLoading } = useQuery({
+    queryKey: ["balance-sheet-all-income", selectedYear, selectedMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("income")
         .select("*")
-        .gte("date", format(yearStartDate, "yyyy-MM-dd"))
         .lte("date", format(asOfDate, "yyyy-MM-dd"))
         .eq("status", "received");
       if (error) throw error;
@@ -70,14 +69,13 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch expenses (YTD for retained earnings calculation)
-  const { data: expenses, isLoading: expensesLoading } = useQuery({
-    queryKey: ["balance-sheet-expenses", selectedYear, selectedMonth],
+  // Fetch ALL expenses up to asOfDate (for cash balance)
+  const { data: allExpenses, isLoading: expensesLoading } = useQuery({
+    queryKey: ["balance-sheet-all-expenses", selectedYear, selectedMonth],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
-        .gte("created_at", format(yearStartDate, "yyyy-MM-dd"))
         .lte("created_at", format(asOfDate, "yyyy-MM-dd'T'23:59:59"))
         .eq("status", "paid");
       if (error) throw error;
@@ -85,17 +83,14 @@ export function BalanceSheet() {
     },
   });
 
-  // Fetch payroll (YTD)
-  const { data: payroll, isLoading: payrollLoading } = useQuery({
-    queryKey: ["balance-sheet-payroll", selectedYear, selectedMonth],
+  // Fetch ALL payroll up to selected month (for cash balance)
+  const { data: allPayroll, isLoading: payrollLoading } = useQuery({
+    queryKey: ["balance-sheet-all-payroll", selectedYear, selectedMonth],
     queryFn: async () => {
-      const yearStart = format(yearStartDate, "yyyy-MM");
       const monthEnd = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-      
       const { data, error } = await supabase
         .from("payroll")
         .select("*")
-        .gte("month", yearStart)
         .lte("month", monthEnd)
         .eq("status", "paid");
       if (error) throw error;
