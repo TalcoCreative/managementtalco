@@ -10,13 +10,36 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Building2, ArrowLeft, Calendar, Clock, MapPin, 
   Video, Users, AlertCircle, Filter, CalendarClock,
-  ExternalLink, FileText
+  ExternalLink, FileText, Download, ChevronDown, ChevronUp
 } from "lucide-react";
 import { format, parseISO, isToday, isFuture, startOfDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { generateMOMPDF } from "@/lib/mom-pdf";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+interface MOMItem {
+  no: number;
+  keterangan: string;
+  hasil: string;
+}
+
+interface MOMData {
+  id: string;
+  content: string;
+  created_at: string;
+}
+
+interface Participant {
+  full_name: string | null;
+  status: string;
+}
+
+interface ExternalParticipant {
+  name: string;
+  company: string | null;
+}
 
 interface Meeting {
   id: string;
@@ -30,6 +53,10 @@ interface Meeting {
   status: string;
   type: string;
   project: { name: string } | null;
+  creator: { full_name: string | null } | null;
+  mom: MOMData[];
+  participants: Participant[];
+  external_participants: ExternalParticipant[];
 }
 
 interface ClientData {
@@ -70,6 +97,8 @@ const getModeIcon = (mode: string) =>
   mode === "online" ? <Video className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-orange-500" />;
 
 function MeetingCard({ meeting, onClick }: { meeting: Meeting; onClick: () => void }) {
+  const hasMOM = meeting.mom && meeting.mom.length > 0;
+
   return (
     <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={onClick}>
       <CardHeader className="pb-3">
@@ -77,7 +106,15 @@ function MeetingCard({ meeting, onClick }: { meeting: Meeting; onClick: () => vo
           <CardTitle className="text-base line-clamp-2 group-hover:text-primary transition-colors">
             {meeting.title}
           </CardTitle>
-          {getStatusBadge(meeting.status, meeting.meeting_date)}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {hasMOM && (
+              <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30">
+                <FileText className="h-3 w-3 mr-0.5" />
+                MOM
+              </Badge>
+            )}
+            {getStatusBadge(meeting.status, meeting.meeting_date)}
+          </div>
         </div>
         {meeting.project && (
           <p className="text-sm text-muted-foreground">{meeting.project.name}</p>
@@ -103,12 +140,57 @@ function MeetingCard({ meeting, onClick }: { meeting: Meeting; onClick: () => vo
   );
 }
 
-function MeetingDetailDialog({ meeting, open, onClose }: { meeting: Meeting | null; open: boolean; onClose: () => void }) {
+function parseMOMContent(content: string): MOMItem[] {
+  try {
+    const items = JSON.parse(content);
+    if (Array.isArray(items)) return items;
+  } catch {}
+  return [{ no: 1, keterangan: content, hasil: "" }];
+}
+
+function MeetingDetailDialog({ meeting, open, onClose, client }: { meeting: Meeting | null; open: boolean; onClose: () => void; client: ClientData | null }) {
+  const [momExpanded, setMomExpanded] = useState(true);
+
   if (!meeting) return null;
+
+  const hasMOM = meeting.mom && meeting.mom.length > 0;
+
+  const handleDownloadPDF = () => {
+    if (!hasMOM) return;
+    
+    // Use first MOM entry
+    const momData = meeting.mom[0];
+    const momItems = parseMOMContent(momData.content);
+
+    const meetingData = {
+      title: meeting.title,
+      meeting_date: meeting.meeting_date,
+      start_time: meeting.start_time,
+      end_time: meeting.end_time,
+      location: meeting.location || undefined,
+      meeting_link: meeting.meeting_link || undefined,
+      mode: meeting.mode,
+      client: client ? { name: client.name } : undefined,
+      project: meeting.project ? { title: meeting.project.name } : undefined,
+      creator: meeting.creator ? { full_name: meeting.creator.full_name || "Unknown" } : undefined,
+    };
+
+    const participants = (meeting.participants || []).map(p => ({
+      user: { full_name: p.full_name || "Unknown" },
+      status: p.status,
+    }));
+
+    const externalParticipants = (meeting.external_participants || []).map(p => ({
+      name: p.name,
+      company: p.company || undefined,
+    }));
+
+    generateMOMPDF(meetingData, momItems, participants, externalParticipants);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{meeting.title}</DialogTitle>
         </DialogHeader>
@@ -186,6 +268,75 @@ function MeetingDetailDialog({ meeting, open, onClose }: { meeting: Meeting | nu
               </div>
             )}
           </div>
+
+          {/* MOM Section */}
+          {hasMOM && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMomExpanded(!momExpanded)}
+                  className="flex items-center justify-between w-full group"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-emerald-600" />
+                    <h3 className="text-sm font-semibold">Minutes of Meeting</h3>
+                    <Badge variant="outline" className="text-[10px] border-emerald-500 text-emerald-600">
+                      {meeting.mom.length}
+                    </Badge>
+                  </div>
+                  {momExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+
+                {momExpanded && (
+                  <div className="space-y-3">
+                    {meeting.mom.map((momEntry) => {
+                      const items = parseMOMContent(momEntry.content);
+                      return (
+                        <div key={momEntry.id} className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] text-muted-foreground">
+                              {format(new Date(momEntry.created_at), "d MMM yyyy, HH:mm", { locale: idLocale })}
+                            </p>
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="border-b">
+                                  <th className="text-left py-1.5 px-2 w-8 font-medium text-muted-foreground">No</th>
+                                  <th className="text-left py-1.5 px-2 font-medium text-muted-foreground">Keterangan</th>
+                                  <th className="text-left py-1.5 px-2 font-medium text-muted-foreground">Hasil</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map((item, idx) => (
+                                  <tr key={idx} className="border-b last:border-0">
+                                    <td className="py-1.5 px-2 text-muted-foreground">{item.no}</td>
+                                    <td className="py-1.5 px-2 whitespace-pre-wrap">{item.keterangan}</td>
+                                    <td className="py-1.5 px-2 whitespace-pre-wrap">{item.hasil}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/30"
+                      onClick={handleDownloadPDF}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download MOM (PDF)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -367,6 +518,7 @@ export default function PublicMeetingList() {
         meeting={selectedMeeting}
         open={!!selectedMeeting}
         onClose={() => setSelectedMeeting(null)}
+        client={client}
       />
     </div>
   );
