@@ -345,9 +345,9 @@ export default function RoleManagement() {
             </div>
           </ScrollArea>
           <div className="flex justify-end gap-2 px-6 pb-6 border-t pt-4">
-            <Button variant="outline" onClick={() => setEditRoleId(null)}>Batal</Button>
+            <Button variant="outline" onClick={() => setEditRoleId(null)}>Cancel</Button>
             <Button onClick={savePermissions} disabled={saving}>
-              {saving ? "Menyimpan..." : "Simpan Permission"}
+              {saving ? "Saving..." : "Save Permissions"}
             </Button>
           </div>
         </DialogContent>
