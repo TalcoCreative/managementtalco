@@ -141,7 +141,7 @@ export function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/80 backdrop-blur-2xl border-t border-border/15"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-2xl border-t border-border/30"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-around h-16">
@@ -152,7 +152,7 @@ export function MobileBottomNav() {
                   key="more"
                   onClick={() => setMoreOpen(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground/60 transition-all duration-200 tap-target",
+                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground transition-all duration-200 tap-target",
                     moreOpen && "text-primary"
                   )}
                 >
@@ -172,7 +172,7 @@ export function MobileBottomNav() {
                 to={tab.url}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 tap-target",
-                  isActive ? "text-primary" : "text-muted-foreground/60"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <div
