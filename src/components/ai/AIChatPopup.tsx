@@ -19,27 +19,51 @@ export function AIChatPopup() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Drag state - shared for both icon and chat window
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const [iconPos, setIconPos] = useState<{ x: number; y: number } | null>(null);
-  const dragInfo = useRef<{ startX: number; startY: number; origX: number; origY: number; dragged: boolean } | null>(null);
+  // Snap-to-corner drag state
+  const [iconCorner, setIconCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const [chatCorner, setChatCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const dragInfo = useRef<{ startX: number; startY: number; dragged: boolean; target: "icon" | "chat" } | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ dx: number; dy: number } | null>(null);
 
-  const getDefaultPos = useCallback(() => {
-    const isMd = window.innerWidth >= 768;
-    return {
-      x: isMd ? window.innerWidth - 420 - 32 : 16,
-      y: isMd ? window.innerHeight - 600 - 32 : 80,
-    };
+  const ICON_SIZE = 56;
+  const ICON_MARGIN = 16;
+  const CHAT_MARGIN = 12;
+
+  // Corner positions for icon
+  const getIconCornerPos = useCallback((corner: string) => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const m = ICON_MARGIN;
+    const bottomOffset = window.innerWidth < 768 ? 80 : m; // above mobile nav
+    switch (corner) {
+      case "tl": return { x: m, y: m };
+      case "tr": return { x: w - ICON_SIZE - m, y: m };
+      case "bl": return { x: m, y: h - ICON_SIZE - bottomOffset };
+      case "br": default: return { x: w - ICON_SIZE - m, y: h - ICON_SIZE - bottomOffset };
+    }
   }, []);
 
-  const getDefaultIconPos = useCallback(() => ({
-    x: window.innerWidth >= 768 ? window.innerWidth - 56 - 32 : window.innerWidth - 56 - 24,
-    y: window.innerHeight >= 768 ? window.innerHeight - 56 - 32 : window.innerHeight - 56 - 24,
-  }), []);
+  // Corner positions for chat window
+  const getChatCornerStyle = useCallback((corner: string): React.CSSProperties => {
+    const m = CHAT_MARGIN;
+    const style: React.CSSProperties = {};
+    if (corner.includes("t")) { style.top = m; style.bottom = "auto"; }
+    else { style.bottom = window.innerWidth < 768 ? 72 : m; style.top = "auto"; }
+    if (corner.includes("l")) { style.left = m; style.right = "auto"; }
+    else { style.right = m; style.left = "auto"; }
+    return style;
+  }, []);
 
-  useEffect(() => {
-    if (open && !position) setPosition(getDefaultPos());
-  }, [open, position, getDefaultPos]);
+  const getNearestCorner = useCallback((cx: number, cy: number): "tl" | "tr" | "bl" | "br" => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const isLeft = cx < w / 2;
+    const isTop = cy < h / 2;
+    if (isTop && isLeft) return "tl";
+    if (isTop && !isLeft) return "tr";
+    if (!isTop && isLeft) return "bl";
+    return "br";
+  }, []);
 
   // Window-level drag listeners
   useEffect(() => {
@@ -47,52 +71,48 @@ export function AIChatPopup() {
       if (!dragInfo.current) return;
       const dx = e.clientX - dragInfo.current.startX;
       const dy = e.clientY - dragInfo.current.startY;
-      if (!dragInfo.current.dragged && Math.abs(dx) + Math.abs(dy) > 5) {
+      if (!dragInfo.current.dragged && Math.abs(dx) + Math.abs(dy) > 8) {
         dragInfo.current.dragged = true;
       }
-      const setter = open ? setPosition : setIconPos;
-      setter({
-        x: Math.max(0, Math.min(window.innerWidth - 60, dragInfo.current.origX + dx)),
-        y: Math.max(0, Math.min(window.innerHeight - 60, dragInfo.current.origY + dy)),
-      });
+      if (dragInfo.current.dragged) {
+        setDragOffset({ dx, dy });
+      }
     };
-    const onUp = () => { dragInfo.current = null; };
+    const onUp = (e: PointerEvent) => {
+      if (!dragInfo.current) return;
+      if (dragInfo.current.dragged) {
+        const corner = getNearestCorner(e.clientX, e.clientY);
+        if (dragInfo.current.target === "icon") setIconCorner(corner);
+        else setChatCorner(corner);
+      }
+      dragInfo.current = null;
+      setDragOffset(null);
+    };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
-  }, [open]);
+  }, [getNearestCorner]);
 
-  const startDrag = useCallback((e: React.PointerEvent, origX: number, origY: number) => {
+  const startDrag = useCallback((e: React.PointerEvent, target: "icon" | "chat") => {
     e.preventDefault();
-    dragInfo.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX,
-      origY,
-      dragged: false,
-    };
+    dragInfo.current = { startX: e.clientX, startY: e.clientY, dragged: false, target };
   }, []);
 
   const handleIconPointerDown = useCallback((e: React.PointerEvent) => {
-    const ip = iconPos ?? getDefaultIconPos();
-    startDrag(e, ip.x, ip.y);
-  }, [iconPos, getDefaultIconPos, startDrag]);
+    startDrag(e, "icon");
+  }, [startDrag]);
 
   const handleIconClick = useCallback(() => {
-    // Only open if we didn't drag
-    if (!dragInfo.current?.dragged) {
-      setOpen(true);
-    }
+    if (!dragInfo.current?.dragged) setOpen(true);
   }, []);
 
   const handleHeaderPointerDown = useCallback((e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    const p = position ?? getDefaultPos();
-    startDrag(e, p.x, p.y);
-  }, [position, getDefaultPos, startDrag]);
+    startDrag(e, "chat");
+  }, [startDrag]);
 
   useEffect(() => {
     if (scrollRef.current) {
