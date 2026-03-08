@@ -141,7 +141,7 @@ export function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/80 backdrop-blur-2xl border-t border-border/15"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-2xl border-t border-border/30"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center justify-around h-16">
@@ -152,7 +152,7 @@ export function MobileBottomNav() {
                   key="more"
                   onClick={() => setMoreOpen(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground/60 transition-all duration-200 tap-target",
+                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground transition-all duration-200 tap-target",
                     moreOpen && "text-primary"
                   )}
                 >
@@ -172,7 +172,7 @@ export function MobileBottomNav() {
                 to={tab.url}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 tap-target",
-                  isActive ? "text-primary" : "text-muted-foreground/60"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <div
@@ -200,7 +200,7 @@ export function MobileBottomNav() {
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl"
+          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl bg-background"
         >
           <SheetHeader>
             <SheetTitle className="text-base font-semibold">
@@ -211,7 +211,7 @@ export function MobileBottomNav() {
             <div className="space-y-5 pr-2 pb-4">
               {visibleGroups.map((group) => (
                 <div key={group.label}>
-                  <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2 px-1">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
                     {group.label}
                   </p>
                   <div className="grid grid-cols-4 gap-2">
@@ -242,10 +242,8 @@ export function MobileBottomNav() {
                           </div>
                           <span
                             className={cn(
-                              "text-[10px] font-medium leading-tight text-center",
-                              isActive
-                                ? "text-primary"
-                                : "text-foreground/80"
+                              "text-[10px] font-medium leading-tight text-center text-foreground",
+                              isActive && "text-primary"
                             )}
                           >
                             {item.title}
