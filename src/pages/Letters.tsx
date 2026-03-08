@@ -80,7 +80,7 @@ export default function Letters() {
   );
 
   const { data: letters, isLoading, refetch } = useQuery({
-    queryKey: ["letters", entityFilter, statusFilter, currentUser?.id, isSuperAdmin],
+    queryKey: ["letters", entityFilter, statusFilter, categoryFilter, currentUser?.id, isSuperAdmin],
     queryFn: async () => {
       let query = supabase
         .from("letters")
@@ -98,15 +98,22 @@ export default function Letters() {
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
+      if (categoryFilter && categoryFilter !== "all") {
+        query = query.eq("category_code", categoryFilter);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
       
-      // Filter confidential letters - only creator and super_admin can see
+      // Filter confidential letters - only creator, super_admin, hr, finance can see
       return data?.filter(letter => {
         if (!letter.is_confidential) return true;
         if (isSuperAdmin) return true;
         if (letter.created_by === currentUser?.id) return true;
+        // For payroll slips, also allow HR and Finance
+        if (letter.letter_type === 'payroll_slip') {
+          return userRoles?.some(role => ['hr', 'finance'].includes(role));
+        }
         return false;
       });
     },
