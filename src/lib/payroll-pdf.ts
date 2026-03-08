@@ -17,6 +17,7 @@ interface PayrollData {
   adjustmentLainnya?: number;
   totalGaji: number;
   payDate: string;
+  letterNumber?: string;
 }
 
 interface PdfSettings {
