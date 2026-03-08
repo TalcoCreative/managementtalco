@@ -200,7 +200,7 @@ export function MobileBottomNav() {
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent
           side="bottom"
-          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl"
+          className="rounded-t-3xl pb-10 max-h-[80vh] border-0 shadow-soft-xl bg-background"
         >
           <SheetHeader>
             <SheetTitle className="text-base font-semibold">
