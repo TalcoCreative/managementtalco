@@ -19,9 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const getHolidayTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    national: 'Libur Nasional',
-    office: 'Libur Kantor',
-    special: 'Libur Khusus',
+    national: 'National Holiday',
+    office: 'Office Holiday',
+    special: 'Special Holiday',
     wfh: 'WFH',
   };
   return labels[type] || type;
@@ -472,7 +472,7 @@ export default function Schedule() {
                   <SelectValue placeholder="Filter Client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Client</SelectItem>
+                  <SelectItem value="all">All Clients</SelectItem>
                   {clients?.map((client: any) => (
                     <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
                   ))}
@@ -486,7 +486,7 @@ export default function Schedule() {
                   <SelectValue placeholder="Filter Person" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Orang</SelectItem>
+                  <SelectItem value="all">All People</SelectItem>
                   {profiles?.map((profile: any) => (
                     <SelectItem key={profile.id} value={profile.id}>{profile.full_name}</SelectItem>
                   ))}
@@ -575,12 +575,12 @@ export default function Schedule() {
                       </div>
                     )}
 
-                    {/* Jadwal Post (EP Slides) */}
+                    {/* Scheduled Posts (EP Slides) */}
                     {selectedEvents.epSlides.length > 0 && (
                       <div className="space-y-2">
                         <h3 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
                           <Send className="h-4 w-4" />
-                          Jadwal Post ({selectedEvents.epSlides.length})
+                          Scheduled Posts ({selectedEvents.epSlides.length})
                         </h3>
                         {selectedEvents.epSlides.map((slide: any) => {
                           const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
@@ -787,35 +787,37 @@ export default function Schedule() {
             </Card>
 
             <Tabs defaultValue="all" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-7">
-                <TabsTrigger value="all">
-                  All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.epSlides.length + monthEvents.holidays.length})
-                </TabsTrigger>
-                <TabsTrigger value="shootings">
-                  <Video className="h-4 w-4 mr-1" />
-                  Shootings ({monthEvents.shootings.length})
-                </TabsTrigger>
-                <TabsTrigger value="meetings">
-                  <Users className="h-4 w-4 mr-1" />
-                  Meetings ({monthEvents.meetings.length})
-                </TabsTrigger>
-                <TabsTrigger value="epSlides">
-                  <Send className="h-4 w-4 mr-1" />
-                  Jadwal Post ({monthEvents.epSlides.length})
-                </TabsTrigger>
-                <TabsTrigger value="tasks">
-                  <CheckSquare className="h-4 w-4 mr-1" />
-                  Tasks ({monthEvents.tasks.length})
-                </TabsTrigger>
-                <TabsTrigger value="projects">
-                  <FolderOpen className="h-4 w-4 mr-1" />
-                  Projects ({monthEvents.projects.length})
-                </TabsTrigger>
-                <TabsTrigger value="holidays">
-                  <PartyPopper className="h-4 w-4 mr-1" />
-                  Holidays ({monthEvents.holidays.length})
-                </TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-1 px-1 pb-1">
+                <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-7 md:w-full gap-0.5">
+                  <TabsTrigger value="all" className="whitespace-nowrap text-xs px-3">
+                    All ({monthEvents.shootings.length + monthEvents.meetings.length + monthEvents.tasks.length + monthEvents.projects.length + monthEvents.epSlides.length + monthEvents.holidays.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="shootings" className="whitespace-nowrap text-xs px-3">
+                    <Video className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Shoots ({monthEvents.shootings.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="meetings" className="whitespace-nowrap text-xs px-3">
+                    <Users className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Meets ({monthEvents.meetings.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="epSlides" className="whitespace-nowrap text-xs px-3">
+                    <Send className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Posts ({monthEvents.epSlides.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="tasks" className="whitespace-nowrap text-xs px-3">
+                    <CheckSquare className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Tasks ({monthEvents.tasks.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="projects" className="whitespace-nowrap text-xs px-3">
+                    <FolderOpen className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Projects ({monthEvents.projects.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="holidays" className="whitespace-nowrap text-xs px-3">
+                    <PartyPopper className="h-3.5 w-3.5 mr-1 shrink-0" />
+                    Holidays ({monthEvents.holidays.length})
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
               {/* All Events */}
               <TabsContent value="all">
@@ -876,11 +878,11 @@ export default function Schedule() {
                           </div>
                         )}
 
-                        {/* Jadwal Post Section */}
+                        {/* Scheduled Posts Section */}
                         {monthEvents.epSlides.length > 0 && (
                           <div>
                             <h3 className="font-semibold flex items-center gap-2 mb-2">
-                              <Send className="h-4 w-4" /> Jadwal Post
+                              <Send className="h-4 w-4" /> Scheduled Posts
                             </h3>
                             {monthEvents.epSlides.map((slide: any) => {
                               const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
@@ -1197,13 +1199,13 @@ export default function Schedule() {
                 </Card>
               </TabsContent>
 
-              {/* Jadwal Post Tab */}
+              {/* Scheduled Posts Tab */}
               <TabsContent value="epSlides">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Send className="h-5 w-5" />
-                      Jadwal Post - {format(filterMonth, "MMMM yyyy")}
+                      Scheduled Posts - {format(filterMonth, "MMMM yyyy")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
