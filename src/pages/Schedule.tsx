@@ -878,11 +878,11 @@ export default function Schedule() {
                           </div>
                         )}
 
-                        {/* Jadwal Post Section */}
+                        {/* Scheduled Posts Section */}
                         {monthEvents.epSlides.length > 0 && (
                           <div>
                             <h3 className="font-semibold flex items-center gap-2 mb-2">
-                              <Send className="h-4 w-4" /> Jadwal Post
+                              <Send className="h-4 w-4" /> Scheduled Posts
                             </h3>
                             {monthEvents.epSlides.map((slide: any) => {
                               const title = slideTitleMap.get(slide.id) || `Slide ${slide.slide_order + 1}`;
