@@ -653,6 +653,7 @@ export default function HRAnalytics() {
           meetings={meetings || []}
           shootings={shootings || []}
           events={events || []}
+          publishedSlides={publishedSlides || []}
           onViewEmployee={handleViewEmployee}
         />
       </div>
