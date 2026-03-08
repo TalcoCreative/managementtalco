@@ -18,6 +18,51 @@ export function AIChatPopup() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Drag state
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const getDefaultPos = useCallback(() => {
+    const isMobile = window.innerWidth < 768;
+    return {
+      x: window.innerWidth - (isMobile ? window.innerWidth - 16 + 8 : 420 + 32),
+      y: window.innerHeight - (isMobile ? window.innerHeight - 96 + 16 : 600 + 32),
+    };
+  }, []);
+
+  // Reset position when opening
+  useEffect(() => {
+    if (open && !position) setPosition(getDefaultPos());
+  }, [open, position, getDefaultPos]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: position?.x ?? 0,
+      origY: position?.y ?? 0,
+    };
+    setIsDragging(false);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [position]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    if (!isDragging && Math.abs(dx) + Math.abs(dy) > 5) setIsDragging(true);
+    setPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 100, dragRef.current.origX + dx)),
+      y: Math.max(0, Math.min(window.innerHeight - 100, dragRef.current.origY + dy)),
+    });
+  }, [isDragging]);
+
+  const handlePointerUp = useCallback(() => {
+    dragRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
