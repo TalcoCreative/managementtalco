@@ -55,11 +55,11 @@ export default function Leave() {
   const getLeaveTypeBadge = (type: string) => {
     switch (type) {
       case "sakit":
-        return <Badge className="bg-red-500">Sakit</Badge>;
+        return <Badge className="bg-red-500">Sick Leave</Badge>;
       case "cuti":
-        return <Badge className="bg-blue-500">Cuti</Badge>;
+        return <Badge className="bg-blue-500">Annual Leave</Badge>;
       case "izin":
-        return <Badge className="bg-yellow-500">Izin</Badge>;
+        return <Badge className="bg-yellow-500">Permission</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
