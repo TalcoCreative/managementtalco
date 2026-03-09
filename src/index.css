@@ -339,7 +339,7 @@
 
   /* Bottom nav safe area */
   .pb-bottom-nav {
-    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   /* FAB positioning */
