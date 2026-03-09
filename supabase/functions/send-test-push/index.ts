@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
         user_id,
         task_id: null,
         message: notifMessage,
-        type: "system",
+        notification_type: "system",
       })
       .select()
       .single();
