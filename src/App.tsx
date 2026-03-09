@@ -73,6 +73,7 @@ import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import PersonalNotes from "./pages/PersonalNotes";
+import InstallApp from "./pages/InstallApp";
 
 const queryClient = new QueryClient();
 
