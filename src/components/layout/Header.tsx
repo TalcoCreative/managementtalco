@@ -11,6 +11,7 @@ import { ManageAnnouncementsDialog } from "@/components/announcements/ManageAnno
 import { HeaderNotifications } from "@/components/layout/HeaderNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { InstallButton } from "@/components/pwa/InstallButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
