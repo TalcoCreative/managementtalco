@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
+        // Import custom push handler
+        importScripts: ["/push-handler.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -50,8 +52,6 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        // Handle notification clicks
-        additionalManifestEntries: [],
       },
       injectRegister: "auto",
       devOptions: {
