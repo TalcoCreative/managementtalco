@@ -3,6 +3,7 @@ import { X, Send, Loader2, Bot, User, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -141,7 +142,7 @@ export function AIChatPopup() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${(await (await import("@/integrations/supabase/client")).supabase.auth.getSession()).data.session?.access_token}`,
+            Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({ messages: newMessages }),
