@@ -27,7 +27,6 @@ export function Header() {
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [manageAnnouncementsOpen, setManageAnnouncementsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const { showNotification } = usePushNotifications();
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -37,6 +36,8 @@ export function Header() {
       return session.session.user;
     },
   });
+
+  const { showNotification } = usePushNotifications(currentUser?.id);
 
   const { data: userRoles } = useQuery({
     queryKey: ["user-roles", currentUser?.id],
