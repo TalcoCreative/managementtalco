@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.ai-agent]
 verify_jwt = false
+
+[functions.send-test-push]
+verify_jwt = false

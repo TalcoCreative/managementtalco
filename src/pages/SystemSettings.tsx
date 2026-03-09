@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings, Bell, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AI_MODELS = [
