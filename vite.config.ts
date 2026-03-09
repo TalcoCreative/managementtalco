@@ -50,6 +50,12 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
+        // Handle notification clicks
+        additionalManifestEntries: [],
+      },
+      injectRegister: "auto",
+      devOptions: {
+        enabled: false,
       },
       manifest: {
         name: "Talco Management System",
