@@ -90,9 +90,8 @@ export function usePushNotifications() {
             icon: "/pwa-512.png",
             badge: "/pwa-512.png",
             tag: options?.tag || "talco-notification",
-            renotify: true,
             ...options,
-          });
+          } as any);
         }).catch(() => {
           // Fallback to regular Notification
           new Notification(title, {
