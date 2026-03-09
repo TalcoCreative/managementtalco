@@ -12,6 +12,7 @@ import { HeaderNotifications } from "@/components/layout/HeaderNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InstallButton } from "@/components/pwa/InstallButton";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function Header() {
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [manageAnnouncementsOpen, setManageAnnouncementsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const { showNotification } = usePushNotifications();
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -51,23 +53,52 @@ export function Header() {
 
   const canManageAnnouncements = userRoles?.includes("hr") || userRoles?.includes("super_admin");
 
+  // Realtime: task notifications with push
   useEffect(() => {
     if (!currentUser) return;
     const channel = supabase
-      .channel('task-notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' }, (payload) => {
-        const newTask = payload.new as any;
-        if (newTask.assigned_to === currentUser.id) {
-          toast.info(`New task assigned to you: ${newTask.title}`, { duration: 5000 });
-        } else {
-          toast.info(`New task created: ${newTask.title}`, { duration: 3000 });
-        }
+      .channel('task-notifications-push')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'task_notifications', filter: `user_id=eq.${currentUser.id}` }, (payload) => {
+        const n = payload.new as any;
+        toast.info(n.message || "New notification", { duration: 5000 });
+        showNotification("Talco - Task Update", {
+          body: n.message || "You have a new task notification",
+          tag: `task-${n.id}`,
+          data: { url: "/tasks", taskId: n.task_id },
+        });
+        queryClient.invalidateQueries({ queryKey: ["header-task-notifications"] });
         queryClient.invalidateQueries({ queryKey: ["tasks"] });
         queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comment_mentions', filter: `mentioned_user_id=eq.${currentUser.id}` }, (payload) => {
+        const m = payload.new as any;
+        showNotification("Talco - You were mentioned", {
+          body: "Someone mentioned you in a comment",
+          tag: `mention-${m.id}`,
+          data: { url: "/tasks", taskId: m.task_id },
+        });
+        queryClient.invalidateQueries({ queryKey: ["header-mentions"] });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'candidate_notifications', filter: `user_id=eq.${currentUser.id}` }, (payload) => {
+        const c = payload.new as any;
+        showNotification("Talco - New Candidate", {
+          body: c.message || "A new candidate has applied",
+          tag: `candidate-${c.id}`,
+          data: { url: "/recruitment" },
+        });
+        queryClient.invalidateQueries({ queryKey: ["header-candidate-notifications"] });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
+        const a = payload.new as any;
+        showNotification("Talco - Announcement", {
+          body: a.title || "New announcement",
+          tag: `announcement-${a.id}`,
+          data: { url: "/" },
+        });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [currentUser, queryClient]);
+  }, [currentUser, queryClient, showNotification]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
