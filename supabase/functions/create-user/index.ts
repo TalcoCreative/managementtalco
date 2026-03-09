@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
@@ -27,9 +27,21 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles").select("role").eq("user_id", user.id);
-    if (!roles?.some((r) => r.role === "super_admin")) {
+    // Check if caller is super_admin via dynamic roles
+    const { data: callerRoles } = await supabaseAdmin
+      .from("user_dynamic_roles")
+      .select("role_id, dynamic_roles(name)")
+      .eq("user_id", user.id);
+    
+    const isSuperAdmin = callerRoles?.some((r: any) => r.dynamic_roles?.name === "Super Admin") ||
+      // Fallback: also check legacy user_roles table
+      await (async () => {
+        const { data: legacyRoles } = await supabaseAdmin
+          .from("user_roles").select("role").eq("user_id", user.id);
+        return legacyRoles?.some((r: any) => r.role === "super_admin");
+      })();
+
+    if (!isSuperAdmin) {
       throw new Error("Only super admins can create users");
     }
 
@@ -51,12 +63,20 @@ serve(async (req) => {
     const userId = newUser.user.id;
     console.log("User created:", userId);
 
-    // Assign role
-    const { error: roleError } = await supabaseAdmin
-      .from("user_roles").insert({ user_id: userId, role });
-    if (roleError) {
-      console.error("Role error:", roleError);
-      throw roleError;
+    // Assign dynamic role - role param is the dynamic_roles.id (UUID)
+    const { error: dynRoleError } = await supabaseAdmin
+      .from("user_dynamic_roles")
+      .insert({ user_id: userId, role_id: role });
+    
+    if (dynRoleError) {
+      console.error("Dynamic role assignment error:", dynRoleError);
+      // If it fails (e.g. role is not a valid UUID), try as legacy enum
+      const { error: legacyRoleError } = await supabaseAdmin
+        .from("user_roles").insert({ user_id: userId, role });
+      if (legacyRoleError) {
+        console.error("Legacy role error too:", legacyRoleError);
+        // Non-fatal - user is created, role can be assigned later
+      }
     }
 
     // Update profile with additional data
@@ -81,7 +101,6 @@ serve(async (req) => {
         .from("profiles").update(profileUpdate).eq("id", userId);
       if (profileError) {
         console.error("Profile update error:", profileError);
-        // Non-fatal - user is already created
       }
     }
 
@@ -112,10 +131,20 @@ async function sendWelcomeEmail(
     const { data: settings } = await supabase
       .from("email_settings").select("sender_name, smtp_email").limit(1).single();
 
+    // Try to get the role name from dynamic_roles if role is a UUID
+    let roleLabel = role;
+    try {
+      const { data: dynRole } = await supabase
+        .from("dynamic_roles").select("name").eq("id", role).single();
+      if (dynRole?.name) roleLabel = dynRole.name;
+    } catch {
+      // If not a UUID, format as before
+      roleLabel = role.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+    }
+
     const senderName = settings?.sender_name || "Talco System";
     const senderEmail = settings?.smtp_email || "onboarding@resend.dev";
     const firstName = fullName.split(" ")[0];
-    const roleLabel = role.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
 
     const htmlBody = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5;">
