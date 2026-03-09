@@ -125,14 +125,26 @@ export function usePushNotifications() {
     if (!currentUser) return;
 
     const init = async () => {
+      console.log("[Push] Initializing for user:", currentUser.id);
       const permission = await requestPermission();
+      console.log("[Push] Permission result:", permission);
       if (permission === "granted") {
         await saveSubscription(currentUser.id);
+        console.log("[Push] Subscription saved");
       }
     };
 
     init();
   }, [currentUser, requestPermission, saveSubscription]);
 
-  return { showNotification, requestPermission };
+  // Test notification function
+  const testNotification = useCallback(() => {
+    console.log("[Push] Testing notification...");
+    showNotification("Test Notification", {
+      body: "Push notifications are working! 🎉",
+      tag: "test-notification",
+    });
+  }, [showNotification]);
+
+  return { showNotification, requestPermission, testNotification };
 }
