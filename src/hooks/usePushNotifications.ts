@@ -75,24 +75,34 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Show a browser notification (works when tab is open but in background)
+  // Show a browser notification
   const showNotification = useCallback((title: string, options?: NotificationOptions) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
-    // Don't show if tab is focused
-    if (document.visibilityState === "visible") return;
+    if (!("Notification" in window)) {
+      console.log("[Push] Notification API not supported");
+      return;
+    }
+    if (Notification.permission !== "granted") {
+      console.log("[Push] Permission not granted:", Notification.permission);
+      return;
+    }
+
+    console.log("[Push] Showing notification:", title);
 
     try {
-      // Try service worker notification first (persists better)
+      // Try service worker notification first (works better in background/PWA)
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.ready.then((reg) => {
           reg.showNotification(title, {
             icon: "/pwa-512.png",
             badge: "/pwa-512.png",
-            tag: options?.tag || "talco-notification",
+            tag: options?.tag || `talco-${Date.now()}`,
+            vibrate: [200, 100, 200],
+            requireInteraction: false,
             ...options,
           } as any);
-        }).catch(() => {
+          console.log("[Push] SW notification sent");
+        }).catch((err) => {
+          console.log("[Push] SW failed, using fallback:", err);
           // Fallback to regular Notification
           new Notification(title, {
             icon: "/pwa-512.png",
@@ -105,8 +115,8 @@ export function usePushNotifications() {
           ...options,
         });
       }
-    } catch {
-      // Notification not supported
+    } catch (err) {
+      console.error("[Push] Error showing notification:", err);
     }
   }, []);
 

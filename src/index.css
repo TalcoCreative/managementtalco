@@ -337,6 +337,11 @@
     @apply floating-card p-4;
   }
 
+  /* Safe area utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
   /* Bottom nav safe area */
   .pb-bottom-nav {
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
