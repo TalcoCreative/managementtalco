@@ -82,6 +82,8 @@ export function Header() {
       )}
       
       <div className="flex items-center gap-0.5">
+        <InstallButton variant="ghost" size="icon" showLabel={false} className="h-9 w-9 rounded-xl" />
+        
         {canManageAnnouncements && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
