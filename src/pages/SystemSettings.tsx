@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings, Bell, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const AI_MODELS = [
@@ -228,6 +229,105 @@ function HRSettingsCard() {
   );
 }
 
+function PushNotificationTestCard() {
+  const { isSuperAdmin } = usePermissions();
+  const { t } = useLanguage();
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const { data: profiles } = useQuery({
+    queryKey: ["all-profiles-push"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, user_id")
+        .order("full_name");
+      return data || [];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  const handleSendTest = async () => {
+    if (!selectedUserId) {
+      toast.error(t("Please select a user", "Pilih user terlebih dahulu"));
+      return;
+    }
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-test-push", {
+        body: { user_id: selectedUserId, message: message || undefined },
+      });
+      if (error) throw error;
+      toast.success(t("Push notification sent!", "Push notification terkirim!"));
+      setMessage("");
+    } catch (err: any) {
+      console.error("Push test error:", err);
+      toast.error(t("Failed to send notification", "Gagal mengirim notifikasi"));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!isSuperAdmin) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bell className="h-5 w-5 text-primary" />
+          {t("Push Notification Test", "Test Push Notification")}
+        </CardTitle>
+        <CardDescription>
+          {t(
+            "Send a test push notification to a specific user to verify the notification system is working.",
+            "Kirim test push notification ke user tertentu untuk memastikan sistem notifikasi berjalan."
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>{t("Select User", "Pilih User")}</Label>
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger>
+              <SelectValue placeholder={t("Choose a user...", "Pilih user...")} />
+            </SelectTrigger>
+            <SelectContent>
+              {profiles?.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name} ({p.user_id})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>{t("Message (optional)", "Pesan (opsional)")}</Label>
+          <Textarea
+            placeholder={t(
+              "Custom notification message...",
+              "Pesan notifikasi kustom..."
+            )}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={2}
+          />
+        </div>
+        <Button onClick={handleSendTest} disabled={sending || !selectedUserId} className="gap-2">
+          <Send className="h-4 w-4" />
+          {sending ? t("Sending...", "Mengirim...") : t("Send Test Notification", "Kirim Test Notifikasi")}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "The user must have the app open or installed as PWA with notifications enabled to receive the push.",
+            "User harus membuka app atau install sebagai PWA dengan notifikasi diaktifkan untuk menerima push."
+          )}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SystemSettings() {
   const { t } = useLanguage();
 
@@ -244,6 +344,7 @@ export default function SystemSettings() {
 
         <AIConfigCard />
         <HRSettingsCard />
+        <PushNotificationTestCard />
       </div>
     </AppLayout>
   );
