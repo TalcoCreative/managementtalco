@@ -119,6 +119,7 @@ const getNotificationLabel = (type: string, template?: EmailTemplate | null): st
     case "meeting_invitation": case "meeting_reminder": return "Meeting";
     case "announcement": return "Pengumuman";
     case "recruitment_pic_assigned": return "Recruitment";
+    case "ep_mention": return "Editorial Plan";
     default: return "Notifikasi";
   }
 };
