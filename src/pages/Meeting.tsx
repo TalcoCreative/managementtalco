@@ -304,6 +304,74 @@ const Meeting = () => {
     setStatsDateTo(new Date(now.getFullYear(), 11, 31));
   };
 
+  const MeetingTable = ({ meetings: meetingList }: { meetings: any[] }) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("title")}>
+            <div className="flex items-center gap-1">Judul <ArrowUpDown className={`h-4 w-4 ${sortField === "title" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("date")}>
+            <div className="flex items-center gap-1">Tanggal & Waktu <ArrowUpDown className={`h-4 w-4 ${sortField === "date" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("type")}>
+            <div className="flex items-center gap-1">Tipe <ArrowUpDown className={`h-4 w-4 ${sortField === "type" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("mode")}>
+            <div className="flex items-center gap-1">Mode <ArrowUpDown className={`h-4 w-4 ${sortField === "mode" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("participants")}>
+            <div className="flex items-center gap-1">Partisipan <ArrowUpDown className={`h-4 w-4 ${sortField === "participants" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("creator")}>
+            <div className="flex items-center gap-1">Dibuat Oleh <ArrowUpDown className={`h-4 w-4 ${sortField === "creator" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("status")}>
+            <div className="flex items-center gap-1">Status <ArrowUpDown className={`h-4 w-4 ${sortField === "status" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {meetingList.map((meeting) => (
+          <TableRow key={meeting.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedMeeting(meeting)}>
+            <TableCell className="font-medium">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p>{meeting.title}</p>
+                  {meeting.is_confidential && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                      <Lock className="w-3 h-3 mr-1" /> Rahasia
+                    </Badge>
+                  )}
+                </div>
+                {meeting.client && <p className="text-xs text-muted-foreground">Client: {meeting.client.name}</p>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p>{format(parseISO(meeting.meeting_date), "dd MMM yyyy", { locale: id })}</p>
+                  <p className="text-xs text-muted-foreground">{meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}</p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>{getTypeBadge(meeting.type)}</TableCell>
+            <TableCell>{getModeBadge(meeting.mode)}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span>{getParticipantCount(meeting.id)}</span>
+              </div>
+            </TableCell>
+            <TableCell>{meeting.creator?.full_name || "-"}</TableCell>
+            <TableCell>{getStatusBadge(meeting)}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
