@@ -182,7 +182,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         status: "pending",
         requested_at: new Date().toISOString(),
         is_hidden: formData.is_hidden,
-      }).select('id').single();
+      }).select('id, share_token').single();
 
       if (error) throw error;
 
