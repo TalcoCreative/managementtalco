@@ -469,17 +469,6 @@ const Meeting = () => {
                   <SelectItem value="offline">Offline</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="upcoming">Mendatang</SelectItem>
-                  <SelectItem value="past">Selesai</SelectItem>
-                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
