@@ -203,9 +203,9 @@ const Meeting = () => {
     return "lewat";
   };
 
-  const filteredMeetings = useMemo(() => {
+  // Base filter (search, type, mode, confidential) - shared between tabs
+  const baseFilteredMeetings = useMemo(() => {
     let result = meetings?.filter(meeting => {
-      // Filter confidential meetings: only creator, participants, and super_admin can see
       if (meeting.is_confidential && currentUser?.id) {
         const isCreator = meeting.created_by === currentUser.id;
         const isParticipant = participants?.some(p => p.meeting_id === meeting.id && p.user_id === currentUser.id);
@@ -217,56 +217,49 @@ const Meeting = () => {
       const matchesType = typeFilter === "all" || meeting.type === typeFilter;
       const matchesMode = modeFilter === "all" || meeting.mode === modeFilter;
       
-      let matchesStatus = true;
-      if (statusFilter !== "all") {
-        const meetingDate = parseISO(meeting.meeting_date);
-        if (statusFilter === "upcoming") {
-          matchesStatus = isFuture(meetingDate) || isToday(meetingDate);
-        } else if (statusFilter === "past") {
-          matchesStatus = isPast(meetingDate) && !isToday(meetingDate);
-        } else if (statusFilter === "completed") {
-          matchesStatus = meeting.status === "completed";
-        } else if (statusFilter === "cancelled") {
-          matchesStatus = meeting.status === "cancelled";
-        }
-      }
-      
-      return matchesSearch && matchesType && matchesMode && matchesStatus;
+      return matchesSearch && matchesType && matchesMode;
     }) || [];
 
-    // Sort the filtered results
+    return result;
+  }, [meetings, searchTerm, typeFilter, modeFilter, currentUser?.id, participants, isSuperAdmin]);
+
+  // Active meetings (not completed and not cancelled)
+  const activeMeetings = useMemo(() => {
+    const result = baseFilteredMeetings.filter(m => m.status !== "completed" && m.status !== "cancelled");
     result.sort((a, b) => {
       let comparison = 0;
-      
       switch (sortField) {
-        case "title":
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case "date":
-          comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time);
-          break;
-        case "type":
-          comparison = a.type.localeCompare(b.type);
-          break;
-        case "mode":
-          comparison = a.mode.localeCompare(b.mode);
-          break;
-        case "participants":
-          comparison = getParticipantCount(a.id) - getParticipantCount(b.id);
-          break;
-        case "creator":
-          comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || "");
-          break;
-        case "status":
-          comparison = getStatusValue(a).localeCompare(getStatusValue(b));
-          break;
+        case "title": comparison = a.title.localeCompare(b.title); break;
+        case "date": comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time); break;
+        case "type": comparison = a.type.localeCompare(b.type); break;
+        case "mode": comparison = a.mode.localeCompare(b.mode); break;
+        case "participants": comparison = getParticipantCount(a.id) - getParticipantCount(b.id); break;
+        case "creator": comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || ""); break;
+        case "status": comparison = getStatusValue(a).localeCompare(getStatusValue(b)); break;
       }
-      
       return sortDirection === "asc" ? comparison : -comparison;
     });
-
     return result;
-  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter, currentUser?.id, participants, isSuperAdmin, sortField, sortDirection]);
+  }, [baseFilteredMeetings, sortField, sortDirection]);
+
+  // Completed/cancelled meetings
+  const completedMeetings = useMemo(() => {
+    const result = baseFilteredMeetings.filter(m => m.status === "completed" || m.status === "cancelled");
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "title": comparison = a.title.localeCompare(b.title); break;
+        case "date": comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time); break;
+        case "type": comparison = a.type.localeCompare(b.type); break;
+        case "mode": comparison = a.mode.localeCompare(b.mode); break;
+        case "participants": comparison = getParticipantCount(a.id) - getParticipantCount(b.id); break;
+        case "creator": comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || ""); break;
+        case "status": comparison = getStatusValue(a).localeCompare(getStatusValue(b)); break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+    return result;
+  }, [baseFilteredMeetings, sortField, sortDirection]);
 
   // Filter meetings by date range for stats
   const meetingsInRange = useMemo(() => {
