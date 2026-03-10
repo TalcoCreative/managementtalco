@@ -244,6 +244,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             deadline: formData.deadline,
             priority: formData.priority,
             creatorName: creatorProfile?.full_name || "Someone",
+            shareToken: taskData.share_token || undefined,
           }).catch(err => console.error("Email notification failed:", err));
         }
 
