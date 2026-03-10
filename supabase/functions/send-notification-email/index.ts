@@ -95,6 +95,7 @@ const getDefaultSubject = (type: string, name: string): string => {
     case "meeting_reminder": return `Hi @${firstName} – reminder meeting nih 📅`;
     case "announcement": return `📢 Pengumuman: Ada info penting nih buat lo!`;
     case "recruitment_pic_assigned": return `Hi @${firstName} – lo ditunjuk jadi PIC kandidat nih 📋`;
+    case "ep_mention": return `Hi @${firstName} – lo di-mention di Editorial Plan nih 💬`;
     default: return `Hi @${firstName} – ada update buat lo nih 🚀`;
   }
 };
