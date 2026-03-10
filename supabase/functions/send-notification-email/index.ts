@@ -95,6 +95,7 @@ const getDefaultSubject = (type: string, name: string): string => {
     case "meeting_reminder": return `Hi @${firstName} – reminder meeting nih 📅`;
     case "announcement": return `📢 Pengumuman: Ada info penting nih buat lo!`;
     case "recruitment_pic_assigned": return `Hi @${firstName} – lo ditunjuk jadi PIC kandidat nih 📋`;
+    case "ep_mention": return `Hi @${firstName} – lo di-mention di Editorial Plan nih 💬`;
     default: return `Hi @${firstName} – ada update buat lo nih 🚀`;
   }
 };
@@ -118,6 +119,7 @@ const getNotificationLabel = (type: string, template?: EmailTemplate | null): st
     case "meeting_invitation": case "meeting_reminder": return "Meeting";
     case "announcement": return "Pengumuman";
     case "recruitment_pic_assigned": return "Recruitment";
+    case "ep_mention": return "Editorial Plan";
     default: return "Notifikasi";
   }
 };

@@ -3,9 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Trash2, EyeOff } from "lucide-react";
+import { X, Trash2, EyeOff, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { MentionInput } from "@/components/tasks/MentionInput";
+import { sendMentionEmail, getUserEmailById, sendEmailNotification } from "@/lib/email-notifications";
 
 interface Comment {
   id: string;
@@ -19,12 +21,30 @@ interface Comment {
 
 interface EPCommentsPanelProps {
   epId: string;
+  epTitle?: string;
   currentSlideId?: string;
+  currentSlideLabel?: string;
   onClose: () => void;
 }
 
-export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPanelProps) {
+export function EPCommentsPanel({ epId, epTitle, currentSlideId, currentSlideLabel, onClose }: EPCommentsPanelProps) {
   const queryClient = useQueryClient();
+  const [newComment, setNewComment] = useState("");
+
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("id", user.id)
+        .single();
+      return profile;
+    },
+  });
 
   // Fetch comments filtered by current slide
   const { data: comments, refetch } = useQuery({
@@ -43,6 +63,60 @@ export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPan
       const { data, error } = await query;
       if (error) throw error;
       return data as Comment[];
+    },
+  });
+
+  // Add comment mutation
+  const addCommentMutation = useMutation({
+    mutationFn: async (commentText: string) => {
+      if (!currentUser) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("ep_comments")
+        .insert({
+          ep_id: epId,
+          slide_id: currentSlideId || null,
+          name: currentUser.full_name,
+          comment: commentText,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (_, commentText) => {
+      refetch();
+      setNewComment("");
+      toast.success("Komentar ditambahkan");
+
+      // Process @mentions and send emails
+      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+      let match;
+      while ((match = mentionRegex.exec(commentText)) !== null) {
+        const mentionedUserId = match[2];
+        const mentionedName = match[1];
+        
+        if (mentionedUserId !== currentUser?.id) {
+          const { email, name } = await getUserEmailById(mentionedUserId);
+          if (email) {
+            const baseUrl = window.location.origin;
+            await sendEmailNotification({
+              recipientEmail: email,
+              recipientName: name,
+              notificationType: "ep_mention",
+              data: {
+                title: epTitle || "Editorial Plan",
+                comment_content: commentText.replace(/@\[([^\]]+)\]\([^)]+\)/g, "@$1"),
+                creator_name: currentUser?.full_name || "Tim",
+                description: currentSlideLabel ? `Slide: ${currentSlideLabel}` : undefined,
+                link: `${baseUrl}/editorial-plan`,
+              },
+              relatedId: epId,
+            });
+          }
+        }
+      }
     },
   });
 
@@ -78,6 +152,16 @@ export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPan
     },
   });
 
+  // Format comment text (replace mention syntax with readable names)
+  const formatComment = (text: string) => {
+    return text.replace(/@\[([^\]]+)\]\([^)]+\)/g, (_, name) => `@${name}`);
+  };
+
+  const handleSubmit = () => {
+    if (!newComment.trim()) return;
+    addCommentMutation.mutate(newComment);
+  };
+
   return (
     <div className="w-80 border-l bg-card flex flex-col">
       <div className="flex items-center justify-between p-4 border-b">
@@ -93,6 +177,28 @@ export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPan
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Add comment input */}
+      {currentUser && (
+        <div className="p-4 border-b space-y-2">
+          <MentionInput
+            value={newComment}
+            onChange={setNewComment}
+            placeholder="Tulis komentar... gunakan @ untuk mention"
+            rows={2}
+            disabled={addCommentMutation.isPending}
+          />
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!newComment.trim() || addCommentMutation.isPending}
+            className="w-full"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Kirim
+          </Button>
+        </div>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
@@ -141,7 +247,7 @@ export function EPCommentsPanel({ epId, currentSlideId, onClose }: EPCommentsPan
                     </Button>
                   </div>
                 </div>
-                <p className="text-sm">{comment.comment}</p>
+                <p className="text-sm whitespace-pre-wrap">{formatComment(comment.comment)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   {format(new Date(comment.created_at), "dd MMM yyyy, HH:mm")}
                 </p>

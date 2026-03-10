@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange, Lock, ArrowUpDown } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, Clock, MapPin, Video, Users, Building2, Plus, Search, CalendarRange, Lock, ArrowUpDown, CheckCircle2 } from "lucide-react";
 import { format, parseISO, isToday, isFuture, isPast, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { id } from "date-fns/locale";
 import CreateMeetingDialog from "@/components/meeting/CreateMeetingDialog";
@@ -202,9 +203,9 @@ const Meeting = () => {
     return "lewat";
   };
 
-  const filteredMeetings = useMemo(() => {
+  // Base filter (search, type, mode, confidential) - shared between tabs
+  const baseFilteredMeetings = useMemo(() => {
     let result = meetings?.filter(meeting => {
-      // Filter confidential meetings: only creator, participants, and super_admin can see
       if (meeting.is_confidential && currentUser?.id) {
         const isCreator = meeting.created_by === currentUser.id;
         const isParticipant = participants?.some(p => p.meeting_id === meeting.id && p.user_id === currentUser.id);
@@ -216,56 +217,49 @@ const Meeting = () => {
       const matchesType = typeFilter === "all" || meeting.type === typeFilter;
       const matchesMode = modeFilter === "all" || meeting.mode === modeFilter;
       
-      let matchesStatus = true;
-      if (statusFilter !== "all") {
-        const meetingDate = parseISO(meeting.meeting_date);
-        if (statusFilter === "upcoming") {
-          matchesStatus = isFuture(meetingDate) || isToday(meetingDate);
-        } else if (statusFilter === "past") {
-          matchesStatus = isPast(meetingDate) && !isToday(meetingDate);
-        } else if (statusFilter === "completed") {
-          matchesStatus = meeting.status === "completed";
-        } else if (statusFilter === "cancelled") {
-          matchesStatus = meeting.status === "cancelled";
-        }
-      }
-      
-      return matchesSearch && matchesType && matchesMode && matchesStatus;
+      return matchesSearch && matchesType && matchesMode;
     }) || [];
 
-    // Sort the filtered results
+    return result;
+  }, [meetings, searchTerm, typeFilter, modeFilter, currentUser?.id, participants, isSuperAdmin]);
+
+  // Active meetings (not completed and not cancelled)
+  const activeMeetings = useMemo(() => {
+    const result = baseFilteredMeetings.filter(m => m.status !== "completed" && m.status !== "cancelled");
     result.sort((a, b) => {
       let comparison = 0;
-      
       switch (sortField) {
-        case "title":
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case "date":
-          comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time);
-          break;
-        case "type":
-          comparison = a.type.localeCompare(b.type);
-          break;
-        case "mode":
-          comparison = a.mode.localeCompare(b.mode);
-          break;
-        case "participants":
-          comparison = getParticipantCount(a.id) - getParticipantCount(b.id);
-          break;
-        case "creator":
-          comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || "");
-          break;
-        case "status":
-          comparison = getStatusValue(a).localeCompare(getStatusValue(b));
-          break;
+        case "title": comparison = a.title.localeCompare(b.title); break;
+        case "date": comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time); break;
+        case "type": comparison = a.type.localeCompare(b.type); break;
+        case "mode": comparison = a.mode.localeCompare(b.mode); break;
+        case "participants": comparison = getParticipantCount(a.id) - getParticipantCount(b.id); break;
+        case "creator": comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || ""); break;
+        case "status": comparison = getStatusValue(a).localeCompare(getStatusValue(b)); break;
       }
-      
       return sortDirection === "asc" ? comparison : -comparison;
     });
-
     return result;
-  }, [meetings, searchTerm, typeFilter, modeFilter, statusFilter, currentUser?.id, participants, isSuperAdmin, sortField, sortDirection]);
+  }, [baseFilteredMeetings, sortField, sortDirection]);
+
+  // Completed/cancelled meetings
+  const completedMeetings = useMemo(() => {
+    const result = baseFilteredMeetings.filter(m => m.status === "completed" || m.status === "cancelled");
+    result.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case "title": comparison = a.title.localeCompare(b.title); break;
+        case "date": comparison = a.meeting_date.localeCompare(b.meeting_date) || a.start_time.localeCompare(b.start_time); break;
+        case "type": comparison = a.type.localeCompare(b.type); break;
+        case "mode": comparison = a.mode.localeCompare(b.mode); break;
+        case "participants": comparison = getParticipantCount(a.id) - getParticipantCount(b.id); break;
+        case "creator": comparison = (a.creator?.full_name || "").localeCompare(b.creator?.full_name || ""); break;
+        case "status": comparison = getStatusValue(a).localeCompare(getStatusValue(b)); break;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+    return result;
+  }, [baseFilteredMeetings, sortField, sortDirection]);
 
   // Filter meetings by date range for stats
   const meetingsInRange = useMemo(() => {
@@ -309,6 +303,74 @@ const Meeting = () => {
     setStatsDateFrom(new Date(now.getFullYear(), 0, 1));
     setStatsDateTo(new Date(now.getFullYear(), 11, 31));
   };
+
+  const MeetingTable = ({ meetings: meetingList }: { meetings: any[] }) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("title")}>
+            <div className="flex items-center gap-1">Judul <ArrowUpDown className={`h-4 w-4 ${sortField === "title" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("date")}>
+            <div className="flex items-center gap-1">Tanggal & Waktu <ArrowUpDown className={`h-4 w-4 ${sortField === "date" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("type")}>
+            <div className="flex items-center gap-1">Tipe <ArrowUpDown className={`h-4 w-4 ${sortField === "type" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("mode")}>
+            <div className="flex items-center gap-1">Mode <ArrowUpDown className={`h-4 w-4 ${sortField === "mode" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("participants")}>
+            <div className="flex items-center gap-1">Partisipan <ArrowUpDown className={`h-4 w-4 ${sortField === "participants" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("creator")}>
+            <div className="flex items-center gap-1">Dibuat Oleh <ArrowUpDown className={`h-4 w-4 ${sortField === "creator" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+          <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort("status")}>
+            <div className="flex items-center gap-1">Status <ArrowUpDown className={`h-4 w-4 ${sortField === "status" ? "text-primary" : "text-muted-foreground"}`} /></div>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {meetingList.map((meeting) => (
+          <TableRow key={meeting.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedMeeting(meeting)}>
+            <TableCell className="font-medium">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p>{meeting.title}</p>
+                  {meeting.is_confidential && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                      <Lock className="w-3 h-3 mr-1" /> Rahasia
+                    </Badge>
+                  )}
+                </div>
+                {meeting.client && <p className="text-xs text-muted-foreground">Client: {meeting.client.name}</p>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p>{format(parseISO(meeting.meeting_date), "dd MMM yyyy", { locale: id })}</p>
+                  <p className="text-xs text-muted-foreground">{meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}</p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>{getTypeBadge(meeting.type)}</TableCell>
+            <TableCell>{getModeBadge(meeting.mode)}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span>{getParticipantCount(meeting.id)}</span>
+              </div>
+            </TableCell>
+            <TableCell>{meeting.creator?.full_name || "-"}</TableCell>
+            <TableCell>{getStatusBadge(meeting)}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <AppLayout>
@@ -475,152 +537,61 @@ const Meeting = () => {
                   <SelectItem value="offline">Offline</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full md:w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="upcoming">Mendatang</SelectItem>
-                  <SelectItem value="past">Selesai</SelectItem>
-                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Meetings Table */}
-        <Card>
-          <CardContent className="pt-6">
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Memuat data...</div>
-            ) : filteredMeetings?.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Tidak ada meeting ditemukan
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("title")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Judul
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "title" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("date")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Tanggal & Waktu
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "date" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("type")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Tipe
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "type" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("mode")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Mode
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "mode" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("participants")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Partisipan
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "participants" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("creator")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Dibuat Oleh
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "creator" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort("status")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Status
-                        <ArrowUpDown className={`h-4 w-4 ${sortField === "status" ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMeetings?.map((meeting) => (
-                    <TableRow 
-                      key={meeting.id} 
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => setSelectedMeeting(meeting)}
-                    >
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p>{meeting.title}</p>
-                            {meeting.is_confidential && (
-                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                <Lock className="w-3 h-3 mr-1" />
-                                Rahasia
-                              </Badge>
-                            )}
-                          </div>
-                          {meeting.client && (
-                            <p className="text-xs text-muted-foreground">
-                              Client: {meeting.client.name}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          <div>
-                            <p>{format(parseISO(meeting.meeting_date), "dd MMM yyyy", { locale: id })}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {meeting.start_time.slice(0, 5)} - {meeting.end_time.slice(0, 5)}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getTypeBadge(meeting.type)}</TableCell>
-                      <TableCell>{getModeBadge(meeting.mode)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                          <span>{getParticipantCount(meeting.id)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{meeting.creator?.full_name || "-"}</TableCell>
-                      <TableCell>{getStatusBadge(meeting)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {/* Meetings Tabs */}
+        <Tabs defaultValue="active" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="active" className="gap-2">
+              <Clock className="h-4 w-4" />
+              Berlangsung
+              {activeMeetings.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{activeMeetings.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Selesai
+              {completedMeetings.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{completedMeetings.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
+            <Card>
+              <CardContent className="pt-6">
+                {isLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Memuat data...</div>
+                ) : activeMeetings.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Tidak ada meeting aktif
+                  </div>
+                ) : (
+                  <MeetingTable meetings={activeMeetings} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="completed">
+            <Card>
+              <CardContent className="pt-6">
+                {isLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Memuat data...</div>
+                ) : completedMeetings.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Belum ada meeting selesai
+                  </div>
+                ) : (
+                  <MeetingTable meetings={completedMeetings} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <CreateMeetingDialog
