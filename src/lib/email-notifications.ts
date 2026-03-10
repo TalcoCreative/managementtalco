@@ -248,12 +248,17 @@ export const sendTaskOverdueEmail = async (
     id: string;
     title: string;
     deadline: string;
+    shareToken?: string;
   }
 ): Promise<void> => {
   const { email, name } = await getUserEmailById(assigneeId);
   if (!email) return;
 
   const baseUrl = window.location.origin;
+  const taskLink = taskData.shareToken 
+    ? `https://ms.talco.id/${taskData.shareToken}`
+    : `${baseUrl}/tasks`;
+
   await sendEmailNotification({
     recipientEmail: email,
     recipientName: name,
@@ -261,7 +266,7 @@ export const sendTaskOverdueEmail = async (
     data: {
       title: taskData.title,
       deadline: taskData.deadline,
-      link: `${baseUrl}/tasks`,
+      link: taskLink,
       status: "Overdue",
     },
     relatedId: taskData.id,
