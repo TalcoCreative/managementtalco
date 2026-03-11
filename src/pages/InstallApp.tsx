@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Smartphone, Monitor, Share, Plus, MoreVertical, Check } from "lucide-react";
+import { Download, Smartphone, Monitor, Share, Plus, MoreVertical, Check, Bell, Settings } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useNavigate } from "react-router-dom";
 
