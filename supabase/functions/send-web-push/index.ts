@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { user_id, user_ids, title, body, url, tag, data: extraData } = await req.json();
+    const { user_id, user_ids, title, body, url, tag, data: extraData, triggered_by } = await req.json();
 
     const targetUserIds: string[] = user_ids || (user_id ? [user_id] : []);
     if (targetUserIds.length === 0) {
@@ -37,19 +37,25 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = vapidSettings?.find((s: any) => s.setting_key === "vapid_private_key")?.setting_value;
 
     if (!vapidPublicKey || !vapidPrivateKey) {
-      console.error("[WebPush] VAPID keys not found in company_settings");
+      // Log failure
+      await supabase.from("push_notification_logs").insert({
+        user_ids: targetUserIds,
+        title: title || "N/A",
+        body: body || "",
+        url: url || "/",
+        tag: tag || "",
+        status: "failed",
+        error_details: "VAPID keys not configured",
+        triggered_by: triggered_by || "system",
+      });
+
       return new Response(
         JSON.stringify({ error: "VAPID keys not configured. Call get-vapid-key first." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Configure web-push with VAPID details
-    webpush.setVapidDetails(
-      "mailto:admin@talco.id",
-      vapidPublicKey,
-      vapidPrivateKey
-    );
+    webpush.setVapidDetails("mailto:admin@talco.id", vapidPublicKey, vapidPrivateKey);
 
     // Get all active subscriptions for target users
     const { data: subscriptions, error: subError } = await supabase
@@ -59,7 +65,17 @@ Deno.serve(async (req) => {
       .eq("is_active", true);
 
     if (subError) {
-      console.error("[WebPush] Subscription query error:", subError);
+      await supabase.from("push_notification_logs").insert({
+        user_ids: targetUserIds,
+        title: title || "N/A",
+        body: body || "",
+        url: url || "/",
+        tag: tag || "",
+        status: "failed",
+        error_details: `Subscription query error: ${subError.message}`,
+        triggered_by: triggered_by || "system",
+      });
+
       return new Response(
         JSON.stringify({ error: subError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -67,7 +83,18 @@ Deno.serve(async (req) => {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
-      console.log("[WebPush] No active subscriptions for users:", targetUserIds);
+      await supabase.from("push_notification_logs").insert({
+        user_ids: targetUserIds,
+        title: title || "N/A",
+        body: body || "",
+        url: url || "/",
+        tag: tag || "",
+        status: "no_subscribers",
+        sent_count: 0,
+        total_subscriptions: 0,
+        triggered_by: triggered_by || "system",
+      });
+
       return new Response(
         JSON.stringify({ success: true, sent: 0, message: "No active subscriptions" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -88,16 +115,13 @@ Deno.serve(async (req) => {
     let sent = 0;
     let failed = 0;
     const expiredEndpoints: string[] = [];
+    const errorMessages: string[] = [];
 
-    // Send to all subscriptions in parallel
     await Promise.allSettled(
       subscriptions.map(async (sub: any) => {
         const pushSubscription = {
           endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh_key,
-            auth: sub.auth_key,
-          },
+          keys: { p256dh: sub.p256dh_key, auth: sub.auth_key },
         };
 
         try {
@@ -106,9 +130,11 @@ Deno.serve(async (req) => {
             urgency: "high",
           });
           sent++;
-          console.log(`[WebPush] ✓ Sent to ${sub.device_name || sub.device_type} (${sub.endpoint.slice(0, 60)}...)`);
+          console.log(`[WebPush] ✓ Sent to ${sub.device_name || sub.device_type}`);
         } catch (err: any) {
-          console.error(`[WebPush] ✗ Failed for ${sub.device_name}: ${err.statusCode} ${err.body || err.message}`);
+          const errMsg = `${sub.device_name}: ${err.statusCode} ${err.body || err.message}`;
+          console.error(`[WebPush] ✗ ${errMsg}`);
+          errorMessages.push(errMsg);
           if (err.statusCode === 410 || err.statusCode === 404) {
             expiredEndpoints.push(sub.endpoint);
           }
@@ -123,8 +149,22 @@ Deno.serve(async (req) => {
         .from("push_subscriptions")
         .update({ is_active: false })
         .in("endpoint", expiredEndpoints);
-      console.log(`[WebPush] Deactivated ${expiredEndpoints.length} expired subscriptions`);
     }
+
+    // Log the push notification activity
+    await supabase.from("push_notification_logs").insert({
+      user_ids: targetUserIds,
+      title: title || "N/A",
+      body: body || "",
+      url: url || "/",
+      tag: tag || "",
+      status: sent > 0 ? "sent" : "failed",
+      sent_count: sent,
+      failed_count: failed,
+      total_subscriptions: subscriptions.length,
+      error_details: errorMessages.length > 0 ? errorMessages.join("; ") : null,
+      triggered_by: triggered_by || "system",
+    });
 
     console.log(`[WebPush] Done: sent=${sent}, failed=${failed}, total=${subscriptions.length}`);
 
