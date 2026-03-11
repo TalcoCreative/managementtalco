@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Eye, EyeOff, Globe, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Globe, Lock, User, Bell, BellOff, BellRing, Smartphone } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useQuery } from "@tanstack/react-query";
 
 function LanguageCard() {
   const { language, setLanguage, t } = useLanguage();
