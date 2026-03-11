@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Plus, Trash2, Video, MapPin, Calendar, ExternalLink, Copy } from "lucide-react";
 import { sendMeetingInvitationEmail } from "@/lib/email-notifications";
+import { sendWebPush } from "@/lib/push-utils";
 
 interface CreateMeetingDialogProps {
   open: boolean;
@@ -228,8 +229,8 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
           .map(p => p.full_name)
           .join(", ") || "";
 
-        selectedParticipants.forEach(userId => {
-          sendMeetingInvitationEmail(userId, {
+        selectedParticipants.forEach(participantId => {
+          sendMeetingInvitationEmail(participantId, {
             id: meeting.id,
             title: formData.title,
             date: formData.meeting_date,
@@ -239,6 +240,18 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
             participants: participantNames,
           }).catch(err => console.error("Email notification failed:", err));
         });
+
+        // Push notification to all participants
+        const pushParticipantIds = selectedParticipants.filter(id => id !== userId);
+        if (pushParticipantIds.length > 0) {
+          sendWebPush({
+            userIds: pushParticipantIds,
+            title: "Talco - Meeting Invitation",
+            body: `${creatorProfile?.full_name || "Someone"} invited you to "${formData.title}" on ${formData.meeting_date}`,
+            url: "/meeting",
+            tag: `meeting-${meeting.id}`,
+          }).catch(console.error);
+        }
       }
 
       // Add external participants

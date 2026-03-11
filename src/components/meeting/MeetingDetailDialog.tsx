@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sendWebPush } from "@/lib/push-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -340,6 +341,20 @@ const MeetingDetailDialog = ({
         await supabase
           .from("meeting_notifications")
           .insert(notifications);
+
+        // Push notification to new participants
+        const { data: session } = await supabase.auth.getSession();
+        const { data: senderProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+        const pushIds = toAdd.filter(id => id !== session.session?.user.id);
+        if (pushIds.length > 0) {
+          sendWebPush({
+            userIds: pushIds,
+            title: "Talco - Meeting Invitation",
+            body: `${senderProfile?.full_name || "Someone"} invited you to "${meeting.title}"`,
+            url: "/meeting",
+            tag: `meeting-${meeting.id}`,
+          }).catch(console.error);
+        }
       }
       
       // Remove participants

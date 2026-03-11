@@ -16,6 +16,7 @@ import { z } from "zod";
 import { RichBriefEditor, BriefData } from "@/components/tasks/RichBriefEditor";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
+import { sendWebPush } from "@/lib/push-utils";
 
 
 interface LinkAttachment {
@@ -227,50 +228,85 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         task_title: formData.title.trim(),
       });
 
-      // Send email notification to all assignees (async, non-blocking)
-      if (assignedUsers.length > 0 && taskData) {
+      // Send notifications to assignees and watchers
+      if (taskData) {
         const { data: creatorProfile } = await supabase
           .from("profiles")
           .select("full_name")
           .eq("id", session.session.user.id)
           .single();
-        
-        // Send email to each assignee
+        const creatorName = creatorProfile?.full_name || "Someone";
+
+        // Notify assignees: email + in-app + push
         for (const assigneeId of assignedUsers) {
+          if (assigneeId === session.session.user.id) continue;
+          
+          // In-app notification
+          supabase.from("task_notifications").insert({
+            task_id: taskData.id,
+            user_id: assigneeId,
+            notification_type: "assigned",
+            message: `${creatorName} assigned you to task "${formData.title.trim()}"`,
+            created_by: session.session.user.id,
+          }).then(({ error }) => { if (error) console.error("Assignee notification failed:", error); });
+
+          // Email
           sendTaskAssignmentEmail(assigneeId, {
             id: taskData.id,
             title: formData.title.trim(),
             description: formData.notes?.trim(),
             deadline: formData.deadline,
             priority: formData.priority,
-            creatorName: creatorProfile?.full_name || "Someone",
+            creatorName,
             shareToken: taskData.share_token || undefined,
-          }).catch(err => console.error("Email notification failed:", err));
+          }).catch(console.error);
         }
 
-        // Send notification to watchers (email + in-app, push auto via DB trigger)
+        // Push for all assignees (batch)
+        const pushAssigneeIds = assignedUsers.filter(id => id !== session.session.user.id);
+        if (pushAssigneeIds.length > 0) {
+          sendWebPush({
+            userIds: pushAssigneeIds,
+            title: "Talco - New Task Assigned",
+            body: `${creatorName} assigned you: "${formData.title.trim()}"`,
+            url: "/tasks",
+            tag: `task-assign-${taskData.id}`,
+          }).catch(console.error);
+        }
+
+        // Notify watchers: in-app + email + push
         for (const watcherId of notifyUsers) {
-          // In-app notification
+          if (watcherId === session.session.user.id) continue;
+          
           supabase.from("task_notifications").insert({
             task_id: taskData.id,
             user_id: watcherId,
             notification_type: "assigned",
-            message: `${creatorProfile?.full_name || "Someone"} menambahkan lo sebagai watcher di task "${formData.title.trim()}"`,
+            message: `${creatorName} menambahkan lo sebagai watcher di task "${formData.title.trim()}"`,
             created_by: session.session.user.id,
           }).then(({ error }) => { if (error) console.error("Watcher notification failed:", error); });
 
-          // Email notification  
           sendTaskAssignmentEmail(watcherId, {
             id: taskData.id,
             title: formData.title.trim(),
             description: formData.notes?.trim(),
             deadline: formData.deadline,
             priority: formData.priority,
-            creatorName: creatorProfile?.full_name || "Someone",
+            creatorName,
             shareToken: taskData.share_token || undefined,
-          }).catch(err => console.error("Watcher email failed:", err));
+          }).catch(console.error);
         }
-        // Push notifications are sent automatically via DB trigger on task_notifications insert
+
+        const pushWatcherIds = notifyUsers.filter(id => id !== session.session.user.id);
+        if (pushWatcherIds.length > 0) {
+          sendWebPush({
+            userIds: pushWatcherIds,
+            title: "Talco - Task Watcher",
+            body: `${creatorName} added you as watcher on "${formData.title.trim()}"`,
+            url: "/tasks",
+            tag: `task-watch-${taskData.id}`,
+          }).catch(console.error);
+        }
       }
 
       toast.success("Task created successfully!");
