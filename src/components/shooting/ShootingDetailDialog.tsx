@@ -135,7 +135,6 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
       toast.success("Shooting schedule approved!");
 
       // Push to all crew
-      const { data: session } = await supabase.auth.getSession();
       pushToShootingInvolved({
         shootingId: shootingId!,
         title: "Talco - Shooting Approved ✅",
