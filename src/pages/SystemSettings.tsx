@@ -9,9 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings, Bell, Send } from "lucide-react";
+import { Bot, Eye, EyeOff, Save, AlertTriangle, Clock, Settings, Bell, Send, ScrollText, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 const AI_MODELS = [
   { value: "gpt-4o-mini", label: "GPT-4o Mini" },
