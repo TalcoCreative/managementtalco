@@ -353,6 +353,7 @@ export default function HRAnalytics() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="HR Analytics" />
         {/* Header — Immersive section */}
         <div className="section-header" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
           <div className="section-icon">

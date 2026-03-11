@@ -356,6 +356,7 @@ export default function Prospects() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Prospects" />
         <div className="flex items-center justify-between">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-sales)' } as React.CSSProperties}>
             <div className="section-icon">

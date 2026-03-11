@@ -617,6 +617,7 @@ export default function HRDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="HR Dashboard" />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
             <div className="section-icon">
