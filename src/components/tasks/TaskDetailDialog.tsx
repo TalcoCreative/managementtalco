@@ -398,9 +398,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             .single();
 
           // Insert mention records (for in-app notifications)
+          const pushMentionIds: string[] = [];
           for (const mentionedUserId of mentionedUserIds) {
             // Don't notify yourself
             if (mentionedUserId === session.session.user.id) continue;
+
+            pushMentionIds.push(mentionedUserId);
 
             await supabase.from("comment_mentions").insert({
               comment_id: newComment.id,
@@ -416,6 +419,17 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               mentionerName: currentProfile?.full_name || "Someone",
               shareToken: task?.share_token,
             }).catch(err => console.error("Mention email failed:", err));
+          }
+
+          // Push notification for all mentions
+          if (pushMentionIds.length > 0) {
+            sendWebPush({
+              userIds: pushMentionIds,
+              title: "Talco - You were mentioned",
+              body: `${currentProfile?.full_name || "Someone"} mentioned you in "${task?.title || "a task"}"`,
+              url: "/tasks",
+              tag: `mention-${newComment.id}`,
+            }).catch(console.error);
           }
         }
       }
