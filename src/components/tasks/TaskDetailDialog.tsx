@@ -228,18 +228,29 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       }
       if (newAssignees.length > 0) {
         await supabase.from("task_assignees").insert(newAssignees.map((userId: string) => ({ task_id: taskId, user_id: userId })));
-      }
-
-      // Send email to new assignees
-      if (newAssignees.length > 0) {
         const { data: session } = await supabase.auth.getSession();
         const { data: creatorProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+        const creatorName = creatorProfile?.full_name || "Someone";
+        
         for (const assigneeId of newAssignees) {
-          sendTaskAssignmentEmail(assigneeId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: creatorProfile?.full_name || "Someone" }).catch(console.error);
+          if (assigneeId === session.session?.user.id) continue;
+          // In-app
+          supabase.from("task_notifications").insert({
+            task_id: taskId, user_id: assigneeId, notification_type: "assigned",
+            message: `${creatorName} assigned you to task "${editTitle}"`,
+            created_by: session.session?.user.id,
+          }).catch(console.error);
+          // Email
+          sendTaskAssignmentEmail(assigneeId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName }).catch(console.error);
+        }
+        // Push
+        const pushIds = newAssignees.filter(id => id !== session.session?.user.id);
+        if (pushIds.length > 0) {
+          sendWebPush({ userIds: pushIds, title: "Talco - Task Assigned", body: `${creatorName} assigned you: "${editTitle}"`, url: "/tasks", tag: `task-assign-${taskId}` }).catch(console.error);
         }
       }
 
-      // Update task_watchers - sync with editWatchers
+      // Update task_watchers
       const currentWatcherIds = watcherIds;
       const newWatchers = editWatchers.filter(id => !currentWatcherIds.includes(id));
       const removedWatchers = currentWatcherIds.filter((id: string) => !editWatchers.includes(id));
@@ -249,20 +260,22 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       }
       if (newWatchers.length > 0) {
         await supabase.from("task_watchers").insert(newWatchers.map((userId: string) => ({ task_id: taskId, user_id: userId })));
-        // Send notification to new watchers
         const { data: session } = await supabase.auth.getSession();
         const { data: senderProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+        const senderName = senderProfile?.full_name || "Someone";
         for (const wId of newWatchers) {
+          if (wId === session.session?.user.id) continue;
           supabase.from("task_notifications").insert({
-            task_id: taskId,
-            user_id: wId,
-            notification_type: "assigned",
-            message: `${senderProfile?.full_name || "Someone"} menambahkan lo sebagai watcher di task "${editTitle}"`,
+            task_id: taskId, user_id: wId, notification_type: "assigned",
+            message: `${senderName} menambahkan lo sebagai watcher di task "${editTitle}"`,
             created_by: session.session?.user.id,
-          }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
-          sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderProfile?.full_name || "Someone" }).catch(console.error);
+          }).catch(console.error);
+          sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderName }).catch(console.error);
         }
-        // Push notifications sent automatically via DB trigger on task_notifications insert
+        const pushWatcherIds = newWatchers.filter(id => id !== session.session?.user.id);
+        if (pushWatcherIds.length > 0) {
+          sendWebPush({ userIds: pushWatcherIds, title: "Talco - Task Watcher", body: `${senderName} added you as watcher on "${editTitle}"`, url: "/tasks", tag: `task-watch-${taskId}` }).catch(console.error);
+        }
       }
 
       toast.success("Task berhasil diupdate");
