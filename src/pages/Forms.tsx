@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 interface Form {
   id: string;
