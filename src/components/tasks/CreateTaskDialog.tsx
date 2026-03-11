@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { sendWebPush } from "@/lib/push-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
