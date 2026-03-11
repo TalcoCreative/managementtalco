@@ -14,6 +14,7 @@ import { CreateAssetDialog } from "@/components/asset/CreateAssetDialog";
 import { AssetDetailDialog } from "@/components/asset/AssetDetailDialog";
 import { QRScannerDialog } from "@/components/asset/QRScannerDialog";
 import { AssetTransactionHistory } from "@/components/asset/AssetTransactionHistory";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 interface Asset {
   id: string;
