@@ -298,6 +298,18 @@ export function CreateShootingDialog() {
             role,
           }).catch(err => console.error("Email notification failed:", err));
         });
+
+        // Push notification to all crew
+        const pushCrewIds = Array.from(notifyUsers).filter(id => id !== session.session.user.id);
+        if (pushCrewIds.length > 0) {
+          sendWebPush({
+            userIds: pushCrewIds,
+            title: "Talco - Shooting Schedule",
+            body: `${creatorProfile?.full_name || "Someone"} assigned you to shooting "${formData.title}" on ${formData.scheduled_date}`,
+            url: "/shooting",
+            tag: `shooting-${shooting.id}`,
+          }).catch(console.error);
+        }
       }
 
       toast.success("Shooting schedule requested successfully!");
