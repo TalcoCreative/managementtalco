@@ -51,6 +51,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     let featureKey: string | null = null;
 
+    // Routes always accessible to all authenticated users
+    const ALWAYS_ACCESSIBLE_ROUTES = ["/profile-settings", "/personal-notes", "/install-app"];
+    if (ALWAYS_ACCESSIBLE_ROUTES.some(r => path === r || path.startsWith(r + "/"))) return;
+
     if (ROUTE_FEATURE_MAP[path]) {
       featureKey = ROUTE_FEATURE_MAP[path];
     } else {
