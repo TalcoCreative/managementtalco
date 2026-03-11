@@ -27,6 +27,7 @@ import { CreateRecruitmentFormDialog } from "@/components/recruitment-forms/Crea
 import { FormBuilderDialog } from "@/components/recruitment-forms/FormBuilderDialog";
 import { EmbedCodeDialog } from "@/components/recruitment-forms/EmbedCodeDialog";
 import { EditRecruitmentFormDialog } from "@/components/recruitment-forms/EditRecruitmentFormDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 import {
   AlertDialog,
   AlertDialogAction,
