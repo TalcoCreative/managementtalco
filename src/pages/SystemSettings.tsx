@@ -331,6 +331,116 @@ function PushNotificationTestCard() {
   );
 }
 
+function PushNotificationLogsCard() {
+  const { isSuperAdmin } = usePermissions();
+  const { t } = useLanguage();
+  const queryClient = useQueryClient();
+
+  const { data: logs = [], isLoading, refetch } = useQuery({
+    queryKey: ["push-notification-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("push_notification_logs" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  if (!isSuperAdmin) return null;
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "sent": return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case "failed": return <XCircle className="h-4 w-4 text-destructive" />;
+      case "no_subscribers": return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      default: return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "sent": return <Badge variant="default" className="bg-green-600 text-xs">Sent</Badge>;
+      case "failed": return <Badge variant="destructive" className="text-xs">Failed</Badge>;
+      case "no_subscribers": return <Badge variant="secondary" className="text-xs">No Subs</Badge>;
+      default: return <Badge variant="outline" className="text-xs">{status}</Badge>;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
+              <ScrollText className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base">{t("Push Notification Logs", "Log Push Notification")}</CardTitle>
+              <CardDescription>{t("Activity log of all push notifications sent", "Log aktivitas semua push notification yang terkirim")}</CardDescription>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground text-center py-4">{t("Loading...", "Memuat...")}</p>
+        ) : logs.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">{t("No push notification logs yet", "Belum ada log push notification")}</p>
+        ) : (
+          <ScrollArea className="h-[400px]">
+            <div className="space-y-3">
+              {logs.map((log: any) => (
+                <div key={log.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {getStatusIcon(log.status)}
+                      <span className="text-sm font-medium truncate">{log.title}</span>
+                    </div>
+                    {getStatusBadge(log.status)}
+                  </div>
+                  {log.body && <p className="text-xs text-muted-foreground line-clamp-2">{log.body}</p>}
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>{format(new Date(log.created_at), "dd MMM yyyy HH:mm:ss")}</span>
+                    <span>•</span>
+                    <span>{t("Sent", "Terkirim")}: {log.sent_count || 0}/{log.total_subscriptions || 0}</span>
+                    {log.failed_count > 0 && (
+                      <>
+                        <span>•</span>
+                        <span className="text-destructive">{t("Failed", "Gagal")}: {log.failed_count}</span>
+                      </>
+                    )}
+                    {log.triggered_by && (
+                      <>
+                        <span>•</span>
+                        <span>{t("From", "Dari")}: {log.triggered_by}</span>
+                      </>
+                    )}
+                  </div>
+                  {log.error_details && (
+                    <p className="text-xs text-destructive bg-destructive/5 rounded p-2 font-mono break-all">
+                      {log.error_details}
+                    </p>
+                  )}
+                  {log.url && (
+                    <p className="text-xs text-muted-foreground">URL: {log.url}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SystemSettings() {
   const { t } = useLanguage();
 
@@ -348,6 +458,7 @@ export default function SystemSettings() {
         <AIConfigCard />
         <HRSettingsCard />
         <PushNotificationTestCard />
+        <PushNotificationLogsCard />
       </div>
     </AppLayout>
   );
