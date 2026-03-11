@@ -18,7 +18,7 @@ import { MentionInput, extractMentions, renderCommentWithMentions } from "@/comp
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
-import { pushToTaskInvolved } from "@/lib/push-helpers";
+import { getTaskInvolvedUsers } from "@/lib/push-helpers";
 import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 import { SubTasksSection } from "@/components/tasks/SubTasksSection";
@@ -284,14 +284,20 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       // Push notification to ALL involved on task edit
       const { data: editSession } = await supabase.auth.getSession();
-      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editSession.session?.user.id).single();
-      pushToTaskInvolved({
-        taskId: taskId!,
-        title: "Talco - Task Updated",
-        body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
-        tag: `task-edit-${taskId}-${Date.now()}`,
-        excludeUserId: editSession.session?.user.id,
-      }).catch(console.error);
+      const editUserId = editSession.session?.user.id;
+      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editUserId).single();
+      const editInvolved = await getTaskInvolvedUsers(taskId!);
+      const editPushTargets = editInvolved.filter(id => id !== editUserId);
+      if (editPushTargets.length > 0) {
+        console.log("[TaskPush] Edit push to", editPushTargets.length, "users");
+        sendWebPush({
+          userIds: editPushTargets,
+          title: "Talco - Task Updated",
+          body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
+          url: "/tasks",
+          tag: `task-edit-${taskId}-${Date.now()}`,
+        }).catch(err => console.error("[TaskPush] Edit push failed:", err));
+      }
 
       queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
       queryClient.invalidateQueries({ queryKey: ["task-watchers", taskId] });
@@ -447,15 +453,20 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         }
       }
 
-      // Push notification to ALL involved on new comment (not just mentions)
+      // Push notification to ALL involved on new comment
       const { data: commenterProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
-      pushToTaskInvolved({
-        taskId: taskId!,
-        title: "Talco - New Comment",
-        body: `${commenterProfile?.full_name || "Someone"} commented on "${task?.title || "a task"}"`,
-        tag: `task-comment-${taskId}-${Date.now()}`,
-        excludeUserId: session.session.user.id,
-      }).catch(console.error);
+      const commentInvolved = await getTaskInvolvedUsers(taskId!);
+      const commentPushTargets = commentInvolved.filter(id => id !== session.session.user.id);
+      if (commentPushTargets.length > 0) {
+        console.log("[TaskPush] Comment push to", commentPushTargets.length, "users");
+        sendWebPush({
+          userIds: commentPushTargets,
+          title: "Talco - New Comment",
+          body: `${commenterProfile?.full_name || "Someone"} commented on "${task?.title || "a task"}"`,
+          url: "/tasks",
+          tag: `task-comment-${taskId}-${Date.now()}`,
+        }).catch(err => console.error("[TaskPush] Comment push failed:", err));
+      }
 
       toast.success("Comment added!");
       setComment("");
@@ -535,13 +546,18 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       // Push notification to ALL involved on link added
       const { data: linkerProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
-      pushToTaskInvolved({
-        taskId: taskId!,
-        title: "Talco - Link Added",
-        body: `${linkerProfile?.full_name || "Someone"} added link "${linkName}" to "${task?.title || "a task"}"`,
-        tag: `task-link-${taskId}-${Date.now()}`,
-        excludeUserId: session.session.user.id,
-      }).catch(console.error);
+      const linkInvolved = await getTaskInvolvedUsers(taskId!);
+      const linkPushTargets = linkInvolved.filter(id => id !== session.session.user.id);
+      if (linkPushTargets.length > 0) {
+        console.log("[TaskPush] Link push to", linkPushTargets.length, "users");
+        sendWebPush({
+          userIds: linkPushTargets,
+          title: "Talco - Link Added",
+          body: `${linkerProfile?.full_name || "Someone"} added link "${linkName}" to "${task?.title || "a task"}"`,
+          url: "/tasks",
+          tag: `task-link-${taskId}-${Date.now()}`,
+        }).catch(err => console.error("[TaskPush] Link push failed:", err));
+      }
 
       toast.success("Link added!");
       setLinkUrl("");
