@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
 import { usePositionOptions } from "@/hooks/usePositions";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
