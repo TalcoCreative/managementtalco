@@ -281,6 +281,18 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       toast.success("Task berhasil diupdate");
       setIsEditing(false);
+
+      // Push notification to ALL involved on task edit
+      const { data: editSession } = await supabase.auth.getSession();
+      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editSession.session?.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - Task Updated",
+        body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
+        tag: `task-edit-${taskId}-${Date.now()}`,
+        excludeUserId: editSession.session?.user.id,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
       queryClient.invalidateQueries({ queryKey: ["task-watchers", taskId] });
       queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
