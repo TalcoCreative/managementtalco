@@ -239,7 +239,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             task_id: taskId, user_id: assigneeId, notification_type: "assigned",
             message: `${creatorName} assigned you to task "${editTitle}"`,
             created_by: session.session?.user.id,
-          }).catch(console.error);
+          }).then(({ error }) => { if (error) console.error("Assignee notif error:", error); });
           // Email
           sendTaskAssignmentEmail(assigneeId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName }).catch(console.error);
         }
