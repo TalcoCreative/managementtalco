@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/popover";
 import { isPast, parseISO, isToday } from "date-fns";
 import { sendTaskStatusChangeEmail } from "@/lib/email-notifications";
-import { pushToTaskInvolved } from "@/lib/push-helpers";
+import { sendWebPush } from "@/lib/push-utils";
 
 const taskColumns = [
   { id: "pending", title: "Pending" },
