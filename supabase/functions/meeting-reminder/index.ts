@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
       if (!subscriptions || subscriptions.length === 0) continue;
 
-      const locationInfo = meeting.is_online
+      const locationInfo = meeting.mode === "online"
         ? `Online${meeting.meeting_link ? "" : ""}`
         : meeting.location || "TBD";
 
