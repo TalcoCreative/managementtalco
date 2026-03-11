@@ -207,6 +207,15 @@ export default function Tasks() {
           shareToken: taskData.share_token,
         }).catch(err => console.error("Email notification failed:", err));
       }
+
+      // Push notification to ALL involved (assignees, creator, watchers)
+      pushToTaskInvolved({
+        taskId: itemId,
+        title: "Talco - Task Status Changed",
+        body: `${changerProfile?.full_name || "Someone"} changed "${taskData.title}" to ${newStatus.replace("_", " ")}`,
+        tag: `task-status-${itemId}-${Date.now()}`,
+        excludeUserId: currentUserId,
+      }).catch(console.error);
     }
 
     queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
