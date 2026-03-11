@@ -3224,6 +3224,7 @@ export type Database = {
           notes: string | null
           original_date: string | null
           project_id: string | null
+          reminder_sent: boolean | null
           reschedule_reason: string | null
           rescheduled_at: string | null
           share_token: string | null
@@ -3248,6 +3249,7 @@ export type Database = {
           notes?: string | null
           original_date?: string | null
           project_id?: string | null
+          reminder_sent?: boolean | null
           reschedule_reason?: string | null
           rescheduled_at?: string | null
           share_token?: string | null
@@ -3272,6 +3274,7 @@ export type Database = {
           notes?: string | null
           original_date?: string | null
           project_id?: string | null
+          reminder_sent?: boolean | null
           reschedule_reason?: string | null
           rescheduled_at?: string | null
           share_token?: string | null
