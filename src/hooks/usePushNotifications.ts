@@ -108,7 +108,7 @@ export function usePushNotifications(userId?: string | null) {
       const authKey = btoa(String.fromCharCode(...new Uint8Array(auth)))
         .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-      await supabase.from("push_subscriptions").upsert({
+      const { error: upsertError } = await supabase.from("push_subscriptions").upsert({
         user_id: uid,
         endpoint: subscription.endpoint,
         p256dh_key: p256dh,
@@ -116,7 +116,13 @@ export function usePushNotifications(userId?: string | null) {
         device_type: getDeviceType(),
         device_name: getDeviceName(),
         is_active: true,
-      }, { onConflict: "endpoint" });
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,endpoint" });
+
+      if (upsertError) {
+        console.error("[Push] Failed to save subscription:", upsertError);
+        return;
+      }
 
       subscribedRef.current = true;
       console.log("[Push] Subscription saved for user:", uid);
