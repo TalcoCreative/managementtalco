@@ -266,6 +266,17 @@ export function EditShootingDialog({ shootingId, open, onOpenChange, onSuccess }
       }
 
       toast.success("Shooting schedule updated successfully!");
+
+      // Push to all crew on edit
+      const { data: editSession } = await supabase.auth.getSession();
+      pushToShootingInvolved({
+        shootingId: shootingId!,
+        title: "Talco - Shooting Updated",
+        body: `"${formData.title}" has been updated`,
+        tag: `shooting-edit-${shootingId}-${Date.now()}`,
+        excludeUserId: editSession.session?.user.id,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-crew"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });

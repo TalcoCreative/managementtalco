@@ -107,6 +107,19 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
 
       if (error) throw error;
 
+      // Push to HR/Finance/Super Admin
+      const adminUsers = await getHRFinanceAdminUsers();
+      const pushTargets = adminUsers.filter(id => id !== session.session.user.id);
+      if (pushTargets.length > 0) {
+        sendWebPush({
+          userIds: pushTargets,
+          title: "Talco - New Reimbursement Request",
+          body: `New reimbursement request (Rp ${parseInt(formData.amount).toLocaleString("id-ID")})`,
+          url: "/finance",
+          tag: `reimburse-new-${Date.now()}`,
+        }).catch(console.error);
+      }
+
       toast.success("Reimbursement request submitted");
       setDialogOpen(false);
       setFormData({ amount: "", project_id: "", client_id: "", request_from: "operational", notes: "" });
