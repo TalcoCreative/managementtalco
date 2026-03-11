@@ -48,7 +48,6 @@ export function usePushNotifications(userId?: string | null) {
   useEffect(() => {
     const fetchVapidKey = async () => {
       try {
-        // First try from company_settings (faster)
         const { data } = await supabase
           .from("company_settings")
           .select("setting_value")
@@ -60,7 +59,6 @@ export function usePushNotifications(userId?: string | null) {
           return;
         }
 
-        // If not found, call edge function to generate
         const { data: result, error } = await supabase.functions.invoke("get-vapid-key");
         if (!error && result?.publicKey) {
           setVapidPublicKey(result.publicKey);
@@ -87,14 +85,11 @@ export function usePushNotifications(userId?: string | null) {
   const subscribeAndSave = useCallback(async (uid: string) => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !vapidPublicKey) return;
     if (subscribedRef.current) return;
-    
+
     try {
       const registration = await navigator.serviceWorker.ready;
-
-      // Check existing subscription
       let subscription = await registration.pushManager.getSubscription();
 
-      // If no subscription, create one with VAPID key
       if (!subscription) {
         const appServerKeyArray = urlBase64ToUint8Array(vapidPublicKey);
         subscription = await registration.pushManager.subscribe({
@@ -152,34 +147,29 @@ export function usePushNotifications(userId?: string | null) {
     }
   }, []);
 
-  // Send server-side push notification
-  const sendServerPush = useCallback(async (
-    targetUserIds: string[],
-    title: string,
-    body: string,
-    url?: string,
-    tag?: string
-  ) => {
-    try {
-      await supabase.functions.invoke("send-web-push", {
-        body: { user_ids: targetUserIds, title, body, url, tag },
-      });
-    } catch (err) {
-      console.error("[Push] Server push error:", err);
-    }
-  }, []);
-
   // Main initialization
   useEffect(() => {
-    if (!userId || !vapidPublicKey) return;
+    if (!userId) return;
 
     const init = async () => {
+      // Check if Notification API is available
+      const hasNotificationAPI = "Notification" in window;
+
+      if (!hasNotificationAPI) {
+        // Device doesn't support notifications at all (rare)
+        return;
+      }
+
       if (Notification.permission === "granted") {
         permissionGranted.current = true;
         await subscribeAndSave(userId);
-      } else if (Notification.permission === "default" && !isPromptDismissed()) {
-        setShouldShowPrompt(true);
+      } else if (Notification.permission === "default") {
+        // Always show prompt if not dismissed recently
+        if (!isPromptDismissed()) {
+          setShouldShowPrompt(true);
+        }
       }
+      // If "denied", don't show prompt
     };
     init();
   }, [userId, vapidPublicKey, subscribeAndSave]);
@@ -205,6 +195,5 @@ export function usePushNotifications(userId?: string | null) {
     testNotification,
     enableNotifications,
     shouldShowPrompt,
-    sendServerPush,
   };
 }
