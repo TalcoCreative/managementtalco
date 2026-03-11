@@ -18,6 +18,7 @@ import MeetingDetailDialog from "@/components/meeting/MeetingDetailDialog";
 import MeetingNotifications from "@/components/meeting/MeetingNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const Meeting = () => {
   const [searchParams] = useSearchParams();

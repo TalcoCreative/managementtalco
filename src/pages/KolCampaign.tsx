@@ -176,6 +176,7 @@ export default function KolCampaign() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="KOL Campaign" />
         <div className="flex items-center justify-between">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-social)' } as React.CSSProperties}>
             <div className="section-icon">

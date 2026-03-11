@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Plus, Search, MoreVertical, Trash2, Pencil, Copy, ExternalLink,
+// @ts-ignore - continued import
   FileText, BarChart3, Eye, EyeOff,
 } from "lucide-react";
 import { format } from "date-fns";

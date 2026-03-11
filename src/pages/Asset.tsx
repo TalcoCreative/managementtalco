@@ -138,6 +138,7 @@ export default function Asset() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Asset" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>

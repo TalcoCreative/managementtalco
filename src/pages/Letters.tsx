@@ -236,6 +236,7 @@ export default function Letters() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Letters" />
         <div className="flex items-center justify-between">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-meeting)' } as React.CSSProperties}>
             <div className="section-icon">
