@@ -447,6 +447,16 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         }
       }
 
+      // Push notification to ALL involved on new comment (not just mentions)
+      const { data: commenterProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - New Comment",
+        body: `${commenterProfile?.full_name || "Someone"} commented on "${task?.title || "a task"}"`,
+        tag: `task-comment-${taskId}-${Date.now()}`,
+        excludeUserId: session.session.user.id,
+      }).catch(console.error);
+
       toast.success("Comment added!");
       setComment("");
       queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
