@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
 import { ProspectDetailDialog } from "@/components/prospects/ProspectDetailDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500" },
