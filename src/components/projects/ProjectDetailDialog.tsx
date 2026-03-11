@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyTaskStatusChange } from "@/lib/task-notifications";
 import { Calendar, Building2, User, CheckCircle2, Clock, AlertCircle, Users, Eye, EyeOff, Share2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
@@ -90,6 +91,15 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
 
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
+    // Get current status to check if changed
+    const { data: taskData } = await supabase
+      .from("tasks")
+      .select("status")
+      .eq("id", itemId)
+      .single();
+
+    const statusChanged = taskData && taskData.status !== newStatus;
+
     const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus })
@@ -98,6 +108,11 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
     if (error) {
       console.error("Error updating task:", error);
       return;
+    }
+
+    // Send all notifications via shared utility
+    if (statusChanged) {
+      notifyTaskStatusChange(itemId, newStatus);
     }
 
     queryClient.invalidateQueries({ queryKey: ["project-tasks", projectId] });

@@ -27,8 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { isPast, parseISO, isToday } from "date-fns";
-import { sendTaskStatusChangeEmail } from "@/lib/email-notifications";
-import { sendWebPush } from "@/lib/push-utils";
+import { notifyTaskStatusChange } from "@/lib/task-notifications";
 
 const taskColumns = [
   { id: "pending", title: "Pending" },
@@ -157,14 +156,13 @@ export default function Tasks() {
   });
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
-    // First get the task data before updating
+    // First get current status to check if it actually changed
     const { data: taskData } = await supabase
       .from("tasks")
-      .select("title, assigned_to, created_by, share_token, status")
+      .select("status")
       .eq("id", itemId)
       .single();
 
-    // Only send notification if status actually changed
     const statusChanged = taskData && taskData.status !== newStatus;
 
     const { error } = await supabase
@@ -177,82 +175,9 @@ export default function Tasks() {
       return;
     }
 
-    // Send notifications to ALL involved users (assignees, creator, watchers)
-    if (taskData && statusChanged) {
-      const { data: session } = await supabase.auth.getSession();
-      const currentUserId = session.session?.user.id;
-      
-      // Get changer's name
-      const { data: changerProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", currentUserId)
-        .single();
-
-      // Get ALL involved users: multi-assignees, creator, watchers
-      const { data: multiAssignees } = await supabase
-        .from("task_assignees")
-        .select("user_id")
-        .eq("task_id", itemId);
-      const { data: watchers } = await supabase
-        .from("task_watchers")
-        .select("user_id")
-        .eq("task_id", itemId);
-
-      const notifyUsers = new Set<string>();
-      // Legacy assigned_to
-      if (taskData.assigned_to && taskData.assigned_to !== currentUserId) {
-        notifyUsers.add(taskData.assigned_to);
-      }
-      // Creator
-      if (taskData.created_by && taskData.created_by !== currentUserId) {
-        notifyUsers.add(taskData.created_by);
-      }
-      // Multi-assignees
-      multiAssignees?.forEach(a => { if (a.user_id !== currentUserId) notifyUsers.add(a.user_id); });
-      // Watchers
-      watchers?.forEach(w => { if (w.user_id !== currentUserId) notifyUsers.add(w.user_id); });
-
-      const changerName = changerProfile?.full_name || "Someone";
-      const statusLabel = newStatus.replace("_", " ");
-
-      // Bell notification for ALL involved
-      if (notifyUsers.size > 0) {
-        const bellRecords = Array.from(notifyUsers).map(uid => ({
-          task_id: itemId,
-          user_id: uid,
-          notification_type: "status_change",
-          message: `${changerName} mengubah status "${taskData.title}" menjadi ${statusLabel}`,
-          created_by: currentUserId,
-        }));
-        supabase.from("task_notifications").insert(bellRecords).then(({ error: bellErr }) => {
-          if (bellErr) console.error("Bell notification insert failed:", bellErr);
-        });
-
-        // Email notification
-        sendTaskStatusChangeEmail(Array.from(notifyUsers), {
-          id: itemId,
-          title: taskData.title,
-          newStatus,
-          changerName,
-          shareToken: taskData.share_token,
-        }).catch(err => console.error("Email notification failed:", err));
-      }
-
-      // Push notification directly using the SAME notifyUsers set (no extra DB queries)
-      const pushTargets = Array.from(notifyUsers);
-      if (pushTargets.length > 0) {
-        console.log("[TaskPush] Sending status change push to", pushTargets.length, "users:", pushTargets);
-        sendWebPush({
-          userIds: pushTargets,
-          title: "Talco - Task Status Changed",
-          body: `${changerName} mengubah "${taskData.title}" → ${statusLabel}`,
-          url: "/tasks",
-          tag: `task-status-${itemId}-${Date.now()}`,
-        }).then(() => {
-          console.log("[TaskPush] Push sent successfully");
-        }).catch(err => console.error("[TaskPush] Push failed:", err));
-      }
+    // Send all notifications via shared utility
+    if (statusChanged) {
+      notifyTaskStatusChange(itemId, newStatus);
     }
 
     queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
