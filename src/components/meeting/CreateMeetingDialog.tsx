@@ -217,6 +217,20 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
           .from("meeting_notifications")
           .insert(notificationRecords);
 
+        // Bell notifications (task_notifications with meeting_id)
+        const bellRecords = selectedParticipants
+          .filter(pid => pid !== userId)
+          .map(pid => ({
+            meeting_id: meeting.id,
+            user_id: pid,
+            notification_type: "assigned",
+            message: `Kamu diundang ke meeting "${formData.title}" pada ${formData.meeting_date}`,
+            created_by: userId,
+          }));
+        if (bellRecords.length > 0) {
+          await supabase.from("task_notifications").insert(bellRecords);
+        }
+
         // Send email notifications (async, non-blocking)
         const { data: creatorProfile } = await supabase
           .from("profiles")

@@ -235,11 +235,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         for (const assigneeId of newAssignees) {
           if (assigneeId === session.session?.user.id) continue;
           // In-app
-          supabase.from("task_notifications").insert({
+          await supabase.from("task_notifications").insert({
             task_id: taskId, user_id: assigneeId, notification_type: "assigned",
             message: `${creatorName} assigned you to task "${editTitle}"`,
             created_by: session.session?.user.id,
-          }).then(({ error }) => { if (error) console.error("Assignee notif error:", error); });
+          });
           // Email
           sendTaskAssignmentEmail(assigneeId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName }).catch(console.error);
         }
@@ -265,11 +265,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         const senderName = senderProfile?.full_name || "Someone";
         for (const wId of newWatchers) {
           if (wId === session.session?.user.id) continue;
-          supabase.from("task_notifications").insert({
+          await supabase.from("task_notifications").insert({
             task_id: taskId, user_id: wId, notification_type: "assigned",
             message: `${senderName} menambahkan lo sebagai watcher di task "${editTitle}"`,
             created_by: session.session?.user.id,
-          }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
+          });
           sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderName }).catch(console.error);
         }
         const pushWatcherIds = newWatchers.filter(id => id !== session.session?.user.id);

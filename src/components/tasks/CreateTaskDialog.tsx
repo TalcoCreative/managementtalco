@@ -242,13 +242,13 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
           if (assigneeId === session.session.user.id) continue;
           
           // In-app notification
-          supabase.from("task_notifications").insert({
+          await supabase.from("task_notifications").insert({
             task_id: taskData.id,
             user_id: assigneeId,
             notification_type: "assigned",
             message: `${creatorName} assigned you to task "${formData.title.trim()}"`,
             created_by: session.session.user.id,
-          }).then(({ error }) => { if (error) console.error("Assignee notification failed:", error); });
+          });
 
           // Email
           sendTaskAssignmentEmail(assigneeId, {
@@ -278,13 +278,13 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         for (const watcherId of notifyUsers) {
           if (watcherId === session.session.user.id) continue;
           
-          supabase.from("task_notifications").insert({
+          await supabase.from("task_notifications").insert({
             task_id: taskData.id,
             user_id: watcherId,
             notification_type: "assigned",
             message: `${creatorName} menambahkan lo sebagai watcher di task "${formData.title.trim()}"`,
             created_by: session.session.user.id,
-          }).then(({ error }) => { if (error) console.error("Watcher notification failed:", error); });
+          });
 
           sendTaskAssignmentEmail(watcherId, {
             id: taskData.id,

@@ -103,6 +103,20 @@ export function CreateAnnouncementDialog({
           url: "/",
           tag: `announcement-${announcement.id}`,
         });
+
+        // Bell notifications for all team members
+        const { data: session } = await supabase.auth.getSession();
+        const bellRecords = allUserIds
+          .filter(uid => uid !== session?.session?.user.id)
+          .map(uid => ({
+            user_id: uid,
+            notification_type: "created" as const,
+            message: `📢 Pengumuman baru: ${title.trim()}`,
+            created_by: session?.session?.user.id || null,
+          }));
+        if (bellRecords.length > 0) {
+          await supabase.from("task_notifications").insert(bellRecords);
+        }
       }
 
       toast.success("Announcement created and sent to all team members");

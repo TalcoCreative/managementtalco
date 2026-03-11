@@ -274,6 +274,20 @@ export function CreateShootingDialog() {
 
         await supabase.from("shooting_notifications").insert(notifications);
 
+        // Bell notifications (task_notifications with shooting_id)
+        const bellRecords = Array.from(notifyUsers)
+          .filter(uid => uid !== session.session.user.id)
+          .map(uid => ({
+            shooting_id: shooting.id,
+            user_id: uid,
+            notification_type: "assigned",
+            message: `Kamu ditugaskan ke shooting "${formData.title}" pada ${formData.scheduled_date}`,
+            created_by: session.session.user.id,
+          }));
+        if (bellRecords.length > 0) {
+          await supabase.from("task_notifications").insert(bellRecords);
+        }
+
         // Send email notifications to all crew members (async, non-blocking)
         const { data: creatorProfile } = await supabase
           .from("profiles")
