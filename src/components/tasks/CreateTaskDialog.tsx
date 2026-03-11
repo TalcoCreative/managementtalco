@@ -270,17 +270,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             shareToken: taskData.share_token || undefined,
           }).catch(err => console.error("Watcher email failed:", err));
         }
-
-        // Server-side Web Push to watchers
-        if (notifyUsers.length > 0) {
-          sendWebPush({
-            userIds: notifyUsers,
-            title: "Talco - Task Watcher",
-            body: `${creatorProfile?.full_name || "Someone"} added you as watcher on "${formData.title.trim()}"`,
-            url: taskData.share_token ? `/${taskData.share_token}` : "/tasks",
-            tag: `task-watch-${taskData.id}`,
-          });
-        }
+        // Push notifications are sent automatically via DB trigger on task_notifications insert
       }
 
       toast.success("Task created successfully!");
