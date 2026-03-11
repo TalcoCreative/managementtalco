@@ -248,16 +248,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
           }).catch(err => console.error("Email notification failed:", err));
         }
 
-        // Server-side Web Push to all assignees
-        sendWebPush({
-          userIds: assignedUsers,
-          title: "Talco - New Task Assigned",
-          body: `${creatorProfile?.full_name || "Someone"} assigned you: "${formData.title.trim()}"`,
-          url: taskData.share_token ? `/${taskData.share_token}` : "/tasks",
-          tag: `task-assign-${taskData.id}`,
-        });
-
-        // Send notification to watchers (email + in-app + push)
+        // Send notification to watchers (email + in-app, push auto via DB trigger)
         for (const watcherId of notifyUsers) {
           // In-app notification
           supabase.from("task_notifications").insert({
