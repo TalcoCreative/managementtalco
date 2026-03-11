@@ -177,7 +177,7 @@ export default function Tasks() {
       return;
     }
 
-    // Send email notification to involved users (async, non-blocking)
+    // Send notifications to ALL involved users (assignees, creator, watchers)
     if (taskData && statusChanged) {
       const { data: session } = await supabase.auth.getSession();
       const currentUserId = session.session?.user.id;
@@ -189,30 +189,61 @@ export default function Tasks() {
         .eq("id", currentUserId)
         .single();
 
-      // Notify assignee and creator (except the one who made the change)
+      // Get ALL involved users: multi-assignees, creator, watchers
+      const { data: multiAssignees } = await supabase
+        .from("task_assignees")
+        .select("user_id")
+        .eq("task_id", itemId);
+      const { data: watchers } = await supabase
+        .from("task_watchers")
+        .select("user_id")
+        .eq("task_id", itemId);
+
       const notifyUsers = new Set<string>();
+      // Legacy assigned_to
       if (taskData.assigned_to && taskData.assigned_to !== currentUserId) {
         notifyUsers.add(taskData.assigned_to);
       }
+      // Creator
       if (taskData.created_by && taskData.created_by !== currentUserId) {
         notifyUsers.add(taskData.created_by);
       }
+      // Multi-assignees
+      multiAssignees?.forEach(a => { if (a.user_id !== currentUserId) notifyUsers.add(a.user_id); });
+      // Watchers
+      watchers?.forEach(w => { if (w.user_id !== currentUserId) notifyUsers.add(w.user_id); });
 
+      const changerName = changerProfile?.full_name || "Someone";
+      const statusLabel = newStatus.replace("_", " ");
+
+      // Bell notification for ALL involved
       if (notifyUsers.size > 0) {
+        const bellRecords = Array.from(notifyUsers).map(uid => ({
+          task_id: itemId,
+          user_id: uid,
+          notification_type: "status_change",
+          message: `${changerName} mengubah status "${taskData.title}" menjadi ${statusLabel}`,
+          created_by: currentUserId,
+        }));
+        supabase.from("task_notifications").insert(bellRecords).then(({ error: bellErr }) => {
+          if (bellErr) console.error("Bell notification insert failed:", bellErr);
+        });
+
+        // Email notification
         sendTaskStatusChangeEmail(Array.from(notifyUsers), {
           id: itemId,
           title: taskData.title,
           newStatus,
-          changerName: changerProfile?.full_name || "Someone",
+          changerName,
           shareToken: taskData.share_token,
         }).catch(err => console.error("Email notification failed:", err));
       }
 
-      // Push notification to ALL involved (assignees, creator, watchers)
+      // Push notification to ALL involved (assignees, creator, watchers) - client side
       pushToTaskInvolved({
         taskId: itemId,
         title: "Talco - Task Status Changed",
-        body: `${changerProfile?.full_name || "Someone"} changed "${taskData.title}" to ${newStatus.replace("_", " ")}`,
+        body: `${changerName} changed "${taskData.title}" to ${statusLabel}`,
         tag: `task-status-${itemId}-${Date.now()}`,
         excludeUserId: currentUserId,
       }).catch(console.error);

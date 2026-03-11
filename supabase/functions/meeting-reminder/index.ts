@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Get meetings happening today that haven't been reminded yet
     const { data: meetings, error: meetError } = await supabase
       .from("meetings")
-      .select("id, title, meeting_date, start_time, location, is_online, meeting_link")
+      .select("id, title, meeting_date, start_time, location, mode, meeting_link")
       .eq("meeting_date", todayStr)
       .in("status", ["scheduled", "in_progress"])
       .is("reminder_sent", null);
