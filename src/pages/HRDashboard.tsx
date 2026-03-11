@@ -78,7 +78,16 @@ function LateThresholdSetting() {
         .update({ setting_value: threshold })
         .eq("setting_key", "late_threshold_time");
       if (error) throw error;
-      toast.success("Late threshold time updated");
+
+      // Recalculate all existing attendance late_status based on new threshold
+      const [threshH, threshM] = threshold.split(":").map(Number);
+      const { error: rpcError } = await supabase.rpc("recalculate_late_status" as any, {
+        thresh_hour: threshH,
+        thresh_minute: threshM,
+      });
+      if (rpcError) console.error("Recalculate fallback needed:", rpcError);
+
+      toast.success("Late threshold updated & attendance recalculated");
       refetch();
     } catch {
       toast.error("Failed to update threshold");

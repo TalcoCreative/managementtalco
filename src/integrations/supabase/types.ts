@@ -5621,6 +5621,10 @@ export type Database = {
         }
         Returns: string
       }
+      recalculate_late_status: {
+        Args: { thresh_hour: number; thresh_minute: number }
+        Returns: undefined
+      }
     }
     Enums: {
       account_type:
