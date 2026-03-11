@@ -269,7 +269,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
             task_id: taskId, user_id: wId, notification_type: "assigned",
             message: `${senderName} menambahkan lo sebagai watcher di task "${editTitle}"`,
             created_by: session.session?.user.id,
-          }).catch(console.error);
+          }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
           sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderName }).catch(console.error);
         }
         const pushWatcherIds = newWatchers.filter(id => id !== session.session?.user.id);
