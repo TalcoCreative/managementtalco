@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { Plus, Receipt, CheckCircle, XCircle, Wallet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { REIMBURSE_CATEGORY_MAPPING } from "@/lib/finance-categories";
+import { getHRFinanceAdminUsers } from "@/lib/push-helpers";
+import { sendWebPush } from "@/lib/push-utils";
 
 interface Props {
   canApprove: boolean;
