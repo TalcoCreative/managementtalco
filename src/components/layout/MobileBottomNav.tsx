@@ -138,10 +138,11 @@ export function MobileBottomNav() {
     (t) => t.featureKey === "__more__" || canView(t.featureKey)
   );
 
+  const alwaysVisible = ["profile_settings", "personal_notes"];
   const visibleGroups = moreGroups
     .map((g) => ({
       ...g,
-      items: g.items.filter((i) => canView(i.featureKey)),
+      items: g.items.filter((i) => alwaysVisible.includes(i.featureKey) || canView(i.featureKey)),
     }))
     .filter((g) => g.items.length > 0);
 
