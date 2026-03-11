@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { EditShootingDialog } from "./EditShootingDialog";
 import { RelatedTasksSection } from "./RelatedTasksSection";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
+import { pushToShootingInvolved } from "@/lib/push-helpers";
 
 interface ShootingDetailDialogProps {
   shootingId: string | null;
