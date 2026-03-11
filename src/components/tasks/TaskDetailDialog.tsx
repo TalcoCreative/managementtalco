@@ -261,14 +261,7 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
           sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderProfile?.full_name || "Someone" }).catch(console.error);
         }
-        // Server-side Web Push to new watchers
-        sendWebPush({
-          userIds: newWatchers,
-          title: "Talco - Task Watcher",
-          body: `${senderProfile?.full_name || "Someone"} added you as watcher on "${editTitle}"`,
-          url: "/tasks",
-          tag: `task-watch-${taskId}`,
-        });
+        // Push notifications sent automatically via DB trigger on task_notifications insert
       }
 
       toast.success("Task berhasil diupdate");
