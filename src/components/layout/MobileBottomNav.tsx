@@ -4,7 +4,7 @@ import {
   Palette, Hammer, UserCog, LayoutDashboard, TrendingUp, DollarSign, Settings,
   Mail, Shield, Wrench, Target, Search, Building2, PieChart, GraduationCap,
   Star, Sparkles, Share2, CalendarHeart, Crown, Scale, UserPlus, CalendarClock,
-  Wallet, UserSearch, ClipboardCheck, BarChart2,
+  Wallet, UserSearch, ClipboardCheck, BarChart2, User,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
