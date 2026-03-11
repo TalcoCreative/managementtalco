@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     // Get meetings happening today that haven't been reminded yet
     const { data: meetings, error: meetError } = await supabase
       .from("meetings")
-      .select("id, title, meeting_date, start_time, location, is_online, meeting_link")
+      .select("id, title, meeting_date, start_time, location, mode, meeting_link")
       .eq("meeting_date", todayStr)
       .in("status", ["scheduled", "in_progress"])
       .is("reminder_sent", null);
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
       if (!subscriptions || subscriptions.length === 0) continue;
 
-      const locationInfo = meeting.is_online
+      const locationInfo = meeting.mode === "online"
         ? `Online${meeting.meeting_link ? "" : ""}`
         : meeting.location || "TBD";
 
@@ -159,11 +159,15 @@ Deno.serve(async (req) => {
 
       // Log
       await supabase.from("push_notification_logs").insert({
-        target_user_ids: Array.from(userIds),
+        user_ids: Array.from(userIds),
         title: "Meeting Reminder",
         body: `"${meeting.title}" in 30 minutes`,
+        url: "/meeting",
+        tag: `meeting-reminder-${meeting.id}`,
         status: totalSent > 0 ? "sent" : "no_subscribers",
         sent_count: totalSent,
+        total_subscriptions: subscriptions.length,
+        triggered_by: "cron",
       });
     }
 
