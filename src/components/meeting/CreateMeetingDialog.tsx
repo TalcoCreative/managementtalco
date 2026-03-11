@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Plus, Trash2, Video, MapPin, Calendar, ExternalLink, Copy } from "lucide-react";
 import { sendMeetingInvitationEmail } from "@/lib/email-notifications";
+import { sendWebPush } from "@/lib/push-utils";
 
 interface CreateMeetingDialogProps {
   open: boolean;
