@@ -94,6 +94,15 @@ export function CreateAnnouncementDialog({
             }
           }
         }
+        // Send Web Push to all team members
+        const allUserIds = profiles.map(p => p.id);
+        sendWebPush({
+          userIds: allUserIds,
+          title: "Talco - Pengumuman Baru",
+          body: title.trim(),
+          url: "/",
+          tag: `announcement-${announcement.id}`,
+        });
       }
 
       toast.success("Announcement created and sent to all team members");
