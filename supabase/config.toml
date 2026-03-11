@@ -68,3 +68,9 @@ verify_jwt = false
 
 [functions.send-test-push]
 verify_jwt = false
+
+[functions.get-vapid-key]
+verify_jwt = false
+
+[functions.send-web-push]
+verify_jwt = false
