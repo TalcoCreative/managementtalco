@@ -261,6 +261,20 @@ const MeetingDetailDialog = ({
       }
 
       toast.success("Status meeting diperbarui");
+
+      // Push notification to all involved
+      const involvedUsers = await getMeetingInvolvedUsers(meeting.id);
+      const pushTargets = involvedUsers.filter((id: string) => id !== currentUser?.id);
+      if (pushTargets.length > 0) {
+        sendWebPush({
+          userIds: pushTargets,
+          title: `Talco - Meeting ${newStatus === "completed" ? "Completed ✅" : newStatus === "cancelled" ? "Cancelled ❌" : "Updated"}`,
+          body: `"${meeting.title}" status changed to ${newStatus}`,
+          url: "/meeting",
+          tag: `meeting-status-${meeting.id}-${Date.now()}`,
+        }).catch(console.error);
+      }
+
       onUpdate();
     } catch (error: any) {
       toast.error(error.message || "Gagal memperbarui status");
