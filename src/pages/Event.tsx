@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { CreateEventDialog } from "@/components/event/CreateEventDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
