@@ -170,6 +170,48 @@ export default function InstallApp() {
           </CardContent>
         </Card>
 
+        {/* Enable Notifications */}
+        <Card className="border-orange-500/30 bg-orange-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-orange-500" />
+              Aktifkan Push Notification
+            </CardTitle>
+            <CardDescription>Langkah penting setelah install agar tidak ketinggalan update</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg bg-orange-500/10 p-4 text-sm text-foreground">
+              <p className="font-semibold mb-2">⚠️ Setelah install, Anda WAJIB mengaktifkan notifikasi:</p>
+              <ol className="space-y-3 mt-3">
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center font-semibold text-xs">1</span>
+                  <span>Buka aplikasi Talco dan login</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center font-semibold text-xs">2</span>
+                  <span>Klik foto profil Anda → pilih <strong>"Profile Settings"</strong></span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center font-semibold text-xs">3</span>
+                  <span>Scroll ke bagian <strong>"Push Notifications"</strong></span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center font-semibold text-xs">4</span>
+                  <span>Klik <strong>"Aktifkan Notifikasi"</strong> dan izinkan di browser</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-500/20 text-orange-600 flex items-center justify-center font-semibold text-xs">5</span>
+                  <span>Klik <strong>"Test Push Notification"</strong> untuk memastikan berhasil</span>
+                </li>
+              </ol>
+            </div>
+            <Button variant="outline" className="w-full gap-2" onClick={() => navigate("/profile-settings")}>
+              <Settings className="h-4 w-4" />
+              Buka Profile Settings
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Benefits */}
         <Card className="bg-muted/30">
           <CardHeader>
@@ -195,7 +237,7 @@ export default function InstallApp() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-success" />
-                <span>Notifikasi push (segera hadir)</span>
+                <span>Push notification real-time</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-success" />
