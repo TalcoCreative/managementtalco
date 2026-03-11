@@ -133,6 +133,17 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
       }
 
       toast.success("Shooting schedule approved!");
+
+      // Push to all crew
+      const { data: session } = await supabase.auth.getSession();
+      pushToShootingInvolved({
+        shootingId: shootingId!,
+        title: "Talco - Shooting Approved ✅",
+        body: `"${shooting?.title}" has been approved`,
+        tag: `shooting-approve-${shootingId}`,
+        excludeUserId: session.session?.user.id,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
