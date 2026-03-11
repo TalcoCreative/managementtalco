@@ -96,10 +96,10 @@ export function usePushNotifications(userId?: string | null) {
 
       // If no subscription, create one with VAPID key
       if (!subscription) {
-        const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+        const appServerKeyArray = urlBase64ToUint8Array(vapidPublicKey);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey,
+          applicationServerKey: appServerKeyArray.buffer as ArrayBuffer,
         });
         console.log("[Push] Created new push subscription");
       }
