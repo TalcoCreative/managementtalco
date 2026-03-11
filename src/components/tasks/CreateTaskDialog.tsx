@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { sendWebPush } from "@/lib/push-utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -249,16 +248,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
           }).catch(err => console.error("Email notification failed:", err));
         }
 
-        // Server-side Web Push to all assignees
-        sendWebPush({
-          userIds: assignedUsers,
-          title: "Talco - New Task Assigned",
-          body: `${creatorProfile?.full_name || "Someone"} assigned you: "${formData.title.trim()}"`,
-          url: taskData.share_token ? `/${taskData.share_token}` : "/tasks",
-          tag: `task-assign-${taskData.id}`,
-        });
-
-        // Send notification to watchers (email + in-app + push)
+        // Send notification to watchers (email + in-app, push auto via DB trigger)
         for (const watcherId of notifyUsers) {
           // In-app notification
           supabase.from("task_notifications").insert({
@@ -280,17 +270,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             shareToken: taskData.share_token || undefined,
           }).catch(err => console.error("Watcher email failed:", err));
         }
-
-        // Server-side Web Push to watchers
-        if (notifyUsers.length > 0) {
-          sendWebPush({
-            userIds: notifyUsers,
-            title: "Talco - Task Watcher",
-            body: `${creatorProfile?.full_name || "Someone"} added you as watcher on "${formData.title.trim()}"`,
-            url: taskData.share_token ? `/${taskData.share_token}` : "/tasks",
-            tag: `task-watch-${taskData.id}`,
-          });
-        }
+        // Push notifications are sent automatically via DB trigger on task_notifications insert
       }
 
       toast.success("Task created successfully!");
