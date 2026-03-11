@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateCampaignDialog } from "@/components/kol/CreateCampaignDialog";
 import { CampaignDetailDialog } from "@/components/kol/CampaignDetailDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const statusColors: Record<string, string> = {
   contacted: "bg-gray-500",
