@@ -80,6 +80,13 @@ export function RescheduleShootingDialog({
           .eq("id", shootingData.task_id);
       }
 
+      // Push notify crew about reschedule
+      const { data: crewNotifs } = await supabase.from("shooting_notifications").select("user_id").eq("shooting_id", shooting.id);
+      const crewIds = crewNotifs?.map((n: any) => n.user_id).filter(Boolean) || [];
+      if (crewIds.length > 0) {
+        sendWebPush({ userIds: crewIds, title: "Talco - Shooting Rescheduled", body: `"${shooting.title}" has been rescheduled to ${newDate}`, url: "/shooting", tag: `shooting-resched-${shooting.id}` }).catch(console.error);
+      }
+
       toast.success("Shooting rescheduled! Waiting for crew re-approval.");
       onOpenChange(false);
       setNewDate("");
