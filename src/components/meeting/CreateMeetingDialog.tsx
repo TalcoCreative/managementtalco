@@ -250,6 +250,7 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
             body: `${creatorProfile?.full_name || "Someone"} invited you to "${formData.title}" on ${formData.meeting_date}`,
             url: "/meeting",
             tag: `meeting-${meeting.id}`,
+          }).catch(console.error);
         }
       }
 
