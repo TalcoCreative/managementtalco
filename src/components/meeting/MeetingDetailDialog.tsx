@@ -342,6 +342,20 @@ const MeetingDetailDialog = ({
           .from("meeting_notifications")
           .insert(notifications);
 
+        // Bell notifications for new participants
+        const bellRecords = toAdd
+          .filter(uid => uid !== session.session?.user.id)
+          .map(uid => ({
+            meeting_id: meeting.id,
+            user_id: uid,
+            notification_type: "assigned",
+            message: `${senderProfile?.full_name || "Someone"} mengundang kamu ke meeting "${meeting.title}"`,
+            created_by: session.session?.user.id,
+          }));
+        if (bellRecords.length > 0) {
+          await supabase.from("task_notifications").insert(bellRecords);
+        }
+
         // Push notification to new participants
         const { data: session } = await supabase.auth.getSession();
         const { data: senderProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();

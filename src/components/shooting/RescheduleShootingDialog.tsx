@@ -80,11 +80,22 @@ export function RescheduleShootingDialog({
           .eq("id", shootingData.task_id);
       }
 
-      // Push notify crew about reschedule
+      // Push + bell notify crew about reschedule
       const { data: crewNotifs } = await supabase.from("shooting_notifications").select("user_id").eq("shooting_id", shooting.id);
+      const { data: session } = await supabase.auth.getSession();
       const crewIds = crewNotifs?.map((n: any) => n.user_id).filter(Boolean) || [];
       if (crewIds.length > 0) {
         sendWebPush({ userIds: crewIds, title: "Talco - Shooting Rescheduled", body: `"${shooting.title}" has been rescheduled to ${newDate}`, url: "/shooting", tag: `shooting-resched-${shooting.id}` }).catch(console.error);
+
+        // Bell notifications
+        const bellRecords = crewIds.map((uid: string) => ({
+          shooting_id: shooting.id,
+          user_id: uid,
+          notification_type: "updated",
+          message: `Shooting "${shooting.title}" dijadwalkan ulang ke ${newDate}`,
+          created_by: session?.session?.user.id || null,
+        }));
+        await supabase.from("task_notifications").insert(bellRecords);
       }
 
       toast.success("Shooting rescheduled! Waiting for crew re-approval.");
