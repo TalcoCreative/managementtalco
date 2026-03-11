@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, X, Save } from "lucide-react";
+import { pushToShootingInvolved } from "@/lib/push-helpers";
 
 interface Freelancer {
   id?: string;
