@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateDialog";
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
 import { usePositionOptions } from "@/hooks/usePositions";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
@@ -203,6 +204,7 @@ export default function Recruitment() {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
+        <DesktopRecommendBanner featureLabel="Recruitment" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-recruitment)' } as React.CSSProperties}>

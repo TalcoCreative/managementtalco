@@ -27,6 +27,7 @@ import { CreateRecruitmentFormDialog } from "@/components/recruitment-forms/Crea
 import { FormBuilderDialog } from "@/components/recruitment-forms/FormBuilderDialog";
 import { EmbedCodeDialog } from "@/components/recruitment-forms/EmbedCodeDialog";
 import { EditRecruitmentFormDialog } from "@/components/recruitment-forms/EditRecruitmentFormDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -121,6 +122,7 @@ export default function RecruitmentForms() {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
+        <DesktopRecommendBanner featureLabel="Recruitment Forms" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

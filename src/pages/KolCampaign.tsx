@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreateCampaignDialog } from "@/components/kol/CreateCampaignDialog";
 import { CampaignDetailDialog } from "@/components/kol/CampaignDetailDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const statusColors: Record<string, string> = {
   contacted: "bg-gray-500",
@@ -175,6 +176,7 @@ export default function KolCampaign() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="KOL Campaign" />
         <div className="flex items-center justify-between">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-social)' } as React.CSSProperties}>
             <div className="section-icon">

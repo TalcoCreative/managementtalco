@@ -18,6 +18,7 @@ import MeetingDetailDialog from "@/components/meeting/MeetingDetailDialog";
 import MeetingNotifications from "@/components/meeting/MeetingNotifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const Meeting = () => {
   const [searchParams] = useSearchParams();
@@ -375,6 +376,7 @@ const Meeting = () => {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
+        <DesktopRecommendBanner featureLabel="Meeting" />
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-meeting)' } as React.CSSProperties}>
             <div className="section-icon">

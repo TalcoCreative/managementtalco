@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
 import { ProspectDetailDialog } from "@/components/prospects/ProspectDetailDialog";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500" },
@@ -355,6 +356,7 @@ export default function Prospects() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Prospects" />
         <div className="flex items-center justify-between">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-sales)' } as React.CSSProperties}>
             <div className="section-icon">

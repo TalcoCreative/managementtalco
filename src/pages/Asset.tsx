@@ -14,6 +14,7 @@ import { CreateAssetDialog } from "@/components/asset/CreateAssetDialog";
 import { AssetDetailDialog } from "@/components/asset/AssetDetailDialog";
 import { QRScannerDialog } from "@/components/asset/QRScannerDialog";
 import { AssetTransactionHistory } from "@/components/asset/AssetTransactionHistory";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 interface Asset {
   id: string;
@@ -137,6 +138,7 @@ export default function Asset() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Asset" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>

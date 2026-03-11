@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { CreateEventDialog } from "@/components/event/CreateEventDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const statusColors: Record<string, string> = {
   planning: "bg-blue-100 text-blue-800",
@@ -124,6 +125,7 @@ export default function Event() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="Event" />
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-schedule)' } as React.CSSProperties}>
             <div className="section-icon">

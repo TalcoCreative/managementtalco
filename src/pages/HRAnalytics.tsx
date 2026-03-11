@@ -28,6 +28,7 @@ import {
   Filter,
   Eye
 } from "lucide-react";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, differenceInMinutes, eachDayOfInterval } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -352,6 +353,7 @@ export default function HRAnalytics() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <DesktopRecommendBanner featureLabel="HR Analytics" />
         {/* Header — Immersive section */}
         <div className="section-header" style={{ '--section-color': 'var(--section-hr)' } as React.CSSProperties}>
           <div className="section-icon">
