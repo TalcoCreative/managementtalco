@@ -91,6 +91,15 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
 
 
   const handleStatusChange = async (itemId: string, newStatus: string) => {
+    // Get current status to check if changed
+    const { data: taskData } = await supabase
+      .from("tasks")
+      .select("status")
+      .eq("id", itemId)
+      .single();
+
+    const statusChanged = taskData && taskData.status !== newStatus;
+
     const { error } = await supabase
       .from("tasks")
       .update({ status: newStatus })
@@ -99,6 +108,11 @@ export function ProjectDetailDialog({ projectId, open, onOpenChange }: ProjectDe
     if (error) {
       console.error("Error updating task:", error);
       return;
+    }
+
+    // Send all notifications via shared utility
+    if (statusChanged) {
+      notifyTaskStatusChange(itemId, newStatus);
     }
 
     queryClient.invalidateQueries({ queryKey: ["project-tasks", projectId] });
