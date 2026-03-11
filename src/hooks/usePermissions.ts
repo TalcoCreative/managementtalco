@@ -211,7 +211,12 @@ export function usePermissions() {
 
   const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading);
 
+  // Features accessible to ALL users without any permission check
+  const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes"];
+
   const can = (featureKey: string, action: PermissionAction = "can_view"): boolean => {
+    // Always accessible features bypass all checks
+    if (ALWAYS_ACCESSIBLE.includes(featureKey)) return true;
     // Super admin always has full access
     if (isSuperAdmin) return true;
     // If no dynamic role assigned, deny
