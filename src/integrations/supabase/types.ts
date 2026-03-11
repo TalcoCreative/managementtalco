@@ -4069,6 +4069,54 @@ export type Database = {
           },
         ]
       }
+      push_notification_logs: {
+        Row: {
+          body: string | null
+          created_at: string
+          error_details: string | null
+          failed_count: number | null
+          id: string
+          sent_count: number | null
+          status: string
+          tag: string | null
+          title: string
+          total_subscriptions: number | null
+          triggered_by: string | null
+          url: string | null
+          user_ids: string[]
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          error_details?: string | null
+          failed_count?: number | null
+          id?: string
+          sent_count?: number | null
+          status?: string
+          tag?: string | null
+          title: string
+          total_subscriptions?: number | null
+          triggered_by?: string | null
+          url?: string | null
+          user_ids?: string[]
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          error_details?: string | null
+          failed_count?: number | null
+          id?: string
+          sent_count?: number | null
+          status?: string
+          tag?: string | null
+          title?: string
+          total_subscriptions?: number | null
+          triggered_by?: string | null
+          url?: string | null
+          user_ids?: string[]
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_key: string

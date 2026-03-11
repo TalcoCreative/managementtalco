@@ -90,6 +90,20 @@ export function usePushNotifications(userId?: string | null) {
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
 
+      // If existing subscription uses a different VAPID key, unsubscribe first
+      if (subscription) {
+        const existingKey = subscription.options?.applicationServerKey;
+        const newKeyArray = urlBase64ToUint8Array(vapidPublicKey);
+        if (existingKey) {
+          const existingKeyArray = new Uint8Array(existingKey as ArrayBuffer);
+          if (existingKeyArray.length !== newKeyArray.length || !existingKeyArray.every((v, i) => v === newKeyArray[i])) {
+            console.log("[Push] VAPID key changed, re-subscribing...");
+            await subscription.unsubscribe();
+            subscription = null;
+          }
+        }
+      }
+
       if (!subscription) {
         const appServerKeyArray = urlBase64ToUint8Array(vapidPublicKey);
         subscription = await registration.pushManager.subscribe({
