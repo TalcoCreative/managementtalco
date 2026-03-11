@@ -28,6 +28,7 @@ import { CreateLetterDialog } from "@/components/letters/CreateLetterDialog";
 import { LetterDetailDialog } from "@/components/letters/LetterDetailDialog";
 import { generatePayrollPDF } from "@/lib/payroll-pdf";
 import { toast } from "sonner";
+import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const ENTITIES = [
   { code: "TCI", name: "Talco Creative Indonesia" },
