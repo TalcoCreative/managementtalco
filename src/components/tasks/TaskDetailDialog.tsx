@@ -284,14 +284,20 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       // Push notification to ALL involved on task edit
       const { data: editSession } = await supabase.auth.getSession();
-      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editSession.session?.user.id).single();
-      pushToTaskInvolved({
-        taskId: taskId!,
-        title: "Talco - Task Updated",
-        body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
-        tag: `task-edit-${taskId}-${Date.now()}`,
-        excludeUserId: editSession.session?.user.id,
-      }).catch(console.error);
+      const editUserId = editSession.session?.user.id;
+      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editUserId).single();
+      const editInvolved = await getTaskInvolvedUsers(taskId!);
+      const editPushTargets = editInvolved.filter(id => id !== editUserId);
+      if (editPushTargets.length > 0) {
+        console.log("[TaskPush] Edit push to", editPushTargets.length, "users");
+        sendWebPush({
+          userIds: editPushTargets,
+          title: "Talco - Task Updated",
+          body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
+          url: "/tasks",
+          tag: `task-edit-${taskId}-${Date.now()}`,
+        }).catch(err => console.error("[TaskPush] Edit push failed:", err));
+      }
 
       queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
       queryClient.invalidateQueries({ queryKey: ["task-watchers", taskId] });
