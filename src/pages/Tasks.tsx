@@ -239,14 +239,20 @@ export default function Tasks() {
         }).catch(err => console.error("Email notification failed:", err));
       }
 
-      // Push notification to ALL involved (assignees, creator, watchers) - client side
-      pushToTaskInvolved({
-        taskId: itemId,
-        title: "Talco - Task Status Changed",
-        body: `${changerName} changed "${taskData.title}" to ${statusLabel}`,
-        tag: `task-status-${itemId}-${Date.now()}`,
-        excludeUserId: currentUserId,
-      }).catch(console.error);
+      // Push notification directly using the SAME notifyUsers set (no extra DB queries)
+      const pushTargets = Array.from(notifyUsers);
+      if (pushTargets.length > 0) {
+        console.log("[TaskPush] Sending status change push to", pushTargets.length, "users:", pushTargets);
+        sendWebPush({
+          userIds: pushTargets,
+          title: "Talco - Task Status Changed",
+          body: `${changerName} mengubah "${taskData.title}" → ${statusLabel}`,
+          url: "/tasks",
+          tag: `task-status-${itemId}-${Date.now()}`,
+        }).then(() => {
+          console.log("[TaskPush] Push sent successfully");
+        }).catch(err => console.error("[TaskPush] Push failed:", err));
+      }
     }
 
     queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
