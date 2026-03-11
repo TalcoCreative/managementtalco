@@ -159,11 +159,15 @@ Deno.serve(async (req) => {
 
       // Log
       await supabase.from("push_notification_logs").insert({
-        target_user_ids: Array.from(userIds),
+        user_ids: Array.from(userIds),
         title: "Meeting Reminder",
         body: `"${meeting.title}" in 30 minutes`,
+        url: "/meeting",
+        tag: `meeting-reminder-${meeting.id}`,
         status: totalSent > 0 ? "sent" : "no_subscribers",
         sent_count: totalSent,
+        total_subscriptions: subscriptions.length,
+        triggered_by: "cron",
       });
     }
 
