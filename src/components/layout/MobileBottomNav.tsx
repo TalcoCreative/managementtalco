@@ -4,7 +4,7 @@ import {
   Palette, Hammer, UserCog, LayoutDashboard, TrendingUp, DollarSign, Settings,
   Mail, Shield, Wrench, Target, Search, Building2, PieChart, GraduationCap,
   Star, Sparkles, Share2, CalendarHeart, Crown, Scale, UserPlus, CalendarClock,
-  Wallet, UserSearch, ClipboardCheck, BarChart2,
+  Wallet, UserSearch, ClipboardCheck, BarChart2, User,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -121,6 +121,7 @@ const moreGroups: MoreGroup[] = [
   {
     label: "System",
     items: [
+      { title: "Profile", url: "/profile-settings", featureKey: "profile_settings", icon: User, color: "hsl(222,72%,52%)" },
       { title: "Email Settings", url: "/system/email-settings", featureKey: "email_settings", icon: Mail, color: "hsl(222,10%,48%)" },
       { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
       { title: "Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
@@ -137,10 +138,11 @@ export function MobileBottomNav() {
     (t) => t.featureKey === "__more__" || canView(t.featureKey)
   );
 
+  const alwaysVisible = ["profile_settings", "personal_notes"];
   const visibleGroups = moreGroups
     .map((g) => ({
       ...g,
-      items: g.items.filter((i) => canView(i.featureKey)),
+      items: g.items.filter((i) => alwaysVisible.includes(i.featureKey) || canView(i.featureKey)),
     }))
     .filter((g) => g.items.length > 0);
 
