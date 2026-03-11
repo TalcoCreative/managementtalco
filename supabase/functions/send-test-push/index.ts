@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -27,28 +27,36 @@ Deno.serve(async (req) => {
 
     const notifMessage = message || "🔔 Ini adalah test push notification dari Talco!";
 
-    // Insert into task_notifications to trigger realtime
-    const { data, error } = await supabase
+    // Send real web push notification
+    const pushResult = await fetch(`${supabaseUrl}/functions/v1/send-web-push`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        user_id,
+        title: "Talco - Test Notification 🔔",
+        body: notifMessage,
+        url: "/",
+        tag: "test-push",
+      }),
+    });
+
+    const pushData = await pushResult.json();
+
+    // Also insert into task_notifications for in-app notification
+    await supabase
       .from("task_notifications")
       .insert({
         user_id,
         task_id: null,
         message: notifMessage,
         notification_type: "system",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Insert error:", error);
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+      });
 
     return new Response(
-      JSON.stringify({ success: true, notification: data }),
+      JSON.stringify({ success: true, push: pushData }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

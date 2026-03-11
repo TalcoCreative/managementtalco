@@ -5,6 +5,10 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { FloatingActionButton } from "./FloatingActionButton";
 import { AIChatPopup } from "@/components/ai/AIChatPopup";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PushPermissionPrompt, IOSInstallPrompt } from "@/components/pwa/PushPermissionPrompt";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -12,6 +16,17 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+      return session.session.user;
+    },
+  });
+
+  const { shouldShowPrompt, enableNotifications } = usePushNotifications(currentUser?.id);
 
   return (
     <SidebarProvider>
@@ -27,6 +42,8 @@ export function AppLayout({ children }: AppLayoutProps) {
       {isMobile && <MobileBottomNav />}
       <FloatingActionButton />
       <AIChatPopup />
+      {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
+      <IOSInstallPrompt />
     </SidebarProvider>
   );
 }

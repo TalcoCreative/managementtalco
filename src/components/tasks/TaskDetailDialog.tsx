@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { sendWebPush } from "@/lib/push-utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -261,6 +262,14 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
           }).then(({ error }) => { if (error) console.error("Watcher notif error:", error); });
           sendTaskAssignmentEmail(wId, { id: taskId, title: editTitle, description: editDescription, deadline: editDeadline, creatorName: senderProfile?.full_name || "Someone" }).catch(console.error);
         }
+        // Server-side Web Push to new watchers
+        sendWebPush({
+          userIds: newWatchers,
+          title: "Talco - Task Watcher",
+          body: `${senderProfile?.full_name || "Someone"} added you as watcher on "${editTitle}"`,
+          url: "/tasks",
+          tag: `task-watch-${taskId}`,
+        });
       }
 
       toast.success("Task berhasil diupdate");
