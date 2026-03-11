@@ -16,6 +16,8 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Receipt, Plus, Clock, CheckCircle, XCircle, Wallet, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { getHRFinanceAdminUsers } from "@/lib/push-helpers";
+import { sendWebPush } from "@/lib/push-utils";
 
 const REIMBURSEMENT_CATEGORIES = [
   { value: "event", label: "Event" },
