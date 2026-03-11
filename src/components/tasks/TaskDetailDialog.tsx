@@ -533,6 +533,16 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       if (error) throw error;
 
+      // Push notification to ALL involved on link added
+      const { data: linkerProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - Link Added",
+        body: `${linkerProfile?.full_name || "Someone"} added link "${linkName}" to "${task?.title || "a task"}"`,
+        tag: `task-link-${taskId}-${Date.now()}`,
+        excludeUserId: session.session.user.id,
+      }).catch(console.error);
+
       toast.success("Link added!");
       setLinkUrl("");
       setLinkName("");

@@ -170,6 +170,15 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
       }
 
       toast.success("Shooting schedule rejected");
+
+      // Push to all crew
+      pushToShootingInvolved({
+        shootingId: shootingId!,
+        title: "Talco - Shooting Rejected ❌",
+        body: `"${shooting?.title}" has been rejected`,
+        tag: `shooting-reject-${shootingId}`,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
