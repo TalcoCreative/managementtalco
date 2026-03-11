@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
+import { getMeetingInvolvedUsers } from "@/lib/push-helpers";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -260,6 +261,20 @@ const MeetingDetailDialog = ({
       }
 
       toast.success("Status meeting diperbarui");
+
+      // Push notification to all involved
+      const involvedUsers = await getMeetingInvolvedUsers(meeting.id);
+      const pushTargets = involvedUsers.filter((id: string) => id !== currentUser?.id);
+      if (pushTargets.length > 0) {
+        sendWebPush({
+          userIds: pushTargets,
+          title: `Talco - Meeting ${newStatus === "completed" ? "Completed ✅" : newStatus === "cancelled" ? "Cancelled ❌" : "Updated"}`,
+          body: `"${meeting.title}" status changed to ${newStatus}`,
+          url: "/meeting",
+          tag: `meeting-status-${meeting.id}-${Date.now()}`,
+        }).catch(console.error);
+      }
+
       onUpdate();
     } catch (error: any) {
       toast.error(error.message || "Gagal memperbarui status");

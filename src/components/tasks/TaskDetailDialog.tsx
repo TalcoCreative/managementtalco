@@ -18,6 +18,7 @@ import { MentionInput, extractMentions, renderCommentWithMentions } from "@/comp
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
+import { pushToTaskInvolved } from "@/lib/push-helpers";
 import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 import { SubTasksSection } from "@/components/tasks/SubTasksSection";
@@ -280,6 +281,18 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
 
       toast.success("Task berhasil diupdate");
       setIsEditing(false);
+
+      // Push notification to ALL involved on task edit
+      const { data: editSession } = await supabase.auth.getSession();
+      const { data: editorProfile } = await supabase.from("profiles").select("full_name").eq("id", editSession.session?.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - Task Updated",
+        body: `${editorProfile?.full_name || "Someone"} updated task "${editTitle}"`,
+        tag: `task-edit-${taskId}-${Date.now()}`,
+        excludeUserId: editSession.session?.user.id,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["task-detail", taskId] });
       queryClient.invalidateQueries({ queryKey: ["task-watchers", taskId] });
       queryClient.invalidateQueries({ queryKey: ["active-tasks"] });
@@ -434,6 +447,16 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         }
       }
 
+      // Push notification to ALL involved on new comment (not just mentions)
+      const { data: commenterProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - New Comment",
+        body: `${commenterProfile?.full_name || "Someone"} commented on "${task?.title || "a task"}"`,
+        tag: `task-comment-${taskId}-${Date.now()}`,
+        excludeUserId: session.session.user.id,
+      }).catch(console.error);
+
       toast.success("Comment added!");
       setComment("");
       queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
@@ -509,6 +532,16 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
       });
 
       if (error) throw error;
+
+      // Push notification to ALL involved on link added
+      const { data: linkerProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      pushToTaskInvolved({
+        taskId: taskId!,
+        title: "Talco - Link Added",
+        body: `${linkerProfile?.full_name || "Someone"} added link "${linkName}" to "${task?.title || "a task"}"`,
+        tag: `task-link-${taskId}-${Date.now()}`,
+        excludeUserId: session.session.user.id,
+      }).catch(console.error);
 
       toast.success("Link added!");
       setLinkUrl("");

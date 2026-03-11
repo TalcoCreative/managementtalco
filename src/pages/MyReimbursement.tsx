@@ -16,6 +16,8 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { Receipt, Plus, Clock, CheckCircle, XCircle, Wallet, TrendingUp, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { getHRFinanceAdminUsers } from "@/lib/push-helpers";
+import { sendWebPush } from "@/lib/push-utils";
 
 const REIMBURSEMENT_CATEGORIES = [
   { value: "event", label: "Event" },
@@ -171,6 +173,20 @@ export default function MyReimbursement() {
       });
 
       if (error) throw error;
+
+      // Push to HR/Finance/Super Admin
+      const { data: requesterProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      const adminUsers = await getHRFinanceAdminUsers();
+      const pushTargets = adminUsers.filter(id => id !== session.session.user.id);
+      if (pushTargets.length > 0) {
+        sendWebPush({
+          userIds: pushTargets,
+          title: dialogType === "reimbursement" ? "Talco - New Reimbursement" : "Talco - New Budget Request",
+          body: `${requesterProfile?.full_name || "Someone"} submitted a ${dialogType} request (Rp ${parseInt(formData.amount).toLocaleString("id-ID")})`,
+          url: "/finance",
+          tag: `reimburse-new-${Date.now()}`,
+        }).catch(console.error);
+      }
 
       toast.success(dialogType === "reimbursement" 
         ? "Reimbursement berhasil diajukan" 

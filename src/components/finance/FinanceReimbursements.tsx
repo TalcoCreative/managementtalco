@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { Plus, Receipt, CheckCircle, XCircle, Wallet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { REIMBURSE_CATEGORY_MAPPING } from "@/lib/finance-categories";
+import { getHRFinanceAdminUsers } from "@/lib/push-helpers";
+import { sendWebPush } from "@/lib/push-utils";
 
 interface Props {
   canApprove: boolean;
@@ -104,6 +106,19 @@ export function FinanceReimbursements({ canApprove, canMarkPaid }: Props) {
       });
 
       if (error) throw error;
+
+      // Push to HR/Finance/Super Admin
+      const adminUsers = await getHRFinanceAdminUsers();
+      const pushTargets = adminUsers.filter(id => id !== session.session.user.id);
+      if (pushTargets.length > 0) {
+        sendWebPush({
+          userIds: pushTargets,
+          title: "Talco - New Reimbursement Request",
+          body: `New reimbursement request (Rp ${parseInt(formData.amount).toLocaleString("id-ID")})`,
+          url: "/finance",
+          tag: `reimburse-new-${Date.now()}`,
+        }).catch(console.error);
+      }
 
       toast.success("Reimbursement request submitted");
       setDialogOpen(false);

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { EditShootingDialog } from "./EditShootingDialog";
 import { RelatedTasksSection } from "./RelatedTasksSection";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
+import { pushToShootingInvolved } from "@/lib/push-helpers";
 
 interface ShootingDetailDialogProps {
   shootingId: string | null;
@@ -132,6 +133,16 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
       }
 
       toast.success("Shooting schedule approved!");
+
+      // Push to all crew
+      pushToShootingInvolved({
+        shootingId: shootingId!,
+        title: "Talco - Shooting Approved ✅",
+        body: `"${shooting?.title}" has been approved`,
+        tag: `shooting-approve-${shootingId}`,
+        excludeUserId: session.session?.user.id,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
@@ -158,6 +169,15 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
       }
 
       toast.success("Shooting schedule rejected");
+
+      // Push to all crew
+      pushToShootingInvolved({
+        shootingId: shootingId!,
+        title: "Talco - Shooting Rejected ❌",
+        body: `"${shooting?.title}" has been rejected`,
+        tag: `shooting-reject-${shootingId}`,
+      }).catch(console.error);
+
       queryClient.invalidateQueries({ queryKey: ["shooting-schedules"] });
       queryClient.invalidateQueries({ queryKey: ["shooting-detail", shootingId] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
