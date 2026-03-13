@@ -22,6 +22,7 @@ export function ClockInOut() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [breakLoading, setBreakLoading] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
