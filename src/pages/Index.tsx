@@ -191,10 +191,13 @@ export default function Index() {
   return (
     <AppLayout>
       <div className="space-y-5 sm:space-y-6">
-        {/* Greeting */}
-        <div className="min-w-0">
-          <p className="text-muted-foreground text-sm">{greeting} 👋</p>
-          <h1 className="text-xl sm:text-2xl font-bold truncate">{firstName}</h1>
+        {/* Greeting + Team Mood */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-sm">{greeting} 👋</p>
+            <h1 className="text-xl sm:text-2xl font-bold truncate">{firstName}</h1>
+          </div>
+          <TeamMoodBar />
         </div>
 
         <HolidayBanner />

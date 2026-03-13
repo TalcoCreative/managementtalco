@@ -735,6 +735,7 @@ export function ClockInOut() {
                 Buka Kamera untuk Clock In
               </Button>
             )}
+            <MoodSelector value={selectedMood} onChange={setSelectedMood} disabled={loading} />
             <Button
               onClick={handleClockIn}
               disabled={loading || !photoClockIn}
