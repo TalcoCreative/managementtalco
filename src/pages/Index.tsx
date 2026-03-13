@@ -11,6 +11,7 @@ import { MeetingInvitationNotifications } from "@/components/meeting/MeetingInvi
 import { AnnouncementNotifications } from "@/components/announcements/AnnouncementNotifications";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import HolidayBanner from "@/components/holiday/HolidayBanner";
+import { TeamMoodBar } from "@/components/dashboard/TeamMoodBar";
 import { Badge } from "@/components/ui/badge";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
