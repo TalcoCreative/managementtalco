@@ -202,6 +202,7 @@ export default function Index() {
         </div>
 
         <HolidayBanner />
+        <MoodNudge />
         <ClockInOut />
         <AnnouncementNotifications />
         <MeetingInvitationNotifications />
