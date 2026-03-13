@@ -12,6 +12,7 @@ import {
   Eye,
   Instagram,
   Youtube,
+  Calendar,
 } from "lucide-react";
 
 interface Slide {
