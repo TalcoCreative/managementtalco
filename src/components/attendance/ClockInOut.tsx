@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2, Coffee, Play, Square } from "lucide-react";
 import { format, isAfter, set, differenceInMinutes } from "date-fns";
 import { AutoClockoutNotification } from "./AutoClockoutNotification";
+import { MoodSelector } from "./MoodSelector";
 
 export function ClockInOut() {
   const [notes, setNotes] = useState("");
