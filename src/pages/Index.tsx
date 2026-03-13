@@ -12,6 +12,7 @@ import { AnnouncementNotifications } from "@/components/announcements/Announceme
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import HolidayBanner from "@/components/holiday/HolidayBanner";
 import { TeamMoodBar } from "@/components/dashboard/TeamMoodBar";
+import { MoodNudge } from "@/components/attendance/MoodNudge";
 import { Badge } from "@/components/ui/badge";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
