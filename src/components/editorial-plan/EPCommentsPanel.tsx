@@ -114,7 +114,7 @@ export function EPCommentsPanel({ epId, epTitle, currentSlideId, currentSlideLab
             await supabase.from("task_notifications").insert({
               user_id: mentionedUserId,
               message: `${currentUser?.full_name || "Seseorang"} menyebut kamu di komentar EP "${epTitle || "Editorial Plan"}"${currentSlideLabel ? ` (${currentSlideLabel})` : ""}`,
-              type: "mention",
+              notification_type: "mention",
             });
           } catch (e) {
             console.error("Failed to insert task_notification:", e);
