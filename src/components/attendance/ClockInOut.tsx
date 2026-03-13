@@ -317,7 +317,9 @@ export function ClockInOut() {
       toast.success(`Clock in berhasil! (${lateStatus})`);
       setNotes("");
       setPhotoClockIn(null);
+      setSelectedMood(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["team-moods-today"] });
 
       // Send clock-in summary email (non-blocking)
       supabase.functions.invoke("clockin-summary-email", {
