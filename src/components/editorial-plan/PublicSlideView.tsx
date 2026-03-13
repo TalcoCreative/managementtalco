@@ -33,7 +33,7 @@ interface Block {
 }
 
 interface PublicSlideViewProps {
-  slide: Slide;
+  slide: Slide & { publish_date?: string | null; channel?: string | null; format?: string | null; channels?: string[] | null };
   onLightboxChange?: (open: boolean) => void;
 }
 
