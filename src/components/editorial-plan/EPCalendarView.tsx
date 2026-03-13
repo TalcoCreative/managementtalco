@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   format,
   startOfMonth,
@@ -55,6 +56,7 @@ const CHANNEL_ICONS: Record<string, string> = {
 
 export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const isMobile = useIsMobile();
 
   // Fetch slide_blocks to get titles
   const slideIds = slides.map(s => s.id);
@@ -81,7 +83,6 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
       if (content?.title) {
         map.set(block.slide_id, content.title);
       } else if (content?.caption) {
-        // fallback to caption if no title
         map.set(block.slide_id, content.caption.substring(0, 40));
       }
     });
@@ -100,6 +101,12 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
     });
     return map;
   }, [slides]);
+
+  // Sorted list for mobile
+  const sortedSlidesByDate = useMemo(() => {
+    const entries = Array.from(slidesByDate.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return entries;
+  }, [slidesByDate]);
 
   const scheduledCount = slides.filter(s => s.publish_date).length;
   const unscheduledCount = slides.filter(s => !s.publish_date).length;
@@ -122,51 +129,63 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
     weeks.push(days.slice(i, i + 7));
   }
 
-  const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+  const dayNames = isMobile ? ["S", "S", "R", "K", "J", "S", "M"] : ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
-          <h3 className="font-semibold">Jadwal Tayang</h3>
-          <Badge variant="secondary">{scheduledCount} terjadwal</Badge>
+    <Card className="p-3 sm:p-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          <h3 className="font-semibold text-sm sm:text-base">Jadwal Tayang</h3>
+          <Badge variant="secondary" className="text-[10px] sm:text-xs">{scheduledCount} terjadwal</Badge>
           {unscheduledCount > 0 && (
-            <Badge variant="outline" className="text-muted-foreground">{unscheduledCount} belum dijadwalkan</Badge>
+            <Badge variant="outline" className="text-muted-foreground text-[10px] sm:text-xs">{unscheduledCount} belum</Badge>
           )}
         </div>
         <div className="flex items-center gap-1">
-          <div className="flex items-center gap-3 mr-4 text-xs">
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block" />
-              Proposed
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
-              Approved
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block" />
-              Published
-            </span>
-          </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+          {!isMobile && (
+            <div className="flex items-center gap-2 mr-3 text-xs">
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
+                Proposed
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                Approved
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-blue-500 inline-block" />
+                Published
+              </span>
+            </div>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium min-w-[120px] text-center">
-            {format(currentMonth, "MMMM yyyy", { locale: localeId })}
+          <span className="text-xs sm:text-sm font-semibold min-w-[100px] sm:min-w-[120px] text-center">
+            {format(currentMonth, "MMM yyyy", { locale: localeId })}
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
+      {/* Mobile legend */}
+      {isMobile && (
+        <div className="flex items-center gap-3 mb-2 text-[10px]">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> Proposed</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Published</span>
+        </div>
+      )}
+
       <div className="border rounded-lg overflow-hidden">
         {/* Day headers */}
         <div className="grid grid-cols-7 bg-muted/50">
-          {dayNames.map((name) => (
-            <div key={name} className="px-2 py-1.5 text-center text-xs font-medium text-muted-foreground border-b">
+          {dayNames.map((name, i) => (
+            <div key={i} className="px-0.5 sm:px-2 py-1 sm:py-1.5 text-center text-[10px] sm:text-xs font-semibold text-muted-foreground border-b">
               {name}
             </div>
           ))}
@@ -179,26 +198,26 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
               const dateKey = format(dayDate, "yyyy-MM-dd");
               const daySlides = slidesByDate.get(dateKey) || [];
               const inMonth = isSameMonth(dayDate, currentMonth);
-              const today = isToday(dayDate);
+              const todayFlag = isToday(dayDate);
 
               return (
                 <div
                   key={dateKey}
                   className={cn(
-                    "min-h-[90px] p-1 border-b border-r last:border-r-0 transition-colors",
+                    "min-h-[48px] sm:min-h-[90px] p-0.5 sm:p-1 border-b border-r last:border-r-0 transition-colors",
                     !inMonth && "bg-muted/20",
-                    today && "bg-primary/5"
+                    todayFlag && "bg-primary/5"
                   )}
                 >
                   <div className={cn(
-                    "text-xs font-medium mb-0.5 px-1",
+                    "text-[11px] sm:text-xs font-semibold mb-0 sm:mb-0.5 px-0.5 sm:px-1 tabular-nums",
                     !inMonth && "text-muted-foreground/40",
-                    today && "text-primary font-bold"
+                    todayFlag && "text-primary font-bold"
                   )}>
                     {format(dayDate, "d")}
                   </div>
-                  <div className="space-y-0.5">
-                    {daySlides.map(({ slide, index }) => {
+                  <div className="space-y-px sm:space-y-0.5">
+                    {daySlides.slice(0, isMobile ? 2 : 99).map(({ slide, index }) => {
                       const colors = STATUS_COLORS[slide.status] || STATUS_COLORS.proposed;
                       const channelIcon = CHANNEL_ICONS[slide.channel || "other"] || "📌";
                       const title = slideTitles.get(slide.id);
@@ -207,23 +226,29 @@ export function EPCalendarView({ slides, onSlideClick }: EPCalendarViewProps) {
                           key={slide.id}
                           onClick={() => onSlideClick(index)}
                           className={cn(
-                            "w-full text-left px-1.5 py-0.5 rounded text-[10px] leading-tight flex flex-col gap-0 hover:opacity-80 transition-opacity",
+                            "w-full text-left px-0.5 sm:px-1.5 py-px sm:py-0.5 rounded leading-tight flex flex-col gap-0 hover:opacity-80 transition-opacity",
+                            isMobile ? "text-[8px]" : "text-[10px]",
                             colors.bg,
                             colors.text
                           )}
                           title={`Slide ${slide.slide_order + 1} • ${slide.channel} • ${slide.format} • ${slide.status}${title ? ` • ${title}` : ''}`}
                         >
-                          <div className="flex items-center gap-1 truncate">
-                            <span className={cn("h-1.5 w-1.5 rounded-full flex-shrink-0", colors.dot)} />
-                            <span>{channelIcon}</span>
-                            <span className="truncate">S{slide.slide_order + 1} · {slide.format}</span>
+                          <div className="flex items-center gap-px sm:gap-1 truncate">
+                            <span className={cn("h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full flex-shrink-0", colors.dot)} />
+                            <span className="hidden sm:inline">{channelIcon}</span>
+                            <span className="truncate">
+                              {isMobile ? `S${slide.slide_order + 1}` : `S${slide.slide_order + 1} · ${slide.format}`}
+                            </span>
                           </div>
-                          {title && (
+                          {!isMobile && title && (
                             <span className="truncate pl-4 opacity-80 font-medium">{title}</span>
                           )}
                         </button>
                       );
                     })}
+                    {isMobile && daySlides.length > 2 && (
+                      <div className="text-[8px] text-muted-foreground text-center">+{daySlides.length - 2}</div>
+                    )}
                   </div>
                 </div>
               );

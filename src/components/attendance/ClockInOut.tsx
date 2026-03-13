@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2, Coffee, Play, Square } from "lucide-react";
 import { format, isAfter, set, differenceInMinutes } from "date-fns";
 import { AutoClockoutNotification } from "./AutoClockoutNotification";
+import { MoodSelector } from "./MoodSelector";
 
 export function ClockInOut() {
   const [notes, setNotes] = useState("");
@@ -21,6 +22,7 @@ export function ClockInOut() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isOnBreak, setIsOnBreak] = useState(false);
   const [breakLoading, setBreakLoading] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -307,6 +309,7 @@ export function ClockInOut() {
         photo_clock_in: photoClockIn,
         notes: notes.trim() || null,
         late_status: lateStatus,
+        mood: selectedMood,
       } as any);
 
       if (error) throw error;
@@ -314,7 +317,9 @@ export function ClockInOut() {
       toast.success(`Clock in berhasil! (${lateStatus})`);
       setNotes("");
       setPhotoClockIn(null);
+      setSelectedMood(null);
       queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["team-moods-today"] });
 
       // Send clock-in summary email (non-blocking)
       supabase.functions.invoke("clockin-summary-email", {
@@ -730,6 +735,7 @@ export function ClockInOut() {
                 Buka Kamera untuk Clock In
               </Button>
             )}
+            <MoodSelector value={selectedMood} onChange={setSelectedMood} disabled={loading} />
             <Button
               onClick={handleClockIn}
               disabled={loading || !photoClockIn}

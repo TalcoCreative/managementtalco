@@ -12,6 +12,7 @@ import {
   Eye,
   Instagram,
   Youtube,
+  Calendar,
 } from "lucide-react";
 
 interface Slide {
@@ -33,7 +34,7 @@ interface Block {
 }
 
 interface PublicSlideViewProps {
-  slide: Slide;
+  slide: Slide & { publish_date?: string | null; channel?: string | null; format?: string | null; channels?: string[] | null };
   onLightboxChange?: (open: boolean) => void;
 }
 
@@ -203,7 +204,32 @@ export function PublicSlideView({ slide, onLightboxChange }: PublicSlideViewProp
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-4">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
+      {/* Jadwal Tayang info */}
+      {slide.publish_date && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-primary">Jadwal Tayang</span>
+            </div>
+            <Badge variant="secondary" className="text-xs">
+              {new Date(slide.publish_date).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </Badge>
+            {slide.channel && (
+              <Badge variant="outline" className="text-xs gap-1">
+                {CHANNEL_LABELS[slide.channel] || slide.channel}
+              </Badge>
+            )}
+            {slide.format && (
+              <Badge variant="outline" className="text-xs">
+                {FORMAT_LABELS[slide.format] || slide.format}
+              </Badge>
+            )}
+          </div>
+        </Card>
+      )}
+
       {blocks?.map((block) => (
         <div key={block.id}>{renderBlock(block)}</div>
       ))}
