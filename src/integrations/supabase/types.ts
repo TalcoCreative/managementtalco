@@ -240,6 +240,7 @@ export type Database = {
           date: string
           id: string
           late_status: string | null
+          mood: string | null
           notes: string | null
           photo_clock_in: string | null
           photo_clock_out: string | null
@@ -256,6 +257,7 @@ export type Database = {
           date?: string
           id?: string
           late_status?: string | null
+          mood?: string | null
           notes?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null
@@ -272,6 +274,7 @@ export type Database = {
           date?: string
           id?: string
           late_status?: string | null
+          mood?: string | null
           notes?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null
