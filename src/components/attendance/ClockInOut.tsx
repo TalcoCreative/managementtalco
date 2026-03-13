@@ -309,6 +309,7 @@ export function ClockInOut() {
         photo_clock_in: photoClockIn,
         notes: notes.trim() || null,
         late_status: lateStatus,
+        mood: selectedMood,
       } as any);
 
       if (error) throw error;
