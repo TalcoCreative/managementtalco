@@ -85,12 +85,12 @@ export function EPCommentsPanel({ epId, epTitle, currentSlideId, currentSlideLab
       if (error) throw error;
       return data;
     },
-    onSuccess: async (_, commentText) => {
+    onSuccess: async (data, commentText) => {
       refetch();
       setNewComment("");
       toast.success("Komentar ditambahkan");
 
-      // Process @mentions and send emails
+      // Process @mentions and send emails + bell notifications
       const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
       let match;
       while ((match = mentionRegex.exec(commentText)) !== null) {
@@ -98,6 +98,29 @@ export function EPCommentsPanel({ epId, epTitle, currentSlideId, currentSlideLab
         const mentionedName = match[1];
         
         if (mentionedUserId !== currentUser?.id) {
+          // Insert into comment_mentions for bell notification (triggers DB push too)
+          try {
+            await supabase.from("comment_mentions").insert({
+              comment_id: data.id,
+              mentioned_user_id: mentionedUserId,
+              task_id: null,
+            });
+          } catch (e) {
+            console.error("Failed to insert comment_mention:", e);
+          }
+
+          // Also insert a task_notification for the bell icon
+          try {
+            await supabase.from("task_notifications").insert({
+              user_id: mentionedUserId,
+              message: `${currentUser?.full_name || "Seseorang"} menyebut kamu di komentar EP "${epTitle || "Editorial Plan"}"${currentSlideLabel ? ` (${currentSlideLabel})` : ""}`,
+              type: "mention",
+            });
+          } catch (e) {
+            console.error("Failed to insert task_notification:", e);
+          }
+
+          // Send email notification
           const { email, name } = await getUserEmailById(mentionedUserId);
           if (email) {
             const baseUrl = window.location.origin;
