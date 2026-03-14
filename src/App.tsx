@@ -74,6 +74,7 @@ import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
 import PersonalNotes from "./pages/PersonalNotes";
 import InstallApp from "./pages/InstallApp";
+import NotificationLog from "./pages/NotificationLog";
 
 const queryClient = new QueryClient();
 
