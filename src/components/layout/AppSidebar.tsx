@@ -1,8 +1,9 @@
-import { 
+import {
   Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
   Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
