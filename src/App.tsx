@@ -144,6 +144,7 @@ const App = () => (
           <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           <Route path="/personal-notes" element={<ProtectedRoute><PersonalNotes /></ProtectedRoute>} />
           <Route path="/install-app" element={<InstallApp />} />
+          <Route path="/notification-log" element={<ProtectedRoute><NotificationLog /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />
           <Route path="/share/project/:token" element={<SharedProject />} />

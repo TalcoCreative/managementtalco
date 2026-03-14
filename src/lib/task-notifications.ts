@@ -87,6 +87,14 @@ export async function notifyTaskStatusChange(taskId: string, newStatus: string) 
       tag: `task-status-${taskId}-${Date.now()}`,
     }).catch(err => console.error("[TaskNotify] Push failed:", err));
 
+    // 4. WhatsApp notification via Fonnte
+    const waMessage = `Halo!\n\nTask "${taskData.title}" telah diubah statusnya menjadi *${statusLabel}* oleh ${changerName}.\n\nSilakan cek di Talco Project Management System.`;
+    sendWhatsApp({
+      userIds: targets,
+      message: waMessage,
+      eventType: "task_status_updated",
+    }).catch(err => console.error("[TaskNotify] WhatsApp failed:", err));
+
   } catch (err) {
     console.error("[TaskNotify] Error:", err);
   }
