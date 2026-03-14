@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
 import { sendTaskStatusChangeEmail } from "@/lib/email-notifications";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 
 /**
  * Shared utility: notify ALL involved users when a task status changes.
