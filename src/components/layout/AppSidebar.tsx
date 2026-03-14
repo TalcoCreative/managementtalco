@@ -1,8 +1,9 @@
-import { 
+import {
   Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
   Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -98,6 +99,7 @@ const executiveItems: NavItem[] = [
 const systemItems: NavItem[] = [
   { title: "Profile Settings", url: "/profile-settings", icon: User, featureKey: "profile_settings" },
   { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
+  { title: "WA Notification Log", url: "/notification-log", icon: MessageSquare, featureKey: "notification_log" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
   { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
 ];
