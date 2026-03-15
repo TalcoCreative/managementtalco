@@ -24,6 +24,7 @@ serve(async (req) => {
     if (!FONNTE_API_KEY) {
       throw new Error("FONNTE_API_KEY is not configured");
     }
+    console.log(`[Fonnte] API Key loaded, length: ${FONNTE_API_KEY.length}, starts with: ${FONNTE_API_KEY.substring(0, 6)}...`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -125,26 +126,32 @@ function isValidPhone(phone: string): boolean {
 
 async function sendToFonnte(apiKey: string, target: string, message: string) {
   try {
+    console.log(`[Fonnte] Sending to ${target}, message length: ${message.length}`);
+    
+    const formData = new URLSearchParams();
+    formData.append("target", target);
+    formData.append("message", message);
+    formData.append("typing", "true");
+    formData.append("delay", "1");
+    formData.append("countryCode", "62");
+
     const response = await fetch("https://api.fonnte.com/send", {
       method: "POST",
       headers: {
         Authorization: apiKey,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        target,
-        message,
-        typing: true,
-        delay: "1",
-      }),
+      body: formData,
     });
 
     const data = await response.json();
+    console.log(`[Fonnte] Response for ${target}:`, JSON.stringify(data));
+    
     return {
-      success: response.ok && data.status === true,
+      success: data.status === true,
       response: data,
     };
   } catch (err) {
+    console.error(`[Fonnte] Error for ${target}:`, err.message);
     return {
       success: false,
       response: { error: err.message },
