@@ -24,7 +24,6 @@ serve(async (req) => {
     if (!FONNTE_API_KEY) {
       throw new Error("FONNTE_API_KEY is not configured");
     }
-    console.log(`[Fonnte] API Key loaded, length: ${FONNTE_API_KEY.length}, starts with: ${FONNTE_API_KEY.substring(0, 6)}...`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -40,12 +39,30 @@ serve(async (req) => {
       );
     }
 
+    // Check if this event type is enabled in settings
+    const { data: settingRow } = await supabase
+      .from("wa_notification_settings")
+      .select("is_enabled, send_to_personal, group_ids")
+      .eq("event_type", event_type)
+      .single();
+
+    // If setting exists and is disabled, skip entirely
+    if (settingRow && !settingRow.is_enabled) {
+      console.log(`[WA] Event type "${event_type}" is disabled, skipping`);
+      return new Response(
+        JSON.stringify({ success: true, message: "Event type disabled", results: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const sendToPersonal = settingRow?.send_to_personal ?? true;
+    const groupIds: string[] = settingRow?.group_ids || [];
+
     const results: any[] = [];
 
-    // If direct phone number provided (test mode)
+    // If direct phone number provided (test mode) — always send
     if (phone) {
       const result = await sendToFonnte(FONNTE_API_KEY, phone, message);
-      // Log it
       await supabase.from("notification_logs").insert({
         user_id: "00000000-0000-0000-0000-000000000000",
         phone_number: phone,
@@ -60,49 +77,73 @@ serve(async (req) => {
       });
     }
 
-    // If user_ids provided, look up phone numbers from profiles
-    if (user_ids && user_ids.length > 0) {
+    // Send to individual users (personal) if enabled
+    if (sendToPersonal && user_ids && user_ids.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, phone")
         .in("id", user_ids);
 
-      if (!profiles || profiles.length === 0) {
-        return new Response(
-          JSON.stringify({ success: true, message: "No profiles found", results: [] }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (profiles && profiles.length > 0) {
+        for (const profile of profiles) {
+          const phoneNumber = profile.phone;
 
-      for (const profile of profiles) {
-        const phoneNumber = profile.phone;
+          // Personalize message with "Halo [nama]"
+          const personalizedMessage = `Halo ${profile.full_name || "Team"}! 👋\n\n${message}`;
 
-        // Validate phone number
-        if (!phoneNumber || !isValidPhone(phoneNumber)) {
+          if (!phoneNumber || !isValidPhone(phoneNumber)) {
+            await supabase.from("notification_logs").insert({
+              user_id: profile.id,
+              phone_number: phoneNumber || null,
+              message: personalizedMessage,
+              event_type,
+              status: "invalid_number",
+              response_api: JSON.stringify({ error: "Phone number empty or invalid" }),
+            });
+            results.push({ user_id: profile.id, status: "invalid_number" });
+            continue;
+          }
+
+          const result = await sendToFonnte(FONNTE_API_KEY, phoneNumber, personalizedMessage);
+
           await supabase.from("notification_logs").insert({
             user_id: profile.id,
-            phone_number: phoneNumber || null,
-            message,
+            phone_number: phoneNumber,
+            message: personalizedMessage,
             event_type,
-            status: "invalid_number",
-            response_api: JSON.stringify({ error: "Phone number empty or invalid" }),
+            status: result.success ? "success" : "failed",
+            response_api: JSON.stringify(result.response),
           });
-          results.push({ user_id: profile.id, status: "invalid_number" });
-          continue;
-        }
 
-        const result = await sendToFonnte(FONNTE_API_KEY, phoneNumber, message);
+          results.push({ user_id: profile.id, phone: phoneNumber, ...result });
+        }
+      }
+    }
+
+    // Send to assigned groups
+    if (groupIds.length > 0) {
+      console.log(`[WA] Sending to ${groupIds.length} groups for event: ${event_type}`);
+      for (const groupId of groupIds) {
+        const groupMessage = `📢 *Notifikasi Sistem*\n\n${message}`;
+        const result = await sendToFonnte(FONNTE_API_KEY, groupId, groupMessage);
+
+        // Get group name for logging
+        const { data: groupData } = await supabase
+          .from("wa_groups")
+          .select("name")
+          .eq("id", groupId)
+          .single();
 
         await supabase.from("notification_logs").insert({
-          user_id: profile.id,
-          phone_number: phoneNumber,
-          message,
+          user_id: "00000000-0000-0000-0000-000000000000",
+          phone_number: groupId,
+          message: groupMessage,
           event_type,
           status: result.success ? "success" : "failed",
-          response_api: JSON.stringify(result.response),
+          response_api: JSON.stringify({ ...result.response, group_name: groupData?.name }),
         });
 
-        results.push({ user_id: profile.id, phone: phoneNumber, ...result });
+        results.push({ group_id: groupId, group_name: groupData?.name, ...result });
       }
     }
 
@@ -119,7 +160,6 @@ serve(async (req) => {
 });
 
 function isValidPhone(phone: string): boolean {
-  // Accept 08xxxxxxxxxx format (Indonesian)
   const cleaned = phone.replace(/[\s\-()]/g, "");
   return /^08\d{8,13}$/.test(cleaned);
 }
@@ -127,7 +167,7 @@ function isValidPhone(phone: string): boolean {
 async function sendToFonnte(apiKey: string, target: string, message: string) {
   try {
     console.log(`[Fonnte] Sending to ${target}, message length: ${message.length}`);
-    
+
     const formData = new URLSearchParams();
     formData.append("target", target);
     formData.append("message", message);
@@ -145,7 +185,7 @@ async function sendToFonnte(apiKey: string, target: string, message: string) {
 
     const data = await response.json();
     console.log(`[Fonnte] Response for ${target}:`, JSON.stringify(data));
-    
+
     return {
       success: data.status === true,
       response: data,
