@@ -24,6 +24,7 @@ serve(async (req) => {
     if (!FONNTE_API_KEY) {
       throw new Error("FONNTE_API_KEY is not configured");
     }
+    console.log(`[Fonnte] API Key loaded, length: ${FONNTE_API_KEY.length}, starts with: ${FONNTE_API_KEY.substring(0, 6)}...`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
