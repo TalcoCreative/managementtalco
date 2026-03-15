@@ -133,6 +133,7 @@ async function sendToFonnte(apiKey: string, target: string, message: string) {
     formData.append("message", message);
     formData.append("typing", "true");
     formData.append("delay", "1");
+    formData.append("countryCode", "62");
 
     const response = await fetch("https://api.fonnte.com/send", {
       method: "POST",
