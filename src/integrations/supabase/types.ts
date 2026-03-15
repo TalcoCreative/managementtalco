@@ -5677,6 +5677,57 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_groups: {
+        Row: {
+          id: string
+          name: string
+          synced_at: string
+        }
+        Insert: {
+          id: string
+          name: string
+          synced_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
+      wa_notification_settings: {
+        Row: {
+          event_type: string
+          group_ids: string[] | null
+          id: string
+          is_enabled: boolean
+          label: string
+          send_to_personal: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          event_type: string
+          group_ids?: string[] | null
+          id?: string
+          is_enabled?: boolean
+          label: string
+          send_to_personal?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          event_type?: string
+          group_ids?: string[] | null
+          id?: string
+          is_enabled?: boolean
+          label?: string
+          send_to_personal?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
