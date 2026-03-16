@@ -18,6 +18,7 @@ import { MentionInput, extractMentions, renderCommentWithMentions } from "@/comp
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, sendMentionEmail } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 import { getTaskInvolvedUsers } from "@/lib/push-helpers";
 import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
