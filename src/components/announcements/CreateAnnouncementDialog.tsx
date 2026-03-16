@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 import { toast } from "sonner";
 import {
   Dialog,
