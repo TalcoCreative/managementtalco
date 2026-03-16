@@ -12,6 +12,7 @@ interface SendWhatsAppRequest {
   phone?: string;
   message: string;
   event_type: string;
+  role_filter?: string[]; // e.g. ["hr","super_admin"] — only send personal to users with these roles
 }
 
 serve(async (req) => {
@@ -30,7 +31,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: SendWhatsAppRequest = await req.json();
-    const { user_ids, phone, message, event_type } = body;
+    const { user_ids, phone, message, event_type, role_filter } = body;
 
     if (!message || !event_type) {
       return new Response(
@@ -77,18 +78,60 @@ serve(async (req) => {
       });
     }
 
+    // Determine target user IDs for personal messages
+    let targetUserIds = user_ids || [];
+
+    // If role_filter provided, fetch users with those roles and intersect/use them
+    if (role_filter && role_filter.length > 0) {
+      console.log(`[WA] Role filter active: ${role_filter.join(", ")}`);
+      // Get user_ids from user_roles with matching roles
+      const { data: roleUsers } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", role_filter);
+
+      // Also check dynamic roles for super_admin / hr
+      const { data: dynRoles } = await supabase
+        .from("dynamic_roles")
+        .select("id, name")
+        .or(role_filter.map(r => `name.ilike.%${r}%`).join(","));
+
+      let dynUserIds: string[] = [];
+      if (dynRoles && dynRoles.length > 0) {
+        const dynRoleIds = dynRoles.map(r => r.id);
+        const { data: dynRoleUsers } = await supabase
+          .from("user_dynamic_roles")
+          .select("user_id")
+          .in("role_id", dynRoleIds);
+        dynUserIds = (dynRoleUsers || []).map(u => u.user_id);
+      }
+
+      const roleUserIds = new Set([
+        ...(roleUsers || []).map(u => u.user_id),
+        ...dynUserIds,
+      ]);
+
+      // If user_ids were also provided, use the intersection (role users who are also in user_ids)
+      // If no user_ids provided, send to all role users
+      if (targetUserIds.length > 0) {
+        // Merge: include both the specified users AND role-filtered users
+        targetUserIds = Array.from(new Set([...targetUserIds.filter(id => roleUserIds.has(id)), ...Array.from(roleUserIds)]));
+      } else {
+        targetUserIds = Array.from(roleUserIds);
+      }
+      console.log(`[WA] After role filter: ${targetUserIds.length} users`);
+    }
+
     // Send to individual users (personal) if enabled
-    if (sendToPersonal && user_ids && user_ids.length > 0) {
+    if (sendToPersonal && targetUserIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, phone")
-        .in("id", user_ids);
+        .in("id", targetUserIds);
 
       if (profiles && profiles.length > 0) {
         for (const profile of profiles) {
           const phoneNumber = profile.phone;
-
-          // Personalize message with "Halo [nama]"
           const personalizedMessage = `Halo ${profile.full_name || "Team"}! 👋\n\n${message}`;
 
           if (!phoneNumber || !isValidPhone(phoneNumber)) {
@@ -127,7 +170,6 @@ serve(async (req) => {
         const groupMessage = `📢 *Notifikasi Sistem*\n\n${message}`;
         const result = await sendToFonnte(FONNTE_API_KEY, groupId, groupMessage);
 
-        // Get group name for logging
         const { data: groupData } = await supabase
           .from("wa_groups")
           .select("name")
