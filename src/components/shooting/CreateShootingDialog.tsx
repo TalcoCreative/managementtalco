@@ -325,6 +325,14 @@ export function CreateShootingDialog() {
             tag: `shooting-${shooting.id}`,
           }).catch(console.error);
         }
+
+        // WhatsApp notification for shooting
+        const shootingCrewIds = Array.from(notifyUsers);
+        sendWhatsApp({
+          userIds: shootingCrewIds,
+          message: `📷 *Shooting Schedule Baru*\n\n*${formData.title}*\nTanggal: ${formData.scheduled_date}\nWaktu: ${formData.scheduled_time}\nLokasi: ${formData.location || "-"}\n\nDibuat oleh ${creatorProfile?.full_name || "Someone"}.\n\nSilakan cek di Talco.`,
+          eventType: "shooting_created",
+        }).catch(err => console.error("[Shooting] WhatsApp failed:", err));
       }
 
       toast.success("Shooting schedule requested successfully!");

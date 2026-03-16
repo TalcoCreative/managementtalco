@@ -267,6 +267,14 @@ const CreateMeetingDialog = ({ open, onOpenChange, onSuccess }: CreateMeetingDia
             tag: `meeting-${meeting.id}`,
           }).catch(console.error);
         }
+
+        // WhatsApp notification for meeting
+        const locationInfo = formData.mode === "offline" ? formData.location : formData.meeting_link;
+        sendWhatsApp({
+          userIds: selectedParticipants,
+          message: `📅 *Meeting Baru*\n\n*${formData.title}*\nTanggal: ${formData.meeting_date}\nWaktu: ${formData.start_time} - ${formData.end_time}\nLokasi: ${locationInfo || "-"}\n\nDibuat oleh ${creatorProfile?.full_name || "Someone"}.\n\nSilakan cek di Talco.`,
+          eventType: "meeting_created",
+        }).catch(err => console.error("[Meeting] WhatsApp failed:", err));
       }
 
       // Add external participants
