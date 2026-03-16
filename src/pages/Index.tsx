@@ -80,9 +80,27 @@ const quickModules = [
   { title: "Clients", url: "/clients", icon: Users, color: "hsl(var(--primary))", featureKey: "clients" },
   { title: "Finance", url: "/finance", icon: DollarSign, color: "hsl(152 48% 46%)", featureKey: "finance" },
   { title: "Reports", url: "/reports", icon: BarChart3, color: "hsl(var(--info))", featureKey: "reports" },
-  { title: "Social Media", url: "/social-media", icon: Megaphone, color: "hsl(330 60% 55%)", featureKey: "social_media" },
-  { title: "Sales", url: "/sales/dashboard", icon: TrendingUp, color: "hsl(var(--warning))", featureKey: "sales_analytics" },
-  { title: "Editorial", url: "/editorial-plan", icon: Palette, color: "hsl(280 60% 55%)", featureKey: "editorial_plan" },
+  {
+    title: "Social Media",
+    url: "/social-media",
+    icon: Megaphone,
+    color: "hsl(330 60% 55%)",
+    featureKey: "social_media",
+  },
+  {
+    title: "Sales",
+    url: "/sales/dashboard",
+    icon: TrendingUp,
+    color: "hsl(var(--warning))",
+    featureKey: "sales_analytics",
+  },
+  {
+    title: "Editorial",
+    url: "/editorial-plan",
+    icon: Palette,
+    color: "hsl(280 60% 55%)",
+    featureKey: "editorial_plan",
+  },
   { title: "Letters", url: "/letters", icon: FileText, color: "hsl(var(--muted-foreground))", featureKey: "letters" },
 ];
 
@@ -103,11 +121,7 @@ export default function Index() {
     queryKey: ["current-profile", session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) return null;
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", session.user.id)
-        .single();
+      const { data } = await supabase.from("profiles").select("full_name").eq("id", session.user.id).single();
       return data;
     },
     enabled: !!session?.user?.id,
@@ -118,11 +132,7 @@ export default function Index() {
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return null;
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.session.user.id)
-        .single();
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", session.session.user.id).single();
       return data?.role;
     },
   });
@@ -133,7 +143,11 @@ export default function Index() {
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
       const [clientsRes, projectsRes, tasksRes] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }).eq("client_type", "client").eq("status", "active"),
+        supabase
+          .from("clients")
+          .select("id", { count: "exact", head: true })
+          .eq("client_type", "client")
+          .eq("status", "active"),
         supabase.from("projects").select("id", { count: "exact", head: true }).neq("status", "completed"),
         supabase.from("tasks").select("id", { count: "exact", head: true }),
       ]);
@@ -151,7 +165,9 @@ export default function Index() {
       if (!session?.user?.id) return [];
       const { data, error } = await supabase
         .from("tasks")
-        .select("*, projects(title, clients(name)), created_by_profile:profiles!fk_tasks_created_by_profiles(full_name)")
+        .select(
+          "*, projects(title, clients(name)), created_by_profile:profiles!fk_tasks_created_by_profiles(full_name)",
+        )
         .eq("assigned_to", session.user.id)
         .not("status", "in", "(completed,done)")
         .order("deadline", { ascending: true });
@@ -211,10 +227,30 @@ export default function Index() {
 
         {/* Stats Row — Colorful KPI cards */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <KpiCard icon={<Users className="h-5 w-5" />} label="Clients" value={stats?.clients || 0} color="var(--section-clients)" />
-          <KpiCard icon={<FolderKanban className="h-5 w-5" />} label="Active Projects" value={stats?.projects || 0} color="var(--section-projects)" />
-          <KpiCard icon={<ArrowDownToLine className="h-5 w-5" />} label="Tasks to Me" value={tasksAssignedToMe?.length || 0} color="var(--section-tasks)" />
-          <KpiCard icon={<ArrowUpFromLine className="h-5 w-5" />} label="Tasks I Gave" value={tasksAssignedByMe?.length || 0} color="var(--section-finance)" />
+          <KpiCard
+            icon={<Users className="h-5 w-5" />}
+            label="Clients"
+            value={stats?.clients || 0}
+            color="var(--section-clients)"
+          />
+          <KpiCard
+            icon={<FolderKanban className="h-5 w-5" />}
+            label="Active Projects"
+            value={stats?.projects || 0}
+            color="var(--section-projects)"
+          />
+          <KpiCard
+            icon={<ArrowDownToLine className="h-5 w-5" />}
+            label="Tasks to Me"
+            value={tasksAssignedToMe?.length || 0}
+            color="var(--section-tasks)"
+          />
+          <KpiCard
+            icon={<ArrowUpFromLine className="h-5 w-5" />}
+            label="Tasks I Gave"
+            value={tasksAssignedByMe?.length || 0}
+            color="var(--section-finance)"
+          />
         </div>
 
         {/* Quick Access Modules — Colorful grid */}
@@ -279,9 +315,19 @@ export default function Index() {
   );
 }
 
-function KpiCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+function KpiCard({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  color: string;
+}) {
   return (
-    <div className="kpi-card p-3.5 sm:p-4" style={{ '--kpi-color': color } as React.CSSProperties}>
+    <div className="kpi-card p-3.5 sm:p-4" style={{ "--kpi-color": color } as React.CSSProperties}>
       <div className="flex items-center gap-3">
         <div className="kpi-icon">{icon}</div>
         <div className="min-w-0">
@@ -313,10 +359,13 @@ function TaskSection({
   formatDate: (d: string | null) => string;
 }) {
   return (
-    <Card className="border-0 shadow-float overflow-hidden card-accent" style={{ '--accent-color': accentColor || 'var(--primary)' } as React.CSSProperties}>
+    <Card
+      className="border-0 shadow-float overflow-hidden card-accent"
+      style={{ "--accent-color": accentColor || "var(--primary)" } as React.CSSProperties}
+    >
       <div className="flex items-center justify-between p-4 pb-2">
         <div className="flex items-center gap-2">
-          <div style={{ color: `hsl(${accentColor || 'var(--primary)'})` }}>{icon}</div>
+          <div style={{ color: `hsl(${accentColor || "var(--primary)"})` }}>{icon}</div>
           <h3 className="font-semibold text-sm sm:text-base">{title}</h3>
           {tasks.length > 0 && (
             <Badge variant="secondary" className="text-xs h-5 px-1.5 rounded-full">
@@ -347,9 +396,7 @@ function TaskSection({
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {task.projects?.clients?.name} · {task.projects?.title}
                       </p>
-                      <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">
-                        {getSubtext(task)}
-                      </p>
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">{getSubtext(task)}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Badge className={`${getStatusColor(task.status)} text-[10px] px-1.5 py-0 h-5 rounded-full`}>
