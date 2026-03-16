@@ -117,7 +117,14 @@ export function CreateAnnouncementDialog({
           }));
         if (bellRecords.length > 0) {
           await supabase.from("task_notifications").insert(bellRecords);
-        }
+
+        // WhatsApp notification to all team members
+        sendWhatsApp({
+          userIds: allUserIds,
+          message: `📢 *Pengumuman Baru*\n\n*${title.trim()}*\n\n${content.trim()}\n\nSilakan cek di Talco Project Management System.`,
+          eventType: "announcement",
+        }).catch(err => console.error("[Announcement] WhatsApp failed:", err));
+      }
       }
 
       toast.success("Announcement created and sent to all team members");
