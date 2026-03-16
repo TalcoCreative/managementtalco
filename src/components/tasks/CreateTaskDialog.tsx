@@ -310,6 +310,16 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
         }
       }
 
+      // WhatsApp notification for task assigned
+      const allTaskTargets = [...new Set([...assignedUsers, ...notifyUsers])].filter(id => id !== session.session.user.id);
+      if (allTaskTargets.length > 0) {
+        sendWhatsApp({
+          userIds: allTaskTargets,
+          message: `📝 *Task Baru*\n\n*${formData.title.trim()}*\nPrioritas: ${formData.priority}\nDeadline: ${formData.deadline || "-"}\n\nDi-assign oleh ${creatorName}.\n\nSilakan cek di Talco.`,
+          eventType: "task_assigned",
+        }).catch(err => console.error("[Task] WhatsApp failed:", err));
+      }
+
       toast.success("Task created successfully!");
       setOpen(false);
       setFormData({
