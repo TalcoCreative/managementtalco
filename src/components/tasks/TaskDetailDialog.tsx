@@ -250,6 +250,12 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         if (pushIds.length > 0) {
           sendWebPush({ userIds: pushIds, title: "Talco - Task Assigned", body: `${creatorName} assigned you: "${editTitle}"`, url: "/tasks", tag: `task-assign-${taskId}` }).catch(console.error);
         }
+        // WhatsApp for new assignees
+        sendWhatsApp({
+          userIds: pushIds,
+          message: `📝 *Task Assigned*\n\n*${editTitle}*\n\nDi-assign oleh ${creatorName}.\n\nSilakan cek di Talco.`,
+          eventType: "task_assigned",
+        }).catch(err => console.error("[Task] WA assign failed:", err));
       }
 
       // Update task_watchers
