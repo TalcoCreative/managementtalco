@@ -157,6 +157,55 @@ Deno.serve(async (req) => {
         .update({ reminder_sent: true })
         .eq("id", meeting.id);
 
+      // WhatsApp reminder to all participants
+      const waUserIds = Array.from(userIds);
+      try {
+        const fonnteApiKey = Deno.env.get("FONNTE_API_KEY");
+        if (fonnteApiKey) {
+          // Check WA notification settings for meeting_reminder
+          const { data: waSetting } = await supabase
+            .from("wa_notification_settings")
+            .select("is_enabled, send_to_personal, group_ids")
+            .eq("event_type", "meeting_reminder")
+            .single();
+
+          if (!waSetting || waSetting.is_enabled !== false) {
+            const waMessage = `📅 *Meeting Reminder*\n\nMeeting *"${meeting.title}"* akan dimulai dalam 30 menit.\nWaktu: ${meeting.start_time?.slice(0, 5)}\nLokasi: ${locationInfo}\n\nSilakan bersiap-siap!`;
+
+            // Send to personal
+            if (waSetting?.send_to_personal !== false && waUserIds.length > 0) {
+              const { data: profiles } = await supabase.from("profiles").select("id, full_name, phone").in("id", waUserIds);
+              for (const profile of (profiles || [])) {
+                if (profile.phone && /^08\d{8,13}$/.test(profile.phone.replace(/[\s\-()]/g, ""))) {
+                  const personalMsg = `Halo ${profile.full_name || "Team"}! 👋\n\n${waMessage}`;
+                  const formData = new URLSearchParams();
+                  formData.append("target", profile.phone);
+                  formData.append("message", personalMsg);
+                  formData.append("typing", "true");
+                  formData.append("delay", "1");
+                  formData.append("countryCode", "62");
+                  await fetch("https://api.fonnte.com/send", { method: "POST", headers: { Authorization: fonnteApiKey }, body: formData });
+                }
+              }
+            }
+            // Send to groups
+            const groupIds: string[] = waSetting?.group_ids || [];
+            for (const gid of groupIds) {
+              const groupMsg = `📢 *Notifikasi Sistem*\n\n${waMessage}`;
+              const formData = new URLSearchParams();
+              formData.append("target", gid);
+              formData.append("message", groupMsg);
+              formData.append("typing", "true");
+              formData.append("delay", "1");
+              formData.append("countryCode", "62");
+              await fetch("https://api.fonnte.com/send", { method: "POST", headers: { Authorization: fonnteApiKey }, body: formData });
+            }
+          }
+        }
+      } catch (waErr) {
+        console.error("[MeetingReminder] WA failed:", waErr);
+      }
+
       // Log
       await supabase.from("push_notification_logs").insert({
         user_ids: Array.from(userIds),
