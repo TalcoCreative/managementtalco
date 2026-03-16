@@ -65,6 +65,16 @@ export function CreateLeaveRequestDialog({ open, onOpenChange }: CreateLeaveRequ
 
       if (error) throw error;
 
+      // WhatsApp notification to HR/SuperAdmin only
+      const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
+      sendWhatsApp({
+        userIds: [],
+        message: `📝 *Pengajuan Cuti/Izin*\n\n${myProfile?.full_name || "Team Member"} mengajukan *${leaveType}*\nTanggal: ${format(startDate, "dd/MM/yyyy")} - ${format(endDate, "dd/MM/yyyy")}\nAlasan: ${reason.trim() || "-"}\n\nSilakan review di Talco.`,
+        eventType: "leave_request",
+        roleFilter: ["hr", "super_admin"],
+      }).catch(err => console.error("[Leave] WhatsApp failed:", err));
+
       toast.success("Leave request submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
       queryClient.invalidateQueries({ queryKey: ["pending-leave-requests"] });

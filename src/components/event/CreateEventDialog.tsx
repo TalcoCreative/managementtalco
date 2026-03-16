@@ -132,6 +132,17 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
         changed_by: profile.id,
       });
 
+      // WhatsApp notification for event created
+      const { data: allProfiles } = await supabase.from("profiles").select("id");
+      const { data: creatorProfile } = await supabase.from("profiles").select("full_name").eq("id", profile.id).single();
+      const allIds = (allProfiles || []).map(p => p.id);
+      const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
+      sendWhatsApp({
+        userIds: allIds,
+        message: `🎉 *Event Baru Dibuat*\n\n*${name}*\nTipe: ${eventType}\nTanggal: ${startDate}\nLokasi: ${isOnline ? "Online" : (location || "-")}\n\nDibuat oleh ${creatorProfile?.full_name || "Someone"}.\n\nSilakan cek di Talco.`,
+        eventType: "event_created",
+      }).catch(err => console.error("[Event] WhatsApp failed:", err));
+
       return data;
     },
     onSuccess: () => {

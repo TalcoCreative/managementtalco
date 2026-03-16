@@ -16,6 +16,7 @@ import { Plus, X, Search } from "lucide-react";
 import { z } from "zod";
 import { sendShootingAssignmentEmail } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 
 const shootingSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
