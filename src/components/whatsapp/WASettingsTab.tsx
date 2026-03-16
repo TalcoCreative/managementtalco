@@ -6,14 +6,34 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { RefreshCw, Users, Bell, MessageSquare, Loader2 } from "lucide-react";
+import { RefreshCw, Users, Bell, MessageSquare, Loader2, Send } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { sendTestEventWhatsApp } from "@/lib/whatsapp-utils";
+
+const TEST_MESSAGES: Record<string, string> = {
+  announcement: "📢 *Test Pengumuman*\n\nIni adalah pesan tes untuk notifikasi Announcement.",
+  attendance: "📋 *Test Attendance*\n\nIni adalah pesan tes untuk notifikasi Attendance (Clock In/Out).",
+  event_created: "🎉 *Test Event Created*\n\nIni adalah pesan tes untuk notifikasi Event baru.",
+  leave_request: "📝 *Test Leave Request*\n\nIni adalah pesan tes untuk notifikasi pengajuan Cuti/Izin.",
+  meeting_created: "📅 *Test Meeting Created*\n\nIni adalah pesan tes untuk notifikasi Meeting baru.",
+  meeting_reminder: "📅 *Test Meeting Reminder*\n\nIni adalah pesan tes untuk notifikasi Reminder Meeting.",
+  new_candidate: "👤 *Test New Candidate*\n\nIni adalah pesan tes untuk notifikasi Kandidat baru.",
+  project_created: "📁 *Test Project Created*\n\nIni adalah pesan tes untuk notifikasi Project baru.",
+  shooting_created: "📷 *Test Shooting Created*\n\nIni adalah pesan tes untuk notifikasi Shooting baru.",
+  shooting_reminder: "📷 *Test Shooting Reminder*\n\nIni adalah pesan tes untuk notifikasi Reminder Shooting.",
+  task_assigned: "📝 *Test Task Assigned*\n\nIni adalah pesan tes untuk notifikasi Task di-assign.",
+  task_comment: "💬 *Test Task Comment*\n\nIni adalah pesan tes untuk notifikasi Komentar baru di Task.",
+  task_deadline_reminder: "⏰ *Test Task Deadline*\n\nIni adalah pesan tes untuk notifikasi Reminder Deadline Task.",
+  task_mention: "🔔 *Test Task Mention*\n\nIni adalah pesan tes untuk notifikasi Mention di Task.",
+  task_status_updated: "🔄 *Test Task Status*\n\nIni adalah pesan tes untuk notifikasi perubahan Status Task.",
+};
 
 export default function WASettingsTab() {
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
+  const [testingEvent, setTestingEvent] = useState<string | null>(null);
 
   // Fetch notification settings
   const { data: settings, isLoading: loadingSettings } = useQuery({
@@ -97,6 +117,24 @@ export default function WASettingsTab() {
     groupMutation.mutate({ id: settingId, group_ids: currentGroups.filter((g) => g !== groupId) });
   };
 
+  const handleTestEvent = async (eventType: string) => {
+    setTestingEvent(eventType);
+    try {
+      const testMsg = TEST_MESSAGES[eventType] || `Test notifikasi untuk event: ${eventType}`;
+      const result = await sendTestEventWhatsApp(eventType, testMsg);
+      if (result?.success) {
+        const resultCount = result.results?.length || 0;
+        toast.success(`Test berhasil! ${resultCount} pesan terkirim ke group.`);
+      } else {
+        toast.error(result?.message || "Test gagal");
+      }
+    } catch (err: any) {
+      toast.error("Test gagal: " + (err.message || "Unknown error"));
+    } finally {
+      setTestingEvent(null);
+    }
+  };
+
   if (loadingSettings) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -171,12 +209,13 @@ export default function WASettingsTab() {
             Notification Settings
           </CardTitle>
           <CardDescription>
-            Atur jenis notifikasi yang aktif dan group tujuan pengiriman
+            Atur jenis notifikasi yang aktif, group tujuan pengiriman, dan test kirim per event
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-1">
           {(settings || []).map((setting: any) => {
             const assignedGroups: string[] = setting.group_ids || [];
+            const isTesting = testingEvent === setting.event_type;
             return (
               <div
                 key={setting.id}
@@ -190,7 +229,18 @@ export default function WASettingsTab() {
                       <p className="text-xs text-muted-foreground font-mono">{setting.event_type}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestEvent(setting.event_type)}
+                      disabled={isTesting || assignedGroups.length === 0}
+                      className="gap-1.5 text-xs h-7"
+                      title={assignedGroups.length === 0 ? "Tambahkan group dulu untuk test" : "Test kirim ke group"}
+                    >
+                      {isTesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                      Test
+                    </Button>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">Personal</span>
                       <Switch

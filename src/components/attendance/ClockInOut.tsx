@@ -334,6 +334,20 @@ export function ClockInOut() {
         console.error("Failed to send clock-in summary email:", err);
       });
 
+      // WhatsApp notification for attendance
+      const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+      const clockUserName = myProfile?.full_name || "Team Member";
+      const { data: allTeamProfiles } = await supabase.from("profiles").select("id").not("id", "eq", session.session.user.id);
+      const teamIds = (allTeamProfiles || []).map((p: any) => p.id);
+      if (teamIds.length > 0) {
+        const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
+        sendWhatsApp({
+          userIds: teamIds,
+          message: `📋 *Attendance*\n\n${clockUserName} telah melakukan Clock In pada ${format(now, 'HH:mm')} WIB (${lateStatus}).\n\nSilakan cek di Talco.`,
+          eventType: "attendance",
+        }).catch((err: any) => console.error("[Attendance] WhatsApp failed:", err));
+      }
+
     } catch (error: any) {
       toast.error(error.message || "Gagal clock in");
     } finally {

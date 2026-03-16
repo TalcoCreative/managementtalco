@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -116,7 +117,14 @@ export function CreateAnnouncementDialog({
           }));
         if (bellRecords.length > 0) {
           await supabase.from("task_notifications").insert(bellRecords);
-        }
+
+        // WhatsApp notification to all team members
+        sendWhatsApp({
+          userIds: allUserIds,
+          message: `📢 *Pengumuman Baru*\n\n*${title.trim()}*\n\n${content.trim()}\n\nSilakan cek di Talco Project Management System.`,
+          eventType: "announcement",
+        }).catch(err => console.error("[Announcement] WhatsApp failed:", err));
+      }
       }
 
       toast.success("Announcement created and sent to all team members");

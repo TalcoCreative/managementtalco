@@ -91,6 +91,17 @@ export function CreateCandidateDialog({ open, onOpenChange }: CreateCandidateDia
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       toast.success("Kandidat berhasil ditambahkan");
+
+      // WhatsApp notification for new candidate (HR/SuperAdmin only)
+      import("@/lib/whatsapp-utils").then(({ sendWhatsApp }) => {
+        sendWhatsApp({
+          userIds: [],
+          message: `👤 *Kandidat Baru*\n\n*${formData.full_name}*\nPosisi: ${formData.position}\nDivisi: ${formData.division}\nEmail: ${formData.email}\n\nSilakan review di Talco.`,
+          eventType: "new_candidate",
+          roleFilter: ["hr", "super_admin"],
+        }).catch(err => console.error("[Candidate] WhatsApp failed:", err));
+      });
+
       onOpenChange(false);
       setFormData({
         full_name: "",

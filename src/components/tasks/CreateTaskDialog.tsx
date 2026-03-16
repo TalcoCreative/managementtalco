@@ -17,6 +17,7 @@ import { RichBriefEditor, BriefData } from "@/components/tasks/RichBriefEditor";
 import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
+import { sendWhatsApp } from "@/lib/whatsapp-utils";
 
 
 interface LinkAttachment {
@@ -306,6 +307,16 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             url: "/tasks",
             tag: `task-watch-${taskData.id}`,
           }).catch(console.error);
+        }
+
+        // WhatsApp notification for task assigned
+        const allTaskTargets = [...new Set([...assignedUsers, ...notifyUsers])].filter(id => id !== session.session.user.id);
+        if (allTaskTargets.length > 0) {
+          sendWhatsApp({
+            userIds: allTaskTargets,
+            message: `📝 *Task Baru*\n\n*${formData.title.trim()}*\nPrioritas: ${formData.priority}\nDeadline: ${formData.deadline || "-"}\n\nDi-assign oleh ${creatorName}.\n\nSilakan cek di Talco.`,
+            eventType: "task_assigned",
+          }).catch(err => console.error("[Task] WhatsApp failed:", err));
         }
       }
 
