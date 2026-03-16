@@ -475,6 +475,28 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
         }).catch(err => console.error("[TaskPush] Comment push failed:", err));
       }
 
+      // WhatsApp for comment
+      if (commentPushTargets.length > 0) {
+        sendWhatsApp({
+          userIds: commentPushTargets,
+          message: `💬 *Komentar Baru*\n\nTask: *${task?.title || "Task"}*\n\n${commenterProfile?.full_name || "Someone"}: ${comment.substring(0, 200)}${comment.length > 200 ? "..." : ""}\n\nSilakan cek di Talco.`,
+          eventType: "task_comment",
+        }).catch(err => console.error("[Task] WA comment failed:", err));
+      }
+
+      // WhatsApp for mentions
+      if (users && users.length > 0) {
+        const waMentionIds = extractMentions(comment, users).filter(id => id !== session.session.user.id);
+        if (waMentionIds.length > 0) {
+          const { data: mentionerProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+          sendWhatsApp({
+            userIds: waMentionIds,
+            message: `🔔 *Kamu Di-mention*\n\nTask: *${task?.title || "Task"}*\n\n${mentionerProfile?.full_name || "Someone"} menyebut kamu di komentar.\n\nSilakan cek di Talco.`,
+            eventType: "task_mention",
+          }).catch(err => console.error("[Task] WA mention failed:", err));
+        }
+      }
+
       toast.success("Comment added!");
       setComment("");
       queryClient.invalidateQueries({ queryKey: ["task-comments", taskId] });
