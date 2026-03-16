@@ -65,6 +65,18 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
 
       if (error) throw error;
 
+      // WhatsApp notification for project created
+      const { data: allProfiles } = await supabase.from("profiles").select("id");
+      const { data: session } = await supabase.auth.getSession();
+      const { data: creatorProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session?.user.id).single();
+      const allIds = (allProfiles || []).map((p: any) => p.id);
+      const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
+      sendWhatsApp({
+        userIds: allIds,
+        message: `📁 *Project Baru*\n\n*${title}*\nTipe: ${type || "-"}\nDeadline: ${deadline || "-"}\n\nDibuat oleh ${creatorProfile?.full_name || "Someone"}.\n\nSilakan cek di Talco.`,
+        eventType: "project_created",
+      }).catch((err: any) => console.error("[Project] WhatsApp failed:", err));
+
       toast.success("Project created successfully");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       onOpenChange(false);
