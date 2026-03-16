@@ -28,7 +28,27 @@ interface TaskDetailDialogProps {
   taskId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
+      }
+
+      // WhatsApp for comment
+      if (commentPushTargets.length > 0) {
+        sendWhatsApp({
+          userIds: commentPushTargets,
+          message: `💬 *Komentar Baru*\n\nTask: *${task?.title || "Task"}*\n\n${commenterProfile?.full_name || "Someone"}: ${comment.substring(0, 200)}${comment.length > 200 ? "..." : ""}\n\nSilakan cek di Talco.`,
+          eventType: "task_comment",
+        }).catch(err => console.error("[Task] WA comment failed:", err));
+      }
+
+      // WhatsApp for mentions
+      const mentionedUserIds = users ? extractMentions(comment, users) : [];
+      const waMentionTargets = mentionedUserIds.filter(id => id !== session.session.user.id);
+      if (waMentionTargets.length > 0) {
+        sendWhatsApp({
+          userIds: waMentionTargets,
+          message: `🔔 *Kamu Di-mention*\n\nTask: *${task?.title || "Task"}*\n\n${commenterProfile?.full_name || "Someone"} menyebut kamu di komentar.\n\nSilakan cek di Talco.`,
+          eventType: "task_mention",
+        }).catch(err => console.error("[Task] WA mention failed:", err));
+      }
 
 
 export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialogProps) {
