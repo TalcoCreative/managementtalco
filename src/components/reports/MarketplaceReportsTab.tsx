@@ -520,7 +520,7 @@ export function MarketplaceReportsTab() {
                             {mp?.label || r.marketplace}
                           </Badge>
                         </TableCell>
-                        <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                        <TableCell>{(r as any).start_date && (r as any).end_date ? `${(r as any).start_date} — ${(r as any).end_date}` : `${MONTHS[r.report_month - 1]} ${r.report_year}`}</TableCell>
                         <TableCell className="text-right">{formatCurrency(r.total_revenue || 0)}</TableCell>
                         <TableCell className="text-right">{formatNumber(r.total_orders || 0)}</TableCell>
                         <TableCell className="text-right">{formatNumber(r.store_visitors || 0)}</TableCell>
