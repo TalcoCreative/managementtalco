@@ -283,7 +283,7 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
             task_id: taskData.id,
             user_id: watcherId,
             notification_type: "assigned",
-            message: `${creatorName} menambahkan lo sebagai watcher di task "${formData.title.trim()}"`,
+            message: `${creatorName} menambahkan notifikasi task "${formData.title.trim()}" untuk kamu`,
             created_by: session.session.user.id,
           });
 
