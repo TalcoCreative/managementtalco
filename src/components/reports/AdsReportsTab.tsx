@@ -345,7 +345,9 @@ export function AdsReportsTab() {
                 reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">
-                      {getMonthLabel(report.report_month)} {report.report_year}
+                      {(report as any).start_date && (report as any).end_date
+                        ? `${(report as any).start_date} — ${(report as any).end_date}`
+                        : `${getMonthLabel(report.report_month)} ${report.report_year}`}
                     </TableCell>
                     <TableCell>{report.clients?.name || "-"}</TableCell>
                     <TableCell>{getPlatformLabel(report.platform)}</TableCell>

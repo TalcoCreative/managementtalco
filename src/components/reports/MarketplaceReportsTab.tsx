@@ -583,6 +583,24 @@ export function MarketplaceReportsTab() {
                 <Input type="number" value={formData.report_year} onChange={(e) => setFormData(p => ({ ...p, report_year: Number(e.target.value) }))} />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tanggal Mulai (opsional)</Label>
+                <Input
+                  type="date"
+                  value={(formData as any).start_date || ""}
+                  onChange={(e) => setFormData(p => ({ ...p, start_date: e.target.value || undefined } as any))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Selesai (opsional)</Label>
+                <Input
+                  type="date"
+                  value={(formData as any).end_date || ""}
+                  onChange={(e) => setFormData(p => ({ ...p, end_date: e.target.value || undefined } as any))}
+                />
+              </div>
+            </div>
 
             {/* Selling section */}
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pt-2">Selling</p>

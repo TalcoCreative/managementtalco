@@ -301,7 +301,9 @@ export function OrganicReportsTab() {
                 reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">
-                      {getMonthLabel(report.report_month)} {report.report_year}
+                      {report.start_date && report.end_date 
+                        ? `${report.start_date} — ${report.end_date}`
+                        : `${getMonthLabel(report.report_month)} ${report.report_year}`}
                     </TableCell>
                     <TableCell>
                       {report.platform_accounts?.clients?.name || "-"}
