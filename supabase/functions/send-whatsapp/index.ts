@@ -43,7 +43,7 @@ serve(async (req) => {
     // Check if this event type is enabled in settings
     const { data: settingRow } = await supabase
       .from("wa_notification_settings")
-      .select("is_enabled, send_to_personal, group_ids")
+      .select("is_enabled, send_to_personal, send_to_all_users, group_ids, role_filter")
       .eq("event_type", event_type)
       .single();
 
@@ -57,7 +57,9 @@ serve(async (req) => {
     }
 
     const sendToPersonal = settingRow?.send_to_personal ?? true;
+    const sendToAllUsers = settingRow?.send_to_all_users ?? false;
     const groupIds: string[] = settingRow?.group_ids || [];
+    const settingsRoleFilter: string[] = settingRow?.role_filter || [];
 
     const results: any[] = [];
 
@@ -81,20 +83,22 @@ serve(async (req) => {
     // Determine target user IDs for personal messages
     let targetUserIds = user_ids || [];
 
-    // If role_filter provided, fetch users with those roles and intersect/use them
-    if (role_filter && role_filter.length > 0) {
-      console.log(`[WA] Role filter active: ${role_filter.join(", ")}`);
-      // Get user_ids from user_roles with matching roles
+    // Merge role_filter from request AND from settings
+    const effectiveRoleFilter = [...new Set([...(role_filter || []), ...settingsRoleFilter])];
+
+    // If role filter is active, filter/expand user list to only those roles
+    if (effectiveRoleFilter.length > 0 && !sendToAllUsers) {
+      console.log(`[WA] Role filter active: ${effectiveRoleFilter.join(", ")}`);
       const { data: roleUsers } = await supabase
         .from("user_roles")
         .select("user_id")
-        .in("role", role_filter);
+        .in("role", effectiveRoleFilter);
 
-      // Also check dynamic roles for super_admin / hr
+      // Also check dynamic roles
       const { data: dynRoles } = await supabase
         .from("dynamic_roles")
         .select("id, name")
-        .or(role_filter.map(r => `name.ilike.%${r}%`).join(","));
+        .or(effectiveRoleFilter.map(r => `name.ilike.%${r}%`).join(","));
 
       let dynUserIds: string[] = [];
       if (dynRoles && dynRoles.length > 0) {
@@ -111,15 +115,33 @@ serve(async (req) => {
         ...dynUserIds,
       ]);
 
-      // If user_ids were also provided, use the intersection (role users who are also in user_ids)
-      // If no user_ids provided, send to all role users
       if (targetUserIds.length > 0) {
-        // Merge: include both the specified users AND role-filtered users
-        targetUserIds = Array.from(new Set([...targetUserIds.filter(id => roleUserIds.has(id)), ...Array.from(roleUserIds)]));
+        // Only keep users who match the role filter from the provided list
+        targetUserIds = targetUserIds.filter(id => roleUserIds.has(id));
+        // Also add role users not in the original list
+        for (const uid of roleUserIds) {
+          if (!targetUserIds.includes(uid)) targetUserIds.push(uid);
+        }
       } else {
         targetUserIds = Array.from(roleUserIds);
       }
       console.log(`[WA] After role filter: ${targetUserIds.length} users`);
+    }
+
+    // If send_to_all_users is enabled, get ALL active users
+    if (sendToAllUsers) {
+      console.log(`[WA] send_to_all_users enabled for "${event_type}"`);
+      const { data: allProfiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .or("status.is.null,status.eq.active");
+      
+      if (allProfiles) {
+        const allIds = allProfiles.map(p => p.id);
+        // Merge with existing targetUserIds
+        targetUserIds = Array.from(new Set([...targetUserIds, ...allIds]));
+      }
+      console.log(`[WA] After all_users merge: ${targetUserIds.length} users`);
     }
 
     // Send to individual users (personal) if enabled
