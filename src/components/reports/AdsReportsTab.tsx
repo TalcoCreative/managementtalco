@@ -345,7 +345,9 @@ export function AdsReportsTab() {
                 reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">
-                      {getMonthLabel(report.report_month)} {report.report_year}
+                      {(report as any).start_date && (report as any).end_date
+                        ? `${(report as any).start_date} — ${(report as any).end_date}`
+                        : `${getMonthLabel(report.report_month)} ${report.report_year}`}
                     </TableCell>
                     <TableCell>{report.clients?.name || "-"}</TableCell>
                     <TableCell>{getPlatformLabel(report.platform)}</TableCell>
@@ -531,6 +533,24 @@ export function AdsReportsTab() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tanggal Mulai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData as any).start_date || ""}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value || undefined } as any)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tanggal Selesai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData as any).end_date || ""}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value || undefined } as any)}
+                    />
                   </div>
                 </div>
 

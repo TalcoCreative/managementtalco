@@ -301,7 +301,9 @@ export function OrganicReportsTab() {
                 reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">
-                      {getMonthLabel(report.report_month)} {report.report_year}
+                      {report.start_date && report.end_date 
+                        ? `${report.start_date} — ${report.end_date}`
+                        : `${getMonthLabel(report.report_month)} ${report.report_year}`}
                     </TableCell>
                     <TableCell>
                       {report.platform_accounts?.clients?.name || "-"}
@@ -449,6 +451,24 @@ export function OrganicReportsTab() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tanggal Mulai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData.start_date as string) || ""}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tanggal Selesai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData.end_date as string) || ""}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
+                    />
                   </div>
                 </div>
 

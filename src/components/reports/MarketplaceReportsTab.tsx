@@ -383,7 +383,7 @@ export function MarketplaceReportsTab() {
                           <TableRow key={r.id}>
                             <TableCell className="font-medium">{r.clients?.name || "-"}</TableCell>
                             <TableCell><Badge variant="outline" className={mp?.color}>{mp?.label || r.marketplace}</Badge></TableCell>
-                            <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                            <TableCell>{(r as any).start_date && (r as any).end_date ? `${(r as any).start_date} — ${(r as any).end_date}` : `${MONTHS[r.report_month - 1]} ${r.report_year}`}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.store_visitors || 0)}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.page_views || 0)}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.unique_visitors || 0)}</TableCell>
@@ -520,7 +520,7 @@ export function MarketplaceReportsTab() {
                             {mp?.label || r.marketplace}
                           </Badge>
                         </TableCell>
-                        <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                        <TableCell>{(r as any).start_date && (r as any).end_date ? `${(r as any).start_date} — ${(r as any).end_date}` : `${MONTHS[r.report_month - 1]} ${r.report_year}`}</TableCell>
                         <TableCell className="text-right">{formatCurrency(r.total_revenue || 0)}</TableCell>
                         <TableCell className="text-right">{formatNumber(r.total_orders || 0)}</TableCell>
                         <TableCell className="text-right">{formatNumber(r.store_visitors || 0)}</TableCell>
@@ -581,6 +581,24 @@ export function MarketplaceReportsTab() {
               <div className="space-y-2">
                 <Label>Tahun</Label>
                 <Input type="number" value={formData.report_year} onChange={(e) => setFormData(p => ({ ...p, report_year: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tanggal Mulai (opsional)</Label>
+                <Input
+                  type="date"
+                  value={(formData as any).start_date || ""}
+                  onChange={(e) => setFormData(p => ({ ...p, start_date: e.target.value || undefined } as any))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tanggal Selesai (opsional)</Label>
+                <Input
+                  type="date"
+                  value={(formData as any).end_date || ""}
+                  onChange={(e) => setFormData(p => ({ ...p, end_date: e.target.value || undefined } as any))}
+                />
               </div>
             </div>
 

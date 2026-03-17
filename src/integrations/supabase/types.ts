@@ -2985,12 +2985,14 @@ export type Database = {
           conversion_rate: number | null
           created_at: string
           created_by: string | null
+          end_date: string | null
           id: string
           marketplace: string
           notes: string | null
           page_views: number | null
           report_month: number
           report_year: number
+          start_date: string | null
           store_visitors: number | null
           total_orders: number | null
           total_products_sold: number | null
@@ -3010,12 +3012,14 @@ export type Database = {
           conversion_rate?: number | null
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
           marketplace?: string
           notes?: string | null
           page_views?: number | null
           report_month: number
           report_year: number
+          start_date?: string | null
           store_visitors?: number | null
           total_orders?: number | null
           total_products_sold?: number | null
@@ -3035,12 +3039,14 @@ export type Database = {
           conversion_rate?: number | null
           created_at?: string
           created_by?: string | null
+          end_date?: string | null
           id?: string
           marketplace?: string
           notes?: string | null
           page_views?: number | null
           report_month?: number
           report_year?: number
+          start_date?: string | null
           store_visitors?: number | null
           total_orders?: number | null
           total_products_sold?: number | null
@@ -3328,6 +3334,7 @@ export type Database = {
           cpm: number | null
           created_at: string
           created_by: string
+          end_date: string | null
           id: string
           impressions: number
           is_locked: boolean
@@ -3341,6 +3348,7 @@ export type Database = {
           report_month: number
           report_year: number
           results: number
+          start_date: string | null
           total_spend: number
           updated_at: string
           updated_by: string | null
@@ -3353,6 +3361,7 @@ export type Database = {
           cpm?: number | null
           created_at?: string
           created_by: string
+          end_date?: string | null
           id?: string
           impressions?: number
           is_locked?: boolean
@@ -3366,6 +3375,7 @@ export type Database = {
           report_month: number
           report_year: number
           results?: number
+          start_date?: string | null
           total_spend: number
           updated_at?: string
           updated_by?: string | null
@@ -3378,6 +3388,7 @@ export type Database = {
           cpm?: number | null
           created_at?: string
           created_by?: string
+          end_date?: string | null
           id?: string
           impressions?: number
           is_locked?: boolean
@@ -3391,6 +3402,7 @@ export type Database = {
           report_month?: number
           report_year?: number
           results?: number
+          start_date?: string | null
           total_spend?: number
           updated_at?: string
           updated_by?: string | null
@@ -3416,6 +3428,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          end_date: string | null
           fb_content_interactions: number | null
           fb_followers: number | null
           fb_impressions: number | null
@@ -3445,6 +3458,7 @@ export type Database = {
           platform_account_id: string
           report_month: number
           report_year: number
+          start_date: string | null
           tt_comments: number | null
           tt_followers: number | null
           tt_likes: number | null
@@ -3461,6 +3475,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          end_date?: string | null
           fb_content_interactions?: number | null
           fb_followers?: number | null
           fb_impressions?: number | null
@@ -3490,6 +3505,7 @@ export type Database = {
           platform_account_id: string
           report_month: number
           report_year: number
+          start_date?: string | null
           tt_comments?: number | null
           tt_followers?: number | null
           tt_likes?: number | null
@@ -3506,6 +3522,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          end_date?: string | null
           fb_content_interactions?: number | null
           fb_followers?: number | null
           fb_impressions?: number | null
@@ -3535,6 +3552,7 @@ export type Database = {
           platform_account_id?: string
           report_month?: number
           report_year?: number
+          start_date?: string | null
           tt_comments?: number | null
           tt_followers?: number | null
           tt_likes?: number | null
@@ -5702,6 +5720,8 @@ export type Database = {
           id: string
           is_enabled: boolean
           label: string
+          role_filter: string[] | null
+          send_to_all_users: boolean | null
           send_to_personal: boolean
           updated_at: string
           updated_by: string | null
@@ -5712,6 +5732,8 @@ export type Database = {
           id?: string
           is_enabled?: boolean
           label: string
+          role_filter?: string[] | null
+          send_to_all_users?: boolean | null
           send_to_personal?: boolean
           updated_at?: string
           updated_by?: string | null
@@ -5722,6 +5744,8 @@ export type Database = {
           id?: string
           is_enabled?: boolean
           label?: string
+          role_filter?: string[] | null
+          send_to_all_users?: boolean | null
           send_to_personal?: boolean
           updated_at?: string
           updated_by?: string | null
