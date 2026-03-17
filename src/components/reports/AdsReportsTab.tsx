@@ -533,6 +533,24 @@ export function AdsReportsTab() {
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tanggal Mulai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData as any).start_date || ""}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value || undefined } as any)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tanggal Selesai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData as any).end_date || ""}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value || undefined } as any)}
+                    />
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Label>Objective *</Label>
