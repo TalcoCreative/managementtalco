@@ -451,6 +451,24 @@ export function OrganicReportsTab() {
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tanggal Mulai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData.start_date as string) || ""}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tanggal Selesai (opsional)</Label>
+                    <Input
+                      type="date"
+                      value={(formData.end_date as string) || ""}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
+                    />
+                  </div>
+                </div>
 
                 {platformMetrics && (
                   <div className="space-y-4 pt-4 border-t">
