@@ -383,7 +383,7 @@ export function MarketplaceReportsTab() {
                           <TableRow key={r.id}>
                             <TableCell className="font-medium">{r.clients?.name || "-"}</TableCell>
                             <TableCell><Badge variant="outline" className={mp?.color}>{mp?.label || r.marketplace}</Badge></TableCell>
-                            <TableCell>{MONTHS[r.report_month - 1]} {r.report_year}</TableCell>
+                            <TableCell>{(r as any).start_date && (r as any).end_date ? `${(r as any).start_date} — ${(r as any).end_date}` : `${MONTHS[r.report_month - 1]} ${r.report_year}`}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.store_visitors || 0)}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.page_views || 0)}</TableCell>
                             <TableCell className="text-right">{formatNumber(r.unique_visitors || 0)}</TableCell>
