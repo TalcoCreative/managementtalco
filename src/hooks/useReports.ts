@@ -298,6 +298,8 @@ export const useAdsReports = (filters?: {
   platform?: string;
   year?: number;
   month?: number;
+  startDate?: string;
+  endDate?: string;
 }) => {
   return useQuery({
     queryKey: ["ads-reports", filters],
@@ -319,6 +321,12 @@ export const useAdsReports = (filters?: {
       }
       if (filters?.month) {
         query = query.eq("report_month", filters.month);
+      }
+      if (filters?.startDate) {
+        query = query.gte("start_date", filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte("end_date", filters.endDate);
       }
 
       const { data, error } = await query;
