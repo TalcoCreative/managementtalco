@@ -102,7 +102,7 @@ export function MarketplaceReportsTab() {
   });
 
   const { data: reports, refetch } = useQuery({
-    queryKey: ["marketplace-reports", selectedYear, selectedClientId],
+    queryKey: ["marketplace-reports", selectedYear, selectedClientId, filterStartDate, filterEndDate],
     queryFn: async () => {
       let query = supabase
         .from("marketplace_reports" as any)
@@ -112,6 +112,12 @@ export function MarketplaceReportsTab() {
 
       if (selectedClientId !== "all") {
         query = query.eq("client_id", selectedClientId);
+      }
+      if (filterStartDate) {
+        query = query.gte("start_date", filterStartDate);
+      }
+      if (filterEndDate) {
+        query = query.lte("end_date", filterEndDate);
       }
 
       const { data, error } = await query;
