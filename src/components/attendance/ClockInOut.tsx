@@ -752,9 +752,14 @@ export function ClockInOut() {
               </Button>
             )}
             <MoodSelector value={selectedMood} onChange={setSelectedMood} disabled={loading} />
+            {!selectedMood && photoClockIn && (
+              <p className="text-xs text-center text-amber-600 dark:text-amber-400 font-medium">
+                ⚠️ Pilih mood dulu sebelum Clock In
+              </p>
+            )}
             <Button
               onClick={handleClockIn}
-              disabled={loading || !photoClockIn}
+              disabled={loading || !photoClockIn || !selectedMood}
               className="w-full gap-2 h-14 text-lg font-semibold"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
