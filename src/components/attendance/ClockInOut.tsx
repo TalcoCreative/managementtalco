@@ -285,7 +285,7 @@ export function ClockInOut() {
       const now = new Date();
       const nowIso = now.toISOString();
 
-      // Fetch late threshold setting
+      // Fetch late threshold setting - use Jakarta timezone explicitly
       let lateStatus = "On Time";
       try {
         const { data: thresholdSetting } = await supabase
@@ -296,8 +296,10 @@ export function ClockInOut() {
         
         if (thresholdSetting?.setting_value) {
           const [threshHour, threshMin] = thresholdSetting.setting_value.split(":").map(Number);
-          const clockInHour = now.getHours();
-          const clockInMin = now.getMinutes();
+          // Use Jakarta timezone explicitly to match DB recalculation
+          const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+          const clockInHour = jakartaTime.getHours();
+          const clockInMin = jakartaTime.getMinutes();
           if (clockInHour > threshHour || (clockInHour === threshHour && clockInMin > threshMin)) {
             lateStatus = "Late";
           }
