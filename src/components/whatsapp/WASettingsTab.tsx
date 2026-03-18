@@ -25,6 +25,7 @@ const TEST_MESSAGES: Record<string, string> = {
   project_created: "📁 *Test Project Created*\n\nIni adalah pesan tes untuk notifikasi Project baru.",
   shooting_created: "📷 *Test Shooting Created*\n\nIni adalah pesan tes untuk notifikasi Shooting baru.",
   shooting_reminder: "📷 *Test Shooting Reminder*\n\nIni adalah pesan tes untuk notifikasi Reminder Shooting.",
+  task_created: "📝 *Test Task Created*\n\nIni adalah pesan tes untuk notifikasi Task baru dibuat.",
   task_assigned: "📝 *Test Task Assigned*\n\nIni adalah pesan tes untuk notifikasi Task di-assign.",
   task_comment: "💬 *Test Task Comment*\n\nIni adalah pesan tes untuk notifikasi Komentar baru di Task.",
   task_deadline: "⏰ *Test Task Deadline*\n\nIni adalah pesan tes untuk notifikasi Reminder Deadline Task.",
