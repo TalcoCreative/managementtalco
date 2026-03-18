@@ -272,6 +272,10 @@ export function ClockInOut() {
       toast.error("Silakan ambil foto terlebih dahulu");
       return;
     }
+    if (!selectedMood) {
+      toast.error("Pilih mood terlebih dahulu sebelum clock in");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -281,7 +285,7 @@ export function ClockInOut() {
       const now = new Date();
       const nowIso = now.toISOString();
 
-      // Fetch late threshold setting
+      // Fetch late threshold setting - use Jakarta timezone explicitly
       let lateStatus = "On Time";
       try {
         const { data: thresholdSetting } = await supabase
@@ -292,8 +296,10 @@ export function ClockInOut() {
         
         if (thresholdSetting?.setting_value) {
           const [threshHour, threshMin] = thresholdSetting.setting_value.split(":").map(Number);
-          const clockInHour = now.getHours();
-          const clockInMin = now.getMinutes();
+          // Use Jakarta timezone explicitly to match DB recalculation
+          const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+          const clockInHour = jakartaTime.getHours();
+          const clockInMin = jakartaTime.getMinutes();
           if (clockInHour > threshHour || (clockInHour === threshHour && clockInMin > threshMin)) {
             lateStatus = "Late";
           }
@@ -746,9 +752,14 @@ export function ClockInOut() {
               </Button>
             )}
             <MoodSelector value={selectedMood} onChange={setSelectedMood} disabled={loading} />
+            {!selectedMood && photoClockIn && (
+              <p className="text-xs text-center text-amber-600 dark:text-amber-400 font-medium">
+                ⚠️ Pilih mood dulu sebelum Clock In
+              </p>
+            )}
             <Button
               onClick={handleClockIn}
-              disabled={loading || !photoClockIn}
+              disabled={loading || !photoClockIn || !selectedMood}
               className="w-full gap-2 h-14 text-lg font-semibold"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
