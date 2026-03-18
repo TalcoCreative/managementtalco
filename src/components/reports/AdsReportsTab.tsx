@@ -315,6 +315,23 @@ export function AdsReportsTab() {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              placeholder="Dari"
+              className="w-[150px]"
+            />
+            <span className="text-muted-foreground text-sm">—</span>
+            <Input
+              type="date"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              placeholder="Sampai"
+              className="w-[150px]"
+            />
+          </div>
         </div>
 
         {/* Table */}
