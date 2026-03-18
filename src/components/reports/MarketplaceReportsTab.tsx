@@ -208,6 +208,25 @@ export function MarketplaceReportsTab() {
           <Plus className="h-4 w-4 mr-2" /> Tambah Report
         </Button>
       </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            placeholder="Dari"
+            className="w-[150px]"
+          />
+          <span className="text-muted-foreground text-sm">—</span>
+          <Input
+            type="date"
+            value={filterEndDate}
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            placeholder="Sampai"
+            className="w-[150px]"
+          />
+        </div>
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
