@@ -64,6 +64,8 @@ export function MarketplaceReportsTab() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("selling");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [formData, setFormData] = useState({
     client_id: "",
     marketplace: "tokopedia",
