@@ -86,6 +86,8 @@ export function OrganicReportsTab() {
   const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
     platform_account_id: "",
