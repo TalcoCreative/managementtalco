@@ -354,7 +354,7 @@ export default function EditorialPlanEditor() {
               <SlideEditor
                 slide={currentSlide}
                 epId={ep.id}
-                isEditable={currentSlide.status !== "published"}
+                isEditable={true}
                 onStatusChange={() => refetchSlides()}
                 onLightboxChange={setLightboxOpen}
               />
