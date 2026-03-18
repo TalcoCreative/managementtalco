@@ -185,8 +185,8 @@ serve(async (req) => {
       }
     }
 
-    // Send to assigned groups
-    if (groupIds.length > 0) {
+    // Send to assigned groups (skip for attendance events - personal only)
+    if (groupIds.length > 0 && event_type !== "attendance_reminder") {
       console.log(`[WA] Sending to ${groupIds.length} groups for event: ${event_type}`);
       for (const groupId of groupIds) {
         const groupMessage = `📢 *Notifikasi Sistem*\n\n${message}`;

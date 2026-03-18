@@ -64,6 +64,8 @@ export function MarketplaceReportsTab() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("selling");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [formData, setFormData] = useState({
     client_id: "",
     marketplace: "tokopedia",
@@ -100,7 +102,7 @@ export function MarketplaceReportsTab() {
   });
 
   const { data: reports, refetch } = useQuery({
-    queryKey: ["marketplace-reports", selectedYear, selectedClientId],
+    queryKey: ["marketplace-reports", selectedYear, selectedClientId, filterStartDate, filterEndDate],
     queryFn: async () => {
       let query = supabase
         .from("marketplace_reports" as any)
@@ -110,6 +112,12 @@ export function MarketplaceReportsTab() {
 
       if (selectedClientId !== "all") {
         query = query.eq("client_id", selectedClientId);
+      }
+      if (filterStartDate) {
+        query = query.gte("start_date", filterStartDate);
+      }
+      if (filterEndDate) {
+        query = query.lte("end_date", filterEndDate);
       }
 
       const { data, error } = await query;
@@ -199,6 +207,25 @@ export function MarketplaceReportsTab() {
         <Button onClick={() => setShowAddDialog(true)} className="ml-auto">
           <Plus className="h-4 w-4 mr-2" /> Tambah Report
         </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            placeholder="Dari"
+            className="w-[150px]"
+          />
+          <span className="text-muted-foreground text-sm">—</span>
+          <Input
+            type="date"
+            value={filterEndDate}
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            placeholder="Sampai"
+            className="w-[150px]"
+          />
+        </div>
       </div>
 
       {/* Summary Cards */}

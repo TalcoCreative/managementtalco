@@ -86,6 +86,8 @@ export function OrganicReportsTab() {
   const [filterPlatform, setFilterPlatform] = useState<string>("all");
   const [filterYear, setFilterYear] = useState<string>(currentYear.toString());
   const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
 
   const [formData, setFormData] = useState<Record<string, unknown>>({
     platform_account_id: "",
@@ -96,8 +98,10 @@ export function OrganicReportsTab() {
   const { data: reports = [], isLoading } = useOrganicReports({
     clientId: filterClient !== "all" ? filterClient : undefined,
     platform: filterPlatform !== "all" ? filterPlatform : undefined,
-    year: filterYear ? parseInt(filterYear) : undefined,
+    year: filterYear && filterYear !== "all" ? parseInt(filterYear) : undefined,
     month: filterMonth !== "all" ? parseInt(filterMonth) : undefined,
+    startDate: filterStartDate || undefined,
+    endDate: filterEndDate || undefined,
   });
 
   const { data: accounts = [] } = usePlatformAccounts();
@@ -269,6 +273,23 @@ export function OrganicReportsTab() {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              placeholder="Dari"
+              className="w-[150px]"
+            />
+            <span className="text-muted-foreground text-sm">—</span>
+            <Input
+              type="date"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              placeholder="Sampai"
+              className="w-[150px]"
+            />
+          </div>
         </div>
 
         {/* Table */}
