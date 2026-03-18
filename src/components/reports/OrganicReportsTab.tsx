@@ -98,8 +98,10 @@ export function OrganicReportsTab() {
   const { data: reports = [], isLoading } = useOrganicReports({
     clientId: filterClient !== "all" ? filterClient : undefined,
     platform: filterPlatform !== "all" ? filterPlatform : undefined,
-    year: filterYear ? parseInt(filterYear) : undefined,
+    year: filterYear && filterYear !== "all" ? parseInt(filterYear) : undefined,
     month: filterMonth !== "all" ? parseInt(filterMonth) : undefined,
+    startDate: filterStartDate || undefined,
+    endDate: filterEndDate || undefined,
   });
 
   const { data: accounts = [] } = usePlatformAccounts();
