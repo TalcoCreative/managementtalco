@@ -272,6 +272,10 @@ export function ClockInOut() {
       toast.error("Silakan ambil foto terlebih dahulu");
       return;
     }
+    if (!selectedMood) {
+      toast.error("Pilih mood terlebih dahulu sebelum clock in");
+      return;
+    }
 
     try {
       setLoading(true);
