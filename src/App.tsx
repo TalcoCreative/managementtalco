@@ -177,6 +177,9 @@ const App = () => (
           <Route path="/kol-campaign/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicKolCampaign />} />
           </Route>
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/data-deletion" element={<DataDeletion />} />
           <Route path="/:token" element={<SharedShortUrl />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -184,6 +187,7 @@ const App = () => (
     </TooltipProvider>
     </LanguageProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
