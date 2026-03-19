@@ -4909,6 +4909,143 @@ export type Database = {
           },
         ]
       }
+      sm_dummy_accounts: {
+        Row: {
+          access_token: string | null
+          account_name: string | null
+          avatar_url: string | null
+          created_at: string | null
+          id: string
+          ig_user_id: string | null
+          page_id: string | null
+          platform: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          account_name?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          ig_user_id?: string | null
+          page_id?: string | null
+          platform: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          account_name?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string
+          ig_user_id?: string | null
+          page_id?: string | null
+          platform?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      sm_dummy_analytics: {
+        Row: {
+          account_id: string | null
+          comments: number | null
+          date: string | null
+          engagement: number | null
+          id: string
+          impressions: number | null
+          likes: number | null
+          post_id: string | null
+          reach: number | null
+          shares: number | null
+        }
+        Insert: {
+          account_id?: string | null
+          comments?: number | null
+          date?: string | null
+          engagement?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          post_id?: string | null
+          reach?: number | null
+          shares?: number | null
+        }
+        Update: {
+          account_id?: string | null
+          comments?: number | null
+          date?: string | null
+          engagement?: number | null
+          id?: string
+          impressions?: number | null
+          likes?: number | null
+          post_id?: string | null
+          reach?: number | null
+          shares?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sm_dummy_analytics_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "sm_dummy_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sm_dummy_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "sm_dummy_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sm_dummy_posts: {
+        Row: {
+          account_id: string | null
+          caption: string | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          platform: string | null
+          scheduled_time: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          platform?: string | null
+          scheduled_time?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          platform?: string | null
+          scheduled_time?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sm_dummy_posts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "sm_dummy_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_media_accounts: {
         Row: {
           access_token: string | null
