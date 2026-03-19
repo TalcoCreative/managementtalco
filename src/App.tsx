@@ -49,6 +49,7 @@ import SharedShooting from "./pages/SharedShooting";
 import SharedMeeting from "./pages/SharedMeeting";
 import SocialMedia from "./pages/SocialMedia";
 import SocialMediaModule from "./pages/SocialMediaModule";
+import SocialModule from "./pages/SocialModule";
 import SocialMediaSettings from "./pages/SocialMediaSettings";
 import SharedSocialMedia from "./pages/SharedSocialMedia";
 import ContentBuilder from "./pages/ContentBuilder";
