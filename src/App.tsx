@@ -75,6 +75,10 @@ import ProfileSettings from "./pages/ProfileSettings";
 import PersonalNotes from "./pages/PersonalNotes";
 import InstallApp from "./pages/InstallApp";
 import NotificationLog from "./pages/NotificationLog";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import DataDeletion from "./pages/DataDeletion";
+import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient();
 
