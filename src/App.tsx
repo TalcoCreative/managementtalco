@@ -130,7 +130,7 @@ const App = () => (
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
-          <Route path="/social-media" element={<ProtectedRoute><SocialMediaModule /></ProtectedRoute>} />
+          <Route path="/social-media" element={<ProtectedRoute><SocialModule /></ProtectedRoute>} />
           <Route path="/social-media/settings" element={<ProtectedRoute><SocialMediaSettings /></ProtectedRoute>} />
           <Route path="/social-media/client/:slug" element={<HubLayout />}>
             <Route index element={<SharedSocialMedia />} />
