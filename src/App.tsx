@@ -83,6 +83,7 @@ import { HelmetProvider } from "react-helmet-async";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
     <TooltipProvider>
