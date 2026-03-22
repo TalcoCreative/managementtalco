@@ -220,8 +220,10 @@ export default function SocialMediaSettings() {
           <div className="flex items-center gap-3">
             <Settings className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold">Social Media Settings</h1>
-              <p className="text-muted-foreground">Konfigurasi integrasi SocialBu</p>
+              <h1 className="text-3xl font-bold">Meta Integration Settings</h1>
+              <p className="text-muted-foreground">
+                This system connects to Facebook and Instagram via Meta APIs.
+              </p>
             </div>
           </div>
         </div>
