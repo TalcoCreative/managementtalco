@@ -35,7 +35,6 @@ export function SocialAnalyticsTab() {
   const { data: analytics, isLoading } = useSocialAnalytics(accountFilter);
   const { config } = useSocialModuleConfig();
 
-  // Aggregate stats
   const totalImpressions = analytics?.reduce((sum: number, a: any) => sum + (a.impressions || 0), 0) || 0;
   const totalReach = analytics?.reduce((sum: number, a: any) => sum + (a.reach || 0), 0) || 0;
   const totalEngagement = analytics?.reduce((sum: number, a: any) => sum + (a.engagement || 0), 0) || 0;
@@ -59,6 +58,11 @@ export function SocialAnalyticsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Info */}
+      <p className="text-sm text-muted-foreground">
+        Performance insights from your Facebook Pages and Instagram Business accounts via <code className="text-xs">pages_read_engagement</code> and <code className="text-xs">instagram_manage_insights</code>.
+      </p>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {statCards.map((s) => (
@@ -83,11 +87,11 @@ export function SocialAnalyticsTab() {
         <BarChart3 className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">Filter by Account:</span>
         <Select value={accountFilter} onValueChange={setAccountFilter}>
-          <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="All Accounts" />
+          <SelectTrigger className="w-[260px]">
+            <SelectValue placeholder="All Facebook & Instagram Accounts" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Accounts</SelectItem>
+            <SelectItem value="all">All Facebook & Instagram Accounts</SelectItem>
             {accounts?.map((a: any) => (
               <SelectItem key={a.id} value={a.id}>
                 <span className="flex items-center gap-2">
@@ -107,7 +111,7 @@ export function SocialAnalyticsTab() {
       {/* Post Analytics Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Post Performance</CardTitle>
+          <CardTitle className="text-base">Post Performance (Facebook & Instagram)</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -151,13 +155,13 @@ export function SocialAnalyticsTab() {
                         <p className="text-sm truncate">{caption}</p>
                       </TableCell>
                       <TableCell>
-                        <span className="flex items-center gap-1.5 capitalize">
+                        <span className="flex items-center gap-1.5">
                           {platform === "instagram" ? (
                             <Instagram className="h-3.5 w-3.5 text-pink-500" />
                           ) : (
                             <Facebook className="h-3.5 w-3.5 text-blue-600" />
                           )}
-                          {platform}
+                          {platform === "instagram" ? "Instagram" : "Facebook"}
                         </span>
                       </TableCell>
                       <TableCell>

@@ -488,31 +488,33 @@ export default function SocialMediaSettings() {
             {/* How it works */}
             <Card>
               <CardHeader>
-                <CardTitle>Cara Kerja</CardTitle>
+                <CardTitle>How It Works</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <h4 className="font-medium">1. Login SocialBu</h4>
+                  <h4 className="font-medium">1. Connect via Facebook Login</h4>
                   <p className="text-sm text-muted-foreground">
-                    Masukkan email dan password akun SocialBu untuk mengaktifkan integrasi.
+                    Users must connect their Facebook account to access Pages and linked Instagram accounts.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-medium">2. Hubungkan Akun Social Media</h4>
+                  <h4 className="font-medium">2. Select Facebook Pages & Instagram Accounts</h4>
                   <p className="text-sm text-muted-foreground">
-                    Hubungkan Instagram, Facebook, TikTok, dan platform lainnya melalui SocialBu.
+                    Connect your Facebook Pages and Instagram Business accounts. Instagram accounts are linked through Facebook Pages via Meta APIs.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-medium">3. Buat & Jadwalkan Post</h4>
+                  <h4 className="font-medium">3. Create & Schedule Posts</h4>
                   <p className="text-sm text-muted-foreground">
-                    Buat post baru, jadwalkan waktu posting, dan upload media langsung dari sini.
+                    Create posts, schedule publish times, and upload media for your Facebook Pages and Instagram accounts.
+                    Uses <code className="text-xs bg-muted px-1 rounded">pages_manage_posts</code> and <code className="text-xs bg-muted px-1 rounded">instagram_content_publish</code>.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-medium">4. Monitor Analytics</h4>
+                  <h4 className="font-medium">4. View Performance Insights</h4>
                   <p className="text-sm text-muted-foreground">
-                    Lihat performa post: views, likes, comments, shares, dan metrics lainnya.
+                    Monitor post performance: impressions, reach, engagement, likes, comments, and shares.
+                    Uses <code className="text-xs bg-muted px-1 rounded">pages_read_engagement</code> and <code className="text-xs bg-muted px-1 rounded">instagram_manage_insights</code>.
                   </p>
                 </div>
               </CardContent>
