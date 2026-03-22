@@ -36,7 +36,6 @@ interface Props {
   onPostCreated?: () => void;
 }
 
-// Demo images for simulation
 const DEMO_IMAGES = [
   "https://picsum.photos/seed/demo1/800/800",
   "https://picsum.photos/seed/demo2/800/800",
@@ -69,7 +68,6 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result as string);
-        // Use a demo image URL for the DB
         setImageUrl(DEMO_IMAGES[Math.floor(Math.random() * DEMO_IMAGES.length)]);
       };
       reader.readAsDataURL(file);
@@ -80,7 +78,6 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
     if (!accountId || !caption.trim()) return;
 
     setSubmitting(true);
-    // Simulate processing
     await new Promise((r) => setTimeout(r, 1200));
 
     let scheduledTime: string | undefined;
@@ -102,7 +99,6 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
     setSubmitting(false);
     setSuccess(true);
 
-    // Reset after showing success
     setTimeout(() => {
       setSuccess(false);
       setCaption("");
@@ -126,7 +122,7 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
           <p className="text-muted-foreground text-center max-w-md">
             {isScheduled
               ? `Your post has been scheduled for ${scheduleDate ? format(scheduleDate, "PPP") : ""} at ${scheduleTime}.`
-              : "Your post has been published immediately."}
+              : "Your post has been published to your Facebook Page / Instagram account."}
           </p>
         </CardContent>
       </Card>
@@ -139,15 +135,15 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
       <div className="lg:col-span-3 space-y-5">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Create New Post</CardTitle>
+            <CardTitle className="text-base">Create Post (Facebook & Instagram)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {/* Account Select */}
             <div className="space-y-2">
-              <Label>Select Account *</Label>
+              <Label>Select Facebook Page or Instagram Account *</Label>
               <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose an account..." />
+                  <SelectValue placeholder="Choose a connected account..." />
                 </SelectTrigger>
                 <SelectContent>
                   {connectedAccounts?.map((a: any) => (
@@ -159,6 +155,9 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
                           <Facebook className="h-4 w-4 text-blue-600" />
                         )}
                         {a.account_name || a.platform}
+                        <span className="text-muted-foreground text-xs">
+                          ({a.platform === "instagram" ? "Instagram" : "Facebook Page"})
+                        </span>
                       </span>
                     </SelectItem>
                   ))}
@@ -208,7 +207,7 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
             <div className="space-y-2">
               <Label>Caption *</Label>
               <Textarea
-                placeholder="Write your caption here..."
+                placeholder="Write your caption for Facebook or Instagram..."
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 rows={5}
@@ -232,7 +231,7 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
                 </Button>
                 {!isScheduled && (
                   <span className="text-xs text-muted-foreground">
-                    Post will be published immediately
+                    Post will be published immediately via Meta API
                   </span>
                 )}
               </div>
@@ -288,7 +287,7 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
             <Send className="h-4 w-4 mr-2" />
           )}
           {submitting
-            ? "Publishing..."
+            ? "Publishing to Meta..."
             : isScheduled
             ? "Schedule Post"
             : "Publish Now"}
@@ -305,13 +304,23 @@ export function SocialCreatePostTab({ onPostCreated }: Props) {
             <div className="border rounded-xl overflow-hidden bg-background">
               {/* Header */}
               <div className="flex items-center gap-2 p-3 border-b">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500" />
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  {selectedAccount?.platform === "facebook" ? (
+                    <Facebook className="h-4 w-4 text-white" />
+                  ) : (
+                    <Instagram className="h-4 w-4 text-white" />
+                  )}
+                </div>
                 <div>
                   <p className="text-xs font-semibold">
                     {selectedAccount?.account_name || "Select account"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground capitalize">
-                    {selectedAccount?.platform || "Platform"}
+                  <p className="text-[10px] text-muted-foreground">
+                    {selectedAccount?.platform === "facebook"
+                      ? "Facebook Page"
+                      : selectedAccount?.platform === "instagram"
+                      ? "Instagram Business"
+                      : "Meta Platform"}
                   </p>
                 </div>
               </div>
