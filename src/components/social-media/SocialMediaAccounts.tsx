@@ -1,78 +1,38 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Instagram, Facebook, Link2, Unlink, AlertCircle, CheckCircle2, RefreshCw, Loader2 } from "lucide-react";
+import { Instagram, Facebook, AlertCircle, CheckCircle2, RefreshCw, Loader2 } from "lucide-react";
 import { useState } from "react";
-
-const platformConfig = {
-  instagram: {
-    name: "Instagram",
-    icon: Instagram,
-    color: "bg-gradient-to-r from-purple-500 to-pink-500",
-    description: "Connect Instagram Business Account via SocialBu",
-  },
-  facebook: {
-    name: "Facebook",
-    icon: Facebook,
-    color: "bg-blue-600",
-    description: "Connect Facebook Page via SocialBu",
-  },
-  twitter: {
-    name: "X (Twitter)",
-    icon: null,
-    color: "bg-black",
-    description: "Connect X/Twitter Account via SocialBu",
-  },
-  tiktok: {
-    name: "TikTok",
-    icon: null,
-    color: "bg-black",
-    description: "Connect TikTok Business Account via SocialBu",
-  },
-  linkedin: {
-    name: "LinkedIn",
-    icon: null,
-    color: "bg-blue-700",
-    description: "Connect LinkedIn Profile/Page via SocialBu",
-  },
-  youtube: {
-    name: "YouTube",
-    icon: null,
-    color: "bg-red-600",
-    description: "Connect YouTube Channel via SocialBu",
-  },
-};
 
 export function SocialMediaAccounts() {
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
-  // Fetch SocialBu settings
+  // Fetch Meta connection status
   const { data: settings } = useQuery({
-    queryKey: ["social-media-settings"],
+    queryKey: ["meta-connection-status"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from("social_media_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (error) throw error;
-
-      return data as (typeof data & { auth_token?: string; is_connected?: boolean }) | null;
+      try {
+        const { data } = await supabase.functions.invoke("meta-api", {
+          body: { action: "check-connection", user_id: user.id },
+        });
+        return data;
+      } catch {
+        return { is_connected: false };
+      }
     },
   });
 
-  // Fetch SocialBu connected accounts
+  // Fetch connected accounts
   const { data: accounts, isLoading } = useQuery({
-    queryKey: ["socialbu-accounts"],
+    queryKey: ["meta-connected-accounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("socialbu_accounts")
@@ -84,55 +44,32 @@ export function SocialMediaAccounts() {
     },
   });
 
-  // Refresh accounts from SocialBu
+  // Refresh accounts from Meta API
   const handleRefresh = async () => {
     if (!settings?.is_connected) {
-      toast.error("SocialBu belum terhubung. Silakan login di Settings.");
+      toast.error("Meta API belum terhubung. Silakan masukkan token di Settings.");
       return;
     }
 
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "fetch-accounts" },
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("meta-api", {
+        body: { action: "fetch-pages", user_id: user.id },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success(`${data.accounts?.length || 0} akun ditemukan dan disinkronkan`);
-      queryClient.invalidateQueries({ queryKey: ["socialbu-accounts"] });
+      toast.success(`${data.pages_count || 0} Pages ditemukan dan disinkronkan`);
+      queryClient.invalidateQueries({ queryKey: ["meta-connected-accounts"] });
     } catch (error: any) {
       toast.error(error.message || "Gagal mengambil akun");
     } finally {
       setIsRefreshing(false);
-    }
-  };
-
-  // Connect new account via SocialBu
-  const handleConnect = async (platform: string) => {
-    if (!settings?.is_connected) {
-      toast.error("SocialBu belum terhubung. Silakan login di Settings terlebih dahulu.");
-      return;
-    }
-
-    setConnectingPlatform(platform);
-    try {
-      const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "connect-account", provider: platform },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      if (data.connect_url) {
-        window.open(data.connect_url, "Connect Social Account", "width=600,height=700");
-        toast.info("Silakan selesaikan proses di popup yang terbuka, lalu klik Refresh");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menghubungkan akun");
-    } finally {
-      setConnectingPlatform(null);
     }
   };
 
@@ -147,9 +84,9 @@ export function SocialMediaAccounts() {
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
               <div>
-                <h3 className="font-medium text-amber-700 dark:text-amber-400">SocialBu Belum Terhubung</h3>
+                <h3 className="font-medium text-amber-700 dark:text-amber-400">Meta API Belum Terhubung</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Untuk menghubungkan akun social media, silakan login ke SocialBu terlebih dahulu di halaman Settings.
+                  Untuk menghubungkan Facebook Pages & Instagram, masukkan Meta Access Token di halaman Settings.
                 </p>
               </div>
             </div>
@@ -158,15 +95,15 @@ export function SocialMediaAccounts() {
       )}
 
       {isConnected && (
-        <Card className="border-green-500/30 bg-green-500/5">
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-green-700 dark:text-green-400">SocialBu Terhubung</h3>
+                  <h3 className="font-medium text-emerald-700 dark:text-emerald-400">Meta API Connected</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Anda dapat menghubungkan dan mengelola akun social media.
+                    Facebook Pages & Instagram accounts terhubung via Meta Graph API.
                   </p>
                 </div>
               </div>
@@ -183,111 +120,67 @@ export function SocialMediaAccounts() {
         </Card>
       )}
 
-      {/* Platform Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Object.entries(platformConfig).map(([key, config]) => {
-          const connectedAccount = accounts?.find(a => a.platform === key);
-          const Icon = config.icon;
-          const isConnecting = connectingPlatform === key;
-
-          return (
-            <Card key={key}>
-              <CardHeader>
+      {/* Account Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {accounts?.map((account) => (
+          <Card key={account.id} className="relative overflow-hidden">
+            <div
+              className={`absolute top-0 left-0 right-0 h-1 ${
+                account.platform === "instagram"
+                  ? "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500"
+                  : "bg-blue-600"
+              }`}
+            />
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-lg text-white ${config.color}`}>
-                    {Icon ? <Icon className="h-6 w-6" /> : <span className="text-lg font-bold">{config.name[0]}</span>}
+                  <div
+                    className={`p-3 rounded-lg text-white ${
+                      account.platform === "instagram"
+                        ? "bg-gradient-to-r from-purple-500 to-pink-500"
+                        : "bg-blue-600"
+                    }`}
+                  >
+                    {account.platform === "instagram" ? (
+                      <Instagram className="h-6 w-6" />
+                    ) : (
+                      <Facebook className="h-6 w-6" />
+                    )}
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{config.name}</CardTitle>
-                    <CardDescription className="text-xs">{config.description}</CardDescription>
+                    <p className="font-semibold">{account.account_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {account.platform === "instagram"
+                        ? "Instagram Business"
+                        : "Facebook Page"}
+                    </p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {connectedAccount ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                        Terhubung
-                      </Badge>
-                    </div>
-                    <div className="text-sm">
-                      <p className="font-medium">{connectedAccount.account_name || "Account"}</p>
-                      {connectedAccount.profile_image_url && (
-                        <img 
-                          src={connectedAccount.profile_image_url} 
-                          alt={connectedAccount.account_name || ""} 
-                          className="w-8 h-8 rounded-full mt-2"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Belum Terhubung
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleConnect(key)}
-                      disabled={!isConnected || isConnecting}
-                    >
-                      {isConnecting ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Link2 className="h-4 w-4 mr-2" />
-                      )}
-                      Hubungkan
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              </div>
+              {account.profile_image_url && (
+                <img
+                  src={account.profile_image_url}
+                  alt={account.account_name || ""}
+                  className="w-8 h-8 rounded-full mt-3"
+                />
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Connected Accounts Summary */}
-      {accounts && accounts.length > 0 && (
+      {(!accounts || accounts.length === 0) && isConnected && (
         <Card>
-          <CardHeader>
-            <CardTitle>Semua Akun Terhubung ({accounts.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {accounts.map((account) => {
-                const config = platformConfig[account.platform as keyof typeof platformConfig];
-                const Icon = config?.icon;
-
-                return (
-                  <div 
-                    key={account.id} 
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg text-white ${config?.color || "bg-gray-500"}`}>
-                        {Icon ? <Icon className="h-4 w-4" /> : <span className="font-bold text-sm">{(config?.name || account.platform)[0]}</span>}
-                      </div>
-                      <div>
-                        <p className="font-medium">{account.account_name || config?.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{account.platform}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-green-500/10 text-green-600">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Connected
-                      </Badge>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <CardContent className="py-12 text-center">
+            <Facebook className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground">Belum ada akun terhubung</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Klik "Refresh" untuk mengambil Facebook Pages & Instagram dari Meta API
+            </p>
           </CardContent>
         </Card>
       )}
