@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,81 +7,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Share2,
   Settings,
   Link2,
-  Unlink,
-  RefreshCw,
   CheckCircle2,
   XCircle,
-  Clock,
   ArrowLeft,
   Loader2,
   Eye,
   EyeOff,
   Instagram,
   Facebook,
-  User,
-  LogIn,
+  RefreshCw,
   LogOut,
+  ShieldCheck,
+  Lock,
+  Key,
 } from "lucide-react";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-const platformConfig = {
-  instagram: { name: "Instagram", icon: Instagram, color: "bg-gradient-to-r from-purple-500 to-pink-500" },
-  facebook: { name: "Facebook", icon: Facebook, color: "bg-blue-600" },
-  twitter: { name: "X (Twitter)", icon: null, color: "bg-black" },
-  tiktok: { name: "TikTok", icon: null, color: "bg-black" },
-  linkedin: { name: "LinkedIn", icon: null, color: "bg-blue-700" },
-  youtube: { name: "YouTube", icon: null, color: "bg-red-600" },
-};
+const META_PERMISSIONS = [
+  { scope: "pages_show_list", description: "List your Facebook Pages" },
+  { scope: "pages_manage_metadata", description: "Manage Page-level data" },
+  { scope: "pages_manage_posts", description: "Publish content to Pages" },
+  { scope: "pages_read_engagement", description: "Read analytics" },
+  { scope: "instagram_basic", description: "Access IG account info" },
+  { scope: "instagram_content_publish", description: "Publish posts to IG" },
+  { scope: "instagram_manage_insights", description: "Read IG analytics" },
+];
 
 export default function SocialMediaSettings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [apiKey, setApiKey] = useState("");
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
+  const [accessToken, setAccessToken] = useState("");
+  const [appId, setAppId] = useState("");
+  const [appSecret, setAppSecret] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingPages, setIsFetchingPages] = useState(false);
 
-  // Fetch current settings and connection status
-  const { data: settings, isLoading, refetch: refetchSettings } = useQuery({
-    queryKey: ["social-media-settings"],
+  // Fetch current connection status
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["meta-connection-status"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (!user) return null;
 
-      // Check connection status via edge function
-      const { data: connectionData } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "check-connection" },
-      });
-
-      // Also fetch from DB for additional info
-      const { data, error } = await supabase
-        .from("social_media_settings")
-        .select("*")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      return {
-        ...(data || {}),
-        is_connected: connectionData?.is_connected || false,
-        has_api_key: connectionData?.has_api_key || false,
-        last_sync_at: connectionData?.last_sync_at || data?.last_sync_at,
-      };
+      try {
+        const { data, error } = await supabase.functions.invoke("meta-api", {
+          body: { action: "check-connection", user_id: user.id },
+        });
+        if (error) return { is_connected: false, has_token: false };
+        return data;
+      } catch {
+        return { is_connected: false, has_token: false };
+      }
     },
   });
 
-  // Fetch SocialBu connected accounts
-  const { data: socialbuAccounts, refetch: refetchAccounts } = useQuery({
-    queryKey: ["socialbu-accounts"],
+  // Fetch connected accounts
+  const { data: connectedAccounts, refetch: refetchAccounts } = useQuery({
+    queryKey: ["meta-connected-accounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("socialbu_accounts")
@@ -93,119 +83,86 @@ export default function SocialMediaSettings() {
     },
   });
 
-  // Save API Key
-  const handleSaveApiKey = async () => {
-    if (!apiKey.trim()) {
-      toast.error("Masukkan API Key SocialBu");
+  const handleSaveCredentials = async () => {
+    if (!accessToken.trim()) {
+      toast.error("Access Token wajib diisi");
       return;
     }
 
-    setIsSavingApiKey(true);
+    setIsSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "save-api-key", api_key: apiKey },
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("meta-api", {
+        body: {
+          action: "save-credentials",
+          user_id: user.id,
+          meta_app_id: appId,
+          meta_app_secret: appSecret,
+          meta_access_token: accessToken,
+        },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success("API Key berhasil disimpan!");
-      setApiKey("");
-      refetchSettings();
-      
-      // Fetch accounts after saving API key
-      await fetchSocialBuAccounts();
+      if (data.is_connected) {
+        toast.success(data.message || "Connected to Meta!");
+      } else {
+        toast.warning(data.message || "Token saved but verification failed");
+      }
+
+      setAccessToken("");
+      setAppId("");
+      setAppSecret("");
+      queryClient.invalidateQueries({ queryKey: ["meta-connection-status"] });
     } catch (error: any) {
-      toast.error(error.message || "Gagal menyimpan API Key");
+      toast.error(error.message || "Gagal menyimpan credentials");
     } finally {
-      setIsSavingApiKey(false);
+      setIsSaving(false);
     }
   };
 
-  // Logout from SocialBu
-  const handleLogout = async () => {
+  const handleFetchPages = async () => {
+    setIsFetchingPages(true);
     try {
-      const { error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "logout" },
-      });
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) throw new Error("Not authenticated");
 
-      if (error) throw error;
-      toast.success("Berhasil logout dari SocialBu");
-      queryClient.invalidateQueries({ queryKey: ["social-media-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["socialbu-accounts"] });
-    } catch (error: any) {
-      toast.error(error.message || "Logout gagal");
-    }
-  };
-
-  // Fetch connected accounts from SocialBu
-  const fetchSocialBuAccounts = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "fetch-accounts" },
+      const { data, error } = await supabase.functions.invoke("meta-api", {
+        body: { action: "fetch-pages", user_id: user.id },
       });
 
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      toast.success(`${data.accounts?.length || 0} akun ditemukan`);
+      toast.success(`${data.pages_count || 0} Facebook Pages ditemukan & disinkronkan`);
       refetchAccounts();
     } catch (error: any) {
-      toast.error(error.message || "Gagal mengambil akun");
-    }
-  };
-
-  // Connect new social account
-  const handleConnectAccount = async (provider: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke("socialbu-accounts", {
-        body: { action: "connect-account", provider },
-      });
-
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-
-      if (data.connect_url) {
-        // Open in popup
-        window.open(data.connect_url, "Connect Social Account", "width=600,height=700");
-        toast.info("Silakan selesaikan proses di popup yang terbuka");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Gagal connect akun");
-    }
-  };
-
-  // Sync posts from SocialBu
-  const handleSync = async () => {
-    if (!settings?.is_connected) {
-      toast.error("SocialBu belum terkoneksi");
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      // Get current user ID
-      const { data: userData } = await supabase.auth.getUser();
-      const userId = userData?.user?.id;
-
-      if (!userId) {
-        toast.error("User tidak terautentikasi");
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("sync-socialbu", {
-        body: { action: "sync", user_id: userId },
-      });
-
-      if (error) throw error;
-
-      toast.success(`Sync berhasil! ${data?.synced || 0} posts diupdate.`);
-      queryClient.invalidateQueries({ queryKey: ["social-media-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["social-media-posts"] });
-    } catch (error: any) {
-      toast.error("Sync gagal: " + error.message);
+      toast.error(error.message || "Gagal mengambil Pages");
     } finally {
-      setIsSyncing(false);
+      setIsFetchingPages(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) return;
+
+      await supabase.functions.invoke("meta-api", {
+        body: { action: "disconnect", user_id: user.id },
+      });
+
+      toast.success("Disconnected from Meta");
+      queryClient.invalidateQueries({ queryKey: ["meta-connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["meta-connected-accounts"] });
+    } catch (error: any) {
+      toast.error(error.message || "Disconnect gagal");
     }
   };
 
@@ -220,307 +177,318 @@ export default function SocialMediaSettings() {
           <div className="flex items-center gap-3">
             <Settings className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold">Meta Integration Settings</h1>
+              <h1 className="text-3xl font-bold">Meta API Settings</h1>
               <p className="text-muted-foreground">
-                This system connects to Facebook and Instagram via Meta APIs.
+                Connect directly to Facebook & Instagram via Meta Graph API
               </p>
             </div>
           </div>
         </div>
 
-        <Tabs defaultValue="connection" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="connection">Koneksi</TabsTrigger>
-            <TabsTrigger value="accounts">Akun Sosial</TabsTrigger>
-            <TabsTrigger value="sync">Sync & Data</TabsTrigger>
-          </TabsList>
-
-          {/* Connection Tab */}
-          <TabsContent value="connection" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Share2 className="h-5 w-5" />
-                  SocialBu Integration
-                </CardTitle>
-                <CardDescription>
-                  Hubungkan akun SocialBu untuk posting dan analytics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Connection Status */}
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                      settings?.is_connected ? "bg-green-100" : "bg-red-100"
-                    }`}>
-                      {settings?.is_connected ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">Status Koneksi</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={settings?.is_connected ? "default" : "secondary"}>
-                          {settings?.is_connected ? "Connected" : "Not Connected"}
-                        </Badge>
-                        {settings?.user_email && (
-                          <span className="text-sm text-muted-foreground">
-                            ({settings.user_email})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {settings?.is_connected && (
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
+        {/* Connection Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Connection Status
+            </CardTitle>
+            <CardDescription>
+              This system connects directly to your Meta (Facebook & Instagram) API. No third-party service required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                    settings?.is_connected
+                      ? "bg-emerald-100 dark:bg-emerald-900/30"
+                      : "bg-red-100 dark:bg-red-900/30"
+                  }`}
+                >
+                  {settings?.is_connected ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-600" />
                   )}
                 </div>
+                <div>
+                  <p className="font-medium">Meta Graph API</p>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={settings?.is_connected ? "default" : "secondary"}
+                      className={
+                        settings?.is_connected
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : ""
+                      }
+                    >
+                      {settings?.is_connected ? "Connected" : "Not Connected"}
+                    </Badge>
+                    {settings?.user_name && (
+                      <span className="text-sm text-muted-foreground">
+                        as {settings.user_name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {settings?.is_connected && (
+                <Button variant="outline" size="sm" onClick={handleDisconnect}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Disconnect
+                </Button>
+              )}
+            </div>
 
-                <Separator />
+            <Separator />
 
-                {/* API Key Form */}
-                {!settings?.is_connected ? (
-                  <div className="space-y-4">
-                    <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
-                      <h4 className="font-medium text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                        <Link2 className="h-4 w-4" />
-                        Hubungkan dengan API Key
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Dapatkan API Key dari <a href="https://socialbu.com/app/settings/developer" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">SocialBu Developer Settings</a>, 
-                        lalu paste di bawah ini.
-                      </p>
-                    </div>
+            {/* Credentials Form */}
+            {!settings?.is_connected ? (
+              <div className="space-y-4">
+                <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    Meta Graph API Credentials
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Masukkan credentials dari{" "}
+                    <a
+                      href="https://developers.facebook.com/apps"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      Meta Developer Console
+                    </a>
+                    . Pastikan app memiliki permission yang dibutuhkan.
+                  </p>
+                </div>
 
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="apiKey">API Key / Access Token</Label>
-                        <div className="relative">
-                          <Input
-                            id="apiKey"
-                            type={showApiKey ? "text" : "password"}
-                            placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOi..."
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-full"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                          >
-                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </div>
-                      <Button onClick={handleSaveApiKey} disabled={isSavingApiKey}>
-                        {isSavingApiKey ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Link2 className="h-4 w-4 mr-2" />
-                        )}
-                        Simpan API Key
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="appId">App ID (Optional)</Label>
+                    <Input
+                      id="appId"
+                      placeholder="123456789012345"
+                      value={appId}
+                      onChange={(e) => setAppId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="appSecret">App Secret (Optional)</Label>
+                    <div className="relative">
+                      <Input
+                        id="appSecret"
+                        type={showSecret ? "text" : "password"}
+                        placeholder="your_app_secret"
+                        value={appSecret}
+                        onChange={(e) => setAppSecret(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowSecret(!showSecret)}
+                      >
+                        {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-green-500/10 border border-green-500/30 p-4 rounded-lg">
-                    <h4 className="font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Terhubung
-                    </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Anda sudah terhubung ke SocialBu. Anda dapat membuat post, menjadwalkan konten, 
-                      dan melihat analytics langsung dari aplikasi ini.
+
+                  <div className="space-y-2">
+                    <Label htmlFor="accessToken">
+                      Page Access Token / User Access Token *
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="accessToken"
+                        type={showToken ? "text" : "password"}
+                        placeholder="EAAxxxxxxxx..."
+                        value={accessToken}
+                        onChange={(e) => setAccessToken(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => setShowToken(!showToken)}
+                      >
+                        {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Dapatkan dari Graph API Explorer atau Facebook Login flow
                     </p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Accounts Tab */}
-          <TabsContent value="accounts" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Akun Social Media</CardTitle>
-                  <CardDescription>Akun yang terhubung melalui SocialBu</CardDescription>
-                </div>
-                {settings?.is_connected && (
-                  <Button variant="outline" size="sm" onClick={fetchSocialBuAccounts}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent>
-                {!settings?.is_connected ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Login ke SocialBu terlebih dahulu untuk melihat akun yang terhubung</p>
-                  </div>
-                ) : socialbuAccounts?.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Share2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Belum ada akun social media yang terhubung</p>
-                    <p className="text-sm mt-2">
-                      Hubungkan akun di dashboard SocialBu atau gunakan tombol di bawah
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {socialbuAccounts?.map((account) => {
-                      const config = platformConfig[account.platform as keyof typeof platformConfig];
-                      const Icon = config?.icon;
-
-                      return (
-                        <div
-                          key={account.id}
-                          className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg text-white ${config?.color || "bg-gray-500"}`}>
-                              {Icon ? <Icon className="h-5 w-5" /> : <Share2 className="h-5 w-5" />}
-                            </div>
-                            <div>
-                              <p className="font-medium">{account.account_name || config?.name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{account.platform}</p>
-                            </div>
-                          </div>
-                          <Badge className="bg-green-500/10 text-green-600">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Connected
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {settings?.is_connected && (
-                  <>
-                    <Separator className="my-6" />
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Tambah Akun Baru</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {Object.entries(platformConfig).map(([key, config]) => {
-                          const Icon = config.icon;
-                          return (
-                            <Button
-                              key={key}
-                              variant="outline"
-                              size="sm"
-                              className="justify-start"
-                              onClick={() => handleConnectAccount(key)}
-                            >
-                              <div className={`p-1 rounded mr-2 text-white ${config.color}`}>
-                                {Icon ? <Icon className="h-3 w-3" /> : <Share2 className="h-3 w-3" />}
-                              </div>
-                              {config.name}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Sync Tab */}
-          <TabsContent value="sync" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sinkronisasi Data</CardTitle>
-                <CardDescription>Sync posts dan analytics dari SocialBu</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Last Sync */}
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Last Sync</p>
-                      <p className="text-sm text-muted-foreground">
-                        {settings?.last_sync_at
-                          ? format(new Date(settings.last_sync_at), "dd MMM yyyy HH:mm")
-                          : "Belum pernah sync"}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSync}
-                    disabled={isSyncing || !settings?.is_connected}
-                  >
-                    {isSyncing ? (
+                  <Button onClick={handleSaveCredentials} disabled={isSaving || !accessToken.trim()}>
+                    {isSaving ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
+                      <Lock className="h-4 w-4 mr-2" />
                     )}
-                    Sync Now
+                    Save & Verify Token
                   </Button>
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-lg">
+                  <h4 className="font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Connected to Meta Graph API
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your Meta credentials are verified and active. You can now publish content 
+                    and view analytics for your Facebook Pages and Instagram accounts.
+                  </p>
+                </div>
 
-                <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-lg">
-                  <h4 className="font-medium text-amber-700 dark:text-amber-400">Info Sync</h4>
-                  <ul className="text-sm text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                    <li>Posts: Mengambil post scheduled dan published dari SocialBu</li>
-                    <li>Analytics: Mengambil metrics (views, likes, comments, dll)</li>
-                    <li>Accounts: Mengupdate status akun yang terhubung</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+                {/* Fetch Pages Button */}
+                <Button onClick={handleFetchPages} disabled={isFetchingPages} className="w-full">
+                  {isFetchingPages ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Fetch Facebook Pages & Instagram Accounts
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* How it works */}
-            <Card>
-              <CardHeader>
-                <CardTitle>How It Works</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">1. Connect via Facebook Login</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Users must connect their Facebook account to access Pages and linked Instagram accounts.
-                  </p>
+        {/* Connected Accounts */}
+        {connectedAccounts && connectedAccounts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Facebook className="h-5 w-5 text-blue-600" />
+                Connected Accounts ({connectedAccounts.length})
+              </CardTitle>
+              <CardDescription>
+                Facebook Pages & Instagram accounts linked via your Meta API token
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {connectedAccounts.map((account) => (
+                  <div
+                    key={account.id}
+                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-lg text-white ${
+                          account.platform === "instagram"
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500"
+                            : "bg-blue-600"
+                        }`}
+                      >
+                        {account.platform === "instagram" ? (
+                          <Instagram className="h-5 w-5" />
+                        ) : (
+                          <Facebook className="h-5 w-5" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{account.account_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {account.platform === "instagram"
+                            ? "Instagram Business Account"
+                            : "Facebook Page"}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Connected
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Required Permissions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Required Meta Permissions
+            </CardTitle>
+            <CardDescription>
+              Ensure your Meta App has these permissions approved for full functionality
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3">
+              {META_PERMISSIONS.map((p) => (
+                <div
+                  key={p.scope}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="font-mono text-xs">
+                      {p.scope}
+                    </Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{p.description}</span>
                 </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">2. Select Facebook Pages & Instagram Accounts</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Connect your Facebook Pages and Instagram Business accounts. Instagram accounts are linked through Facebook Pages via Meta APIs.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">3. Create & Schedule Posts</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Create posts, schedule publish times, and upload media for your Facebook Pages and Instagram accounts.
-                    Uses <code className="text-xs bg-muted px-1 rounded">pages_manage_posts</code> and <code className="text-xs bg-muted px-1 rounded">instagram_content_publish</code>.
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">4. View Performance Insights</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Monitor post performance: impressions, reach, engagement, likes, comments, and shares.
-                    Uses <code className="text-xs bg-muted px-1 rounded">pages_read_engagement</code> and <code className="text-xs bg-muted px-1 rounded">instagram_manage_insights</code>.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* How it works */}
+        <Card>
+          <CardHeader>
+            <CardTitle>How It Works</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium">1. Create Meta App</h4>
+              <p className="text-sm text-muted-foreground">
+                Buat app di{" "}
+                <a
+                  href="https://developers.facebook.com/apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  Meta Developer Console
+                </a>{" "}
+                dan aktifkan Facebook Login, Instagram Graph API.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">2. Generate Access Token</h4>
+              <p className="text-sm text-muted-foreground">
+                Dapatkan User Access Token atau Page Access Token dari Graph API Explorer 
+                dengan permission yang diperlukan.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">3. Paste & Lock</h4>
+              <p className="text-sm text-muted-foreground">
+                Masukkan token di halaman ini. Sistem akan memverifikasi dan menyimpan secara aman. 
+                Klik "Fetch Pages" untuk sync Facebook Pages & Instagram accounts.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">4. Publish & Monitor</h4>
+              <p className="text-sm text-muted-foreground">
+                Buat post, jadwalkan konten, dan monitor analytics langsung dari dashboard. 
+                Semua melalui Meta Graph API langsung — tanpa perantara.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

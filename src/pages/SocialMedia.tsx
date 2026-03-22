@@ -23,12 +23,12 @@ export default function SocialMedia() {
             </div>
             <div>
               <h1 className="section-title">Social Media Management</h1>
-              <p className="section-subtitle">Post, schedule, dan monitor konten social media</p>
+              <p className="section-subtitle">Manage Facebook Pages & Instagram via Meta Graph API</p>
             </div>
           </div>
           <Button variant="outline" onClick={() => navigate("/social-media/settings")}>
             <Settings className="h-4 w-4 mr-2" />
-            Settings
+            Meta API Settings
           </Button>
         </div>
 
