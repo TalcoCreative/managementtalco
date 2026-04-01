@@ -160,7 +160,7 @@ export default function SocialMediaSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [isFetchingPages, setIsFetchingPages] = useState(false);
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: ["meta-connection-status"],
     queryFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
