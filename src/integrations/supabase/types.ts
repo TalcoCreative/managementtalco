@@ -5051,12 +5051,18 @@ export type Database = {
           access_token: string | null
           account_id: string | null
           account_name: string | null
+          avatar_url: string | null
+          category: string | null
           created_at: string
+          followers_count: number | null
           id: string
+          ig_user_id: string | null
           is_connected: boolean | null
+          media_count: number | null
           page_id: string | null
           platform: string
           refresh_token: string | null
+          status: string | null
           token_expires_at: string | null
           updated_at: string
           user_id: string | null
@@ -5065,12 +5071,18 @@ export type Database = {
           access_token?: string | null
           account_id?: string | null
           account_name?: string | null
+          avatar_url?: string | null
+          category?: string | null
           created_at?: string
+          followers_count?: number | null
           id?: string
+          ig_user_id?: string | null
           is_connected?: boolean | null
+          media_count?: number | null
           page_id?: string | null
           platform: string
           refresh_token?: string | null
+          status?: string | null
           token_expires_at?: string | null
           updated_at?: string
           user_id?: string | null
@@ -5079,12 +5091,18 @@ export type Database = {
           access_token?: string | null
           account_id?: string | null
           account_name?: string | null
+          avatar_url?: string | null
+          category?: string | null
           created_at?: string
+          followers_count?: number | null
           id?: string
+          ig_user_id?: string | null
           is_connected?: boolean | null
+          media_count?: number | null
           page_id?: string | null
           platform?: string
           refresh_token?: string | null
+          status?: string | null
           token_expires_at?: string | null
           updated_at?: string
           user_id?: string | null
