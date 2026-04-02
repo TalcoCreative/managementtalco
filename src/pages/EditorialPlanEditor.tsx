@@ -171,8 +171,9 @@ export default function EditorialPlanEditor() {
       toast.success("Slide baru ditambahkan");
       setCurrentSlideIndex((slides?.length || 0));
     },
-    onError: () => {
-      toast.error("Gagal menambah slide");
+    onError: (error: any) => {
+      console.error("Add slide error:", error);
+      toast.error(`Gagal menambah slide: ${error?.message || "Unknown error"}`);
     },
   });
 
