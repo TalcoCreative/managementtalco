@@ -132,7 +132,9 @@ export default function EditorialPlanEditor() {
       if (!ep?.id) throw new Error("No EP");
 
       const newOrder = (slides?.length || 0);
-      const slug = `slide-${newOrder + 1}`;
+      const uniqueId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const slug = `slide-${newOrder + 1}-${uniqueId}`;
+      const userId = (await supabase.auth.getUser()).data.user?.id || null;
       const { data: slide, error } = await supabase
         .from("editorial_slides")
         .insert({
@@ -142,7 +144,7 @@ export default function EditorialPlanEditor() {
           slug,
           channels: [],
           publish_links: [],
-          created_by: (await supabase.auth.getUser()).data.user?.id,
+          created_by: userId,
         })
         .select()
         .single();
