@@ -12,7 +12,31 @@ interface SendWhatsAppRequest {
   phone?: string;
   message: string;
   event_type: string;
-  role_filter?: string[]; // e.g. ["hr","super_admin"] — only send personal to users with these roles
+  role_filter?: string[];
+  connection_test?: boolean;
+}
+
+async function getFonnteApiKey(supabase: any): Promise<string | null> {
+  // First try from company_settings (user-provided key)
+  const { data } = await supabase
+    .from("company_settings")
+    .select("setting_value")
+    .eq("setting_key", "fonnte_api_key")
+    .single();
+
+  if (data?.setting_value) {
+    console.log("[WA] Using API key from company_settings");
+    return data.setting_value;
+  }
+
+  // Fallback to environment variable
+  const envKey = Deno.env.get("FONNTE_API_KEY");
+  if (envKey) {
+    console.log("[WA] Using API key from environment variable");
+    return envKey;
+  }
+
+  return null;
 }
 
 serve(async (req) => {
@@ -21,17 +45,48 @@ serve(async (req) => {
   }
 
   try {
-    const FONNTE_API_KEY = Deno.env.get("FONNTE_API_KEY");
-    if (!FONNTE_API_KEY) {
-      throw new Error("FONNTE_API_KEY is not configured");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: SendWhatsAppRequest = await req.json();
-    const { user_ids, phone, message, event_type, role_filter } = body;
+    const { user_ids, phone, message, event_type, role_filter, connection_test } = body;
+
+    // Get API key from DB or env
+    const FONNTE_API_KEY = await getFonnteApiKey(supabase);
+    if (!FONNTE_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "Fonnte API Key belum dikonfigurasi. Masukkan API Key di Settings.", connection_valid: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Connection test mode — validate API key by calling Fonnte device info
+    if (connection_test) {
+      try {
+        const testResp = await fetch("https://api.fonnte.com/device", {
+          method: "POST",
+          headers: { Authorization: FONNTE_API_KEY },
+        });
+        const testData = await testResp.json();
+        console.log("[WA] Connection test result:", JSON.stringify(testData));
+
+        const isValid = testData.status === true;
+        return new Response(
+          JSON.stringify({
+            connection_valid: isValid,
+            message: isValid ? "API Key valid dan device terhubung" : (testData.reason || testData.detail || "API Key tidak valid atau device belum terhubung"),
+            device_info: isValid ? { name: testData.name, device: testData.device, quota: testData.quota } : null,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (err) {
+        return new Response(
+          JSON.stringify({ connection_valid: false, message: "Gagal menghubungi Fonnte API: " + err.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     if (!message || !event_type) {
       return new Response(
@@ -47,7 +102,6 @@ serve(async (req) => {
       .eq("event_type", event_type)
       .single();
 
-    // If setting exists and is disabled, skip entirely
     if (settingRow && !settingRow.is_enabled) {
       console.log(`[WA] Event type "${event_type}" is disabled, skipping`);
       return new Response(
@@ -83,10 +137,8 @@ serve(async (req) => {
     // Determine target user IDs for personal messages
     let targetUserIds = user_ids || [];
 
-    // Merge role_filter from request AND from settings
     const effectiveRoleFilter = [...new Set([...(role_filter || []), ...settingsRoleFilter])];
 
-    // If role filter is active, filter/expand user list to only those roles
     if (effectiveRoleFilter.length > 0 && !sendToAllUsers) {
       console.log(`[WA] Role filter active: ${effectiveRoleFilter.join(", ")}`);
       const { data: roleUsers } = await supabase
@@ -94,7 +146,6 @@ serve(async (req) => {
         .select("user_id")
         .in("role", effectiveRoleFilter);
 
-      // Also check dynamic roles
       const { data: dynRoles } = await supabase
         .from("dynamic_roles")
         .select("id, name")
@@ -116,9 +167,7 @@ serve(async (req) => {
       ]);
 
       if (targetUserIds.length > 0) {
-        // Only keep users who match the role filter from the provided list
         targetUserIds = targetUserIds.filter(id => roleUserIds.has(id));
-        // Also add role users not in the original list
         for (const uid of roleUserIds) {
           if (!targetUserIds.includes(uid)) targetUserIds.push(uid);
         }
@@ -128,7 +177,6 @@ serve(async (req) => {
       console.log(`[WA] After role filter: ${targetUserIds.length} users`);
     }
 
-    // If send_to_all_users is enabled, get ALL active users
     if (sendToAllUsers) {
       console.log(`[WA] send_to_all_users enabled for "${event_type}"`);
       const { data: allProfiles } = await supabase
@@ -138,13 +186,11 @@ serve(async (req) => {
       
       if (allProfiles) {
         const allIds = allProfiles.map(p => p.id);
-        // Merge with existing targetUserIds
         targetUserIds = Array.from(new Set([...targetUserIds, ...allIds]));
       }
       console.log(`[WA] After all_users merge: ${targetUserIds.length} users`);
     }
 
-    // Send to individual users (personal) if enabled
     if (sendToPersonal && targetUserIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")
@@ -185,7 +231,6 @@ serve(async (req) => {
       }
     }
 
-    // Send to assigned groups (skip for attendance events - personal only)
     if (groupIds.length > 0 && event_type !== "attendance_reminder") {
       console.log(`[WA] Sending to ${groupIds.length} groups for event: ${event_type}`);
       for (const groupId of groupIds) {
