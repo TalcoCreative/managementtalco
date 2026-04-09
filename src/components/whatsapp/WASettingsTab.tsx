@@ -275,7 +275,7 @@ export default function WASettingsTab() {
   allRoleOptions.forEach(r => { if (!roleOptionsMap.has(r.value)) roleOptionsMap.set(r.value, r.label); });
   const roleOptions = Array.from(roleOptionsMap.entries()).map(([value, label]) => ({ value, label }));
 
-  if (loadingSettings) {
+  if (loadingSettings || loadingApiKey) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -285,6 +285,93 @@ export default function WASettingsTab() {
 
   return (
     <div className="space-y-6">
+      {/* API Key Configuration */}
+      <Card className="rounded-2xl border-border/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Key className="h-5 w-5 text-primary" />
+            Fonnte API Key
+          </CardTitle>
+          <CardDescription>
+            Masukkan API Key dari <a href="https://fonnte.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">fonnte.com</a> untuk mengaktifkan pengiriman WhatsApp.
+            Buka Dashboard Fonnte → Device → Salin API Token.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current Status */}
+          {savedApiKey && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/30">
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground mb-1">API Key Tersimpan</p>
+                <p className="font-mono text-sm">{maskedKey}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {connectionStatus === "success" && (
+                  <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Connected
+                  </Badge>
+                )}
+                {connectionStatus === "failed" && (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="h-3 w-3" /> Failed
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  disabled={testingConnection}
+                  className="gap-1.5"
+                >
+                  {testingConnection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}
+                  Test Koneksi
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Input New Key */}
+          <div className="space-y-2">
+            <Label className="text-sm">{savedApiKey ? "Ganti API Key" : "Masukkan API Key"}</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  placeholder="Paste Fonnte API Token di sini..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <Button onClick={handleSaveApiKey} disabled={savingKey || !apiKeyInput.trim()} className="gap-1.5">
+                {savingKey ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                Simpan
+              </Button>
+            </div>
+          </div>
+
+          {/* Tutorial */}
+          <div className="rounded-xl bg-primary/5 border border-primary/10 p-4 space-y-2">
+            <p className="text-sm font-medium text-primary">📋 Cara mendapatkan API Key:</p>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>Buka <a href="https://fonnte.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">fonnte.com</a> dan login</li>
+              <li>Hubungkan device WhatsApp Anda (scan QR code)</li>
+              <li>Buka menu <strong>Device</strong> → pilih device yang aktif</li>
+              <li>Salin <strong>API Token</strong> yang tertera</li>
+              <li>Paste di kolom input di atas dan klik <strong>Simpan</strong></li>
+              <li>Klik <strong>Test Koneksi</strong> untuk memastikan API berjalan</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Group Sync Section */}
       <Card className="rounded-2xl border-border/30">
         <CardHeader>
