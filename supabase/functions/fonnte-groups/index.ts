@@ -13,14 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const FONNTE_API_KEY = Deno.env.get("FONNTE_API_KEY");
-    if (!FONNTE_API_KEY) {
-      throw new Error("FONNTE_API_KEY is not configured");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get API key from company_settings first, fallback to env
+    let FONNTE_API_KEY: string | null = null;
+    const { data: keyData } = await supabase
+      .from("company_settings")
+      .select("setting_value")
+      .eq("setting_key", "fonnte_api_key")
+      .single();
+    FONNTE_API_KEY = keyData?.setting_value || Deno.env.get("FONNTE_API_KEY") || null;
+
+    if (!FONNTE_API_KEY) {
+      throw new Error("Fonnte API Key belum dikonfigurasi. Masukkan di Settings.");
+    }
 
     const body = await req.json();
     const action = body.action || "get"; // "get" or "refresh"

@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { RefreshCw, Users, Bell, MessageSquare, Loader2, Send, Shield, Globe } from "lucide-react";
+import { RefreshCw, Users, Bell, MessageSquare, Loader2, Send, Shield, Globe, Key, Eye, EyeOff, CheckCircle2, XCircle, Wifi } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -44,6 +45,89 @@ export default function WASettingsTab() {
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const [testingEvent, setTestingEvent] = useState<string | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [savingKey, setSavingKey] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "success" | "failed">("idle");
+
+  // Fetch saved API key (masked)
+  const { data: savedApiKey, isLoading: loadingApiKey } = useQuery({
+    queryKey: ["fonnte-api-key"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "fonnte_api_key")
+        .single();
+      return data?.setting_value || "";
+    },
+  });
+
+  const handleSaveApiKey = async () => {
+    if (!apiKeyInput.trim()) {
+      toast.error("API Key tidak boleh kosong");
+      return;
+    }
+    setSavingKey(true);
+    try {
+      const { data: existing } = await supabase
+        .from("company_settings")
+        .select("id")
+        .eq("setting_key", "fonnte_api_key")
+        .single();
+
+      if (existing) {
+        await supabase
+          .from("company_settings")
+          .update({ setting_value: apiKeyInput.trim(), updated_at: new Date().toISOString() })
+          .eq("setting_key", "fonnte_api_key");
+      } else {
+        await supabase.from("company_settings").insert({
+          setting_key: "fonnte_api_key",
+          setting_value: apiKeyInput.trim(),
+        });
+      }
+      toast.success("API Key berhasil disimpan!");
+      setApiKeyInput("");
+      setConnectionStatus("idle");
+      queryClient.invalidateQueries({ queryKey: ["fonnte-api-key"] });
+    } catch (err: any) {
+      toast.error("Gagal menyimpan: " + err.message);
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    setConnectionStatus("idle");
+    try {
+      const { data, error } = await supabase.functions.invoke("send-whatsapp", {
+        body: {
+          message: "✅ *Tes Koneksi Fonnte API*\n\nKoneksi berhasil! API Key Anda valid.",
+          event_type: "connection_test",
+          user_ids: [],
+          connection_test: true,
+        },
+      });
+      if (error) throw error;
+      if (data?.connection_valid) {
+        setConnectionStatus("success");
+        toast.success("Koneksi berhasil! API Key valid ✅");
+      } else {
+        setConnectionStatus("failed");
+        toast.error(data?.message || "API Key tidak valid atau device belum terhubung");
+      }
+    } catch (err: any) {
+      setConnectionStatus("failed");
+      toast.error("Gagal test koneksi: " + err.message);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
+  const maskedKey = savedApiKey ? savedApiKey.slice(0, 8) + "••••••••" + savedApiKey.slice(-4) : "";
 
   // Fetch notification settings
   const { data: settings, isLoading: loadingSettings } = useQuery({
@@ -191,7 +275,7 @@ export default function WASettingsTab() {
   allRoleOptions.forEach(r => { if (!roleOptionsMap.has(r.value)) roleOptionsMap.set(r.value, r.label); });
   const roleOptions = Array.from(roleOptionsMap.entries()).map(([value, label]) => ({ value, label }));
 
-  if (loadingSettings) {
+  if (loadingSettings || loadingApiKey) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -201,6 +285,93 @@ export default function WASettingsTab() {
 
   return (
     <div className="space-y-6">
+      {/* API Key Configuration */}
+      <Card className="rounded-2xl border-border/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Key className="h-5 w-5 text-primary" />
+            Fonnte API Key
+          </CardTitle>
+          <CardDescription>
+            Masukkan API Key dari <a href="https://fonnte.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">fonnte.com</a> untuk mengaktifkan pengiriman WhatsApp.
+            Buka Dashboard Fonnte → Device → Salin API Token.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current Status */}
+          {savedApiKey && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border/30">
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground mb-1">API Key Tersimpan</p>
+                <p className="font-mono text-sm">{maskedKey}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {connectionStatus === "success" && (
+                  <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/20 gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Connected
+                  </Badge>
+                )}
+                {connectionStatus === "failed" && (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="h-3 w-3" /> Failed
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  disabled={testingConnection}
+                  className="gap-1.5"
+                >
+                  {testingConnection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}
+                  Test Koneksi
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Input New Key */}
+          <div className="space-y-2">
+            <Label className="text-sm">{savedApiKey ? "Ganti API Key" : "Masukkan API Key"}</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  placeholder="Paste Fonnte API Token di sini..."
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <Button onClick={handleSaveApiKey} disabled={savingKey || !apiKeyInput.trim()} className="gap-1.5">
+                {savingKey ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+                Simpan
+              </Button>
+            </div>
+          </div>
+
+          {/* Tutorial */}
+          <div className="rounded-xl bg-primary/5 border border-primary/10 p-4 space-y-2">
+            <p className="text-sm font-medium text-primary">📋 Cara mendapatkan API Key:</p>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>Buka <a href="https://fonnte.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">fonnte.com</a> dan login</li>
+              <li>Hubungkan device WhatsApp Anda (scan QR code)</li>
+              <li>Buka menu <strong>Device</strong> → pilih device yang aktif</li>
+              <li>Salin <strong>API Token</strong> yang tertera</li>
+              <li>Paste di kolom input di atas dan klik <strong>Simpan</strong></li>
+              <li>Klik <strong>Test Koneksi</strong> untuk memastikan API berjalan</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Group Sync Section */}
       <Card className="rounded-2xl border-border/30">
         <CardHeader>
