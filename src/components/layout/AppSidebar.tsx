@@ -3,7 +3,7 @@ import {
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
   Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
-  MessageSquare,
+  MessageSquare, CircleDollarSign,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +88,7 @@ const financeItems: NavItem[] = [
 const salesItems: NavItem[] = [
   { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
   { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
+  { title: "Ads Budget", url: "/ads-budget", icon: CircleDollarSign, featureKey: "ads_budget" },
 ];
 
 // ── Executive ───────────────────────────────────────────

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -29,9 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import {
-  Plus, Wallet, TrendingUp, TrendingDown, AlertTriangle, CalendarIcon,
-  DollarSign, BarChart3, ArrowUpRight, ArrowDownRight, Trash2, Edit,
-  ChevronDown, ChevronRight, Eye,
+  Plus, TrendingDown, AlertTriangle, CalendarIcon,
+  DollarSign, ArrowUpRight, ArrowDownRight, Trash2, Edit,
+  ChevronDown, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLATFORMS, ADS_PLATFORMS } from "@/lib/report-constants";
