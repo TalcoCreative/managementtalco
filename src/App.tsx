@@ -76,6 +76,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import PersonalNotes from "./pages/PersonalNotes";
 import InstallApp from "./pages/InstallApp";
 import NotificationLog from "./pages/NotificationLog";
+import AdsBudget from "./pages/AdsBudget";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
@@ -151,6 +152,7 @@ const App = () => (
           <Route path="/personal-notes" element={<ProtectedRoute><PersonalNotes /></ProtectedRoute>} />
           <Route path="/install-app" element={<InstallApp />} />
           <Route path="/notification-log" element={<ProtectedRoute><NotificationLog /></ProtectedRoute>} />
+          <Route path="/ads-budget" element={<ProtectedRoute><AdsBudget /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />
           <Route path="/share/project/:token" element={<SharedProject />} />
