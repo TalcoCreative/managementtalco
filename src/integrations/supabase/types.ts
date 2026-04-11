@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_budget_transactions: {
+        Row: {
+          amount: number
+          budget_id: string
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          platform_account_id: string
+          tax: number
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          budget_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          platform_account_id: string
+          tax?: number
+          transaction_date: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          budget_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          platform_account_id?: string
+          tax?: number
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_budget_transactions_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "ads_budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ads_budget_transactions_platform_account_id_fkey"
+            columns: ["platform_account_id"]
+            isOneToOne: false
+            referencedRelation: "platform_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ads_budgets: {
+        Row: {
+          carry_over: number
+          client_id: string
+          created_at: string
+          created_by: string
+          end_date: string
+          id: string
+          monthly_budget: number
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          carry_over?: number
+          client_id: string
+          created_at?: string
+          created_by: string
+          end_date: string
+          id?: string
+          monthly_budget?: number
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          carry_over?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          end_date?: string
+          id?: string
+          monthly_budget?: number
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_budgets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_reads: {
         Row: {
           announcement_id: string
