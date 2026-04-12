@@ -64,6 +64,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
     label: "Finance",
     features: [
       { key: "finance", label: "Finance Center" },
+      { key: "ads_budget", label: "Ads Budget" },
       { key: "income_statement", label: "Laba Rugi" },
       { key: "balance_sheet", label: "Neraca" },
     ],
@@ -124,6 +125,7 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/recruitment/dashboard": "recruitment_dashboard",
   "/recruitment/forms": "recruitment_forms",
   "/finance": "finance",
+  "/ads-budget": "ads_budget",
   "/finance/laporan-laba-rugi": "income_statement",
   "/finance/neraca": "balance_sheet",
   "/prospects": "prospects",
