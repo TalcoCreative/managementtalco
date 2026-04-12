@@ -79,11 +79,14 @@ type PlatformAccount = {
 const TX_TYPES = [
   { value: "ads_spend", label: "Ads Spend", color: "destructive" },
   { value: "wallet_usage", label: "Wallet Usage", color: "destructive" },
+  { value: "marketplace_spend", label: "Marketplace Spend", color: "destructive" },
+  { value: "marketplace_topup", label: "Marketplace Top Up", color: "default" },
   { value: "top_up", label: "Top Up", color: "default" },
   { value: "transfer", label: "Transfer", color: "secondary" },
+  { value: "other", label: "Lainnya", color: "secondary" },
 ] as const;
 
-const USAGE_TYPES = ["ads_spend", "wallet_usage"];
+const USAGE_TYPES = ["ads_spend", "wallet_usage", "marketplace_spend"];
 
 const fmtCurrency = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
