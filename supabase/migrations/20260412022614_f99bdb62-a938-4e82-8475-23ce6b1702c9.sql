@@ -1,0 +1,2 @@
+ALTER TABLE public.platform_accounts DROP CONSTRAINT platform_accounts_platform_check;
+ALTER TABLE public.platform_accounts ADD CONSTRAINT platform_accounts_platform_check CHECK (platform = ANY (ARRAY['instagram','facebook','linkedin','youtube','tiktok','google_business','tokopedia','shopee']));
