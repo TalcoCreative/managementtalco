@@ -7,6 +7,8 @@ export const PLATFORMS = [
   { value: 'youtube', label: 'YouTube', icon: 'Youtube' },
   { value: 'tiktok', label: 'TikTok', icon: 'Music2' },
   { value: 'google_business', label: 'Google Business', icon: 'MapPin' },
+  { value: 'tokopedia', label: 'Tokopedia', icon: 'ShoppingBag' },
+  { value: 'shopee', label: 'Shopee', icon: 'ShoppingCart' },
 ] as const;
 
 export const ADS_PLATFORMS = [
