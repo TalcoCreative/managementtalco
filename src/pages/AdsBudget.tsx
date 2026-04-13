@@ -403,6 +403,39 @@ export default function AdsBudget() {
           </div>
         </div>
 
+        {/* Master Wallet Card */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="pt-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Master Wallet</p>
+                  <p className="text-xs text-muted-foreground">Total dana yang sudah ditransfer vs yang sudah digunakan</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-6 text-right w-full sm:w-auto">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Transferred</p>
+                  <p className="text-lg font-bold text-primary">{fmtCurrency(walletStats.totalTransferred)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Used</p>
+                  <p className="text-lg font-bold text-destructive">{fmtCurrency(walletStats.totalUsed)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Sisa Wallet</p>
+                  <p className={cn("text-lg font-bold", walletStats.walletRemaining >= 0 ? "text-emerald-600" : "text-destructive")}>
+                    {fmtCurrency(walletStats.walletRemaining)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
