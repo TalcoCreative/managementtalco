@@ -329,6 +329,19 @@ export default function AdsBudget() {
     return { totalBudget, totalUsage, remaining: totalBudget - totalUsage, totalDeficit, warningCount };
   }, [filteredBudgets, transactions]);
 
+  // Master Wallet: total transfers vs total usage across all (filtered) budgets
+  const walletStats = useMemo(() => {
+    const budgetIds = new Set(filteredBudgets.map((b) => b.id));
+    const relevantTxs = transactions.filter((t) => budgetIds.has(t.budget_id));
+    const totalTransferred = relevantTxs
+      .filter((t) => ["transfer", "top_up", "marketplace_topup"].includes(t.transaction_type))
+      .reduce((s, t) => s + t.amount + t.tax, 0);
+    const totalUsed = relevantTxs
+      .filter((t) => USAGE_TYPES.includes(t.transaction_type))
+      .reduce((s, t) => s + t.amount + t.tax, 0);
+    return { totalTransferred, totalUsed, walletRemaining: totalTransferred - totalUsed };
+  }, [filteredBudgets, transactions]);
+
   // Platform breakdown for a budget
   const getPlatformBreakdown = (budget: Budget) => {
     const txs = transactions.filter((t) => t.budget_id === budget.id && USAGE_TYPES.includes(t.transaction_type));
