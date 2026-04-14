@@ -544,7 +544,43 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
               </div>
             </div>
 
-            {/* Published Links Display */}
+            {/* Assign To & Send to Task */}
+            {canEdit && (
+              <div className="space-y-2 pt-2 border-t">
+                <Label className="flex items-center gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Assign To
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Pilih assignee..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleSendToTask}
+                    disabled={!selectedAssignee || isSendingTask}
+                    className="shrink-0"
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    {isSendingTask ? "Mengirim..." : "Kirim ke Task"}
+                  </Button>
+                </div>
+                {slide.assigned_to && (
+                  <p className="text-xs text-muted-foreground">
+                    Sudah di-assign ke: {profiles.find(p => p.id === slide.assigned_to)?.full_name || "Unknown"}
+                  </p>
+                )}
+              </div>
+            )}
+
+
             {slide.status === "published" && slide.publish_links && Array.isArray(slide.publish_links) && slide.publish_links.length > 0 && (
               <div className="space-y-2 pt-2 border-t">
                 <Label className="flex items-center gap-1.5">
