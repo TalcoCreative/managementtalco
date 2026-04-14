@@ -31,7 +31,7 @@ import { format, parseISO } from "date-fns";
 import {
   Plus, TrendingDown, AlertTriangle, CalendarIcon,
   DollarSign, ArrowUpRight, ArrowDownRight, Trash2, Edit,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLATFORMS, ADS_PLATFORMS } from "@/lib/report-constants";
