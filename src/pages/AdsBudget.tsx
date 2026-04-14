@@ -251,7 +251,40 @@ export default function AdsBudget() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const deleteTxMut = useMutation({
+  const saveWalletTopup = useMutation({
+    mutationFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+      const { error } = await supabase.from("master_wallet_transactions").insert({
+        amount: Number(walletAmount) || 0,
+        transaction_date: walletDate ? format(walletDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
+        notes: walletNotes || null,
+        created_by: session.session.user.id,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["master-wallet-transactions"] });
+      toast.success("Wallet top-up added");
+      setShowWalletTopup(false);
+      setWalletAmount(""); setWalletDate(new Date()); setWalletNotes("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteWalletTxMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("master_wallet_transactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["master-wallet-transactions"] });
+      toast.success("Wallet transaction deleted");
+      setDeleteWalletTxId(null);
+    },
+  });
+
+
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ads_budget_transactions").delete().eq("id", id);
       if (error) throw error;
