@@ -171,6 +171,18 @@ export default function AdsBudget() {
     },
   });
 
+  // Master Wallet Transactions
+  const { data: walletTxs = [] } = useQuery({
+    queryKey: ["master-wallet-transactions"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("master_wallet_transactions")
+        .select("*")
+        .order("transaction_date", { ascending: false });
+      return (data || []) as { id: string; amount: number; transaction_date: string; notes: string | null; created_at: string }[];
+    },
+  });
+
   // ── Mutations ──────────────────────────────────────────
   const saveBudget = useMutation({
     mutationFn: async () => {
