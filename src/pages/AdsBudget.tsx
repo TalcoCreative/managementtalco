@@ -284,7 +284,7 @@ export default function AdsBudget() {
     },
   });
 
-
+  const deleteTxMut = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("ads_budget_transactions").delete().eq("id", id);
       if (error) throw error;
