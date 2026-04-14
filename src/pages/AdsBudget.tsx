@@ -775,21 +775,56 @@ export default function AdsBudget() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left", !txDate && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {txDate ? format(txDate, "dd MMM yyyy") : "Pick date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={txDate} onSelect={setTxDate} className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label>Tanggal *</Label>
+                <div className="flex rounded-md border overflow-hidden ml-auto">
+                  <button
+                    type="button"
+                    className={cn("px-3 py-1 text-xs font-medium transition-colors", txDateMode === "single" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                    onClick={() => { setTxDateMode("single"); setTxDateEnd(undefined); }}
+                  >1 Hari</button>
+                  <button
+                    type="button"
+                    className={cn("px-3 py-1 text-xs font-medium transition-colors", txDateMode === "range" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                    onClick={() => setTxDateMode("range")}
+                  >Rentang</button>
+                </div>
               </div>
+              <div className={cn("grid gap-3", txDateMode === "range" ? "grid-cols-2" : "grid-cols-1")}>
+                <div>
+                  {txDateMode === "range" && <Label className="text-xs text-muted-foreground">Dari</Label>}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left", !txDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {txDate ? format(txDate, "dd MMM yyyy") : "Pick date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={txDate} onSelect={setTxDate} className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {txDateMode === "range" && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Sampai</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left", !txDateEnd && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {txDateEnd ? format(txDateEnd, "dd MMM yyyy") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={txDateEnd} onSelect={setTxDateEnd} disabled={(date) => txDate ? date < txDate : false} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Type *</Label>
                 <Select value={txType} onValueChange={setTxType}>
