@@ -970,6 +970,59 @@ export default function AdsBudget() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Wallet Top Up Dialog */}
+      <Dialog open={showWalletTopup} onOpenChange={(o) => { if (!o) { setShowWalletTopup(false); setWalletAmount(""); setWalletDate(new Date()); setWalletNotes(""); } else setShowWalletTopup(true); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Top Up Master Wallet</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Tanggal Top Up *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left", !walletDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {walletDate ? format(walletDate, "dd MMM yyyy") : "Pick date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={walletDate} onSelect={setWalletDate} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Jumlah (IDR) *</Label>
+              <Input type="number" value={walletAmount} onChange={(e) => setWalletAmount(e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={walletNotes} onChange={(e) => setWalletNotes(e.target.value)} placeholder="Keterangan top up..." rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowWalletTopup(false); setWalletAmount(""); setWalletDate(new Date()); setWalletNotes(""); }}>Cancel</Button>
+            <Button onClick={() => saveWalletTopup.mutate()} disabled={!walletAmount || !walletDate || saveWalletTopup.isPending}>
+              {saveWalletTopup.isPending ? "Saving..." : "Add Top Up"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Wallet Transaction Confirm */}
+      <AlertDialog open={!!deleteWalletTxId} onOpenChange={(o) => !o && setDeleteWalletTxId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Top Up?</AlertDialogTitle>
+            <AlertDialogDescription>Transaksi wallet ini akan dihapus permanen.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteWalletTxId && deleteWalletTxMut.mutate(deleteWalletTxId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
