@@ -104,6 +104,13 @@ export default function AdsBudget() {
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
   const [selectedBudgetForTx, setSelectedBudgetForTx] = useState<string | null>(null);
 
+  // Master Wallet top-up state
+  const [showWalletTopup, setShowWalletTopup] = useState(false);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [walletDate, setWalletDate] = useState<Date | undefined>(new Date());
+  const [walletNotes, setWalletNotes] = useState("");
+  const [deleteWalletTxId, setDeleteWalletTxId] = useState<string | null>(null);
+
   // ── Budget form state
   const [bClientId, setBClientId] = useState("");
   const [bStartDate, setBStartDate] = useState<Date | undefined>();
