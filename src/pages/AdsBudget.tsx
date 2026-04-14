@@ -54,6 +54,7 @@ type Transaction = {
   budget_id: string;
   platform_account_id: string;
   transaction_date: string;
+  transaction_date_end: string | null;
   transaction_type: string;
   amount: number;
   tax: number;
