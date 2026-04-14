@@ -25,6 +25,7 @@ export type Database = {
           platform_account_id: string
           tax: number
           transaction_date: string
+          transaction_date_end: string | null
           transaction_type: string
           updated_at: string
         }
@@ -38,6 +39,7 @@ export type Database = {
           platform_account_id: string
           tax?: number
           transaction_date: string
+          transaction_date_end?: string | null
           transaction_type?: string
           updated_at?: string
         }
@@ -51,6 +53,7 @@ export type Database = {
           platform_account_id?: string
           tax?: number
           transaction_date?: string
+          transaction_date_end?: string | null
           transaction_type?: string
           updated_at?: string
         }
