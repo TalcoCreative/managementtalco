@@ -56,6 +56,7 @@ interface Slide {
   format: string | null;
   slug: string | null;
   publish_links: any[] | null;
+  assigned_to: string | null;
 }
 
 interface Block {
