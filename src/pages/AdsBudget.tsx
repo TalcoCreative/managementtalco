@@ -113,7 +113,9 @@ export default function AdsBudget() {
 
   // ── Transaction form state
   const [txAccountId, setTxAccountId] = useState("");
+  const [txDateMode, setTxDateMode] = useState<"single" | "range">("single");
   const [txDate, setTxDate] = useState<Date | undefined>(new Date());
+  const [txDateEnd, setTxDateEnd] = useState<Date | undefined>();
   const [txType, setTxType] = useState("ads_spend");
   const [txAmount, setTxAmount] = useState("");
   const [txTax, setTxTax] = useState("0");
@@ -212,12 +214,13 @@ export default function AdsBudget() {
         budget_id: selectedBudgetForTx!,
         platform_account_id: txAccountId,
         transaction_date: txDate ? format(txDate, "yyyy-MM-dd") : "",
+        transaction_date_end: txDateMode === "range" && txDateEnd ? format(txDateEnd, "yyyy-MM-dd") : null,
         transaction_type: txType,
         amount: Number(txAmount) || 0,
         tax: Number(txTax) || 0,
         notes: txNotes || null,
         created_by: session.session.user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -253,7 +256,9 @@ export default function AdsBudget() {
 
   const resetTxForm = () => {
     setTxAccountId("");
+    setTxDateMode("single");
     setTxDate(new Date());
+    setTxDateEnd(undefined);
     setTxType("ads_spend");
     setTxAmount("");
     setTxTax("0");
