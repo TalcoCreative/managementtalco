@@ -35,6 +35,7 @@ interface Slide {
   slug: string | null;
   publish_links: any[] | null;
   created_at: string;
+  assigned_to: string | null;
 }
 
 interface EditorialPlanData {
