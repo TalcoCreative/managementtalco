@@ -54,6 +54,7 @@ type Transaction = {
   budget_id: string;
   platform_account_id: string;
   transaction_date: string;
+  transaction_date_end: string | null;
   transaction_type: string;
   amount: number;
   tax: number;
@@ -112,7 +113,9 @@ export default function AdsBudget() {
 
   // ── Transaction form state
   const [txAccountId, setTxAccountId] = useState("");
+  const [txDateMode, setTxDateMode] = useState<"single" | "range">("single");
   const [txDate, setTxDate] = useState<Date | undefined>(new Date());
+  const [txDateEnd, setTxDateEnd] = useState<Date | undefined>();
   const [txType, setTxType] = useState("ads_spend");
   const [txAmount, setTxAmount] = useState("");
   const [txTax, setTxTax] = useState("0");
@@ -211,12 +214,13 @@ export default function AdsBudget() {
         budget_id: selectedBudgetForTx!,
         platform_account_id: txAccountId,
         transaction_date: txDate ? format(txDate, "yyyy-MM-dd") : "",
+        transaction_date_end: txDateMode === "range" && txDateEnd ? format(txDateEnd, "yyyy-MM-dd") : null,
         transaction_type: txType,
         amount: Number(txAmount) || 0,
         tax: Number(txTax) || 0,
         notes: txNotes || null,
         created_by: session.session.user.id,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -252,7 +256,9 @@ export default function AdsBudget() {
 
   const resetTxForm = () => {
     setTxAccountId("");
+    setTxDateMode("single");
     setTxDate(new Date());
+    setTxDateEnd(undefined);
     setTxType("ads_spend");
     setTxAmount("");
     setTxTax("0");
@@ -637,7 +643,12 @@ export default function AdsBudget() {
                               <TableBody>
                                 {calc.budgetTxs.map((tx) => (
                                   <TableRow key={tx.id}>
-                                    <TableCell className="whitespace-nowrap">{format(parseISO(tx.transaction_date), "dd MMM yyyy")}</TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                      {format(parseISO(tx.transaction_date), "dd MMM yyyy")}
+                                      {(tx as any).transaction_date_end && (
+                                        <span className="text-muted-foreground"> – {format(parseISO((tx as any).transaction_date_end), "dd MMM yyyy")}</span>
+                                      )}
+                                    </TableCell>
                                     <TableCell>{tx.platform_accounts?.account_name || "-"}</TableCell>
                                     <TableCell>{platformLabel(tx.platform_accounts?.platform || "")}</TableCell>
                                     <TableCell>
@@ -769,21 +780,56 @@ export default function AdsBudget() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left", !txDate && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {txDate ? format(txDate, "dd MMM yyyy") : "Pick date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={txDate} onSelect={setTxDate} className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Label>Tanggal *</Label>
+                <div className="flex rounded-md border overflow-hidden ml-auto">
+                  <button
+                    type="button"
+                    className={cn("px-3 py-1 text-xs font-medium transition-colors", txDateMode === "single" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                    onClick={() => { setTxDateMode("single"); setTxDateEnd(undefined); }}
+                  >1 Hari</button>
+                  <button
+                    type="button"
+                    className={cn("px-3 py-1 text-xs font-medium transition-colors", txDateMode === "range" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                    onClick={() => setTxDateMode("range")}
+                  >Rentang</button>
+                </div>
               </div>
+              <div className={cn("grid gap-3", txDateMode === "range" ? "grid-cols-2" : "grid-cols-1")}>
+                <div>
+                  {txDateMode === "range" && <Label className="text-xs text-muted-foreground">Dari</Label>}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left", !txDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {txDate ? format(txDate, "dd MMM yyyy") : "Pick date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={txDate} onSelect={setTxDate} className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                {txDateMode === "range" && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Sampai</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left", !txDateEnd && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {txDateEnd ? format(txDateEnd, "dd MMM yyyy") : "Pick date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={txDateEnd} onSelect={setTxDateEnd} disabled={(date) => txDate ? date < txDate : false} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Type *</Label>
                 <Select value={txType} onValueChange={setTxType}>
@@ -811,7 +857,7 @@ export default function AdsBudget() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowTxDialog(false); resetTxForm(); }}>Cancel</Button>
-            <Button onClick={() => saveTx.mutate()} disabled={!txAccountId || !txDate || !txAmount || saveTx.isPending}>
+            <Button onClick={() => saveTx.mutate()} disabled={!txAccountId || !txDate || !txAmount || (txDateMode === "range" && !txDateEnd) || saveTx.isPending}>
               {saveTx.isPending ? "Saving..." : "Add Transaction"}
             </Button>
           </DialogFooter>

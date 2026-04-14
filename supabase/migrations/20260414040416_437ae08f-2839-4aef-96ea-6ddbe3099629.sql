@@ -1,0 +1,1 @@
+ALTER TABLE public.ads_budget_transactions ADD COLUMN transaction_date_end text DEFAULT NULL;
