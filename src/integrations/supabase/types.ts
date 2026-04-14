@@ -1424,6 +1424,7 @@ export type Database = {
       editorial_slides: {
         Row: {
           approved_at: string | null
+          assigned_to: string | null
           channel: string | null
           channels: string[] | null
           created_at: string
@@ -1441,6 +1442,7 @@ export type Database = {
         }
         Insert: {
           approved_at?: string | null
+          assigned_to?: string | null
           channel?: string | null
           channels?: string[] | null
           created_at?: string
@@ -1458,6 +1460,7 @@ export type Database = {
         }
         Update: {
           approved_at?: string | null
+          assigned_to?: string | null
           channel?: string | null
           channels?: string[] | null
           created_at?: string
@@ -1474,6 +1477,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "editorial_slides_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "editorial_slides_created_by_fkey"
             columns: ["created_by"]
@@ -3170,6 +3180,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      master_wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          transaction_date: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          transaction_date: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          transaction_date?: string
+        }
+        Relationships: []
       }
       meeting_external_participants: {
         Row: {
@@ -5804,6 +5841,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           description_edited_at: string | null
+          ep_slide_id: string | null
           event_id: string | null
           id: string
           is_hidden: boolean
@@ -5825,6 +5863,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           description_edited_at?: string | null
+          ep_slide_id?: string | null
           event_id?: string | null
           id?: string
           is_hidden?: boolean
@@ -5846,6 +5885,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           description_edited_at?: string | null
+          ep_slide_id?: string | null
           event_id?: string | null
           id?: string
           is_hidden?: boolean
@@ -5886,6 +5926,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_ep_slide_id_fkey"
+            columns: ["ep_slide_id"]
+            isOneToOne: false
+            referencedRelation: "editorial_slides"
             referencedColumns: ["id"]
           },
           {
