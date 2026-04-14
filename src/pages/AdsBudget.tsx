@@ -387,8 +387,9 @@ export default function AdsBudget() {
     return { totalBudget, totalUsage, remaining: totalBudget - totalUsage, totalDeficit, warningCount };
   }, [filteredBudgets, transactions]);
 
-  // Master Wallet: total transfers vs total usage across all (filtered) budgets
+  // Master Wallet: walletTxs total top-ups vs total usage (transfers out from budget transactions)
   const walletStats = useMemo(() => {
+    const totalTopUp = walletTxs.reduce((s, t) => s + Number(t.amount), 0);
     const budgetIds = new Set(filteredBudgets.map((b) => b.id));
     const relevantTxs = transactions.filter((t) => budgetIds.has(t.budget_id));
     const totalTransferred = relevantTxs
@@ -397,8 +398,8 @@ export default function AdsBudget() {
     const totalUsed = relevantTxs
       .filter((t) => USAGE_TYPES.includes(t.transaction_type))
       .reduce((s, t) => s + t.amount + t.tax, 0);
-    return { totalTransferred, totalUsed, walletRemaining: totalTransferred - totalUsed };
-  }, [filteredBudgets, transactions]);
+    return { totalTopUp, totalTransferred, totalUsed, walletRemaining: totalTopUp - totalTransferred };
+  }, [filteredBudgets, transactions, walletTxs]);
 
   // Platform breakdown for a budget
   const getPlatformBreakdown = (budget: Budget) => {
