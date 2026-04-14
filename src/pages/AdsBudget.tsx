@@ -468,30 +468,56 @@ export default function AdsBudget() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
+                  <Wallet className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Master Wallet</p>
-                  <p className="text-xs text-muted-foreground">Total dana yang sudah ditransfer vs yang sudah digunakan</p>
+                  <p className="text-xs text-muted-foreground">Total dana masuk vs dana yang sudah ditransfer ke budget</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-6 text-right w-full sm:w-auto">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Transferred</p>
-                  <p className="text-lg font-bold text-primary">{fmtCurrency(walletStats.totalTransferred)}</p>
+              <div className="flex items-center gap-4">
+                <div className="grid grid-cols-3 gap-6 text-right">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Top Up</p>
+                    <p className="text-lg font-bold text-primary">{fmtCurrency(walletStats.totalTopUp)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Transferred</p>
+                    <p className="text-lg font-bold text-destructive">{fmtCurrency(walletStats.totalTransferred)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Sisa Wallet</p>
+                    <p className={cn("text-lg font-bold", walletStats.walletRemaining >= 0 ? "text-emerald-600" : "text-destructive")}>
+                      {fmtCurrency(walletStats.walletRemaining)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Used</p>
-                  <p className="text-lg font-bold text-destructive">{fmtCurrency(walletStats.totalUsed)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Sisa Wallet</p>
-                  <p className={cn("text-lg font-bold", walletStats.walletRemaining >= 0 ? "text-emerald-600" : "text-destructive")}>
-                    {fmtCurrency(walletStats.walletRemaining)}
-                  </p>
-                </div>
+                <Button size="sm" onClick={() => setShowWalletTopup(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Top Up
+                </Button>
               </div>
             </div>
+
+            {/* Wallet Transactions List */}
+            {walletTxs.length > 0 && (
+              <div className="mt-4 border-t pt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Riwayat Top Up Wallet</p>
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                  {walletTxs.map((wt) => (
+                    <div key={wt.id} className="flex items-center justify-between text-sm bg-muted/40 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground text-xs">{format(parseISO(wt.transaction_date), "dd MMM yyyy")}</span>
+                        <span className="font-medium text-primary">{fmtCurrency(Number(wt.amount))}</span>
+                        {wt.notes && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{wt.notes}</span>}
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-destructive h-7 w-7 p-0" onClick={() => setDeleteWalletTxId(wt.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
