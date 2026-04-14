@@ -857,7 +857,7 @@ export default function AdsBudget() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowTxDialog(false); resetTxForm(); }}>Cancel</Button>
-            <Button onClick={() => saveTx.mutate()} disabled={!txAccountId || !txDate || !txAmount || saveTx.isPending}>
+            <Button onClick={() => saveTx.mutate()} disabled={!txAccountId || !txDate || !txAmount || (txDateMode === "range" && !txDateEnd) || saveTx.isPending}>
               {saveTx.isPending ? "Saving..." : "Add Transaction"}
             </Button>
           </DialogFooter>
