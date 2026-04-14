@@ -36,6 +36,8 @@ import {
   Calendar,
   Link as LinkIcon,
   ExternalLink,
+  Send,
+  UserPlus,
 } from "lucide-react";
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
