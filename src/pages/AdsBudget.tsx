@@ -643,7 +643,12 @@ export default function AdsBudget() {
                               <TableBody>
                                 {calc.budgetTxs.map((tx) => (
                                   <TableRow key={tx.id}>
-                                    <TableCell className="whitespace-nowrap">{format(parseISO(tx.transaction_date), "dd MMM yyyy")}</TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                      {format(parseISO(tx.transaction_date), "dd MMM yyyy")}
+                                      {(tx as any).transaction_date_end && (
+                                        <span className="text-muted-foreground"> – {format(parseISO((tx as any).transaction_date_end), "dd MMM yyyy")}</span>
+                                      )}
+                                    </TableCell>
                                     <TableCell>{tx.platform_accounts?.account_name || "-"}</TableCell>
                                     <TableCell>{platformLabel(tx.platform_accounts?.platform || "")}</TableCell>
                                     <TableCell>
