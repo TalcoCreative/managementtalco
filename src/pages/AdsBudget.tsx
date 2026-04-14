@@ -31,7 +31,7 @@ import { format, parseISO } from "date-fns";
 import {
   Plus, TrendingDown, AlertTriangle, CalendarIcon,
   DollarSign, ArrowUpRight, ArrowDownRight, Trash2, Edit,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLATFORMS, ADS_PLATFORMS } from "@/lib/report-constants";
@@ -104,6 +104,13 @@ export default function AdsBudget() {
   const [expandedBudget, setExpandedBudget] = useState<string | null>(null);
   const [selectedBudgetForTx, setSelectedBudgetForTx] = useState<string | null>(null);
 
+  // Master Wallet top-up state
+  const [showWalletTopup, setShowWalletTopup] = useState(false);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [walletDate, setWalletDate] = useState<Date | undefined>(new Date());
+  const [walletNotes, setWalletNotes] = useState("");
+  const [deleteWalletTxId, setDeleteWalletTxId] = useState<string | null>(null);
+
   // ── Budget form state
   const [bClientId, setBClientId] = useState("");
   const [bStartDate, setBStartDate] = useState<Date | undefined>();
@@ -161,6 +168,18 @@ export default function AdsBudget() {
         .eq("status", "active")
         .order("platform");
       return (data || []) as PlatformAccount[];
+    },
+  });
+
+  // Master Wallet Transactions
+  const { data: walletTxs = [] } = useQuery({
+    queryKey: ["master-wallet-transactions"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("master_wallet_transactions")
+        .select("*")
+        .order("transaction_date", { ascending: false });
+      return (data || []) as { id: string; amount: number; transaction_date: string; notes: string | null; created_at: string }[];
     },
   });
 
@@ -230,6 +249,39 @@ export default function AdsBudget() {
       resetTxForm();
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveWalletTopup = useMutation({
+    mutationFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+      const { error } = await supabase.from("master_wallet_transactions").insert({
+        amount: Number(walletAmount) || 0,
+        transaction_date: walletDate ? format(walletDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
+        notes: walletNotes || null,
+        created_by: session.session.user.id,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["master-wallet-transactions"] });
+      toast.success("Wallet top-up added");
+      setShowWalletTopup(false);
+      setWalletAmount(""); setWalletDate(new Date()); setWalletNotes("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteWalletTxMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("master_wallet_transactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["master-wallet-transactions"] });
+      toast.success("Wallet transaction deleted");
+      setDeleteWalletTxId(null);
+    },
   });
 
   const deleteTxMut = useMutation({
@@ -335,8 +387,9 @@ export default function AdsBudget() {
     return { totalBudget, totalUsage, remaining: totalBudget - totalUsage, totalDeficit, warningCount };
   }, [filteredBudgets, transactions]);
 
-  // Master Wallet: total transfers vs total usage across all (filtered) budgets
+  // Master Wallet: walletTxs total top-ups vs total usage (transfers out from budget transactions)
   const walletStats = useMemo(() => {
+    const totalTopUp = walletTxs.reduce((s, t) => s + Number(t.amount), 0);
     const budgetIds = new Set(filteredBudgets.map((b) => b.id));
     const relevantTxs = transactions.filter((t) => budgetIds.has(t.budget_id));
     const totalTransferred = relevantTxs
@@ -345,8 +398,8 @@ export default function AdsBudget() {
     const totalUsed = relevantTxs
       .filter((t) => USAGE_TYPES.includes(t.transaction_type))
       .reduce((s, t) => s + t.amount + t.tax, 0);
-    return { totalTransferred, totalUsed, walletRemaining: totalTransferred - totalUsed };
-  }, [filteredBudgets, transactions]);
+    return { totalTopUp, totalTransferred, totalUsed, walletRemaining: totalTopUp - totalTransferred };
+  }, [filteredBudgets, transactions, walletTxs]);
 
   // Platform breakdown for a budget
   const getPlatformBreakdown = (budget: Budget) => {
@@ -415,30 +468,56 @@ export default function AdsBudget() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
+                  <Wallet className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Master Wallet</p>
-                  <p className="text-xs text-muted-foreground">Total dana yang sudah ditransfer vs yang sudah digunakan</p>
+                  <p className="text-xs text-muted-foreground">Total dana masuk vs dana yang sudah ditransfer ke budget</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-6 text-right w-full sm:w-auto">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Transferred</p>
-                  <p className="text-lg font-bold text-primary">{fmtCurrency(walletStats.totalTransferred)}</p>
+              <div className="flex items-center gap-4">
+                <div className="grid grid-cols-3 gap-6 text-right">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Top Up</p>
+                    <p className="text-lg font-bold text-primary">{fmtCurrency(walletStats.totalTopUp)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Transferred</p>
+                    <p className="text-lg font-bold text-destructive">{fmtCurrency(walletStats.totalTransferred)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-medium">Sisa Wallet</p>
+                    <p className={cn("text-lg font-bold", walletStats.walletRemaining >= 0 ? "text-emerald-600" : "text-destructive")}>
+                      {fmtCurrency(walletStats.walletRemaining)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Total Used</p>
-                  <p className="text-lg font-bold text-destructive">{fmtCurrency(walletStats.totalUsed)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Sisa Wallet</p>
-                  <p className={cn("text-lg font-bold", walletStats.walletRemaining >= 0 ? "text-emerald-600" : "text-destructive")}>
-                    {fmtCurrency(walletStats.walletRemaining)}
-                  </p>
-                </div>
+                <Button size="sm" onClick={() => setShowWalletTopup(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Top Up
+                </Button>
               </div>
             </div>
+
+            {/* Wallet Transactions List */}
+            {walletTxs.length > 0 && (
+              <div className="mt-4 border-t pt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Riwayat Top Up Wallet</p>
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                  {walletTxs.map((wt) => (
+                    <div key={wt.id} className="flex items-center justify-between text-sm bg-muted/40 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground text-xs">{format(parseISO(wt.transaction_date), "dd MMM yyyy")}</span>
+                        <span className="font-medium text-primary">{fmtCurrency(Number(wt.amount))}</span>
+                        {wt.notes && <span className="text-xs text-muted-foreground truncate max-w-[200px]">{wt.notes}</span>}
+                      </div>
+                      <Button size="sm" variant="ghost" className="text-destructive h-7 w-7 p-0" onClick={() => setDeleteWalletTxId(wt.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -888,6 +967,59 @@ export default function AdsBudget() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteTxId && deleteTxMut.mutate(deleteTxId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Wallet Top Up Dialog */}
+      <Dialog open={showWalletTopup} onOpenChange={(o) => { if (!o) { setShowWalletTopup(false); setWalletAmount(""); setWalletDate(new Date()); setWalletNotes(""); } else setShowWalletTopup(true); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Top Up Master Wallet</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Tanggal Top Up *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left", !walletDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {walletDate ? format(walletDate, "dd MMM yyyy") : "Pick date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={walletDate} onSelect={setWalletDate} className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Jumlah (IDR) *</Label>
+              <Input type="number" value={walletAmount} onChange={(e) => setWalletAmount(e.target.value)} placeholder="0" />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={walletNotes} onChange={(e) => setWalletNotes(e.target.value)} placeholder="Keterangan top up..." rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowWalletTopup(false); setWalletAmount(""); setWalletDate(new Date()); setWalletNotes(""); }}>Cancel</Button>
+            <Button onClick={() => saveWalletTopup.mutate()} disabled={!walletAmount || !walletDate || saveWalletTopup.isPending}>
+              {saveWalletTopup.isPending ? "Saving..." : "Add Top Up"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Wallet Transaction Confirm */}
+      <AlertDialog open={!!deleteWalletTxId} onOpenChange={(o) => !o && setDeleteWalletTxId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Top Up?</AlertDialogTitle>
+            <AlertDialogDescription>Transaksi wallet ini akan dihapus permanen.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteWalletTxId && deleteWalletTxMut.mutate(deleteWalletTxId)}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

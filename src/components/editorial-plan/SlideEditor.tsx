@@ -36,6 +36,8 @@ import {
   Calendar,
   Link as LinkIcon,
   ExternalLink,
+  Send,
+  UserPlus,
 } from "lucide-react";
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
@@ -54,6 +56,7 @@ interface Slide {
   format: string | null;
   slug: string | null;
   publish_links: any[] | null;
+  assigned_to: string | null;
 }
 
 interface Block {
@@ -101,6 +104,8 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [selectedAssignee, setSelectedAssignee] = useState<string>(slide.assigned_to || "");
+  const [isSendingTask, setIsSendingTask] = useState(false);
 
   const handleLightboxOpenChange = (open: boolean) => {
     setLightboxOpen(open);
@@ -127,7 +132,97 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
     },
   });
 
-  // Update block mutation
+  // Fetch profiles for assign-to
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["all-profiles"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, full_name").order("full_name");
+      return data || [];
+    },
+  });
+
+  // Send slide as task
+  const handleSendToTask = async () => {
+    if (!selectedAssignee) {
+      toast.error("Pilih assignee terlebih dahulu");
+      return;
+    }
+    setIsSendingTask(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error("Not authenticated");
+
+      // Get EP data to find client_id
+      const { data: epData } = await supabase.from("editorial_plans").select("id, title, client_id").eq("id", epId).single();
+      if (!epData) throw new Error("EP not found");
+
+      // Find or create a project for this client
+      let projectId: string;
+      const { data: existingProject } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("client_id", epData.client_id)
+        .limit(1)
+        .single();
+
+      if (existingProject) {
+        projectId = existingProject.id;
+      } else {
+        // Get client name
+        const { data: clientData } = await supabase.from("clients").select("name").eq("id", epData.client_id).single();
+        const { data: newProject, error: projError } = await supabase.from("projects").insert({
+          title: `${clientData?.name || "Client"} - Editorial Plan`,
+          client_id: epData.client_id,
+          status: "active",
+        }).select("id").single();
+        if (projError) throw projError;
+        projectId = newProject!.id;
+      }
+
+      // Get content title from blocks
+      const contentBlock = blocks?.find(b => b.block_type === "content_meta");
+      const contentTitle = contentBlock?.content?.title || `EP Slide ${slide.slide_order + 1}`;
+
+      const taskTitle = `[EP] ${epData.title} - ${contentTitle}`;
+      const description = contentBlock?.content?.copywriting || contentBlock?.content?.caption || null;
+
+      // Create task
+      const { data: taskData, error: taskError } = await supabase.from("tasks").insert({
+        title: taskTitle,
+        description,
+        project_id: projectId,
+        assigned_to: selectedAssignee,
+        created_by: session.session.user.id,
+        status: "pending",
+        requested_at: new Date().toISOString(),
+        deadline: slide.publish_date || null,
+        ep_slide_id: slide.id,
+      } as any).select("id").single();
+
+      if (taskError) throw taskError;
+
+      // Add assignee to task_assignees
+      if (taskData) {
+        await supabase.from("task_assignees").insert({
+          task_id: taskData.id,
+          user_id: selectedAssignee,
+        });
+      }
+
+      // Update slide assigned_to
+      await supabase.from("editorial_slides").update({ assigned_to: selectedAssignee } as any).eq("id", slide.id);
+
+      toast.success("Task berhasil dibuat dari slide ini!");
+      onStatusChange();
+    } catch (error: any) {
+      console.error("Error creating task:", error);
+      toast.error("Gagal membuat task: " + (error.message || "Unknown error"));
+    } finally {
+      setIsSendingTask(false);
+    }
+  };
+
+
   const updateBlockMutation = useMutation({
     mutationFn: async ({ blockId, content }: { blockId: string; content: any }) => {
       const { error } = await supabase
@@ -449,7 +544,43 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
               </div>
             </div>
 
-            {/* Published Links Display */}
+            {/* Assign To & Send to Task */}
+            {canEdit && (
+              <div className="space-y-2 pt-2 border-t">
+                <Label className="flex items-center gap-1.5">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Assign To
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Pilih assignee..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleSendToTask}
+                    disabled={!selectedAssignee || isSendingTask}
+                    className="shrink-0"
+                  >
+                    <Send className="h-4 w-4 mr-1" />
+                    {isSendingTask ? "Mengirim..." : "Kirim ke Task"}
+                  </Button>
+                </div>
+                {slide.assigned_to && (
+                  <p className="text-xs text-muted-foreground">
+                    Sudah di-assign ke: {profiles.find(p => p.id === slide.assigned_to)?.full_name || "Unknown"}
+                  </p>
+                )}
+              </div>
+            )}
+
+
             {slide.status === "published" && slide.publish_links && Array.isArray(slide.publish_links) && slide.publish_links.length > 0 && (
               <div className="space-y-2 pt-2 border-t">
                 <Label className="flex items-center gap-1.5">
