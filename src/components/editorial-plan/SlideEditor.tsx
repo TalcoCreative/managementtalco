@@ -104,6 +104,8 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [selectedAssignee, setSelectedAssignee] = useState<string>(slide.assigned_to || "");
+  const [isSendingTask, setIsSendingTask] = useState(false);
 
   const handleLightboxOpenChange = (open: boolean) => {
     setLightboxOpen(open);
