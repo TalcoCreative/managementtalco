@@ -10,8 +10,19 @@ import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2
 import { format, isAfter, set, differenceInMinutes } from "date-fns";
 import { AutoClockoutNotification } from "./AutoClockoutNotification";
 import { MoodSelector } from "./MoodSelector";
+import { getCurrentPosition, matchLocation, type OfficeLocationLite } from "@/lib/geo-utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { MapPin, AlertTriangle } from "lucide-react";
 
 export function ClockInOut() {
+  const [outsideDialog, setOutsideDialog] = useState<{
+    open: boolean;
+    distance: number;
+    nearestName: string;
+    coords: { lat: number; lng: number } | null;
+  }>({ open: false, distance: 0, nearestName: "", coords: null });
+  const [outsideReason, setOutsideReason] = useState("");
+  const [pendingClockIn, setPendingClockIn] = useState(false);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [photoClockIn, setPhotoClockIn] = useState<string | null>(null);
@@ -267,6 +278,81 @@ export function ClockInOut() {
     toast.success("Foto berhasil diambil!");
   };
 
+  // Core insert helper - extracted so we can call it from the outside-reason dialog too
+  const performClockInsert = async (params: {
+    coords: { lat: number; lng: number } | null;
+    locationStatus: "inside" | "outside" | null;
+    matchedLocationId: string | null;
+    matchedLocationName: string | null;
+    outsideReason: string | null;
+  }) => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) throw new Error("Not authenticated");
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    let lateStatus = "On Time";
+    try {
+      const { data: thresholdSetting } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "late_threshold_time")
+        .maybeSingle();
+
+      if (thresholdSetting?.setting_value) {
+        const [threshHour, threshMin] = thresholdSetting.setting_value.split(":").map(Number);
+        const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+        const clockInHour = jakartaTime.getHours();
+        const clockInMin = jakartaTime.getMinutes();
+        if (clockInHour > threshHour || (clockInHour === threshHour && clockInMin > threshMin)) {
+          lateStatus = "Late";
+        }
+      }
+    } catch (e) {
+      console.error("Failed to check late threshold:", e);
+    }
+
+    const { error } = await supabase.from("attendance").insert({
+      user_id: session.session.user.id,
+      date: today,
+      clock_in: nowIso,
+      photo_clock_in: photoClockIn,
+      notes: notes.trim() || null,
+      late_status: lateStatus,
+      mood: selectedMood,
+      clock_in_latitude: params.coords?.lat ?? null,
+      clock_in_longitude: params.coords?.lng ?? null,
+      location_status: params.locationStatus,
+      matched_location_id: params.matchedLocationId,
+      matched_location_name: params.matchedLocationName,
+      outside_reason: params.outsideReason,
+    } as any);
+
+    if (error) throw error;
+
+    toast.success(`Clock in berhasil! (${lateStatus})`);
+    setNotes("");
+    setPhotoClockIn(null);
+    setSelectedMood(null);
+    setOutsideReason("");
+    queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+    queryClient.invalidateQueries({ queryKey: ["team-moods-today"] });
+
+    supabase.functions.invoke("clockin-summary-email", {
+      body: { user_id: session.session.user.id },
+    }).catch(() => {});
+
+    const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
+    const clockUserName = myProfile?.full_name || "Team Member";
+    const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
+    sendWhatsApp({
+      userIds: [session.session.user.id],
+      message: `📋 *Attendance*\n\n${clockUserName}, kamu telah berhasil Clock In pada ${format(now, 'HH:mm')} WIB (${lateStatus}).\n\nSemangat bekerja hari ini! 💪`,
+      eventType: "attendance_reminder",
+    }).catch((err: any) => console.error("[Attendance] WhatsApp failed:", err));
+  };
+
   const handleClockIn = async () => {
     if (!photoClockIn) {
       toast.error("Silakan ambil foto terlebih dahulu");
@@ -279,83 +365,95 @@ export function ClockInOut() {
 
     try {
       setLoading(true);
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) throw new Error("Not authenticated");
 
-      const now = new Date();
-      const nowIso = now.toISOString();
+      // Check if location validation is globally enabled
+      const { data: locSetting } = await supabase
+        .from("company_settings")
+        .select("setting_value")
+        .eq("setting_key", "location_validation_enabled")
+        .maybeSingle();
+      const locationValidationOn = locSetting?.setting_value === "true";
 
-      // Fetch late threshold setting - use Jakarta timezone explicitly
-      let lateStatus = "On Time";
-      try {
-        const { data: thresholdSetting } = await supabase
-          .from("company_settings")
-          .select("setting_value")
-          .eq("setting_key", "late_threshold_time")
-          .maybeSingle();
-        
-        if (thresholdSetting?.setting_value) {
-          const [threshHour, threshMin] = thresholdSetting.setting_value.split(":").map(Number);
-          // Use Jakarta timezone explicitly to match DB recalculation
-          const jakartaTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-          const clockInHour = jakartaTime.getHours();
-          const clockInMin = jakartaTime.getMinutes();
-          if (clockInHour > threshHour || (clockInHour === threshHour && clockInMin > threshMin)) {
-            lateStatus = "Late";
-          }
-        }
-      } catch (e) {
-        console.error("Failed to check late threshold:", e);
+      if (!locationValidationOn) {
+        // Location validation off - just insert without GPS
+        await performClockInsert({
+          coords: null,
+          locationStatus: null,
+          matchedLocationId: null,
+          matchedLocationName: null,
+          outsideReason: null,
+        });
+        return;
       }
 
-      const { error } = await supabase.from("attendance").insert({
-        user_id: session.session.user.id,
-        date: today,
-        clock_in: nowIso,
-        photo_clock_in: photoClockIn,
-        notes: notes.trim() || null,
-        late_status: lateStatus,
-        mood: selectedMood,
-      } as any);
+      // Location validation ON - try to get GPS
+      let pos: GeolocationPosition;
+      try {
+        pos = await getCurrentPosition();
+      } catch (e: any) {
+        toast.error(e.message || "Gagal mendapat lokasi. Aktifkan GPS dan izinkan akses lokasi.");
+        return;
+      }
+      const { latitude: lat, longitude: lng } = pos.coords;
 
-      if (error) throw error;
+      // Fetch active office locations
+      const { data: locs } = await supabase
+        .from("office_locations")
+        .select("id, name, latitude, longitude, radius_meters, is_active")
+        .eq("is_active", true);
 
-      toast.success(`Clock in berhasil! (${lateStatus})`);
-      setNotes("");
-      setPhotoClockIn(null);
-      setSelectedMood(null);
-      queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["team-moods-today"] });
+      const activeLocations: OfficeLocationLite[] = (locs || []) as OfficeLocationLite[];
+      const match = matchLocation(lat, lng, activeLocations);
 
-      // Send clock-in summary email (non-blocking)
-      supabase.functions.invoke("clockin-summary-email", {
-        body: { user_id: session.session.user.id },
-      }).then((result) => {
-        if (result.data?.success) {
-          console.log("Clock-in summary email sent");
-        } else {
-          console.log("Clock-in summary email skipped:", result.data?.error);
-        }
-      }).catch((err) => {
-        console.error("Failed to send clock-in summary email:", err);
-      });
-
-      // WhatsApp notification for attendance - only send to the user themselves
-      const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", session.session.user.id).single();
-      const clockUserName = myProfile?.full_name || "Team Member";
-      const { sendWhatsApp } = await import("@/lib/whatsapp-utils");
-      sendWhatsApp({
-        userIds: [session.session.user.id],
-        message: `📋 *Attendance*\n\n${clockUserName}, kamu telah berhasil Clock In pada ${format(now, 'HH:mm')} WIB (${lateStatus}).\n\nSemangat bekerja hari ini! 💪`,
-        eventType: "attendance_reminder",
-      }).catch((err: any) => console.error("[Attendance] WhatsApp failed:", err));
-
+      if (match.inside && match.matchedLocation) {
+        await performClockInsert({
+          coords: { lat, lng },
+          locationStatus: "inside",
+          matchedLocationId: match.matchedLocation.id,
+          matchedLocationName: match.matchedLocation.name,
+          outsideReason: null,
+        });
+      } else {
+        // Outside - prompt for reason
+        setOutsideDialog({
+          open: true,
+          distance: Math.round(match.distanceMeters || 0),
+          nearestName: match.matchedLocation?.name || "kantor",
+          coords: { lat, lng },
+        });
+        setLoading(false);
+        return;
+      }
     } catch (error: any) {
       toast.error(error.message || "Gagal clock in");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSubmitOutside = async () => {
+    if (!outsideReason.trim()) {
+      toast.error("Alasan wajib diisi");
+      return;
+    }
+    if (!outsideDialog.coords) return;
+    setPendingClockIn(true);
+    try {
+      await performClockInsert({
+        coords: outsideDialog.coords,
+        locationStatus: "outside",
+        matchedLocationId: null,
+        matchedLocationName: null,
+        outsideReason: outsideReason.trim(),
+      });
+      setOutsideDialog({ open: false, distance: 0, nearestName: "", coords: null });
+    } catch (e: any) {
+      toast.error(e.message || "Gagal clock in");
+    } finally {
+      setPendingClockIn(false);
+    }
+  };
+
 
   const handleClockOut = async () => {
     if (!todayAttendance) return;
@@ -815,6 +913,46 @@ export function ClockInOut() {
           </div>
         )}
       </CardContent>
+
+      {/* Outside-location reason dialog */}
+      <Dialog open={outsideDialog.open} onOpenChange={(o) => !o && setOutsideDialog((d) => ({ ...d, open: false }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Anda di luar lokasi kantor
+            </DialogTitle>
+            <DialogDescription>
+              Anda berada sekitar <strong>{outsideDialog.distance}m</strong> dari{" "}
+              <strong>{outsideDialog.nearestName}</strong>. Mohon isi alasan untuk clock-in di luar lokasi.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="outside-reason">Alasan *</Label>
+            <Textarea
+              id="outside-reason"
+              placeholder="Contoh: Kunjungan klien, WFH, dinas luar..."
+              value={outsideReason}
+              onChange={(e) => setOutsideReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOutsideDialog({ open: false, distance: 0, nearestName: "", coords: null })}
+              disabled={pendingClockIn}
+            >
+              Batal
+            </Button>
+            <Button onClick={handleSubmitOutside} disabled={pendingClockIn || !outsideReason.trim()}>
+              {pendingClockIn ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MapPin className="h-4 w-4 mr-2" />}
+              Lanjutkan Clock In
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
+

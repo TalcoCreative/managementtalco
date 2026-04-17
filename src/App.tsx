@@ -77,6 +77,7 @@ import PersonalNotes from "./pages/PersonalNotes";
 import InstallApp from "./pages/InstallApp";
 import NotificationLog from "./pages/NotificationLog";
 import AdsBudget from "./pages/AdsBudget";
+import SettingLocation from "./pages/SettingLocation";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
@@ -148,6 +149,7 @@ const App = () => (
           <Route path="/system/email-settings" element={<ProtectedRoute><EmailSettings /></ProtectedRoute>} />
           <Route path="/system/roles" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
           <Route path="/system/settings" element={<ProtectedRoute><SystemSettings /></ProtectedRoute>} />
+          <Route path="/setting-location" element={<ProtectedRoute><SettingLocation /></ProtectedRoute>} />
           <Route path="/profile-settings" element={<ProtectedRoute><ProfileSettings /></ProtectedRoute>} />
           <Route path="/personal-notes" element={<ProtectedRoute><PersonalNotes /></ProtectedRoute>} />
           <Route path="/install-app" element={<InstallApp />} />
