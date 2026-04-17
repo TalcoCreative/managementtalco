@@ -3,7 +3,7 @@ import {
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
   Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
-  MessageSquare, CircleDollarSign,
+  MessageSquare, CircleDollarSign, MapPin,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +102,7 @@ const systemItems: NavItem[] = [
   { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
   { title: "WA Notification Log", url: "/notification-log", icon: MessageSquare, featureKey: "notification_log" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
+  { title: "Location Settings", url: "/setting-location", icon: MapPin, featureKey: "setting_location" },
   { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
 ];
 
