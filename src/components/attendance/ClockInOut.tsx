@@ -10,8 +10,19 @@ import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2
 import { format, isAfter, set, differenceInMinutes } from "date-fns";
 import { AutoClockoutNotification } from "./AutoClockoutNotification";
 import { MoodSelector } from "./MoodSelector";
+import { getCurrentPosition, matchLocation, type OfficeLocationLite } from "@/lib/geo-utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { MapPin, AlertTriangle } from "lucide-react";
 
 export function ClockInOut() {
+  const [outsideDialog, setOutsideDialog] = useState<{
+    open: boolean;
+    distance: number;
+    nearestName: string;
+    coords: { lat: number; lng: number } | null;
+  }>({ open: false, distance: 0, nearestName: "", coords: null });
+  const [outsideReason, setOutsideReason] = useState("");
+  const [pendingClockIn, setPendingClockIn] = useState(false);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [photoClockIn, setPhotoClockIn] = useState<string | null>(null);
