@@ -913,6 +913,46 @@ export function ClockInOut() {
           </div>
         )}
       </CardContent>
+
+      {/* Outside-location reason dialog */}
+      <Dialog open={outsideDialog.open} onOpenChange={(o) => !o && setOutsideDialog((d) => ({ ...d, open: false }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Anda di luar lokasi kantor
+            </DialogTitle>
+            <DialogDescription>
+              Anda berada sekitar <strong>{outsideDialog.distance}m</strong> dari{" "}
+              <strong>{outsideDialog.nearestName}</strong>. Mohon isi alasan untuk clock-in di luar lokasi.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="outside-reason">Alasan *</Label>
+            <Textarea
+              id="outside-reason"
+              placeholder="Contoh: Kunjungan klien, WFH, dinas luar..."
+              value={outsideReason}
+              onChange={(e) => setOutsideReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOutsideDialog({ open: false, distance: 0, nearestName: "", coords: null })}
+              disabled={pendingClockIn}
+            >
+              Batal
+            </Button>
+            <Button onClick={handleSubmitOutside} disabled={pendingClockIn || !outsideReason.trim()}>
+              {pendingClockIn ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <MapPin className="h-4 w-4 mr-2" />}
+              Lanjutkan Clock In
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
+
