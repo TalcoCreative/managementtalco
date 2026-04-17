@@ -342,13 +342,19 @@ export type Database = {
           break_end: string | null
           break_start: string | null
           clock_in: string | null
+          clock_in_latitude: number | null
+          clock_in_longitude: number | null
           clock_out: string | null
           created_at: string | null
           date: string
           id: string
           late_status: string | null
+          location_status: string | null
+          matched_location_id: string | null
+          matched_location_name: string | null
           mood: string | null
           notes: string | null
+          outside_reason: string | null
           photo_clock_in: string | null
           photo_clock_out: string | null
           tasks_completed: string[] | null
@@ -359,13 +365,19 @@ export type Database = {
           break_end?: string | null
           break_start?: string | null
           clock_in?: string | null
+          clock_in_latitude?: number | null
+          clock_in_longitude?: number | null
           clock_out?: string | null
           created_at?: string | null
           date?: string
           id?: string
           late_status?: string | null
+          location_status?: string | null
+          matched_location_id?: string | null
+          matched_location_name?: string | null
           mood?: string | null
           notes?: string | null
+          outside_reason?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null
           tasks_completed?: string[] | null
@@ -376,13 +388,19 @@ export type Database = {
           break_end?: string | null
           break_start?: string | null
           clock_in?: string | null
+          clock_in_latitude?: number | null
+          clock_in_longitude?: number | null
           clock_out?: string | null
           created_at?: string | null
           date?: string
           id?: string
           late_status?: string | null
+          location_status?: string | null
+          matched_location_id?: string | null
+          matched_location_name?: string | null
           mood?: string | null
           notes?: string | null
+          outside_reason?: string | null
           photo_clock_in?: string | null
           photo_clock_out?: string | null
           tasks_completed?: string[] | null
@@ -390,6 +408,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "attendance_matched_location_id_fkey"
+            columns: ["matched_location_id"]
+            isOneToOne: false
+            referencedRelation: "office_locations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fk_attendance_user_profiles"
             columns: ["user_id"]
@@ -3753,6 +3778,42 @@ export type Database = {
           sent_at?: string | null
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      office_locations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius_meters?: number
+          updated_at?: string
         }
         Relationships: []
       }
