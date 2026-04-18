@@ -386,12 +386,31 @@ export function ClockInOut() {
         return;
       }
 
-      // Location validation ON - try to get GPS
+      // Location validation ON - GPS is MANDATORY
+      if (!navigator.geolocation) {
+        toast.error("Browser tidak mendukung GPS. Tidak bisa clock in.");
+        return;
+      }
+      // Check permission state if available
+      try {
+        if ((navigator as any).permissions?.query) {
+          const perm = await (navigator as any).permissions.query({ name: "geolocation" });
+          if (perm.state === "denied") {
+            toast.error("Izin lokasi ditolak. Aktifkan GPS & izinkan akses lokasi di browser, lalu coba lagi.");
+            return;
+          }
+        }
+      } catch {}
+
       let pos: GeolocationPosition;
       try {
         pos = await getCurrentPosition();
       } catch (e: any) {
-        toast.error(e.message || "Gagal mendapat lokasi. Aktifkan GPS dan izinkan akses lokasi.");
+        toast.error(
+          e?.message?.includes("denied") || e?.code === 1
+            ? "Izin lokasi ditolak. Anda harus mengaktifkan GPS untuk clock in."
+            : "Gagal mendapat lokasi GPS. Aktifkan GPS Anda dan coba lagi."
+        );
         return;
       }
       const { latitude: lat, longitude: lng } = pos.coords;

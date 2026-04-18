@@ -145,8 +145,39 @@ export default function SettingLocation() {
       if (error) throw error;
       return (data || []) as unknown as AttendanceRow[];
     },
-    refetchInterval: 30000, // auto-refresh every 30s
+    refetchInterval: 15000, // fallback poll every 15s
   });
+
+  // Realtime: subscribe to attendance changes for live monitoring
+  useEffect(() => {
+    const channel = supabase
+      .channel("setting-loc-attendance-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["setting-loc-attendance"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "office_locations" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["office-locations"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "company_settings" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["company-setting", "location_validation_enabled"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const filteredAttendance = useMemo(() => {
     return attendance.filter((a) => {
