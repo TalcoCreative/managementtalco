@@ -59,15 +59,16 @@ const today = () => format(new Date(), "yyyy-MM-dd");
 export default function SettingLocation() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isSuperAdmin, isLoading: permLoading } = usePermissions();
+  const { isSuperAdmin, canView, isLoading: permLoading } = usePermissions();
+  const hasAccess = isSuperAdmin || canView("setting_location");
 
   // ────── ACCESS GUARD ─────────────────────────────────────
   useEffect(() => {
-    if (!permLoading && !isSuperAdmin) {
-      toast.error("Hanya Super Admin yang dapat mengakses halaman ini");
+    if (!permLoading && !hasAccess) {
+      toast.error("Anda tidak memiliki akses ke halaman ini");
       navigate("/");
     }
-  }, [permLoading, isSuperAdmin, navigate]);
+  }, [permLoading, hasAccess, navigate]);
 
   // ────── GLOBAL TOGGLE ────────────────────────────────────
   const { data: globalSetting } = useQuery({
@@ -334,7 +335,7 @@ export default function SettingLocation() {
     return { lat, lng, radius: form.radius_meters };
   }, [form.latitude, form.longitude, form.radius_meters]);
 
-  if (permLoading || !isSuperAdmin) {
+  if (permLoading || !hasAccess) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
