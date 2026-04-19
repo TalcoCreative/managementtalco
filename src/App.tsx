@@ -78,6 +78,8 @@ import InstallApp from "./pages/InstallApp";
 import NotificationLog from "./pages/NotificationLog";
 import AdsBudget from "./pages/AdsBudget";
 import SettingLocation from "./pages/SettingLocation";
+import Invoices from "./pages/Invoices";
+import InvoiceTemplates from "./pages/InvoiceTemplates";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
@@ -128,6 +130,8 @@ const App = () => (
           <Route path="/meeting" element={<ProtectedRoute><Meeting /></ProtectedRoute>} />
           <Route path="/asset" element={<ProtectedRoute><Asset /></ProtectedRoute>} />
           <Route path="/letters" element={<ProtectedRoute><Letters /></ProtectedRoute>} />
+          <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+          <Route path="/settings/invoice-templates" element={<ProtectedRoute><InvoiceTemplates /></ProtectedRoute>} />
           <Route path="/kol-database" element={<ProtectedRoute><KolDatabase /></ProtectedRoute>} />
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />

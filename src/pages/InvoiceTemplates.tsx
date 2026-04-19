@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Building2, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { TemplateEditorDialog } from "@/components/invoices/TemplateEditorDialog";
-import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { InvoiceTemplate } from "@/lib/invoice-types";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -121,13 +124,25 @@ export default function InvoiceTemplates() {
 
         <TemplateEditorDialog open={creating} onOpenChange={setCreating} template={null} />
         <TemplateEditorDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} template={editing} />
-        <DeleteConfirmDialog
-          open={!!deleteTarget}
-          onOpenChange={(o) => !o && setDeleteTarget(null)}
-          onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-          title="Delete template?"
-          description={`"${deleteTarget?.name}" will be removed. Existing invoices keep their snapshot.`}
-        />
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete template?</AlertDialogTitle>
+              <AlertDialogDescription>
+                "{deleteTarget?.name}" will be removed. Existing invoices keep their snapshot.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
