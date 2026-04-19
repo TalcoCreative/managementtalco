@@ -3,7 +3,7 @@ import {
   Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
   UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
   Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
-  MessageSquare, CircleDollarSign, MapPin,
+  MessageSquare, CircleDollarSign, MapPin, ReceiptText,
 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -45,6 +45,7 @@ const employeeItems: NavItem[] = [
 const reportsItems: NavItem[] = [
   { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
   { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
+  { title: "Invoices", url: "/invoices", icon: ReceiptText, featureKey: "invoices" },
 ];
 
 // ── KOL ─────────────────────────────────────────────────
@@ -103,6 +104,7 @@ const systemItems: NavItem[] = [
   { title: "WA Notification Log", url: "/notification-log", icon: MessageSquare, featureKey: "notification_log" },
   { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
   { title: "Location Settings", url: "/setting-location", icon: MapPin, featureKey: "setting_location" },
+  { title: "Invoice Templates", url: "/settings/invoice-templates", icon: ReceiptText, featureKey: "invoice_templates" },
   { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
 ];
 

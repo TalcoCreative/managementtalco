@@ -2542,6 +2542,248 @@ export type Database = {
           },
         ]
       }
+      invoice_activity_logs: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id: string
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_activity_logs_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_activity_logs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_templates: {
+        Row: {
+          company_info: Json
+          created_at: string
+          created_by: string | null
+          default_notes: string | null
+          default_terms: string | null
+          entity_code: string
+          entity_name: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          logo_url: string | null
+          name: string
+          payment_methods: Json
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+        }
+        Insert: {
+          company_info?: Json
+          created_at?: string
+          created_by?: string | null
+          default_notes?: string | null
+          default_terms?: string | null
+          entity_code: string
+          entity_name: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          logo_url?: string | null
+          name: string
+          payment_methods?: Json
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Update: {
+          company_info?: Json
+          created_at?: string
+          created_by?: string | null
+          default_notes?: string | null
+          default_terms?: string | null
+          entity_code?: string
+          entity_name?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          logo_url?: string | null
+          name?: string
+          payment_methods?: Json
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          bill_to_address: string | null
+          bill_to_company: string | null
+          bill_to_email: string | null
+          bill_to_name: string
+          bill_to_phone: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          custom_logo_url: string | null
+          discount_amount: number
+          due_date: string | null
+          enabled_payment_method_ids: Json
+          id: string
+          invoice_number: string
+          issue_date: string
+          items: Json
+          letter_id: string | null
+          notes: string | null
+          paid_at: string | null
+          project_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_percent: number
+          template_id: string | null
+          template_snapshot: Json
+          terms: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          bill_to_address?: string | null
+          bill_to_company?: string | null
+          bill_to_email?: string | null
+          bill_to_name: string
+          bill_to_phone?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          custom_logo_url?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          enabled_payment_method_ids?: Json
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          items?: Json
+          letter_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percent?: number
+          template_id?: string | null
+          template_snapshot?: Json
+          terms?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          bill_to_address?: string | null
+          bill_to_company?: string | null
+          bill_to_email?: string | null
+          bill_to_name?: string
+          bill_to_phone?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          custom_logo_url?: string | null
+          discount_amount?: number
+          due_date?: string | null
+          enabled_payment_method_ids?: Json
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          items?: Json
+          letter_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          project_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percent?: number
+          template_id?: string | null
+          template_snapshot?: Json
+          terms?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kol_campaign_history: {
         Row: {
           action: string
