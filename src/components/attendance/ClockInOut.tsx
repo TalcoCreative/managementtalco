@@ -10,7 +10,13 @@ import { Clock, LogIn, LogOut, Camera, CheckCircle2, CalendarOff, Video, Loader2
 import { format, isAfter, set, differenceInMinutes } from "date-fns";
 import { AutoClockoutNotification } from "./AutoClockoutNotification";
 import { MoodSelector } from "./MoodSelector";
-import { getCurrentPosition, matchLocation, type OfficeLocationLite } from "@/lib/geo-utils";
+import {
+  getCurrentPosition,
+  getGeolocationErrorMessage,
+  getGeolocationPermissionState,
+  matchLocation,
+  type OfficeLocationLite,
+} from "@/lib/geo-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MapPin, AlertTriangle } from "lucide-react";
 
@@ -388,29 +394,21 @@ export function ClockInOut() {
 
       // Location validation ON - GPS is MANDATORY
       if (!navigator.geolocation) {
-        toast.error("Browser tidak mendukung GPS. Tidak bisa clock in.");
+        toast.error("Browser ini tidak mendukung akses lokasi, jadi clock in tidak bisa dilakukan.");
         return;
       }
-      // Check permission state if available
-      try {
-        if ((navigator as any).permissions?.query) {
-          const perm = await (navigator as any).permissions.query({ name: "geolocation" });
-          if (perm.state === "denied") {
-            toast.error("Izin lokasi ditolak. Aktifkan GPS & izinkan akses lokasi di browser, lalu coba lagi.");
-            return;
-          }
-        }
-      } catch {}
+
+      const permissionState = await getGeolocationPermissionState();
+      if (permissionState === "denied") {
+        toast.error("Izin lokasi sedang diblokir. Aktifkan kembali akses lokasi di browser/device Anda lalu coba lagi.");
+        return;
+      }
 
       let pos: GeolocationPosition;
       try {
         pos = await getCurrentPosition();
       } catch (e: any) {
-        toast.error(
-          e?.message?.includes("denied") || e?.code === 1
-            ? "Izin lokasi ditolak. Anda harus mengaktifkan GPS untuk clock in."
-            : "Gagal mendapat lokasi GPS. Aktifkan GPS Anda dan coba lagi."
-        );
+        toast.error(getGeolocationErrorMessage(e));
         return;
       }
       const { latitude: lat, longitude: lng } = pos.coords;
