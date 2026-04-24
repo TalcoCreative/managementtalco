@@ -372,13 +372,17 @@ export function ClockInOut() {
     try {
       setLoading(true);
 
-      // Check if location validation is globally enabled
+      // Check if location validation is globally enabled.
+      // Default to ON when the setting row is missing or unreadable so GPS is
+      // never silently skipped for non-super-admin users.
       const { data: locSetting } = await supabase
         .from("company_settings")
         .select("setting_value")
         .eq("setting_key", "location_validation_enabled")
         .maybeSingle();
-      const locationValidationOn = locSetting?.setting_value === "true";
+      const locationValidationOn = locSetting
+        ? locSetting.setting_value === "true"
+        : true;
 
       if (!locationValidationOn) {
         // Location validation off - just insert without GPS
