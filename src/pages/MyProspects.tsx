@@ -134,8 +134,19 @@ export default function MyProspects() {
                     <TableCell>{p.products?.name || "-"}</TableCell>
                     <TableCell>{formatRp(p.estimated_value)}</TableCell>
                     <TableCell>{formatRp(p.final_value)}</TableCell>
-                    <TableCell>
-                      <Badge className={`${STATUS_COLOR[p.status] || "bg-gray-500"} text-white`}>{p.status}</Badge>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, status: v })}>
+                        <SelectTrigger className="h-8 w-[140px]">
+                          <SelectValue>
+                            <Badge className={`${STATUS_COLOR[p.status] || "bg-gray-500"} text-white capitalize`}>{p.status}</Badge>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map(s => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       {p.deal_status ? <Badge variant="outline">{p.deal_status}</Badge> : "-"}
