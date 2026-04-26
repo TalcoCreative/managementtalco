@@ -84,6 +84,18 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
     source: prospect.source,
     pic_id: prospect.pic_id || "",
     temperature: prospect.temperature || "warm",
+    product_id: prospect.product_id || "",
+    estimated_value: prospect.estimated_value?.toString() || "",
+    final_value: prospect.final_value?.toString() || "",
+    deal_status: prospect.deal_status || "",
+  });
+
+  const { data: productsList } = useQuery({
+    queryKey: ["products-active-detail"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("products").select("id, name").eq("is_active", true).order("name");
+      return data || [];
+    },
   });
 
   const { data: comments, isLoading: commentsLoading } = useQuery({
@@ -170,7 +182,11 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
           source: editData.source,
           pic_id: editData.pic_id || null,
           temperature: editData.temperature,
-        })
+          product_id: editData.product_id || null,
+          estimated_value: editData.estimated_value ? Number(editData.estimated_value) : null,
+          final_value: editData.final_value ? Number(editData.final_value) : null,
+          deal_status: editData.deal_status || null,
+        } as any)
         .eq("id", prospect.id);
 
       if (error) throw error;

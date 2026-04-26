@@ -70,7 +70,7 @@ export default function Prospects() {
     },
   });
 
-  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing') || userRoles?.includes('sales');
 
   // Redirect if no access
   if (!rolesLoading && !canAccessSales) {
