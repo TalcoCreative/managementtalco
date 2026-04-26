@@ -287,6 +287,10 @@ export function ProspectDetailDialog({ prospect, open, onOpenChange }: ProspectD
                     source: prospect.source,
                     pic_id: prospect.pic_id || "",
                     temperature: prospect.temperature || "warm",
+                    product_id: prospect.product_id || "",
+                    estimated_value: prospect.estimated_value?.toString() || "",
+                    final_value: prospect.final_value?.toString() || "",
+                    deal_status: prospect.deal_status || "",
                   });
                 }
                 setIsEditing(!isEditing);
