@@ -89,6 +89,10 @@ const financeItems: NavItem[] = [
 const salesItems: NavItem[] = [
   { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
   { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
+  { title: "My Prospects", url: "/my-prospects", icon: UserPlus, featureKey: "my_prospects" },
+  { title: "My Sales Dashboard", url: "/my-sales-dashboard", icon: TrendingUp, featureKey: "my_sales_dashboard" },
+  { title: "My Commission", url: "/my-commission", icon: Wallet, featureKey: "my_commission" },
+  { title: "Sales Admin", url: "/sales-admin", icon: CircleDollarSign, featureKey: "sales_admin" },
   { title: "Ads Budget", url: "/ads-budget", icon: CircleDollarSign, featureKey: "ads_budget" },
 ];
 
