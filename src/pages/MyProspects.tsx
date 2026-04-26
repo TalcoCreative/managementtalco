@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { CreateProspectDialog } from "@/components/prospects/CreateProspectDialog";
 import { ProspectDetailDialog } from "@/components/prospects/ProspectDetailDialog";
+
+const STATUS_OPTIONS = [
+  { value: "new", label: "New" },
+  { value: "contacted", label: "Contacted" },
+  { value: "meeting", label: "Meeting" },
+  { value: "proposal", label: "Proposal" },
+  { value: "negotiation", label: "Negotiation" },
+  { value: "won", label: "Won" },
+  { value: "lost", label: "Lost" },
+];
 
 const STATUS_COLOR: Record<string, string> = {
   new: "bg-blue-500", contacted: "bg-yellow-500", meeting: "bg-purple-500",
@@ -30,6 +42,8 @@ export default function MyProspects() {
     },
   });
 
+  const qc = useQueryClient();
+
   const { data: prospects, isLoading } = useQuery({
     queryKey: ["my-prospects", userId],
     queryFn: async () => {
@@ -43,6 +57,18 @@ export default function MyProspects() {
       return data || [];
     },
     enabled: !!userId,
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await (supabase as any).from("prospects").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-prospects", userId] });
+      toast.success("Status updated");
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to update"),
   });
 
   const filtered = (prospects || []).filter((p: any) =>
@@ -108,8 +134,19 @@ export default function MyProspects() {
                     <TableCell>{p.products?.name || "-"}</TableCell>
                     <TableCell>{formatRp(p.estimated_value)}</TableCell>
                     <TableCell>{formatRp(p.final_value)}</TableCell>
-                    <TableCell>
-                      <Badge className={`${STATUS_COLOR[p.status] || "bg-gray-500"} text-white`}>{p.status}</Badge>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, status: v })}>
+                        <SelectTrigger className="h-8 w-[140px]">
+                          <SelectValue>
+                            <Badge className={`${STATUS_COLOR[p.status] || "bg-gray-500"} text-white capitalize`}>{p.status}</Badge>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map(s => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       {p.deal_status ? <Badge variant="outline">{p.deal_status}</Badge> : "-"}
