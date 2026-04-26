@@ -42,6 +42,8 @@ export default function MyProspects() {
     },
   });
 
+  const qc = useQueryClient();
+
   const { data: prospects, isLoading } = useQuery({
     queryKey: ["my-prospects", userId],
     queryFn: async () => {
@@ -55,6 +57,18 @@ export default function MyProspects() {
       return data || [];
     },
     enabled: !!userId,
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await (supabase as any).from("prospects").update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-prospects", userId] });
+      toast.success("Status updated");
+    },
+    onError: (e: any) => toast.error(e.message || "Failed to update"),
   });
 
   const filtered = (prospects || []).filter((p: any) =>
