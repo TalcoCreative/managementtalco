@@ -75,6 +75,10 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
     features: [
       { key: "prospects", label: "Prospects" },
       { key: "sales_analytics", label: "Sales Analytics" },
+      { key: "my_prospects", label: "My Prospects" },
+      { key: "my_sales_dashboard", label: "My Sales Dashboard" },
+      { key: "my_commission", label: "My Commission" },
+      { key: "sales_admin", label: "Sales Admin" },
     ],
   },
   {
@@ -136,6 +140,10 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/prospects": "prospects",
   "/prospects/history": "prospects",
   "/sales/dashboard": "sales_analytics",
+  "/my-prospects": "my_prospects",
+  "/my-sales-dashboard": "my_sales_dashboard",
+  "/my-commission": "my_commission",
+  "/sales-admin": "sales_admin",
   "/ceo-dashboard": "ceo_dashboard",
   "/system/email-settings": "email_settings",
   "/system/roles": "role_management",

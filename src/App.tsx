@@ -27,6 +27,10 @@ import MyReimbursement from "./pages/MyReimbursement";
 import Prospects from "./pages/Prospects";
 import ProspectHistory from "./pages/ProspectHistory";
 import SalesDashboard from "./pages/SalesDashboard";
+import MyProspects from "./pages/MyProspects";
+import MySalesDashboard from "./pages/MySalesDashboard";
+import MyCommission from "./pages/MyCommission";
+import SalesAdmin from "./pages/SalesAdmin";
 import Performance from "./pages/Performance";
 import Recruitment from "./pages/Recruitment";
 import RecruitmentForms from "./pages/RecruitmentForms";
@@ -118,6 +122,10 @@ const App = () => (
           <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
           <Route path="/prospects/history" element={<ProtectedRoute><ProspectHistory /></ProtectedRoute>} />
           <Route path="/sales/dashboard" element={<ProtectedRoute><SalesDashboard /></ProtectedRoute>} />
+          <Route path="/my-prospects" element={<ProtectedRoute><MyProspects /></ProtectedRoute>} />
+          <Route path="/my-sales-dashboard" element={<ProtectedRoute><MySalesDashboard /></ProtectedRoute>} />
+          <Route path="/my-commission" element={<ProtectedRoute><MyCommission /></ProtectedRoute>} />
+          <Route path="/sales-admin" element={<ProtectedRoute><SalesAdmin /></ProtectedRoute>} />
           <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
           <Route path="/recruitment" element={<ProtectedRoute><Recruitment /></ProtectedRoute>} />
           <Route path="/recruitment/forms" element={<ProtectedRoute><RecruitmentForms /></ProtectedRoute>} />

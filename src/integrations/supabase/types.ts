@@ -1240,6 +1240,136 @@ export type Database = {
           },
         ]
       }
+      commission_rules: {
+        Row: {
+          commission_percentage: number
+          created_at: string
+          id: string
+          product_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          commission_percentage: number
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          commission_percentage?: number
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_rules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      commissions: {
+        Row: {
+          approved_at: string | null
+          commission_amount: number
+          commission_percentage: number
+          created_at: string
+          deal_value: number
+          id: string
+          notes: string | null
+          paid_at: string | null
+          product_id: string | null
+          prospect_id: string
+          sales_id: string
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          commission_amount: number
+          commission_percentage: number
+          created_at?: string
+          deal_value: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          product_id?: string | null
+          prospect_id: string
+          sales_id: string
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          commission_amount?: number
+          commission_percentage?: number
+          created_at?: string
+          deal_value?: number
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          product_id?: string | null
+          prospect_id?: string
+          sales_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: true
+            referencedRelation: "prospects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_sales_id_fkey"
+            columns: ["sales_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           id: string
@@ -4246,6 +4376,36 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          created_at: string
+          default_commission_percentage: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_commission_percentage?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_commission_percentage?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -4513,12 +4673,17 @@ export type Database = {
           contact_name: string
           created_at: string
           created_by: string
+          deal_status: string | null
           email: string | null
+          estimated_value: number | null
+          final_value: number | null
           id: string
           location: string | null
           needs: string | null
+          owner_id: string | null
           phone: string | null
           pic_id: string | null
+          product_id: string | null
           product_service: string | null
           source: string
           status: string
@@ -4530,12 +4695,17 @@ export type Database = {
           contact_name: string
           created_at?: string
           created_by: string
+          deal_status?: string | null
           email?: string | null
+          estimated_value?: number | null
+          final_value?: number | null
           id?: string
           location?: string | null
           needs?: string | null
+          owner_id?: string | null
           phone?: string | null
           pic_id?: string | null
+          product_id?: string | null
           product_service?: string | null
           source: string
           status?: string
@@ -4547,12 +4717,17 @@ export type Database = {
           contact_name?: string
           created_at?: string
           created_by?: string
+          deal_status?: string | null
           email?: string | null
+          estimated_value?: number | null
+          final_value?: number | null
           id?: string
           location?: string | null
           needs?: string | null
+          owner_id?: string | null
           phone?: string | null
           pic_id?: string | null
+          product_id?: string | null
           product_service?: string | null
           source?: string
           status?: string
@@ -4568,10 +4743,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prospects_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prospects_pic_id_fkey"
             columns: ["pic_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospects_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -6364,6 +6553,57 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawals: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          id: string
+          notes: string | null
+          processed_by: string | null
+          processed_date: string | null
+          request_date: string
+          sales_id: string
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          processed_date?: string | null
+          request_date?: string
+          sales_id: string
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          id?: string
+          notes?: string | null
+          processed_by?: string | null
+          processed_date?: string | null
+          request_date?: string
+          sales_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawals_sales_id_fkey"
+            columns: ["sales_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -6401,6 +6641,10 @@ export type Database = {
       recalculate_late_status: {
         Args: { thresh_hour: number; thresh_minute: number }
         Returns: undefined
+      }
+      resolve_commission_percentage: {
+        Args: { _product_id: string; _user_id: string }
+        Returns: number
       }
     }
     Enums: {
