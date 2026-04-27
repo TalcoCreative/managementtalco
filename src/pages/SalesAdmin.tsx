@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, CheckCircle2, XCircle, DollarSign } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, XCircle, DollarSign, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -28,6 +28,8 @@ const BADGE: Record<string, string> = {
 export default function SalesAdmin() {
   const { isSuperAdmin, isLoading } = usePermissions();
   const qc = useQueryClient();
+  const [productFilter, setProductFilter] = useState("all");
+  const [salesFilter, setSalesFilter] = useState("all");
 
   // ---- Queries ----
   const { data: products } = useQuery({
@@ -63,6 +65,25 @@ export default function SalesAdmin() {
       .select("*, profiles!withdrawals_sales_id_fkey(full_name)")
       .order("request_date", { ascending: false })).data || [],
   });
+  const { data: wonProspects } = useQuery({
+    queryKey: ["admin-won-prospects"],
+    queryFn: async () => (await (supabase as any)
+      .from("prospects")
+      .select(`
+        id,
+        contact_name,
+        company,
+        final_value,
+        status,
+        deal_status,
+        won_approved_at,
+        products(name),
+        owner:profiles!prospects_owner_id_fkey(full_name),
+        pic:profiles!prospects_pic_id_fkey(full_name)
+      `)
+      .eq("status", "won")
+      .order("updated_at", { ascending: false })).data || [],
+  });
 
   const globalPct = settings?.find((s: any) => s.setting_key === "default_commission_percentage")?.setting_value || "10";
 
@@ -85,6 +106,27 @@ export default function SalesAdmin() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-commissions"] }); toast.success("Updated"); },
+  });
+
+  const approveWon = useMutation({
+    mutationFn: async (prospectId: string) => {
+      const sessionRes = await supabase.auth.getSession();
+      const { error } = await (supabase as any)
+        .from("prospects")
+        .update({
+          won_approved_at: new Date().toISOString(),
+          won_approved_by: sessionRes.data.session?.user.id,
+        })
+        .eq("id", prospectId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-won-prospects"] });
+      qc.invalidateQueries({ queryKey: ["admin-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-dash-commissions"] });
+      toast.success("Won deal approved");
+    },
   });
 
   const updateWithdrawal = useMutation({
@@ -129,11 +171,24 @@ export default function SalesAdmin() {
     mutationFn: async () => {
       if (!ruleForm.user_id && !ruleForm.product_id) throw new Error("Select user and/or product");
       if (!ruleForm.commission_percentage) throw new Error("Enter percentage");
-      const { error } = await (supabase as any).from("commission_rules").upsert({
+      const payload = {
         user_id: ruleForm.user_id || null,
         product_id: ruleForm.product_id || null,
         commission_percentage: Number(ruleForm.commission_percentage),
-      }, { onConflict: "user_id,product_id" } as any);
+      };
+      const existingQuery = (supabase as any)
+        .from("commission_rules")
+        .select("id")
+        .eq("commission_percentage", Number(ruleForm.commission_percentage));
+
+      const userFilteredQuery = ruleForm.user_id ? existingQuery.eq("user_id", ruleForm.user_id) : existingQuery.is("user_id", null);
+      const finalQuery = ruleForm.product_id ? userFilteredQuery.eq("product_id", ruleForm.product_id) : userFilteredQuery.is("product_id", null);
+      const { data: existing, error: existingError } = await finalQuery.maybeSingle();
+      if (existingError) throw existingError;
+
+      const { error } = existing?.id
+        ? await (supabase as any).from("commission_rules").update(payload).eq("id", existing.id)
+        : await (supabase as any).from("commission_rules").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -158,6 +213,16 @@ export default function SalesAdmin() {
   const totalLiability = (commissions || []).filter((c: any) => c.status !== "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
   const totalPaid = (commissions || []).filter((c: any) => c.status === "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
   const pendingWithdrawals = (withdrawals || []).filter((w: any) => w.status === "requested").length;
+  const filteredWonProspects = useMemo(() => {
+    return (wonProspects || []).filter((item: any) => {
+      const matchProduct = productFilter === "all" || item.products?.name === productFilter;
+      const ownerName = item.owner?.full_name || item.pic?.full_name || "-";
+      const matchSales = salesFilter === "all" || ownerName === salesFilter;
+      return matchProduct && matchSales;
+    });
+  }, [wonProspects, productFilter, salesFilter]);
+  const salesNames = Array.from(new Set((wonProspects || []).map((item: any) => item.owner?.full_name || item.pic?.full_name).filter(Boolean)));
+  const productNames = Array.from(new Set((products || []).map((item: any) => item.name).filter(Boolean)));
 
   return (
     <AppLayout>
