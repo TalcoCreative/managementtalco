@@ -171,23 +171,36 @@ export default function SalesAdmin() {
     mutationFn: async () => {
       if (!ruleForm.user_id && !ruleForm.product_id) throw new Error("Select user and/or product");
       if (!ruleForm.commission_percentage) throw new Error("Enter percentage");
+
       const payload = {
         user_id: ruleForm.user_id || null,
         product_id: ruleForm.product_id || null,
         commission_percentage: Number(ruleForm.commission_percentage),
       };
-      const existingQuery = (supabase as any)
-        .from("commission_rules")
-        .select("id");
 
-      const userFilteredQuery = ruleForm.user_id ? existingQuery.eq("user_id", ruleForm.user_id) : existingQuery.is("user_id", null);
-      const finalQuery = ruleForm.product_id ? userFilteredQuery.eq("product_id", ruleForm.product_id) : userFilteredQuery.is("product_id", null);
-      const { data: existing, error: existingError } = await finalQuery.maybeSingle();
-      if (existingError) throw existingError;
+      let error = null as any;
 
-      const { error } = existing?.id
-        ? await (supabase as any).from("commission_rules").update(payload).eq("id", existing.id)
-        : await (supabase as any).from("commission_rules").insert(payload);
+      if (ruleForm.user_id && ruleForm.product_id) {
+        const result = await (supabase as any)
+          .from("commission_rules")
+          .upsert(payload, { onConflict: "user_id,product_id" });
+        error = result.error;
+      } else {
+        const existingQuery = (supabase as any)
+          .from("commission_rules")
+          .select("id");
+
+        const userFilteredQuery = ruleForm.user_id ? existingQuery.eq("user_id", ruleForm.user_id) : existingQuery.is("user_id", null);
+        const finalQuery = ruleForm.product_id ? userFilteredQuery.eq("product_id", ruleForm.product_id) : userFilteredQuery.is("product_id", null);
+        const { data: existing, error: existingError } = await finalQuery.maybeSingle();
+        if (existingError) throw existingError;
+
+        const result = existing?.id
+          ? await (supabase as any).from("commission_rules").update(payload).eq("id", existing.id)
+          : await (supabase as any).from("commission_rules").insert(payload);
+        error = result.error;
+      }
+
       if (error) throw error;
     },
     onSuccess: () => {
