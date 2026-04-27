@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, CheckCircle2, XCircle, DollarSign, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, XCircle, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -178,8 +178,7 @@ export default function SalesAdmin() {
       };
       const existingQuery = (supabase as any)
         .from("commission_rules")
-        .select("id")
-        .eq("commission_percentage", Number(ruleForm.commission_percentage));
+        .select("id");
 
       const userFilteredQuery = ruleForm.user_id ? existingQuery.eq("user_id", ruleForm.user_id) : existingQuery.is("user_id", null);
       const finalQuery = ruleForm.product_id ? userFilteredQuery.eq("product_id", ruleForm.product_id) : userFilteredQuery.is("product_id", null);
@@ -206,9 +205,6 @@ export default function SalesAdmin() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-rules"] }); toast.success("Deleted"); },
   });
 
-  if (isLoading) return <AppLayout><div className="p-8">Loading...</div></AppLayout>;
-  if (!isSuperAdmin) return <AppLayout><div className="p-8 text-center text-muted-foreground">Super admin only.</div></AppLayout>;
-
   // ---- Aggregate stats ----
   const totalLiability = (commissions || []).filter((c: any) => c.status !== "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
   const totalPaid = (commissions || []).filter((c: any) => c.status === "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
@@ -223,6 +219,9 @@ export default function SalesAdmin() {
   }, [wonProspects, productFilter, salesFilter]);
   const salesNames = Array.from(new Set((wonProspects || []).map((item: any) => item.owner?.full_name || item.pic?.full_name).filter(Boolean)));
   const productNames = Array.from(new Set((products || []).map((item: any) => item.name).filter(Boolean)));
+
+  if (isLoading) return <AppLayout><div className="p-8">Loading...</div></AppLayout>;
+  if (!isSuperAdmin) return <AppLayout><div className="p-8 text-center text-muted-foreground">Super admin only.</div></AppLayout>;
 
   return (
     <AppLayout>
