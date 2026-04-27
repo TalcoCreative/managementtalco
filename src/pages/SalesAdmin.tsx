@@ -259,14 +259,14 @@ export default function SalesAdmin() {
                     <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All sales" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All sales</SelectItem>
-                      {salesNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                      {salesNames.map((name) => <SelectItem key={String(name)} value={String(name)}>{String(name)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <Select value={productFilter} onValueChange={setProductFilter}>
                     <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All products" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All products</SelectItem>
-                      {productNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                      {productNames.map((name) => <SelectItem key={String(name)} value={String(name)}>{String(name)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
