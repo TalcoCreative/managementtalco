@@ -128,6 +128,7 @@ const moreGroups: MoreGroup[] = [
       { title: "Profile", url: "/profile-settings", featureKey: "profile_settings", icon: User, color: "hsl(222,72%,52%)" },
       { title: "Email Settings", url: "/system/email-settings", featureKey: "email_settings", icon: Mail, color: "hsl(222,10%,48%)" },
       { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
+      { title: "Location", url: "/setting-location", featureKey: "setting_location", icon: MapPin, color: "hsl(330,60%,55%)" },
       { title: "Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
     ],
   },
