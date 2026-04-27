@@ -110,6 +110,10 @@ const moreGroups: MoreGroup[] = [
     items: [
       { title: "Sales Analytics", url: "/sales/dashboard", featureKey: "sales_analytics", icon: TrendingUp, color: "hsl(205,72%,52%)" },
       { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: UserPlus, color: "hsl(330,60%,55%)" },
+      { title: "My Prospects", url: "/my-prospects", featureKey: "my_prospects", icon: UserPlus, color: "hsl(280,60%,55%)" },
+      { title: "My Sales", url: "/my-sales-dashboard", featureKey: "my_sales_dashboard", icon: TrendingUp, color: "hsl(152,48%,46%)" },
+      { title: "My Commission", url: "/my-commission", featureKey: "my_commission", icon: Wallet, color: "hsl(38,82%,52%)" },
+      { title: "Sales Admin", url: "/sales-admin", featureKey: "sales_admin", icon: CircleDollarSign, color: "hsl(0,62%,54%)" },
     ],
   },
   {
