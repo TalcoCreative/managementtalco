@@ -4,7 +4,7 @@ import {
   Palette, Hammer, UserCog, LayoutDashboard, TrendingUp, DollarSign, Settings,
   Mail, Shield, Wrench, Target, Search, Building2, PieChart, GraduationCap,
   Star, Sparkles, Share2, CalendarHeart, Crown, Scale, UserPlus, CalendarClock,
-  Wallet, UserSearch, ClipboardCheck, BarChart2, User,
+  Wallet, UserSearch, ClipboardCheck, BarChart2, User, MapPin, CircleDollarSign,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -110,6 +110,10 @@ const moreGroups: MoreGroup[] = [
     items: [
       { title: "Sales Analytics", url: "/sales/dashboard", featureKey: "sales_analytics", icon: TrendingUp, color: "hsl(205,72%,52%)" },
       { title: "Prospects", url: "/prospects", featureKey: "prospects", icon: UserPlus, color: "hsl(330,60%,55%)" },
+      { title: "My Prospects", url: "/my-prospects", featureKey: "my_prospects", icon: UserPlus, color: "hsl(280,60%,55%)" },
+      { title: "My Sales", url: "/my-sales-dashboard", featureKey: "my_sales_dashboard", icon: TrendingUp, color: "hsl(152,48%,46%)" },
+      { title: "My Commission", url: "/my-commission", featureKey: "my_commission", icon: Wallet, color: "hsl(38,82%,52%)" },
+      { title: "Sales Admin", url: "/sales-admin", featureKey: "sales_admin", icon: CircleDollarSign, color: "hsl(0,62%,54%)" },
     ],
   },
   {
@@ -124,6 +128,7 @@ const moreGroups: MoreGroup[] = [
       { title: "Profile", url: "/profile-settings", featureKey: "profile_settings", icon: User, color: "hsl(222,72%,52%)" },
       { title: "Email Settings", url: "/system/email-settings", featureKey: "email_settings", icon: Mail, color: "hsl(222,10%,48%)" },
       { title: "Role & Access", url: "/system/roles", featureKey: "role_management", icon: Shield, color: "hsl(152,48%,46%)" },
+      { title: "Location", url: "/setting-location", featureKey: "setting_location", icon: MapPin, color: "hsl(330,60%,55%)" },
       { title: "Settings", url: "/system/settings", featureKey: "system_settings", icon: Settings, color: "hsl(222,10%,48%)" },
     ],
   },
