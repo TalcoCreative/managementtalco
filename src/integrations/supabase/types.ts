@@ -4689,6 +4689,8 @@ export type Database = {
           status: string
           temperature: string | null
           updated_at: string
+          won_approved_at: string | null
+          won_approved_by: string | null
         }
         Insert: {
           company?: string | null
@@ -4711,6 +4713,8 @@ export type Database = {
           status?: string
           temperature?: string | null
           updated_at?: string
+          won_approved_at?: string | null
+          won_approved_by?: string | null
         }
         Update: {
           company?: string | null
@@ -4733,6 +4737,8 @@ export type Database = {
           status?: string
           temperature?: string | null
           updated_at?: string
+          won_approved_at?: string | null
+          won_approved_by?: string | null
         }
         Relationships: [
           {
