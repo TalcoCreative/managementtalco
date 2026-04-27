@@ -92,7 +92,7 @@ export function CreateProspectDialog({ open, onOpenChange, salesMode }: CreatePr
         needs: formData.needs || null,
         product_service: formData.product_service || null,
         source: formData.source,
-        pic_id: formData.pic_id || null,
+        pic_id: formData.pic_id || session.session.user.id,
         product_id: formData.product_id || null,
         estimated_value: formData.estimated_value ? Number(formData.estimated_value) : null,
         owner_id: session.session.user.id,
