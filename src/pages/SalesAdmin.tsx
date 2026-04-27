@@ -240,12 +240,82 @@ export default function SalesAdmin() {
 
         <Tabs defaultValue="commissions">
           <TabsList>
+            <TabsTrigger value="won-history">Won History</TabsTrigger>
             <TabsTrigger value="commissions">Commissions</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="rules">Commission Rules</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="won-history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Won Deal History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <Select value={salesFilter} onValueChange={setSalesFilter}>
+                    <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All sales" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All sales</SelectItem>
+                      {salesNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={productFilter} onValueChange={setProductFilter}>
+                    <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All products" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All products</SelectItem>
+                      {productNames.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sales</TableHead>
+                      <TableHead>Prospect</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Final Value</TableHead>
+                      <TableHead>Deal</TableHead>
+                      <TableHead>Approval</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWonProspects.length === 0 ? (
+                      <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No won deals found</TableCell></TableRow>
+                    ) : filteredWonProspects.map((item: any) => {
+                      const salesName = item.owner?.full_name || item.pic?.full_name || "-";
+                      const approved = Boolean(item.won_approved_at);
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>{salesName}</TableCell>
+                          <TableCell>{item.contact_name}<div className="text-xs text-muted-foreground">{item.company || "-"}</div></TableCell>
+                          <TableCell>{item.products?.name || "-"}</TableCell>
+                          <TableCell className="font-semibold">{formatRp(Number(item.final_value) || 0)}</TableCell>
+                          <TableCell><Badge className={`${BADGE.approved} text-white capitalize`}>{item.deal_status || "-"}</Badge></TableCell>
+                          <TableCell>
+                            {approved ? (
+                              <div className="text-xs text-muted-foreground">Approved {format(new Date(item.won_approved_at), "dd MMM yyyy HH:mm")}</div>
+                            ) : (
+                              <Badge className={`${BADGE.pending} text-white`}>Waiting Admin</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" disabled={approved || approveWon.isPending} onClick={() => approveWon.mutate(item.id)}>
+                              <CheckCircle2 className="mr-1 h-3.5 w-3.5" />Confirm Won
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Commissions */}
           <TabsContent value="commissions">
