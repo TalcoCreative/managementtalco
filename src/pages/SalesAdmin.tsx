@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -28,6 +28,8 @@ const BADGE: Record<string, string> = {
 export default function SalesAdmin() {
   const { isSuperAdmin, isLoading } = usePermissions();
   const qc = useQueryClient();
+  const [productFilter, setProductFilter] = useState("all");
+  const [salesFilter, setSalesFilter] = useState("all");
 
   // ---- Queries ----
   const { data: products } = useQuery({
@@ -63,6 +65,25 @@ export default function SalesAdmin() {
       .select("*, profiles!withdrawals_sales_id_fkey(full_name)")
       .order("request_date", { ascending: false })).data || [],
   });
+  const { data: wonProspects } = useQuery({
+    queryKey: ["admin-won-prospects"],
+    queryFn: async () => (await (supabase as any)
+      .from("prospects")
+      .select(`
+        id,
+        contact_name,
+        company,
+        final_value,
+        status,
+        deal_status,
+        won_approved_at,
+        products(name),
+        owner:profiles!prospects_owner_id_fkey(full_name),
+        pic:profiles!prospects_pic_id_fkey(full_name)
+      `)
+      .eq("status", "won")
+      .order("updated_at", { ascending: false })).data || [],
+  });
 
   const globalPct = settings?.find((s: any) => s.setting_key === "default_commission_percentage")?.setting_value || "10";
 
@@ -85,6 +106,27 @@ export default function SalesAdmin() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-commissions"] }); toast.success("Updated"); },
+  });
+
+  const approveWon = useMutation({
+    mutationFn: async (prospectId: string) => {
+      const sessionRes = await supabase.auth.getSession();
+      const { error } = await (supabase as any)
+        .from("prospects")
+        .update({
+          won_approved_at: new Date().toISOString(),
+          won_approved_by: sessionRes.data.session?.user.id,
+        })
+        .eq("id", prospectId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-won-prospects"] });
+      qc.invalidateQueries({ queryKey: ["admin-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-commissions"] });
+      qc.invalidateQueries({ queryKey: ["my-dash-commissions"] });
+      toast.success("Won deal approved");
+    },
   });
 
   const updateWithdrawal = useMutation({
@@ -129,11 +171,23 @@ export default function SalesAdmin() {
     mutationFn: async () => {
       if (!ruleForm.user_id && !ruleForm.product_id) throw new Error("Select user and/or product");
       if (!ruleForm.commission_percentage) throw new Error("Enter percentage");
-      const { error } = await (supabase as any).from("commission_rules").upsert({
+      const payload = {
         user_id: ruleForm.user_id || null,
         product_id: ruleForm.product_id || null,
         commission_percentage: Number(ruleForm.commission_percentage),
-      }, { onConflict: "user_id,product_id" } as any);
+      };
+      const existingQuery = (supabase as any)
+        .from("commission_rules")
+        .select("id");
+
+      const userFilteredQuery = ruleForm.user_id ? existingQuery.eq("user_id", ruleForm.user_id) : existingQuery.is("user_id", null);
+      const finalQuery = ruleForm.product_id ? userFilteredQuery.eq("product_id", ruleForm.product_id) : userFilteredQuery.is("product_id", null);
+      const { data: existing, error: existingError } = await finalQuery.maybeSingle();
+      if (existingError) throw existingError;
+
+      const { error } = existing?.id
+        ? await (supabase as any).from("commission_rules").update(payload).eq("id", existing.id)
+        : await (supabase as any).from("commission_rules").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -151,13 +205,23 @@ export default function SalesAdmin() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-rules"] }); toast.success("Deleted"); },
   });
 
-  if (isLoading) return <AppLayout><div className="p-8">Loading...</div></AppLayout>;
-  if (!isSuperAdmin) return <AppLayout><div className="p-8 text-center text-muted-foreground">Super admin only.</div></AppLayout>;
-
   // ---- Aggregate stats ----
   const totalLiability = (commissions || []).filter((c: any) => c.status !== "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
   const totalPaid = (commissions || []).filter((c: any) => c.status === "paid").reduce((s: number, c: any) => s + Number(c.commission_amount), 0);
   const pendingWithdrawals = (withdrawals || []).filter((w: any) => w.status === "requested").length;
+  const filteredWonProspects = useMemo(() => {
+    return (wonProspects || []).filter((item: any) => {
+      const matchProduct = productFilter === "all" || item.products?.name === productFilter;
+      const ownerName = item.owner?.full_name || item.pic?.full_name || "-";
+      const matchSales = salesFilter === "all" || ownerName === salesFilter;
+      return matchProduct && matchSales;
+    });
+  }, [wonProspects, productFilter, salesFilter]);
+  const salesNames = Array.from(new Set((wonProspects || []).map((item: any) => item.owner?.full_name || item.pic?.full_name).filter(Boolean)));
+  const productNames = Array.from(new Set((products || []).map((item: any) => item.name).filter(Boolean)));
+
+  if (isLoading) return <AppLayout><div className="p-8">Loading...</div></AppLayout>;
+  if (!isSuperAdmin) return <AppLayout><div className="p-8 text-center text-muted-foreground">Super admin only.</div></AppLayout>;
 
   return (
     <AppLayout>
@@ -176,12 +240,82 @@ export default function SalesAdmin() {
 
         <Tabs defaultValue="commissions">
           <TabsList>
+            <TabsTrigger value="won-history">Won History</TabsTrigger>
             <TabsTrigger value="commissions">Commissions</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="rules">Commission Rules</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="won-history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Won Deal History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <Select value={salesFilter} onValueChange={setSalesFilter}>
+                    <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All sales" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All sales</SelectItem>
+                      {salesNames.map((name) => <SelectItem key={String(name)} value={String(name)}>{String(name)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={productFilter} onValueChange={setProductFilter}>
+                    <SelectTrigger className="w-full md:w-56"><SelectValue placeholder="All products" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All products</SelectItem>
+                      {productNames.map((name) => <SelectItem key={String(name)} value={String(name)}>{String(name)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sales</TableHead>
+                      <TableHead>Prospect</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Final Value</TableHead>
+                      <TableHead>Deal</TableHead>
+                      <TableHead>Approval</TableHead>
+                      <TableHead>Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWonProspects.length === 0 ? (
+                      <TableRow><TableCell colSpan={7} className="py-8 text-center text-muted-foreground">No won deals found</TableCell></TableRow>
+                    ) : filteredWonProspects.map((item: any) => {
+                      const salesName = item.owner?.full_name || item.pic?.full_name || "-";
+                      const approved = Boolean(item.won_approved_at);
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>{salesName}</TableCell>
+                          <TableCell>{item.contact_name}<div className="text-xs text-muted-foreground">{item.company || "-"}</div></TableCell>
+                          <TableCell>{item.products?.name || "-"}</TableCell>
+                          <TableCell className="font-semibold">{formatRp(Number(item.final_value) || 0)}</TableCell>
+                          <TableCell><Badge className={`${BADGE.approved} text-white capitalize`}>{item.deal_status || "-"}</Badge></TableCell>
+                          <TableCell>
+                            {approved ? (
+                              <div className="text-xs text-muted-foreground">Approved {format(new Date(item.won_approved_at), "dd MMM yyyy HH:mm")}</div>
+                            ) : (
+                              <Badge className={`${BADGE.pending} text-white`}>Waiting Admin</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button size="sm" disabled={approved || approveWon.isPending} onClick={() => approveWon.mutate(item.id)}>
+                              <CheckCircle2 className="mr-1 h-3.5 w-3.5" />Confirm Won
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Commissions */}
           <TabsContent value="commissions">

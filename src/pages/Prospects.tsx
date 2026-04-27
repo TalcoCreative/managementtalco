@@ -323,7 +323,7 @@ export default function Prospects() {
     for (const row of data) {
       if (!row.contact_name || !row.source) continue;
       
-      await supabase.from("prospects").insert({
+        await supabase.from("prospects").insert({
         contact_name: row.contact_name,
         company: row.company || null,
         email: row.email || null,
@@ -334,6 +334,8 @@ export default function Prospects() {
         needs: row.needs || null,
         status: row.status || 'new',
         temperature: row.temperature || 'warm',
+          owner_id: session.session.user.id,
+          pic_id: session.session.user.id,
         created_by: session.session.user.id,
       });
     }
@@ -526,7 +528,7 @@ export default function Prospects() {
                       </TableCell>
                       <TableCell>{getSourceLabel(prospect.source)}</TableCell>
                       <TableCell>{prospect.product_service}</TableCell>
-                      <TableCell>{prospect.pic?.full_name || "-"}</TableCell>
+                       <TableCell>{prospect.pic?.full_name || prospect.created_by_profile?.full_name || "-"}</TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={prospect.temperature || "warm"}
