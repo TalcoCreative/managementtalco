@@ -372,9 +372,39 @@ export function ClockInOut() {
     try {
       setLoading(true);
 
-      // Check if location validation is globally enabled.
-      // Default to ON when the setting row is missing or unreadable so GPS is
-      // never silently skipped for non-super-admin users.
+      // GPS is ALWAYS mandatory for clock in - no exceptions.
+      if (!navigator.geolocation) {
+        toast.error("Browser ini tidak mendukung GPS. Clock in tidak bisa dilakukan tanpa lokasi.");
+        return;
+      }
+
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        toast.error("GPS hanya bisa diakses di koneksi aman (HTTPS). Clock in dibatalkan.");
+        return;
+      }
+
+      const permissionState = await getGeolocationPermissionState();
+      if (permissionState === "denied") {
+        toast.error("Izin lokasi diblokir. Aktifkan GPS & izin lokasi di browser/device Anda — clock in tidak bisa dilakukan tanpa GPS.");
+        return;
+      }
+
+      let pos: GeolocationPosition;
+      try {
+        pos = await getCurrentPosition();
+      } catch (e: any) {
+        toast.error(`${getGeolocationErrorMessage(e)} Clock in dibatalkan karena GPS tidak tersedia.`);
+        return;
+      }
+      const { latitude: lat, longitude: lng } = pos.coords;
+
+      if (typeof lat !== "number" || typeof lng !== "number" || Number.isNaN(lat) || Number.isNaN(lng)) {
+        toast.error("Koordinat GPS tidak valid. Clock in dibatalkan.");
+        return;
+      }
+
+      // Check if office-radius validation is enabled. If OFF, GPS is still
+      // captured but we skip the inside/outside check and store as-is.
       const { data: locSetting } = await supabase
         .from("company_settings")
         .select("setting_value")
@@ -385,9 +415,8 @@ export function ClockInOut() {
         : true;
 
       if (!locationValidationOn) {
-        // Location validation off - just insert without GPS
         await performClockInsert({
-          coords: null,
+          coords: { lat, lng },
           locationStatus: null,
           matchedLocationId: null,
           matchedLocationName: null,
@@ -395,27 +424,6 @@ export function ClockInOut() {
         });
         return;
       }
-
-      // Location validation ON - GPS is MANDATORY
-      if (!navigator.geolocation) {
-        toast.error("Browser ini tidak mendukung akses lokasi, jadi clock in tidak bisa dilakukan.");
-        return;
-      }
-
-      const permissionState = await getGeolocationPermissionState();
-      if (permissionState === "denied") {
-        toast.error("Izin lokasi sedang diblokir. Aktifkan kembali akses lokasi di browser/device Anda lalu coba lagi.");
-        return;
-      }
-
-      let pos: GeolocationPosition;
-      try {
-        pos = await getCurrentPosition();
-      } catch (e: any) {
-        toast.error(getGeolocationErrorMessage(e));
-        return;
-      }
-      const { latitude: lat, longitude: lng } = pos.coords;
 
       // Fetch active office locations
       const { data: locs } = await supabase
