@@ -217,7 +217,7 @@ export default function PublicApplyForm() {
             value={value}
             onChange={(e) => setFormValues({ ...formValues, [field.id]: e.target.value })}
             placeholder={field.placeholder || ""}
-            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12"
+            className="!bg-zinc-800 !border-zinc-700 !text-white placeholder:!text-zinc-500 focus-visible:!bg-zinc-800 h-12"
           />
         );
 
@@ -227,7 +227,7 @@ export default function PublicApplyForm() {
             value={value}
             onChange={(e) => setFormValues({ ...formValues, [field.id]: e.target.value })}
             placeholder={field.placeholder || ""}
-            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[120px]"
+            className="!bg-zinc-800 !border-zinc-700 !text-white placeholder:!text-zinc-500 focus-visible:!bg-zinc-800 min-h-[120px]"
           />
         );
 
@@ -238,7 +238,7 @@ export default function PublicApplyForm() {
             value={value}
             onChange={(e) => setFormValues({ ...formValues, [field.id]: e.target.value })}
             placeholder={field.placeholder || "email@example.com"}
-            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12"
+            className="!bg-zinc-800 !border-zinc-700 !text-white placeholder:!text-zinc-500 focus-visible:!bg-zinc-800 h-12"
           />
         );
 
@@ -249,7 +249,7 @@ export default function PublicApplyForm() {
             value={value}
             onChange={(e) => setFormValues({ ...formValues, [field.id]: e.target.value })}
             placeholder={field.placeholder || "08xxxxxxxxxx"}
-            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12"
+            className="!bg-zinc-800 !border-zinc-700 !text-white placeholder:!text-zinc-500 focus-visible:!bg-zinc-800 h-12"
           />
         );
 
@@ -260,7 +260,7 @@ export default function PublicApplyForm() {
             value={value}
             onChange={(e) => setFormValues({ ...formValues, [field.id]: e.target.value })}
             placeholder={field.placeholder || "https://..."}
-            className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 h-12"
+            className="!bg-zinc-800 !border-zinc-700 !text-white placeholder:!text-zinc-500 focus-visible:!bg-zinc-800 h-12"
           />
         );
 
