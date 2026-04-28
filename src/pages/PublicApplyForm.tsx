@@ -317,7 +317,7 @@ export default function PublicApplyForm() {
             value={value}
             onValueChange={(val) => setFormValues({ ...formValues, [field.id]: val })}
           >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-12">
+            <SelectTrigger className="!bg-zinc-800 !border-zinc-700 !text-white h-12">
               <SelectValue placeholder={field.placeholder || "Pilih opsi..."} />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
