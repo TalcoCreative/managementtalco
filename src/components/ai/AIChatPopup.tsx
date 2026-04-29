@@ -12,7 +12,8 @@ interface Message {
 }
 
 export function AIChatPopup() {
-  const { isSuperAdmin } = usePermissions();
+  // TASSA full access mode — available to all authenticated users
+  usePermissions();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -121,7 +122,7 @@ export function AIChatPopup() {
     }
   }, [messages]);
 
-  if (!isSuperAdmin) return null;
+  // TASSA available for everyone — no role gate
 
   const handleSend = async () => {
     const text = input.trim();
