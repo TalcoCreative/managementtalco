@@ -58,6 +58,13 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
   const [terms, setTerms] = useState("");
   const [enabledMethodIds, setEnabledMethodIds] = useState<string[]>([]);
 
+  // Recurring options
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState<"weekly" | "monthly" | "yearly">("monthly");
+  const [recurringIntervalCount, setRecurringIntervalCount] = useState<number>(1);
+  const [recurringEndDate, setRecurringEndDate] = useState<string>("");
+  const [recurringMaxOccurrences, setRecurringMaxOccurrences] = useState<string>("");
+
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-for-invoice"],
     queryFn: async () => {
@@ -148,6 +155,11 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
     setNotes("");
     setTerms("");
     setEnabledMethodIds([]);
+    setIsRecurring(false);
+    setRecurringInterval("monthly");
+    setRecurringIntervalCount(1);
+    setRecurringEndDate("");
+    setRecurringMaxOccurrences("");
     setTab("template");
   };
 
