@@ -256,6 +256,28 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
         changed_by: user.id,
       });
 
+      // Create recurring rule if enabled
+      if (isRecurring) {
+        const start = new Date(issueDate);
+        const next = new Date(start);
+        if (recurringInterval === "weekly") next.setDate(next.getDate() + 7 * recurringIntervalCount);
+        else if (recurringInterval === "monthly") next.setMonth(next.getMonth() + recurringIntervalCount);
+        else next.setFullYear(next.getFullYear() + recurringIntervalCount);
+
+        await (supabase as any).from("invoice_recurring_rules").insert({
+          source_invoice_id: invoice.id,
+          snapshot: { invoice_id: invoice.id },
+          interval_unit: recurringInterval,
+          interval_count: recurringIntervalCount,
+          start_date: issueDate,
+          next_run_date: next.toISOString().slice(0, 10),
+          end_date: recurringEndDate || null,
+          max_occurrences: recurringMaxOccurrences ? Number(recurringMaxOccurrences) : null,
+          occurrences_generated: 1,
+          created_by: user.id,
+        });
+      }
+
       return invoice;
     },
     onSuccess: () => {
