@@ -13,6 +13,7 @@ import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import HolidayBanner from "@/components/holiday/HolidayBanner";
 import { TeamMoodBar } from "@/components/dashboard/TeamMoodBar";
 import { MoodNudge } from "@/components/attendance/MoodNudge";
+import { PendingCompletionPopup } from "@/components/dashboard/PendingCompletionPopup";
 import { Badge } from "@/components/ui/badge";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
@@ -220,6 +221,7 @@ export default function Index() {
         <HolidayBanner />
         <MoodNudge />
         <ClockInOut />
+        <PendingCompletionPopup userId={session?.user?.id} />
         <AnnouncementNotifications />
         <MeetingInvitationNotifications />
         <ShootingNotifications />
