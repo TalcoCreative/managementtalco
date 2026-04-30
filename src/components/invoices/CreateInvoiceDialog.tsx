@@ -546,6 +546,41 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
           </TabsContent>
         </Tabs>
 
+        {/* Recurring */}
+        <div className="rounded-xl border border-border/60 p-4 space-y-3 mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">Recurring Invoice</Label>
+              <p className="text-xs text-muted-foreground">Auto-generate copies as DRAFT every interval.</p>
+            </div>
+            <Checkbox checked={isRecurring} onCheckedChange={(c) => setIsRecurring(!!c)} />
+          </div>
+          {isRecurring && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Every</Label>
+                <Input type="number" min={1} value={recurringIntervalCount} onChange={(e) => setRecurringIntervalCount(Math.max(1, Number(e.target.value)))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Interval</Label>
+                <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={recurringInterval} onChange={(e) => setRecurringInterval(e.target.value as any)}>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">End date (opsional)</Label>
+                <Input type="date" value={recurringEndDate} onChange={(e) => setRecurringEndDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Max occurrences (opsional)</Label>
+                <Input type="number" min={1} value={recurringMaxOccurrences} onChange={(e) => setRecurringMaxOccurrences(e.target.value)} />
+              </div>
+            </div>
+          )}
+        </div>
+
         <DialogFooter className="pt-4 border-t border-border/40">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !selectedTemplate}>
