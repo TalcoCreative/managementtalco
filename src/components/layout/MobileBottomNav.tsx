@@ -153,6 +153,11 @@ export function MobileBottomNav() {
     "my_sales_dashboard",
     "my_commission",
     "setting_location",
+    "notification_log",
+    "email_settings",
+    "system_settings",
+    "role_management",
+    "invoice_templates",
   ];
   const visibleGroups = moreGroups
     .map((g) => ({
