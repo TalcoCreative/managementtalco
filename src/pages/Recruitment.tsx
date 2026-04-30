@@ -324,19 +324,21 @@ export default function Recruitment() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={hrPicFilter} onValueChange={setHrPicFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-10">
-              <SelectValue placeholder="Filter HR PIC" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua HR</SelectItem>
-              {hrUsers.map((u: any) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isSuperAdmin && (
+            <Select value={hrPicFilter} onValueChange={setHrPicFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-10">
+                <SelectValue placeholder="Filter HR PIC" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua HR</SelectItem>
+                {hrUsers.map((u: any) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
