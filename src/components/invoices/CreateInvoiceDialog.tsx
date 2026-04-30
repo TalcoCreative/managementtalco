@@ -58,6 +58,13 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
   const [terms, setTerms] = useState("");
   const [enabledMethodIds, setEnabledMethodIds] = useState<string[]>([]);
 
+  // Recurring options
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringInterval, setRecurringInterval] = useState<"weekly" | "monthly" | "yearly">("monthly");
+  const [recurringIntervalCount, setRecurringIntervalCount] = useState<number>(1);
+  const [recurringEndDate, setRecurringEndDate] = useState<string>("");
+  const [recurringMaxOccurrences, setRecurringMaxOccurrences] = useState<string>("");
+
   const { data: clients = [] } = useQuery({
     queryKey: ["clients-for-invoice"],
     queryFn: async () => {
@@ -148,6 +155,11 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
     setNotes("");
     setTerms("");
     setEnabledMethodIds([]);
+    setIsRecurring(false);
+    setRecurringInterval("monthly");
+    setRecurringIntervalCount(1);
+    setRecurringEndDate("");
+    setRecurringMaxOccurrences("");
     setTab("template");
   };
 
@@ -243,6 +255,28 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
         description: `Invoice ${invoiceNumber} created`,
         changed_by: user.id,
       });
+
+      // Create recurring rule if enabled
+      if (isRecurring) {
+        const start = new Date(issueDate);
+        const next = new Date(start);
+        if (recurringInterval === "weekly") next.setDate(next.getDate() + 7 * recurringIntervalCount);
+        else if (recurringInterval === "monthly") next.setMonth(next.getMonth() + recurringIntervalCount);
+        else next.setFullYear(next.getFullYear() + recurringIntervalCount);
+
+        await (supabase as any).from("invoice_recurring_rules").insert({
+          source_invoice_id: invoice.id,
+          snapshot: { invoice_id: invoice.id },
+          interval_unit: recurringInterval,
+          interval_count: recurringIntervalCount,
+          start_date: issueDate,
+          next_run_date: next.toISOString().slice(0, 10),
+          end_date: recurringEndDate || null,
+          max_occurrences: recurringMaxOccurrences ? Number(recurringMaxOccurrences) : null,
+          occurrences_generated: 1,
+          created_by: user.id,
+        });
+      }
 
       return invoice;
     },
@@ -511,6 +545,41 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Recurring */}
+        <div className="rounded-xl border border-border/60 p-4 space-y-3 mt-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">Recurring Invoice</Label>
+              <p className="text-xs text-muted-foreground">Auto-generate copies as DRAFT every interval.</p>
+            </div>
+            <Checkbox checked={isRecurring} onCheckedChange={(c) => setIsRecurring(!!c)} />
+          </div>
+          {isRecurring && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Every</Label>
+                <Input type="number" min={1} value={recurringIntervalCount} onChange={(e) => setRecurringIntervalCount(Math.max(1, Number(e.target.value)))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Interval</Label>
+                <select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={recurringInterval} onChange={(e) => setRecurringInterval(e.target.value as any)}>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">End date (opsional)</Label>
+                <Input type="date" value={recurringEndDate} onChange={(e) => setRecurringEndDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Max occurrences (opsional)</Label>
+                <Input type="number" min={1} value={recurringMaxOccurrences} onChange={(e) => setRecurringMaxOccurrences(e.target.value)} />
+              </div>
+            </div>
+          )}
+        </div>
 
         <DialogFooter className="pt-4 border-t border-border/40">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

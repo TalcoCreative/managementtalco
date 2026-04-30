@@ -1535,6 +1535,9 @@ export type Database = {
           created_by: string
           id: string
           period: string | null
+          period_end: string | null
+          period_start: string | null
+          project_id: string | null
           slug: string
           title: string
           updated_at: string
@@ -1545,6 +1548,9 @@ export type Database = {
           created_by: string
           id?: string
           period?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          project_id?: string | null
           slug: string
           title: string
           updated_at?: string
@@ -1555,6 +1561,9 @@ export type Database = {
           created_by?: string
           id?: string
           period?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          project_id?: string | null
           slug?: string
           title?: string
           updated_at?: string
@@ -1572,6 +1581,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "editorial_plans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -2714,6 +2730,75 @@ export type Database = {
           },
         ]
       }
+      invoice_recurring_rules: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string | null
+          id: string
+          interval_count: number
+          interval_unit: string
+          is_active: boolean
+          last_generated_at: string | null
+          max_occurrences: number | null
+          next_run_date: string
+          occurrences_generated: number
+          snapshot: Json
+          source_invoice_id: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          id?: string
+          interval_count?: number
+          interval_unit: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          max_occurrences?: number | null
+          next_run_date: string
+          occurrences_generated?: number
+          snapshot?: Json
+          source_invoice_id?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          interval_count?: number
+          interval_unit?: string
+          is_active?: boolean
+          last_generated_at?: string | null
+          max_occurrences?: number | null
+          next_run_date?: string
+          occurrences_generated?: number
+          snapshot?: Json
+          source_invoice_id?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_recurring_rules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_recurring_rules_source_invoice_id_fkey"
+            columns: ["source_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_templates: {
         Row: {
           company_info: Json
@@ -2802,6 +2887,7 @@ export type Database = {
           notes: string | null
           paid_at: string | null
           project_id: string | null
+          recurring_rule_id: string | null
           status: string
           subtotal: number
           tax_amount: number
@@ -2834,6 +2920,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           project_id?: string | null
+          recurring_rule_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -2866,6 +2953,7 @@ export type Database = {
           notes?: string | null
           paid_at?: string | null
           project_id?: string | null
+          recurring_rule_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -2903,6 +2991,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_recurring_rule_id_fkey"
+            columns: ["recurring_rule_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_recurring_rules"
             referencedColumns: ["id"]
           },
           {
@@ -3762,6 +3857,9 @@ export type Database = {
       meetings: {
         Row: {
           client_id: string | null
+          completion_confirmed_at: string | null
+          completion_notes: string | null
+          completion_status: string | null
           created_at: string
           created_by: string
           end_time: string
@@ -3787,6 +3885,9 @@ export type Database = {
         }
         Insert: {
           client_id?: string | null
+          completion_confirmed_at?: string | null
+          completion_notes?: string | null
+          completion_status?: string | null
           created_at?: string
           created_by: string
           end_time: string
@@ -3812,6 +3913,9 @@ export type Database = {
         }
         Update: {
           client_id?: string | null
+          completion_confirmed_at?: string | null
+          completion_notes?: string | null
+          completion_status?: string | null
           created_at?: string
           created_by?: string
           end_time?: string
@@ -5362,6 +5466,9 @@ export type Database = {
           cancel_reason: string | null
           cancelled_at: string | null
           client_id: string | null
+          completion_confirmed_at: string | null
+          completion_notes: string | null
+          completion_status: string | null
           created_at: string | null
           director: string | null
           id: string
@@ -5385,6 +5492,9 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           client_id?: string | null
+          completion_confirmed_at?: string | null
+          completion_notes?: string | null
+          completion_status?: string | null
           created_at?: string | null
           director?: string | null
           id?: string
@@ -5408,6 +5518,9 @@ export type Database = {
           cancel_reason?: string | null
           cancelled_at?: string | null
           client_id?: string | null
+          completion_confirmed_at?: string | null
+          completion_notes?: string | null
+          completion_status?: string | null
           created_at?: string | null
           director?: string | null
           id?: string

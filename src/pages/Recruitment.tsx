@@ -29,6 +29,7 @@ import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateD
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
 import { usePositionOptions } from "@/hooks/usePositions";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
@@ -43,6 +44,7 @@ const STATUS_OPTIONS = [
 
 export default function Recruitment() {
   const { positionOptions } = usePositionOptions();
+  const { isSuperAdmin } = usePermissions();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,16 +57,33 @@ export default function Recruitment() {
   );
   const queryClient = useQueryClient();
 
-  const { data: candidates, isLoading } = useQuery({
-    queryKey: ["candidates"],
+  // Get current user for PIC isolation
+  const { data: currentUserId } = useQuery({
+    queryKey: ["current-user-id-recruitment"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase.auth.getUser();
+      return data.user?.id || null;
+    },
+  });
+
+  const { data: candidates, isLoading } = useQuery({
+    queryKey: ["candidates", isSuperAdmin, currentUserId],
+    enabled: currentUserId !== undefined,
+    queryFn: async () => {
+      let query = supabase
         .from("candidates")
         .select(`
           *,
           hr_pic:profiles!candidates_hr_pic_id_fkey(id, full_name)
         `)
         .order("applied_at", { ascending: false });
+
+      // Isolation: non-super-admin only sees candidates where they are the PIC
+      if (!isSuperAdmin && currentUserId) {
+        query = query.eq("hr_pic_id", currentUserId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -305,19 +324,21 @@ export default function Recruitment() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={hrPicFilter} onValueChange={setHrPicFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-10">
-              <SelectValue placeholder="Filter HR PIC" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua HR</SelectItem>
-              {hrUsers.map((u: any) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isSuperAdmin && (
+            <Select value={hrPicFilter} onValueChange={setHrPicFilter}>
+              <SelectTrigger className="w-full sm:w-[180px] h-12 sm:h-10">
+                <SelectValue placeholder="Filter HR PIC" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua HR</SelectItem>
+                {hrUsers.map((u: any) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Table */}
