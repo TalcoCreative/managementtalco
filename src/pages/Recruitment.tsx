@@ -29,6 +29,7 @@ import { CreateCandidateDialog } from "@/components/recruitment/CreateCandidateD
 import { CandidateDetailDialog } from "@/components/recruitment/CandidateDetailDialog";
 import { usePositionOptions } from "@/hooks/usePositions";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const STATUS_OPTIONS = [
   { value: "applied", label: "Applied", color: "bg-blue-500" },
