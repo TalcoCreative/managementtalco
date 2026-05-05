@@ -108,15 +108,15 @@ export function Header() {
 
   return (
     <header 
-      className="flex items-center justify-between bg-card/70 backdrop-blur-2xl px-4 sm:px-6 gap-3 sticky top-0 z-40 border-b border-border/20"
+      className="flex items-center justify-between bg-background/75 backdrop-blur-2xl px-4 sm:px-6 gap-3 sticky top-0 z-40 border-b border-border/40"
       style={{ 
         paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))",
         minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))"
       }}
     >
-      {!isMobile && <SidebarTrigger className="flex-shrink-0" />}
+      {!isMobile && <SidebarTrigger className="flex-shrink-0 h-9 w-9 rounded-xl hover:bg-muted/60 transition-colors" />}
       {isMobile && (
-        <h1 className="text-sm font-semibold tracking-tight truncate text-foreground">Talco</h1>
+        <h1 className="text-[15px] font-semibold tracking-tight truncate text-foreground">Talco</h1>
       )}
       
       <div className="flex items-center gap-0.5">
