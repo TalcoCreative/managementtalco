@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -139,8 +139,23 @@ const moreGroups: MoreGroup[] = [
 
 export function MobileBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
   const location = useLocation();
   const { canView } = usePermissions();
+
+  // Auto-hide on scroll down, reveal on scroll up
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY.current) < 8) return;
+      if (y > lastY.current && y > 80) setHidden(true);
+      else setHidden(false);
+      lastY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const visiblePrimary = primaryTabs.filter(
     (t) => t.featureKey === "__more__" || canView(t.featureKey)
@@ -169,10 +184,11 @@ export function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-background/95 backdrop-blur-2xl border-t border-border/30"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        className="floating-nav-pill md:hidden"
+        data-hidden={hidden}
+        aria-label="Primary"
       >
-        <div className="flex items-center justify-around h-16">
+        <div className="flex items-center justify-around h-14 px-2">
           {visiblePrimary.map((tab) => {
             if (tab.url === "#more") {
               return (
@@ -180,14 +196,13 @@ export function MobileBottomNav() {
                   key="more"
                   onClick={() => setMoreOpen(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 w-full h-full text-muted-foreground transition-all duration-200 tap-target",
+                    "flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-muted-foreground transition-all duration-200 tap-target rounded-full",
                     moreOpen && "text-primary"
                   )}
+                  aria-label="More"
                 >
-                  <tab.icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium tracking-wide">
-                    {tab.title}
-                  </span>
+                  <tab.icon className="h-[18px] w-[18px]" />
+                  <span className="text-[9.5px] font-medium tracking-wide">{tab.title}</span>
                 </button>
               );
             }
@@ -199,21 +214,21 @@ export function MobileBottomNav() {
                 key={tab.url}
                 to={tab.url}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 tap-target",
+                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200 tap-target rounded-full",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <div
                   className={cn(
-                    "flex items-center justify-center w-10 h-7 rounded-full transition-all duration-200",
-                    isActive && "bg-primary/10"
+                    "flex items-center justify-center w-9 h-7 rounded-full transition-all duration-300",
+                    isActive && "bg-primary/10 shadow-[0_0_18px_hsl(var(--primary)/0.25)]"
                   )}
                 >
-                  <tab.icon className="h-5 w-5" />
+                  <tab.icon className="h-[18px] w-[18px]" />
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-medium tracking-wide",
+                    "text-[9.5px] font-medium tracking-wide",
                     isActive && "font-semibold"
                   )}
                 >
