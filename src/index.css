@@ -40,22 +40,22 @@
     --destructive: 0 62% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders & inputs */
-    --border: 225 12% 90%;
-    --input: 225 12% 89%;
-    --ring: 222 72% 52%;
+    /* Borders & inputs — #E5E7EB */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 58%;
 
-    --radius: 0.875rem;
+    --radius: 1rem;
 
-    /* Sidebar */
-    --sidebar-background: 222 28% 11%;
-    --sidebar-foreground: 222 12% 94%;
-    --sidebar-primary: 222 72% 56%;
+    /* Sidebar — deep slate #111827 */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 220 14% 92%;
+    --sidebar-primary: 239 84% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 22% 17%;
-    --sidebar-accent-foreground: 222 12% 94%;
-    --sidebar-border: 222 22% 19%;
-    --sidebar-ring: 222 72% 56%;
+    --sidebar-accent: 222 40% 16%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 222 40% 18%;
+    --sidebar-ring: 239 84% 64%;
 
     /* Status */
     --status-todo: 222 58% 56%;
