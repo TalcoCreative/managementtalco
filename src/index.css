@@ -10,31 +10,31 @@
 
 @layer base {
   :root {
-    /* Canvas */
-    --background: 225 18% 96%;
-    --foreground: 222 22% 12%;
+    /* Canvas — soft neutral #F8FAFC */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
 
     /* Floating surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222 22% 12%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 22% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Brand */
-    --primary: 222 72% 52%;
+    /* Brand — Indigo #4F46E5 */
+    --primary: 239 84% 58%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 222 60% 62%;
+    --primary-glow: 239 84% 68%;
 
     /* Neutral surfaces */
-    --secondary: 225 16% 95%;
-    --secondary-foreground: 222 18% 28%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 18%;
 
-    --muted: 225 14% 94%;
-    --muted-foreground: 222 10% 48%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 225 14% 92%;
-    --accent-foreground: 222 18% 18%;
+    --accent: 187 92% 43%;
+    --accent-foreground: 0 0% 100%;
 
     /* Destructive */
     --destructive: 0 62% 54%;
