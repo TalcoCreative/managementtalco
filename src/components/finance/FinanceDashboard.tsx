@@ -407,6 +407,46 @@ export function FinanceDashboard() {
     });
   }, [today, recurringBudgets, payrollData]);
 
+  // Realisasi (cumulative spent vs budget) for current month
+  const realisasi = useMemo(() => {
+    const start = startOfMonth(today);
+    const end = endOfMonth(today);
+    const totalDays = end.getDate();
+    const todayDay = today.getDate();
+
+    const monthlyBudget = (recurringBudgets || [])
+      .filter(r => r.type === "expense")
+      .reduce((sum, r) => {
+        if (r.period === "monthly") return sum + Number(r.amount);
+        if (r.period === "yearly") return sum + Number(r.amount) / 12;
+        if (r.period === "weekly") return sum + Number(r.amount) * 4;
+        return sum;
+      }, 0);
+
+    const startStr = format(start, "yyyy-MM-dd");
+    const endStr = format(end, "yyyy-MM-dd");
+
+    // group expenses by day
+    const dailySpent: Record<number, number> = {};
+    (ledgerEntries || [])
+      .filter(e => e.type === "expense" && e.date >= startStr && e.date <= endStr)
+      .forEach(e => {
+        const d = new Date(e.date).getDate();
+        dailySpent[d] = (dailySpent[d] || 0) + Math.abs(Number(e.amount));
+      });
+
+    let cumulative = 0;
+    return Array.from({ length: totalDays }, (_, i) => {
+      const day = i + 1;
+      cumulative += dailySpent[day] || 0;
+      return {
+        day: String(day),
+        spent: day <= todayDay ? cumulative : null,
+        budget: monthlyBudget,
+      };
+    });
+  }, [today, recurringBudgets, ledgerEntries]);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -768,6 +808,27 @@ export function FinanceDashboard() {
               <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Line type="monotone" dataKey="income" name="Expected Income" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
               <Line type="monotone" dataKey="expenses" name="Expected Expenses" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Realisasi (Cumulative Spent vs Budget - Current Month) */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Realisasi Bulan Berjalan ({format(today, "MMM yyyy")})</CardTitle>
+          <p className="text-xs text-muted-foreground">Akumulasi pengeluaran per hari vs total budget bulan ini</p>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={realisasi}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+              <YAxis tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} labelFormatter={(l) => `Tanggal ${l}`} />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Line type="monotone" dataKey="budget" name="Budget" stroke="hsl(var(--muted-foreground))" strokeWidth={1} strokeDasharray="6 4" dot={false} />
+              <Line type="monotone" dataKey="spent" name="Realisasi (Cumulative)" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
             </LineChart>
           </ResponsiveContainer>
         </CardContent>

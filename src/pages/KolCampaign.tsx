@@ -177,7 +177,7 @@ export default function KolCampaign() {
     <AppLayout>
       <div className="space-y-6">
         <DesktopRecommendBanner featureLabel="KOL Campaign" />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="section-header !mb-0 flex-1" style={{ '--section-color': 'var(--section-social)' } as React.CSSProperties}>
             <div className="section-icon">
               <Megaphone className="h-5 w-5" />
@@ -188,9 +188,10 @@ export default function KolCampaign() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
-              Assign KOL ke Campaign
+              <span className="hidden sm:inline">Assign KOL ke Campaign</span>
+              <span className="sm:hidden">Assign</span>
             </Button>
           </div>
         </div>
@@ -211,7 +212,7 @@ export default function KolCampaign() {
                 </div>
               </div>
               <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,7 +225,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -237,7 +238,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={postedFilter} onValueChange={setPostedFilter}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Posted" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,7 +248,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={paidFilter} onValueChange={setPaidFilter}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Payment" />
                 </SelectTrigger>
                 <SelectContent>

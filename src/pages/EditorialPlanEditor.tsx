@@ -249,27 +249,43 @@ export default function EditorialPlanEditor() {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header - fixed */}
-      <header className="border-b bg-card px-4 py-3 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/editorial-plan")}>
+      <header className="border-b bg-card px-3 sm:px-4 py-2.5 sm:py-3 shrink-0 sticky top-0 z-30">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/editorial-plan")} className="shrink-0 h-9 w-9">
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="font-semibold">{ep.title}</h1>
-              <p className="text-sm text-muted-foreground">
+            {currentSlideIndex !== null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentSlideIndex(null)}
+                className="shrink-0 h-9 px-2 sm:hidden"
+              >
+                <Calendar className="h-4 w-4 mr-1" /> Jadwal
+              </Button>
+            )}
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sm sm:text-base truncate">{ep.title}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {ep.clients?.name} {ep.period && `• ${ep.period}`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowComments(!showComments)}>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => setShowComments(!showComments)}>
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Comments
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4 mr-2" />
               Preview
             </Button>
@@ -425,13 +441,21 @@ export default function EditorialPlanEditor() {
 
         {/* Comments Panel */}
         {showComments && ep && (
-          <EPCommentsPanel
-            epId={ep.id}
-            epTitle={ep.title}
-            currentSlideId={currentSlide?.id}
-            currentSlideLabel={currentSlide ? `Slide ${(currentSlideIndex ?? 0) + 1}` : undefined}
-            onClose={() => setShowComments(false)}
-          />
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 z-40 sm:hidden"
+              onClick={() => setShowComments(false)}
+            />
+            <div className="fixed sm:static top-0 right-0 h-[100dvh] sm:h-auto w-[88vw] max-w-sm sm:w-auto z-50 sm:z-auto">
+              <EPCommentsPanel
+                epId={ep.id}
+                epTitle={ep.title}
+                currentSlideId={currentSlide?.id}
+                currentSlideLabel={currentSlide ? `Slide ${(currentSlideIndex ?? 0) + 1}` : undefined}
+                onClose={() => setShowComments(false)}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
