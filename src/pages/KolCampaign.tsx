@@ -211,7 +211,7 @@ export default function KolCampaign() {
                 </div>
               </div>
               <Select value={clientFilter} onValueChange={setClientFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,7 +224,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full sm:w-[150px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -237,7 +237,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={postedFilter} onValueChange={setPostedFilter}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Posted" />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,7 +247,7 @@ export default function KolCampaign() {
                 </SelectContent>
               </Select>
               <Select value={paidFilter} onValueChange={setPaidFilter}>
-                <SelectTrigger className="w-[130px]">
+                <SelectTrigger className="w-full sm:w-[130px]">
                   <SelectValue placeholder="Payment" />
                 </SelectTrigger>
                 <SelectContent>
