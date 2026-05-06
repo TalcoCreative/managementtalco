@@ -441,13 +441,21 @@ export default function EditorialPlanEditor() {
 
         {/* Comments Panel */}
         {showComments && ep && (
-          <EPCommentsPanel
-            epId={ep.id}
-            epTitle={ep.title}
-            currentSlideId={currentSlide?.id}
-            currentSlideLabel={currentSlide ? `Slide ${(currentSlideIndex ?? 0) + 1}` : undefined}
-            onClose={() => setShowComments(false)}
-          />
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 z-40 sm:hidden"
+              onClick={() => setShowComments(false)}
+            />
+            <div className="fixed sm:static top-0 right-0 h-[100dvh] sm:h-auto w-[88vw] max-w-sm sm:w-auto z-50 sm:z-auto">
+              <EPCommentsPanel
+                epId={ep.id}
+                epTitle={ep.title}
+                currentSlideId={currentSlide?.id}
+                currentSlideLabel={currentSlide ? `Slide ${(currentSlideIndex ?? 0) + 1}` : undefined}
+                onClose={() => setShowComments(false)}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
