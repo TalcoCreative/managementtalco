@@ -407,14 +407,14 @@ const Meeting = () => {
         {/* Stats Date Range Filter */}
         <Card>
           <CardContent className="pt-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <CalendarRange className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Periode Statistik:</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <CalendarRange className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <span className="text-sm font-medium w-full sm:w-auto">Periode Statistik:</span>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-[130px]">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none sm:w-[130px] text-xs sm:text-sm">
                       {format(statsDateFrom, "dd MMM yyyy", { locale: id })}
                     </Button>
                   </PopoverTrigger>
@@ -430,7 +430,7 @@ const Meeting = () => {
                 <span className="text-muted-foreground">-</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="w-[130px]">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none sm:w-[130px] text-xs sm:text-sm">
                       {format(statsDateTo, "dd MMM yyyy", { locale: id })}
                     </Button>
                   </PopoverTrigger>
@@ -445,14 +445,14 @@ const Meeting = () => {
                 </Popover>
               </div>
               
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={setThisMonth}>
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={setThisMonth}>
                   Bulan Ini
                 </Button>
-                <Button variant="secondary" size="sm" onClick={setLastMonth}>
+                <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={setLastMonth}>
                   Bulan Lalu
                 </Button>
-                <Button variant="secondary" size="sm" onClick={setThisYear}>
+                <Button variant="secondary" size="sm" className="flex-1 sm:flex-none" onClick={setThisYear}>
                   Tahun Ini
                 </Button>
               </div>
@@ -545,19 +545,19 @@ const Meeting = () => {
 
         {/* Meetings Tabs */}
         <Tabs defaultValue="active" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="active" className="gap-2">
+          <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-grid">
+            <TabsTrigger value="active" className="gap-1.5 text-xs sm:text-sm">
               <Clock className="h-4 w-4" />
               Berlangsung
               {activeMeetings.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{activeMeetings.length}</Badge>
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] sm:text-xs">{activeMeetings.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
+            <TabsTrigger value="completed" className="gap-1.5 text-xs sm:text-sm">
               <CheckCircle2 className="h-4 w-4" />
               Selesai
               {completedMeetings.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">{completedMeetings.length}</Badge>
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] sm:text-xs">{completedMeetings.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
