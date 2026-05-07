@@ -136,10 +136,10 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+    `group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
       isActive
-        ? 'bg-sidebar-primary/15 text-sidebar-primary-foreground shadow-inner-soft'
-        : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+        ? 'bg-sidebar-primary/15 text-sidebar-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.25)]'
+        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
     }`;
 
   // profile_settings and personal_notes are always visible to all users
