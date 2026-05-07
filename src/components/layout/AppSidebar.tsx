@@ -33,49 +33,39 @@ const operationsItems: NavItem[] = [
   { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
 ];
 
-// ── Employee ────────────────────────────────────────────
-const employeeItems: NavItem[] = [
+// ── HR ──────────────────────────────────────────────────
+const hrItems: NavItem[] = [
+  { title: "Employee", url: "/users", icon: Users, featureKey: "team" },
+  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
+  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
   { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
   { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
   { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
-  { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
+  { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
+  { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
+  { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
+  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
+  { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
 ];
 
-// ── Reports & Letters ───────────────────────────────────
-const reportsItems: NavItem[] = [
-  { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
-  { title: "Invoices", url: "/invoices", icon: ReceiptText, featureKey: "invoices" },
-];
-
-// ── KOL ─────────────────────────────────────────────────
-const kolItems: NavItem[] = [
+// ── Marketing ───────────────────────────────────────────
+const marketingItems: NavItem[] = [
+  { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
+  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
+  { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
   { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
   { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
 ];
 
-// ── Form Builder ────────────────────────────────────────
-const formBuilderItems: NavItem[] = [
-  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
-];
-
-// ── Social Media ────────────────────────────────────────
-const socialMediaItems: NavItem[] = [
-  { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
-  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
-  { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
-];
-
-// ── HR ──────────────────────────────────────────────────
-const hrItems: NavItem[] = [
-  { title: "Team", url: "/users", icon: Users, featureKey: "team" },
-  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
-  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
-  { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
-  { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
-  { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
-  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
-  { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
+// ── Sales ───────────────────────────────────────────────
+const salesItems: NavItem[] = [
+  { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
+  { title: "My Prospects", url: "/my-prospects", icon: UserPlus, featureKey: "my_prospects" },
+  { title: "My Sales Dashboard", url: "/my-sales-dashboard", icon: TrendingUp, featureKey: "my_sales_dashboard" },
+  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
+  { title: "My Commission", url: "/my-commission", icon: Wallet, featureKey: "my_commission" },
+  { title: "Sales Admin", url: "/sales-admin", icon: CircleDollarSign, featureKey: "sales_admin" },
+  { title: "Ads Budget", url: "/ads-budget", icon: CircleDollarSign, featureKey: "ads_budget" },
 ];
 
 // ── Finance ─────────────────────────────────────────────
@@ -83,17 +73,18 @@ const financeItems: NavItem[] = [
   { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
   { title: "Income Statement", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
   { title: "Balance Sheet", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
+  { title: "Invoices", url: "/invoices", icon: ReceiptText, featureKey: "invoices" },
 ];
 
-// ── Sales ───────────────────────────────────────────────
-const salesItems: NavItem[] = [
-  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
-  { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
-  { title: "My Prospects", url: "/my-prospects", icon: UserPlus, featureKey: "my_prospects" },
-  { title: "My Sales Dashboard", url: "/my-sales-dashboard", icon: TrendingUp, featureKey: "my_sales_dashboard" },
-  { title: "My Commission", url: "/my-commission", icon: Wallet, featureKey: "my_commission" },
-  { title: "Sales Admin", url: "/sales-admin", icon: CircleDollarSign, featureKey: "sales_admin" },
-  { title: "Ads Budget", url: "/ads-budget", icon: CircleDollarSign, featureKey: "ads_budget" },
+// ── Reports ─────────────────────────────────────────────
+const reportsItems: NavItem[] = [
+  { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
+  { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
+];
+
+// ── Form Builder ────────────────────────────────────────
+const formBuilderItems: NavItem[] = [
+  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
 ];
 
 // ── Executive ───────────────────────────────────────────
@@ -145,10 +136,10 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+    `group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
       isActive
-        ? 'bg-sidebar-primary/15 text-sidebar-primary-foreground shadow-inner-soft'
-        : 'text-sidebar-foreground/55 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
+        ? 'bg-sidebar-primary/15 text-sidebar-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.25)]'
+        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
     }`;
 
   // profile_settings and personal_notes are always visible to all users
@@ -158,18 +149,18 @@ export function AppSidebar() {
     const visible = filterItems(items);
     if (visible.length === 0) return null;
     return (
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
+      <SidebarGroup className="px-0 py-0.5">
+        <SidebarGroupLabel className="text-sidebar-foreground/35 text-[10px] font-semibold uppercase tracking-[0.12em] px-5 mb-1 mt-2">
           {label}
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu className="px-2 space-y-0.5">
+          <SidebarMenu className="px-2.5 space-y-px">
             {visible.map((item) => (
               <SidebarMenuItem key={item.title + item.url}>
                 <SidebarMenuButton asChild>
                   <NavLink to={item.url} className={navLinkClass}>
-                    <item.icon className="h-4 w-4 opacity-70" />
-                    {!isCollapsed && <span>{item.title}</span>}
+                    <item.icon className="h-[15px] w-[15px] opacity-75 shrink-0" />
+                    {!isCollapsed && <span className="truncate">{item.title}</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -211,16 +202,17 @@ export function AppSidebar() {
         
         {renderGroup("Main", mainItems)}
         {renderGroup("Operations", operationsItems)}
-        {renderGroup("Employee", employeeItems)}
-        {renderGroup("Reports & Letters", reportsItems)}
-        {renderGroup("KOL", kolItems)}
-        {renderGroup("Form Builder", formBuilderItems)}
-        {renderGroup("Social Media", socialMediaItems)}
         {renderGroup("HR", hrItems)}
-        {renderGroup("Finance", financeItems)}
+        {renderGroup("Marketing", marketingItems)}
         {renderGroup("Sales", salesItems)}
+        {renderGroup("Finance", financeItems)}
+        {renderGroup("Reports", reportsItems)}
+        {renderGroup("Form Builder", formBuilderItems)}
         {renderGroup("Executive", executiveItems)}
         {renderGroup("System", systemItems)}
+        {renderGroup("Utility", [
+          { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
+        ])}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/15 p-3">
