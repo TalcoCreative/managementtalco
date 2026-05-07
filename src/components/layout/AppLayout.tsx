@@ -30,11 +30,18 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen min-h-[100dvh] w-full overflow-x-hidden">
+      <div className="flex min-h-screen min-h-[100dvh] w-full overflow-x-hidden bg-background">
         {!isMobile && <AppSidebar />}
-        <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
+        <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden relative">
+          {/* Atmospheric base layer */}
+          <div className="pointer-events-none absolute inset-0 -z-10 opacity-[0.65]"
+               style={{
+                 backgroundImage:
+                   "radial-gradient(ellipse 80% 50% at 80% -10%, hsl(var(--primary) / 0.06), transparent 60%), radial-gradient(ellipse 60% 40% at 0% 10%, hsl(var(--accent) / 0.04), transparent 60%)",
+               }}
+          />
           <Header />
-          <main className="flex-1 p-4 sm:p-5 md:p-8 overflow-x-hidden pb-bottom-nav section-atmospheric">
+          <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-5 md:py-7 overflow-x-hidden pb-bottom-nav max-w-[1600px] w-full mx-auto">
             {children}
           </main>
         </div>
