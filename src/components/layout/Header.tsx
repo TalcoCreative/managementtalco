@@ -114,12 +114,28 @@ export function Header() {
         minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))"
       }}
     >
-      {!isMobile && <SidebarTrigger className="flex-shrink-0 h-9 w-9 rounded-xl hover:bg-muted/60 transition-colors" />}
-      {isMobile && (
-        <h1 className="text-[15px] font-semibold tracking-tight truncate text-foreground">Talco</h1>
-      )}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        {!isMobile && <SidebarTrigger className="flex-shrink-0 h-9 w-9 rounded-xl hover:bg-muted/60 transition-colors" />}
+        {isMobile && (
+          <h1 className="text-[15px] font-semibold tracking-tight truncate text-foreground">Talco</h1>
+        )}
+
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-tassa-search"))}
+            className="group hidden md:flex items-center gap-2.5 h-9 w-full max-w-md rounded-xl border border-border/50 bg-muted/40 hover:bg-muted/70 hover:border-border transition-colors px-3 text-left"
+          >
+            <Search className="h-4 w-4 text-muted-foreground/70 group-hover:text-foreground transition-colors" />
+            <span className="text-sm text-muted-foreground/80 flex-1 truncate">Search anything…</span>
+            <span className="hidden lg:inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground/60 border border-border/60 rounded-md px-1.5 py-0.5 bg-card/60">
+              <Command className="h-3 w-3" /> K
+            </span>
+          </button>
+        )}
+      </div>
       
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-0.5 flex-shrink-0">
         <InstallButton variant="ghost" size="icon" showLabel={false} className="h-9 w-9 rounded-xl" />
         
         {canManageAnnouncements && (
