@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogOut, Megaphone } from "lucide-react";
+import { LogOut, Megaphone, Search, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
