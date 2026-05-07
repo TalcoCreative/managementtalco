@@ -149,18 +149,18 @@ export function AppSidebar() {
     const visible = filterItems(items);
     if (visible.length === 0) return null;
     return (
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-sidebar-foreground/30 text-[10px] font-semibold uppercase tracking-[0.1em] px-4 mb-1.5">
+      <SidebarGroup className="px-0 py-0.5">
+        <SidebarGroupLabel className="text-sidebar-foreground/35 text-[10px] font-semibold uppercase tracking-[0.12em] px-5 mb-1 mt-2">
           {label}
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu className="px-2 space-y-0.5">
+          <SidebarMenu className="px-2.5 space-y-px">
             {visible.map((item) => (
               <SidebarMenuItem key={item.title + item.url}>
                 <SidebarMenuButton asChild>
                   <NavLink to={item.url} className={navLinkClass}>
-                    <item.icon className="h-4 w-4 opacity-70" />
-                    {!isCollapsed && <span>{item.title}</span>}
+                    <item.icon className="h-[15px] w-[15px] opacity-75 shrink-0" />
+                    {!isCollapsed && <span className="truncate">{item.title}</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
