@@ -202,16 +202,17 @@ export function AppSidebar() {
         
         {renderGroup("Main", mainItems)}
         {renderGroup("Operations", operationsItems)}
-        {renderGroup("Employee", employeeItems)}
-        {renderGroup("Reports & Letters", reportsItems)}
-        {renderGroup("KOL", kolItems)}
-        {renderGroup("Form Builder", formBuilderItems)}
-        {renderGroup("Social Media", socialMediaItems)}
         {renderGroup("HR", hrItems)}
-        {renderGroup("Finance", financeItems)}
+        {renderGroup("Marketing", marketingItems)}
         {renderGroup("Sales", salesItems)}
+        {renderGroup("Finance", financeItems)}
+        {renderGroup("Reports", reportsItems)}
+        {renderGroup("Form Builder", formBuilderItems)}
         {renderGroup("Executive", executiveItems)}
         {renderGroup("System", systemItems)}
+        {renderGroup("Utility", [
+          { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
+        ])}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border/15 p-3">
