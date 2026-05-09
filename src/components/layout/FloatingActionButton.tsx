@@ -2,6 +2,7 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const contextActions: Record<string, { label: string; action: string }[]> = {
   "/tasks": [{ label: "New Task", action: "create-task" }],
@@ -21,9 +22,11 @@ const contextActions: Record<string, { label: string; action: string }[]> = {
 export function FloatingActionButton() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const actions = contextActions[location.pathname] || [];
 
+  if (isMobile) return null;
   if (actions.length === 0) return null;
 
   const handleAction = (action: string) => {
