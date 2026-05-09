@@ -2,6 +2,7 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const contextActions: Record<string, { label: string; action: string }[]> = {
   "/tasks": [{ label: "New Task", action: "create-task" }],
