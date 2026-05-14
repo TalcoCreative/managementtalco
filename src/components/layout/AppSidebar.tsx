@@ -1,124 +1,30 @@
-import {
-  Users, Briefcase, CheckSquare, Calendar, BarChart3, Building2, ClipboardCheck,
-  Video, Home, LogOut, CalendarOff, Wallet, Receipt, UserPlus, TrendingUp,
-  UserSearch, CalendarClock, Package, FileText, Star, Megaphone, PartyPopper,
-  Crown, Share2, Mail, Scale, PieChart, Sparkles, CalendarHeart, BarChart2, Shield, Settings, User, StickyNote,
-  MessageSquare, CircleDollarSign, MapPin, ReceiptText,
-} from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { LogOut, Search, Command } from "lucide-react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
-} from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePermissions } from "@/hooks/usePermissions";
-
-type NavItem = { title: string; url: string; icon: any; featureKey: string };
-
-// ── Main ────────────────────────────────────────────────
-const mainItems: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
-  { title: "Clients", url: "/clients", icon: Building2, featureKey: "clients" },
-  { title: "Projects", url: "/projects", icon: Briefcase, featureKey: "projects" },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare, featureKey: "tasks" },
-  { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
-];
-
-// ── Operations ──────────────────────────────────────────
-const operationsItems: NavItem[] = [
-  { title: "Shooting", url: "/shooting", icon: Video, featureKey: "shooting" },
-  { title: "Meeting", url: "/meeting", icon: CalendarClock, featureKey: "meeting" },
-  { title: "Event", url: "/event", icon: PartyPopper, featureKey: "event" },
-];
-
-// ── HR ──────────────────────────────────────────────────
-const hrItems: NavItem[] = [
-  { title: "Employee", url: "/users", icon: Users, featureKey: "team" },
-  { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
-  { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
-  { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
-  { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
-  { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
-  { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
-  { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
-  { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
-  { title: "Recruitment Dashboard", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
-  { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
-];
-
-// ── Marketing ───────────────────────────────────────────
-const marketingItems: NavItem[] = [
-  { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
-  { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
-  { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
-  { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
-  { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
-];
-
-// ── Sales ───────────────────────────────────────────────
-const salesItems: NavItem[] = [
-  { title: "Prospects", url: "/prospects", icon: UserPlus, featureKey: "prospects" },
-  { title: "My Prospects", url: "/my-prospects", icon: UserPlus, featureKey: "my_prospects" },
-  { title: "My Sales Dashboard", url: "/my-sales-dashboard", icon: TrendingUp, featureKey: "my_sales_dashboard" },
-  { title: "Sales Analytics", url: "/sales/dashboard", icon: TrendingUp, featureKey: "sales_analytics" },
-  { title: "My Commission", url: "/my-commission", icon: Wallet, featureKey: "my_commission" },
-  { title: "Sales Admin", url: "/sales-admin", icon: CircleDollarSign, featureKey: "sales_admin" },
-  { title: "Ads Budget", url: "/ads-budget", icon: CircleDollarSign, featureKey: "ads_budget" },
-];
-
-// ── Finance ─────────────────────────────────────────────
-const financeItems: NavItem[] = [
-  { title: "Finance", url: "/finance", icon: Wallet, featureKey: "finance" },
-  { title: "Income Statement", url: "/finance/laporan-laba-rugi", icon: PieChart, featureKey: "income_statement" },
-  { title: "Balance Sheet", url: "/finance/neraca", icon: Scale, featureKey: "balance_sheet" },
-  { title: "Invoices", url: "/invoices", icon: ReceiptText, featureKey: "invoices" },
-];
-
-// ── Reports ─────────────────────────────────────────────
-const reportsItems: NavItem[] = [
-  { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-  { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
-];
-
-// ── Form Builder ────────────────────────────────────────
-const formBuilderItems: NavItem[] = [
-  { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
-];
-
-// ── Executive ───────────────────────────────────────────
-const executiveItems: NavItem[] = [
-  { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
-];
-
-// ── System ──────────────────────────────────────────────
-const systemItems: NavItem[] = [
-  { title: "Profile Settings", url: "/profile-settings", icon: User, featureKey: "profile_settings" },
-  { title: "Email Settings", url: "/system/email-settings", icon: Mail, featureKey: "email_settings" },
-  { title: "WA Notification Log", url: "/notification-log", icon: MessageSquare, featureKey: "notification_log" },
-  { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
-  { title: "Location Settings", url: "/setting-location", icon: MapPin, featureKey: "setting_location" },
-  { title: "Invoice Templates", url: "/settings/invoice-templates", icon: ReceiptText, featureKey: "invoice_templates" },
-  { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
-];
+import { filterCategoriesByPermission, NavCategory } from "./nav-config";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
   const navigate = useNavigate();
-  const { canView, isSuperAdmin } = usePermissions();
+  const location = useLocation();
+  const { canView } = usePermissions();
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { data: userProfile } = useQuery({
     queryKey: ["user-profile-sidebar"],
     queryFn: async () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return null;
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("id", session.session.user.id)
         .maybeSingle();
-      if (error) throw error;
       return data;
     },
   });
@@ -133,101 +39,112 @@ export function AppSidebar() {
     }
   };
 
-  const isCollapsed = state === "collapsed";
+  const categories = filterCategoriesByPermission(canView);
 
-  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-      isActive
-        ? 'bg-sidebar-primary/15 text-sidebar-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.25)]'
-        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-    }`;
-
-  // profile_settings and personal_notes are always visible to all users
-  const filterItems = (items: NavItem[]) => items.filter(i => i.featureKey === "profile_settings" || i.featureKey === "personal_notes" || canView(i.featureKey));
-
-  const renderGroup = (label: string, items: NavItem[]) => {
-    const visible = filterItems(items);
-    if (visible.length === 0) return null;
-    return (
-      <SidebarGroup className="px-0 py-0.5">
-        <SidebarGroupLabel className="text-sidebar-foreground/35 text-[10px] font-semibold uppercase tracking-[0.12em] px-5 mb-1 mt-2">
-          {label}
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="px-2.5 space-y-px">
-            {visible.map((item) => (
-              <SidebarMenuItem key={item.title + item.url}>
-                <SidebarMenuButton asChild>
-                  <NavLink to={item.url} className={navLinkClass}>
-                    <item.icon className="h-[15px] w-[15px] opacity-75 shrink-0" />
-                    {!isCollapsed && <span className="truncate">{item.title}</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
-  };
+  const isCategoryActive = (cat: NavCategory) =>
+    cat.items.some((i) => location.pathname === i.url || (i.url !== "/" && location.pathname.startsWith(i.url)));
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/15">
-      <SidebarContent className="bg-sidebar">
-        <div className="px-4 py-6">
-          {!isCollapsed ? (
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
-                <span className="text-sidebar-primary font-semibold text-sm">
-                  {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
-                </span>
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold text-sidebar-foreground leading-tight">
-                  Hi, {userProfile?.full_name?.split(" ")[0] || "User"}
-                </h1>
-                <p className="text-[10px] text-sidebar-foreground/40 mt-0.5">Talco Management</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <div className="h-9 w-9 rounded-xl bg-sidebar-primary/20 flex items-center justify-center">
-                <span className="text-sidebar-primary font-semibold text-sm">
-                  {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {renderGroup("Main", mainItems)}
-        {renderGroup("Operations", operationsItems)}
-        {renderGroup("HR", hrItems)}
-        {renderGroup("Marketing", marketingItems)}
-        {renderGroup("Sales", salesItems)}
-        {renderGroup("Finance", financeItems)}
-        {renderGroup("Reports", reportsItems)}
-        {renderGroup("Form Builder", formBuilderItems)}
-        {renderGroup("Executive", executiveItems)}
-        {renderGroup("System", systemItems)}
-        {renderGroup("Utility", [
-          { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
-        ])}
-      </SidebarContent>
+    <aside
+      className="hidden md:flex flex-col items-center w-[68px] shrink-0 border-r border-sidebar-border/15 bg-sidebar sticky top-0 h-screen z-30"
+      style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+    >
+      {/* Avatar */}
+      <button
+        onClick={() => navigate("/profile-settings")}
+        className="h-10 w-10 rounded-xl bg-sidebar-primary/20 flex items-center justify-center mb-2 hover:bg-sidebar-primary/30 transition-colors"
+        title={userProfile?.full_name || "Profile"}
+      >
+        <span className="text-sidebar-primary font-semibold text-sm">
+          {userProfile?.full_name?.charAt(0)?.toUpperCase() || "U"}
+        </span>
+      </button>
 
-      <SidebarFooter className="border-t border-sidebar-border/15 p-3">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              onClick={handleLogout} 
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/50 hover:bg-destructive/8 hover:text-destructive transition-all duration-200"
+      {/* Search trigger */}
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("open-tassa-search"))}
+        title="Search (⌘K)"
+        className="h-10 w-10 rounded-xl flex items-center justify-center text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors mb-3"
+      >
+        <Search className="h-[18px] w-[18px]" />
+      </button>
+
+      {/* Category rail */}
+      <nav className="flex-1 flex flex-col items-center gap-1 overflow-y-auto py-1 w-full px-1 scrollbar-thin">
+        {categories.map((cat) => {
+          const active = isCategoryActive(cat);
+          const Icon = cat.icon;
+          return (
+            <Popover
+              key={cat.key}
+              open={openKey === cat.key}
+              onOpenChange={(o) => setOpenKey(o ? cat.key : null)}
             >
-              <LogOut className="h-4 w-4" />
-              {!isCollapsed && <span>Logout</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "group relative flex flex-col items-center justify-center gap-0.5 w-full py-2 rounded-xl transition-all",
+                    active
+                      ? "bg-sidebar-primary/15 text-sidebar-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.25)]"
+                      : "text-sidebar-foreground/65 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                  title={cat.label}
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  <span className="text-[9.5px] font-medium tracking-wide leading-none">{cat.label}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="right"
+                align="start"
+                sideOffset={8}
+                className="w-64 p-2 rounded-2xl border-border/40 shadow-soft-xl bg-popover/95 backdrop-blur-xl"
+              >
+                <div className="px-2 pt-1 pb-2 flex items-center gap-2">
+                  <div
+                    className="h-7 w-7 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${cat.color}20` }}
+                  >
+                    <Icon className="h-4 w-4" style={{ color: cat.color }} />
+                  </div>
+                  <span className="text-[13px] font-semibold">{cat.label}</span>
+                </div>
+                <div className="flex flex-col">
+                  {cat.items.map((it) => {
+                    const ItemIcon = it.icon;
+                    const isActive = location.pathname === it.url;
+                    return (
+                      <NavLink
+                        key={it.url}
+                        to={it.url}
+                        onClick={() => setOpenKey(null)}
+                        className={cn(
+                          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors",
+                          isActive
+                            ? "bg-primary/10 text-foreground"
+                            : "text-foreground/75 hover:bg-muted/60 hover:text-foreground"
+                        )}
+                      >
+                        <ItemIcon className="h-[15px] w-[15px] opacity-75 shrink-0" />
+                        <span className="truncate">{it.title}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+          );
+        })}
+      </nav>
+
+      {/* Logout */}
+      <button
+        onClick={handleLogout}
+        className="h-10 w-10 rounded-xl flex items-center justify-center text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors mt-2 mb-3"
+        title="Logout"
+      >
+        <LogOut className="h-[17px] w-[17px]" />
+      </button>
+    </aside>
   );
 }
