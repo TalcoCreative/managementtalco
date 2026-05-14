@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { LogOut, Megaphone, Search, Command } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -115,7 +114,6 @@ export function Header() {
       }}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {!isMobile && <SidebarTrigger className="flex-shrink-0 h-9 w-9 rounded-xl hover:bg-muted/60 transition-colors" />}
         {isMobile && (
           <h1 className="text-[15px] font-semibold tracking-tight truncate text-foreground">Talco</h1>
         )}
