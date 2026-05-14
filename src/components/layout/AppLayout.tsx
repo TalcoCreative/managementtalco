@@ -1,9 +1,9 @@
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Header } from "./Header";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { FloatingActionButton } from "./FloatingActionButton";
 import { AIChatPopup } from "@/components/ai/AIChatPopup";
+import { GlobalSearch } from "./GlobalSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PushPermissionPrompt, IOSInstallPrompt } from "@/components/pwa/PushPermissionPrompt";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -29,7 +29,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { shouldShowPrompt, enableNotifications } = usePushNotifications(currentUser?.id);
 
   return (
-    <SidebarProvider>
+    <>
       <div className="flex min-h-screen min-h-[100dvh] w-full overflow-x-hidden bg-background">
         {!isMobile && <AppSidebar />}
         <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden relative">
@@ -49,8 +49,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       {isMobile && <MobileBottomNav />}
       <FloatingActionButton />
       <AIChatPopup />
+      <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
-    </SidebarProvider>
+    </>
   );
 }
