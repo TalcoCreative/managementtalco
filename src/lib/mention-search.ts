@@ -46,7 +46,7 @@ export async function searchMentions(query: string, limit = 6): Promise<MentionR
     supabase.from("clients").select("id,name,company").or(`name.ilike.${like},company.ilike.${like}`).limit(limit),
     supabase.from("prospects").select("id,contact_name,company").or(`contact_name.ilike.${like},company.ilike.${like}`).limit(limit),
     supabase.from("kol_database").select("id,name,platform").ilike("name", like).limit(limit),
-    supabase.from("editorial_plan").select("id,title").ilike("title", like).limit(limit),
+    supabase.from("editorial_plans").select("id,title").ilike("title", like).limit(limit),
   ]);
 
   const out: MentionResult[] = [];
