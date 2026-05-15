@@ -783,6 +783,157 @@ export type Database = {
           },
         ]
       }
+      chat_conversations: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          last_message_at: string
+          name: string | null
+          type: Database["public"]["Enums"]["chat_conversation_type"]
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          last_message_at?: string
+          name?: string | null
+          type?: Database["public"]["Enums"]["chat_conversation_type"]
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_message_at?: string
+          name?: string | null
+          type?: Database["public"]["Enums"]["chat_conversation_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_message_mentions: {
+        Row: {
+          created_at: string
+          entity_id: string
+          id: string
+          mention_type: Database["public"]["Enums"]["chat_mention_type"]
+          message_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          id?: string
+          mention_type: Database["public"]["Enums"]["chat_mention_type"]
+          message_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          id?: string
+          mention_type?: Database["public"]["Enums"]["chat_mention_type"]
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_mentions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          reply_to_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          reply_to_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          reply_to_id?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_participants: {
+        Row: {
+          conversation_id: string
+          id: string
+          joined_at: string
+          last_read_at: string
+          muted: boolean
+          role: Database["public"]["Enums"]["chat_participant_role"]
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          muted?: boolean
+          role?: Database["public"]["Enums"]["chat_participant_role"]
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          muted?: boolean
+          role?: Database["public"]["Enums"]["chat_participant_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_accounts: {
         Row: {
           client_id: string
@@ -6748,6 +6899,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_chat_participant: {
+        Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
       log_client_activity: {
         Args: {
           p_action: string
@@ -6788,6 +6943,19 @@ export type Database = {
         | "director"
         | "project_manager"
         | "sales"
+      chat_conversation_type: "dm" | "group"
+      chat_mention_type:
+        | "user"
+        | "task"
+        | "project"
+        | "shooting"
+        | "meeting"
+        | "event"
+        | "client"
+        | "prospect"
+        | "kol"
+        | "editorial_plan"
+      chat_participant_role: "admin" | "member"
       ep_block_type:
         | "content_meta"
         | "image"
@@ -6963,6 +7131,20 @@ export const Constants = {
         "project_manager",
         "sales",
       ],
+      chat_conversation_type: ["dm", "group"],
+      chat_mention_type: [
+        "user",
+        "task",
+        "project",
+        "shooting",
+        "meeting",
+        "event",
+        "client",
+        "prospect",
+        "kol",
+        "editorial_plan",
+      ],
+      chat_participant_role: ["admin", "member"],
       ep_block_type: [
         "content_meta",
         "image",
