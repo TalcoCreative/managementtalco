@@ -45,10 +45,11 @@ export function AppSidebar() {
     cat.items.some((i) => location.pathname === i.url || (i.url !== "/" && location.pathname.startsWith(i.url)));
 
   return (
-    <aside
-      className="hidden md:flex flex-col items-center w-[68px] shrink-0 border-r border-sidebar-border/15 bg-sidebar sticky top-0 h-screen z-30"
-      style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
-    >
+    <aside className="hidden md:block w-[68px] shrink-0 self-stretch border-r border-sidebar-border/15 bg-sidebar relative z-30">
+      <div
+        className="sticky top-0 h-screen flex flex-col items-center w-full"
+        style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+      >
       {/* Avatar */}
       <button
         onClick={() => navigate("/profile-settings")}
@@ -144,7 +145,7 @@ export function AppSidebar() {
         title="Logout"
       >
         <LogOut className="h-[17px] w-[17px]" />
-      </button>
+      </div>
     </aside>
   );
 }
