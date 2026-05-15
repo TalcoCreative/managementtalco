@@ -145,6 +145,7 @@ export function AppSidebar() {
         title="Logout"
       >
         <LogOut className="h-[17px] w-[17px]" />
+      </button>
       </div>
     </aside>
   );
