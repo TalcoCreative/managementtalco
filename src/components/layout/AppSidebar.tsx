@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { LogOut, Search, Command } from "lucide-react";
+import { ChevronDown, LogOut, Search } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/hooks/usePermissions";
 import { filterCategoriesByPermission, NavCategory } from "./nav-config";
+import { useChatUnread } from "@/hooks/useChatUnread";
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -28,6 +30,14 @@ export function AppSidebar() {
       return data;
     },
   });
+  const { data: currentUser } = useQuery({
+    queryKey: ["chat-sidebar-current-user"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.user ?? null;
+    },
+  });
+  const { total: unreadChats } = useChatUnread(currentUser?.id);
 
   const handleLogout = async () => {
     try {
@@ -45,7 +55,7 @@ export function AppSidebar() {
     cat.items.some((i) => location.pathname === i.url || (i.url !== "/" && location.pathname.startsWith(i.url)));
 
   return (
-    <aside className="hidden md:block w-[68px] shrink-0 self-stretch border-r border-sidebar-border/15 bg-sidebar relative z-30">
+    <aside className="hidden md:block w-[76px] shrink-0 self-stretch border-r border-sidebar-border/15 bg-sidebar relative z-30">
       <div
         className="sticky top-0 h-screen flex flex-col items-center w-full"
         style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
@@ -75,6 +85,8 @@ export function AppSidebar() {
         {categories.map((cat) => {
           const active = isCategoryActive(cat);
           const Icon = cat.icon;
+          const isChatCategory = cat.key === "chat";
+          const chatBadge = isChatCategory ? unreadChats : 0;
           return (
             <Popover
               key={cat.key}
@@ -84,22 +96,32 @@ export function AppSidebar() {
               <PopoverTrigger asChild>
                 <button
                   className={cn(
-                    "group relative flex flex-col items-center justify-center gap-0.5 w-full py-2 rounded-xl transition-all",
+                    "group relative flex flex-col items-center justify-center gap-1 w-full py-2.5 rounded-xl transition-all",
                     active
                       ? "bg-sidebar-primary/15 text-sidebar-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.25)]"
                       : "text-sidebar-foreground/65 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   )}
                   title={cat.label}
                 >
-                  <Icon className="h-[18px] w-[18px]" />
-                  <span className="text-[9.5px] font-medium tracking-wide leading-none">{cat.label}</span>
+                  <div className="relative flex items-center justify-center">
+                    <Icon className="h-[18px] w-[18px]" />
+                    {chatBadge > 0 && (
+                      <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center border border-sidebar shadow-sm">
+                        {chatBadge > 99 ? "99+" : chatBadge}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9.5px] font-medium tracking-wide leading-none">{cat.label}</span>
+                    {cat.items.length > 1 && <ChevronDown className="h-2.5 w-2.5 opacity-60" />}
+                  </div>
                 </button>
               </PopoverTrigger>
               <PopoverContent
-                side="right"
+                side="bottom"
                 align="start"
                 sideOffset={8}
-                className="w-64 p-2 rounded-2xl border-border/40 shadow-soft-xl bg-popover/95 backdrop-blur-xl"
+                className="w-[280px] p-2 rounded-2xl border-border/40 shadow-soft-xl bg-popover/95 backdrop-blur-xl"
               >
                 <div className="px-2 pt-1 pb-2 flex items-center gap-2">
                   <div
@@ -110,28 +132,30 @@ export function AppSidebar() {
                   </div>
                   <span className="text-[13px] font-semibold">{cat.label}</span>
                 </div>
-                <div className="flex flex-col">
-                  {cat.items.map((it) => {
-                    const ItemIcon = it.icon;
-                    const isActive = location.pathname === it.url;
-                    return (
-                      <NavLink
-                        key={it.url}
-                        to={it.url}
-                        onClick={() => setOpenKey(null)}
-                        className={cn(
-                          "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-foreground"
-                            : "text-foreground/75 hover:bg-muted/60 hover:text-foreground"
-                        )}
-                      >
-                        <ItemIcon className="h-[15px] w-[15px] opacity-75 shrink-0" />
-                        <span className="truncate">{it.title}</span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
+                <ScrollArea className="max-h-[420px]">
+                  <div className="flex flex-col">
+                    {cat.items.map((it) => {
+                      const ItemIcon = it.icon;
+                      const isActive = location.pathname === it.url;
+                      return (
+                        <NavLink
+                          key={it.url}
+                          to={it.url}
+                          onClick={() => setOpenKey(null)}
+                          className={cn(
+                            "flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors",
+                            isActive
+                              ? "bg-primary/10 text-foreground"
+                              : "text-foreground/75 hover:bg-muted/60 hover:text-foreground"
+                          )}
+                        >
+                          <ItemIcon className="h-[15px] w-[15px] opacity-75 shrink-0" />
+                          <span className="truncate">{it.title}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </PopoverContent>
             </Popover>
           );
