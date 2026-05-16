@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 const Meeting = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const clientFilter = searchParams.get("client");
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
