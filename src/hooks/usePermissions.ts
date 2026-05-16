@@ -230,7 +230,7 @@ export function usePermissions() {
   const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading);
 
   // Features accessible to ALL users without any permission check
-  const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes"];
+  const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes", "chat"];
 
   const can = (featureKey: string, action: PermissionAction = "can_view"): boolean => {
     // Always accessible features bypass all checks
