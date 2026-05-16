@@ -109,6 +109,18 @@ const Meeting = () => {
     },
   });
 
+  useEffect(() => {
+    const focus = searchParams.get("focus");
+    if (focus && meetings) {
+      const found = (meetings as any[]).find((m: any) => m.id === focus);
+      if (found) {
+        setSelectedMeeting(found);
+        searchParams.delete("focus");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, meetings]);
+
   // Fetch participants for all meetings
   const { data: participants } = useQuery({
     queryKey: ["meeting-participants"],

@@ -109,6 +109,19 @@ export default function Prospects() {
     },
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const focus = searchParams.get("focus");
+    if (focus && prospects) {
+      const found = (prospects as any[]).find((p: any) => p.id === focus);
+      if (found) {
+        setSelectedProspect(found);
+        searchParams.delete("focus");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, prospects]);
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, oldStatus }: { id: string; status: string; oldStatus: string }) => {
       const { data: session } = await supabase.auth.getSession();
