@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -108,6 +108,19 @@ export default function Prospects() {
       return data as any[];
     },
   });
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const focus = searchParams.get("focus");
+    if (focus && prospects) {
+      const found = (prospects as any[]).find((p: any) => p.id === focus);
+      if (found) {
+        setSelectedProspect(found);
+        searchParams.delete("focus");
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, setSearchParams, prospects]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, oldStatus }: { id: string; status: string; oldStatus: string }) => {

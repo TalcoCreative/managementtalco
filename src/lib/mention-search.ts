@@ -71,16 +71,16 @@ export async function searchMentions(query: string, limit = 6): Promise<MentionR
 }
 
 export const MENTION_TYPE_ROUTE: Record<MentionType, (id: string) => string> = {
-  user: () => `/profile-settings`,
-  task: () => `/tasks`,
-  project: () => `/projects`,
-  shooting: () => `/shooting`,
-  meeting: () => `/meeting`,
+  user: (id) => `/users?focus=${id}`,
+  task: (id) => `/tasks?focus=${id}`,
+  project: (id) => `/projects?focus=${id}`,
+  shooting: (id) => `/shooting?focus=${id}`,
+  meeting: (id) => `/meeting?focus=${id}`,
   event: (id) => `/event/${id}`,
   client: (id) => `/clients/${id}`,
-  prospect: () => `/prospects`,
-  kol: () => `/kol-database`,
-  editorial_plan: () => `/editorial-plan`,
+  prospect: (id) => `/prospects?focus=${id}`,
+  kol: (id) => `/kol-database?focus=${id}`,
+  editorial_plan: (id) => `/editorial-plan?focus=${id}`,
 };
 
 export const MENTION_TYPE_LABEL: Record<MentionType, string> = {

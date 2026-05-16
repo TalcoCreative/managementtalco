@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,13 +19,21 @@ import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 
 export default function ShootingSchedule() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const clientFilter = searchParams.get("client");
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [deleteShooting, setDeleteShooting] = useState<{ id: string; title: string } | null>(null);
   const [rescheduleShooting, setRescheduleShooting] = useState<{ id: string; title: string; scheduled_date: string } | null>(null);
   const [selectedShootingId, setSelectedShootingId] = useState<string | null>(null);
+  useEffect(() => {
+    const focus = searchParams.get("focus");
+    if (focus) {
+      setSelectedShootingId(focus);
+      searchParams.delete("focus");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   const [deleting, setDeleting] = useState(false);
   const [sortAsc, setSortAsc] = useState(true);
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
