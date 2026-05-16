@@ -23,7 +23,7 @@ export interface NavCategory {
 
 const ALWAYS_VISIBLE = [
   "dashboard", "profile_settings", "personal_notes",
-  "my_prospects", "my_sales_dashboard", "my_commission",
+  "my_prospects", "my_sales_dashboard", "my_commission", "chat",
 ];
 
 export const NAV_CATEGORIES: NavCategory[] = [
@@ -36,6 +36,15 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "Dashboard", url: "/", icon: Home, featureKey: "dashboard" },
       { title: "Schedule", url: "/schedule", icon: Calendar, featureKey: "schedule" },
       { title: "Personal Notes", url: "/personal-notes", icon: StickyNote, featureKey: "personal_notes" },
+    ],
+  },
+  {
+    key: "chat",
+    label: "Chat",
+    icon: MessageSquare,
+    color: "hsl(152,48%,46%)",
+    items: [
+      { title: "Chat", url: "/chat", icon: MessageSquare, featureKey: "chat" },
     ],
   },
   {

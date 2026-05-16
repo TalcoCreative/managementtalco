@@ -6899,6 +6899,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_chat_creator: {
+        Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
       is_chat_participant: {
         Args: { _conv: string; _user: string }
         Returns: boolean
