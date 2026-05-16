@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { MessageSquare, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { usePermissions } from "@/hooks/usePermissions";
 import { filterCategoriesByPermission, NavCategory } from "./nav-config";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useChatUnread } from "@/hooks/useChatUnread";
 
 export function MobileBottomNav() {
   const [openCat, setOpenCat] = useState<NavCategory | null>(null);
@@ -13,6 +16,14 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { canView } = usePermissions();
+  const { data: currentUser } = useQuery({
+    queryKey: ["chat-mobile-current-user"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session?.user ?? null;
+    },
+  });
+  const { total: unreadChats } = useChatUnread(currentUser?.id);
 
   useEffect(() => {
     const onScroll = () => {
@@ -28,9 +39,10 @@ export function MobileBottomNav() {
 
   const categories = filterCategoriesByPermission(canView);
 
-  // Show first 4 categories + Search button
-  const primaryCats = categories.slice(0, 4);
-  const remainingCats = categories.slice(4);
+  const chatCategory = categories.find((cat) => cat.key === "chat") ?? null;
+  const nonChatCategories = categories.filter((cat) => cat.key !== "chat");
+  const primaryCats = nonChatCategories.slice(0, 3);
+  const remainingCats = nonChatCategories.slice(3);
 
   const isCategoryActive = (cat: NavCategory) =>
     cat.items.some((i) => location.pathname === i.url || (i.url !== "/" && location.pathname.startsWith(i.url)));
@@ -70,6 +82,33 @@ export function MobileBottomNav() {
               </button>
             );
           })}
+          {chatCategory && (
+            <button
+              onClick={() => navigate(chatCategory.items[0].url)}
+              className={cn(
+                "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all tap-target rounded-full",
+                location.pathname.startsWith("/chat") ? "text-primary" : "text-muted-foreground"
+              )}
+              aria-label="Chat"
+            >
+              <div
+                className={cn(
+                  "relative flex items-center justify-center w-9 h-7 rounded-full transition-all duration-300",
+                  location.pathname.startsWith("/chat") && "bg-primary/10 shadow-[0_0_18px_hsl(var(--primary)/0.25)]"
+                )}
+              >
+                <MessageSquare className="h-[18px] w-[18px]" />
+                {unreadChats > 0 && (
+                  <span className="absolute -top-1 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {unreadChats > 99 ? "99+" : unreadChats}
+                  </span>
+                )}
+              </div>
+              <span className={cn("text-[9.5px] font-medium tracking-wide", location.pathname.startsWith("/chat") && "font-semibold")}>
+                Chat
+              </span>
+            </button>
+          )}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("open-tassa-search"))}
             className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-muted-foreground transition-all tap-target rounded-full"
