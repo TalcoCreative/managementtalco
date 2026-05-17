@@ -257,7 +257,8 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return jsonError("AI Gateway not configured.", 400);
 
-    const systemPrompt = buildSystemPrompt();
+    const contextBlock = await buildLiveContext(adminClient);
+    const systemPrompt = buildSystemPrompt(contextBlock);
 
     // Multi-step tool loop (max 4 iterations)
     let conversation: any[] = [{ role: "system", content: systemPrompt }, ...messages];
