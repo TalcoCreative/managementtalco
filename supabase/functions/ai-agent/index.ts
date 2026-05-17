@@ -390,15 +390,25 @@ TOOLS:
 - execute_action: actually perform the mutation AFTER user confirms
 
 KEY COLUMN NAMES (DO NOT GUESS):
-- tasks.title, tasks.deadline, tasks.assigned_to, tasks.status, tasks.project_id
-- projects.title, projects.client_id, projects.deadline
-- clients.name, clients.company, clients.client_type
-- profiles.full_name, profiles.user_id (text email), profiles.id (uuid), profiles.phone
-- prospects.title, prospects.value, prospects.status, prospects.owner_id
-- expenses/income.amount, .category, .sub_category, .client_id, .project_id
-- ledger_entries.type ('income'|'expense'), .amount, .date, .sub_category
-- meetings.title, .meeting_date, .meeting_time
-- shooting_schedules.title, .scheduled_date, .scheduled_time
+- ALL tables have: created_at (timestamptz), updated_at (timestamptz), created_by (uuid → profiles.id). Use these to answer "kapan dibuat / siapa yg bikin / dibuat hari ini / minggu ini".
+- tasks.title, tasks.deadline, tasks.assigned_to, tasks.status, tasks.project_id, tasks.created_at, tasks.created_by
+- projects.title, projects.client_id, projects.deadline, projects.created_at, projects.created_by
+- clients.name, clients.company, clients.client_type, clients.created_at
+- profiles.full_name, profiles.user_id (text email), profiles.id (uuid), profiles.phone, profiles.created_at
+- prospects.title, prospects.value, prospects.status, prospects.owner_id, prospects.created_at, prospects.created_by
+- expenses/income.amount, .category, .sub_category, .client_id, .project_id, .created_at, .created_by
+- ledger_entries.type ('income'|'expense'), .amount, .date, .sub_category, .created_at
+- meetings.title, .meeting_date, .meeting_time, .created_at, .created_by
+- shooting_schedules.title, .scheduled_date, .scheduled_time, .shooting_date, .created_at, .created_by
+- editorial_plan_slides.title, .status, .publish_date, .platform, .created_at, .created_by, .published_at
+- editorial_plans.title, .client_id, .month, .year, .created_at, .created_by
+- leave_requests, reimbursements, letters, announcements, holidays, candidates, kols, kol_campaigns, events, attendance — all have .created_at and most have .created_by
+
+TIME QUERIES (USE created_at):
+- "Dibuat hari ini" → filter created_at gte today 00:00 (Asia/Jakarta).
+- "Minggu ini / bulan ini" → gte awal periode.
+- "Task terbaru / shooting terbaru" → order_by '-created_at' limit 10.
+- "Siapa yang bikin" → join created_by ke profiles, atau lookup nama dari LIVE CONTEXT roster.
 
 INVESTIGATION RULES:
 1. ANY data question → CALL A TOOL FIRST. Never answer from memory.
