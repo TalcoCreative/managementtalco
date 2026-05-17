@@ -257,12 +257,13 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return jsonError("AI Gateway not configured.", 400);
 
-    const systemPrompt = buildSystemPrompt();
+    const contextBlock = await buildLiveContext(adminClient);
+    const systemPrompt = buildSystemPrompt(contextBlock);
 
     // Multi-step tool loop (max 4 iterations)
     let conversation: any[] = [{ role: "system", content: systemPrompt }, ...messages];
     let iter = 0;
-    const MAX_ITERATIONS = 4;
+    const MAX_ITERATIONS = 6;
 
     while (iter < MAX_ITERATIONS) {
       iter++;
@@ -363,7 +364,7 @@ function jsonOk(data: any) {
   });
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(liveContext: string): string {
   return `You are TASSA — Talco Support Assistant. An internal AI for Talco Management System.
 
 ROLE: Analyst, Operator, and Strategic Advisor. Think like a sharp CEO, not a chatbot.
@@ -430,7 +431,97 @@ RESPONSE FORMAT (use what fits):
 - **Yang perlu diperhatiin:** risks (optional)
 - **Saran gue:** action items (optional)
 
-For confirmation drafts, after calling propose_action, summarize the draft in chat naturally and ask for confirmation.`;
+For confirmation drafts, after calling propose_action, summarize the draft in chat naturally and ask for confirmation.
+
+NAMING: Always refer to people by their FIRST NAME only (e.g. "Reza", "Putri"). Never use full names. The roster below is the source of truth.
+
+═══ LIVE CONTEXT (auto-injected, fresh every request) ═══
+${liveContext}
+═══ END LIVE CONTEXT ═══
+
+Use the LIVE CONTEXT to answer simple questions about team & task workload WITHOUT calling tools. Only call tools for data not present above.`;
+}
+
+// Compact live snapshot injected into the system prompt so TASSA knows team
+// roster + active workload without spending a tool call on trivial questions.
+async function buildLiveContext(client: any): Promise<string> {
+  const todayStr = new Date().toISOString().split("T")[0];
+  try {
+    // Roster: id → first name (mapped from full_name)
+    const { data: profiles } = await client
+      .from("profiles")
+      .select("id, full_name");
+    const idToFirst = new Map<string, string>();
+    const roster: string[] = [];
+    for (const p of profiles || []) {
+      const first = String(p.full_name || "").trim().split(/\s+/)[0] || "Unknown";
+      idToFirst.set(p.id, first);
+      roster.push(`${first}=${p.id}`);
+    }
+
+    // Active tasks per assignee (single + multi via task_assignees)
+    const { data: tasks } = await client
+      .from("tasks")
+      .select("id, status, deadline, assigned_to")
+      .not("status", "in", "(done,completed,cancelled,archived)");
+    const { data: multi } = await client
+      .from("task_assignees")
+      .select("task_id, user_id");
+
+    const taskCount = new Map<string, number>();
+    const overdueCount = new Map<string, number>();
+    const dueTodayCount = new Map<string, number>();
+
+    const bump = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) || 0) + 1);
+
+    const taskMap = new Map<string, any>();
+    for (const t of tasks || []) taskMap.set(t.id, t);
+
+    // Single assignee
+    for (const t of tasks || []) {
+      if (t.assigned_to) {
+        bump(taskCount, t.assigned_to);
+        if (t.deadline && t.deadline < todayStr) bump(overdueCount, t.assigned_to);
+        if (t.deadline === todayStr) bump(dueTodayCount, t.assigned_to);
+      }
+    }
+    // Multi assignees
+    for (const a of multi || []) {
+      const t = taskMap.get(a.task_id);
+      if (!t) continue;
+      bump(taskCount, a.user_id);
+      if (t.deadline && t.deadline < todayStr) bump(overdueCount, a.user_id);
+      if (t.deadline === todayStr) bump(dueTodayCount, a.user_id);
+    }
+
+    const workload: Array<{ name: string; total: number; overdue: number; today: number }> = [];
+    for (const [uid, total] of taskCount.entries()) {
+      workload.push({
+        name: idToFirst.get(uid) || "Unknown",
+        total,
+        overdue: overdueCount.get(uid) || 0,
+        today: dueTodayCount.get(uid) || 0,
+      });
+    }
+    workload.sort((a, b) => b.total - a.total);
+
+    const workloadLine = workload.length === 0
+      ? "(no active tasks)"
+      : workload.map(w => `${w.name}:${w.total}${w.overdue ? `(od:${w.overdue})` : ""}${w.today ? `(td:${w.today})` : ""}`).join(", ");
+
+    const top = workload[0];
+    const topLine = top ? `BUSIEST TODAY: ${top.name} (${top.total} active${top.overdue ? `, ${top.overdue} overdue` : ""})` : "";
+
+    return [
+      `DATE: ${todayStr} (Asia/Jakarta)`,
+      `TEAM ROSTER (first_name=uuid): ${roster.join(", ") || "(empty)"}`,
+      `ACTIVE TASK WORKLOAD (name:total, od=overdue, td=due-today): ${workloadLine}`,
+      topLine,
+      `Total active tasks: ${tasks?.length || 0}. Total team: ${profiles?.length || 0}.`,
+    ].filter(Boolean).join("\n");
+  } catch (e) {
+    return `(live context unavailable: ${String(e)})`;
+  }
 }
 
 // ─── Tool implementations ───────────────────────────────────────────────────
