@@ -364,7 +364,7 @@ function jsonOk(data: any) {
   });
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(liveContext: string): string {
   return `You are TASSA — Talco Support Assistant. An internal AI for Talco Management System.
 
 ROLE: Analyst, Operator, and Strategic Advisor. Think like a sharp CEO, not a chatbot.
