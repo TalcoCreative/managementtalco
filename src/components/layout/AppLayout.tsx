@@ -2,7 +2,6 @@ import { AppSidebar } from "./AppSidebar";
 import { Header } from "./Header";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { FloatingActionButton } from "./FloatingActionButton";
-import { AIChatPopup } from "@/components/ai/AIChatPopup";
 import { GlobalSearch } from "./GlobalSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PushPermissionPrompt, IOSInstallPrompt } from "@/components/pwa/PushPermissionPrompt";
@@ -48,7 +47,6 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       {isMobile && <MobileBottomNav />}
       <FloatingActionButton />
-      <AIChatPopup />
       <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />

@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ConversationList } from "./ConversationList";
 import { ConversationView } from "./ConversationView";
 import { NewConversationDialog } from "./NewConversationDialog";
+import { TassaChatView } from "./TassaChatView";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { cn } from "@/lib/utils";
+
+export const TASSA_CONV_ID = "__tassa_ai__";
 
 interface ChatPanelProps {
   className?: string;
@@ -82,7 +85,9 @@ export function ChatPanel({ className, embedded = false, showCloseButton = false
         </div>
 
         <div className={cn("flex-1 flex flex-col min-w-0", !activeConv && "hidden md:flex")}>
-          {activeConv ? (
+          {activeConv === TASSA_CONV_ID ? (
+            <TassaChatView onBack={() => setActiveConv(null)} />
+          ) : activeConv ? (
             <ConversationView conversationId={activeConv} currentUserId={userId} onBack={() => setActiveConv(null)} />
           ) : (
             <div className="flex-1 hidden md:flex items-center justify-center text-center p-6">
