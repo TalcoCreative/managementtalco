@@ -263,7 +263,7 @@ serve(async (req) => {
     // Multi-step tool loop (max 4 iterations)
     let conversation: any[] = [{ role: "system", content: systemPrompt }, ...messages];
     let iter = 0;
-    const MAX_ITERATIONS = 4;
+    const MAX_ITERATIONS = 6;
 
     while (iter < MAX_ITERATIONS) {
       iter++;
