@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { LogOut, Megaphone, Search, Command } from "lucide-react";
+import { LogOut, Megaphone, Search, Command, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ export function Header() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
   const [createAnnouncementOpen, setCreateAnnouncementOpen] = useState(false);
   const [manageAnnouncementsOpen, setManageAnnouncementsOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -135,6 +137,17 @@ export function Header() {
       
       <div className="flex items-center gap-0.5 flex-shrink-0">
         <InstallButton variant="ghost" size="icon" showLabel={false} className="h-9 w-9 rounded-xl" />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="h-9 w-9 rounded-xl"
+        >
+          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+        
         
         {canManageAnnouncements && (
           <DropdownMenu>
