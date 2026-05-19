@@ -42,6 +42,7 @@ import {
 import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
 import { ImageLightbox } from "./ImageLightbox";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface Slide {
   id: string;
