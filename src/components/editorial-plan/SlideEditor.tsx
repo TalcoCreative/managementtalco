@@ -558,27 +558,42 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
                   <UserPlus className="h-3.5 w-3.5" />
                   Assign To
                 </Label>
-                <div className="flex items-center gap-2">
-                  <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Pilih assignee..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {profiles.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    onClick={handleSendToTask}
-                    disabled={!selectedAssignee || isSendingTask}
-                    className="shrink-0"
-                  >
-                    <Send className="h-4 w-4 mr-1" />
-                    {isSendingTask ? "Mengirim..." : "Kirim ke Task"}
-                  </Button>
-                </div>
+                <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih assignee..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profiles.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Label className="flex items-center gap-1.5 pt-1">
+                  Project
+                </Label>
+                <SearchableSelect
+                  value={selectedProjectId}
+                  onValueChange={setSelectedProjectId}
+                  options={projectOptions}
+                  placeholder={
+                    projectOptions.length === 0
+                      ? "Belum ada project untuk client ini"
+                      : "Pilih project..."
+                  }
+                  searchPlaceholder="Cari project..."
+                />
+
+                <Button
+                  size="sm"
+                  onClick={handleSendToTask}
+                  disabled={!selectedAssignee || !selectedProjectId || isSendingTask}
+                  className="w-full"
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  {isSendingTask ? "Mengirim..." : "Kirim ke Task"}
+                </Button>
+
                 {slide.assigned_to && (
                   <p className="text-xs text-muted-foreground">
                     Sudah di-assign ke: {profiles.find(p => p.id === slide.assigned_to)?.full_name || "Unknown"}
