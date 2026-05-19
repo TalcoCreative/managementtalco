@@ -143,6 +143,33 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
     },
   });
 
+  // Fetch EP info (client_id) once for project list
+  const { data: epInfo } = useQuery({
+    queryKey: ["ep-info", epId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("editorial_plans")
+        .select("id, title, client_id")
+        .eq("id", epId)
+        .single();
+      return data;
+    },
+  });
+
+  // Fetch projects belonging to this client
+  const { data: projectOptions = [] } = useQuery({
+    queryKey: ["ep-client-projects", epInfo?.client_id],
+    enabled: !!epInfo?.client_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("projects")
+        .select("id, title")
+        .eq("client_id", epInfo!.client_id)
+        .order("created_at", { ascending: false });
+      return (data || []).map((p) => ({ value: p.id, label: p.title }));
+    },
+  });
+
   // Send slide as task
   const handleSendToTask = async () => {
     if (!selectedAssignee) {
