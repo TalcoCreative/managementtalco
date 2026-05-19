@@ -176,37 +176,17 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
       toast.error("Pilih assignee terlebih dahulu");
       return;
     }
+    if (!selectedProjectId) {
+      toast.error("Pilih project terlebih dahulu");
+      return;
+    }
     setIsSendingTask(true);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
 
-      // Get EP data to find client_id
       const { data: epData } = await supabase.from("editorial_plans").select("id, title, client_id").eq("id", epId).single();
       if (!epData) throw new Error("EP not found");
-
-      // Find or create a project for this client
-      let projectId: string;
-      const { data: existingProject } = await supabase
-        .from("projects")
-        .select("id")
-        .eq("client_id", epData.client_id)
-        .limit(1)
-        .single();
-
-      if (existingProject) {
-        projectId = existingProject.id;
-      } else {
-        // Get client name
-        const { data: clientData } = await supabase.from("clients").select("name").eq("id", epData.client_id).single();
-        const { data: newProject, error: projError } = await supabase.from("projects").insert({
-          title: `${clientData?.name || "Client"} - Editorial Plan`,
-          client_id: epData.client_id,
-          status: "active",
-        }).select("id").single();
-        if (projError) throw projError;
-        projectId = newProject!.id;
-      }
 
       // Get content title from blocks
       const contentBlock = blocks?.find(b => b.block_type === "content_meta");
@@ -215,11 +195,11 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
       const taskTitle = `[EP] ${epData.title} - ${contentTitle}`;
       const description = contentBlock?.content?.copywriting || contentBlock?.content?.caption || null;
 
-      // Create task
+      // Create task with explicitly chosen project
       const { data: taskData, error: taskError } = await supabase.from("tasks").insert({
         title: taskTitle,
         description,
-        project_id: projectId,
+        project_id: selectedProjectId,
         assigned_to: selectedAssignee,
         created_by: session.session.user.id,
         status: "pending",
@@ -230,7 +210,6 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
 
       if (taskError) throw taskError;
 
-      // Add assignee to task_assignees
       if (taskData) {
         await supabase.from("task_assignees").insert({
           task_id: taskData.id,
@@ -238,7 +217,6 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
         });
       }
 
-      // Update slide assigned_to
       await supabase.from("editorial_slides").update({ assigned_to: selectedAssignee } as any).eq("id", slide.id);
 
       toast.success("Task berhasil dibuat dari slide ini!");
