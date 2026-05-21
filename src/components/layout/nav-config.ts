@@ -4,6 +4,7 @@ import {
   CalendarHeart, UserSearch, BarChart3, FileText, Share2, Sparkles, Star, Megaphone,
   UserPlus, Wallet, CircleDollarSign, PieChart, Scale, ReceiptText, Crown, User,
   Mail, MessageSquare, Shield, MapPin, Settings, StickyNote, LayoutGrid, Briefcase as Work,
+  HeartHandshake,
 } from "lucide-react";
 
 export interface NavItemDef {
