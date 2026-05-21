@@ -170,6 +170,8 @@ const App = () => (
           <Route path="/personal-notes" element={<ProtectedRoute><PersonalNotes /></ProtectedRoute>} />
           <Route path="/install-app" element={<InstallApp />} />
           <Route path="/notification-log" element={<ProtectedRoute><NotificationLog /></ProtectedRoute>} />
+          <Route path="/team-review" element={<ProtectedRoute><TeamReview /></ProtectedRoute>} />
+          <Route path="/system/team-review-settings" element={<ProtectedRoute><TeamReviewSettings /></ProtectedRoute>} />
           <Route path="/ads-budget" element={<ProtectedRoute><AdsBudget /></ProtectedRoute>} />
           <Route path="/projects/task/:token" element={<SharedTask />} />
           <Route path="/share/task/:token" element={<SharedTask />} />
