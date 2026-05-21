@@ -86,6 +86,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
     label: "Executive",
     features: [
       { key: "ceo_dashboard", label: "CEO Dashboard" },
+      { key: "team_review_admin", label: "Team Review (Culture Insight)" },
     ],
   },
   {
@@ -151,6 +152,8 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/system/roles": "role_management",
   "/system/settings": "system_settings",
   "/setting-location": "setting_location",
+  "/team-review": "team_review_admin",
+  "/system/team-review-settings": "team_review_admin",
 };
 
 // Map feature keys to sidebar nav URLs

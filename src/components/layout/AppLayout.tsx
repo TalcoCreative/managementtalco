@@ -8,6 +8,7 @@ import { PushPermissionPrompt, IOSInstallPrompt } from "@/components/pwa/PushPer
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { TeamReviewGate } from "@/components/team-review/TeamReviewOverlay";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -50,6 +51,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
+      <TeamReviewGate userId={currentUser?.id} />
     </>
   );
 }

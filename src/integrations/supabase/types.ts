@@ -4676,6 +4676,7 @@ export type Database = {
           full_name: string
           gaji_pokok: number | null
           id: string
+          include_in_team_review: boolean
           ktp_number: string | null
           phone: string | null
           salary: number | null
@@ -4699,6 +4700,7 @@ export type Database = {
           full_name: string
           gaji_pokok?: number | null
           id: string
+          include_in_team_review?: boolean
           ktp_number?: string | null
           phone?: string | null
           salary?: number | null
@@ -4722,6 +4724,7 @@ export type Database = {
           full_name?: string
           gaji_pokok?: number | null
           id?: string
+          include_in_team_review?: boolean
           ktp_number?: string | null
           phone?: string | null
           salary?: number | null
@@ -6713,6 +6716,153 @@ export type Database = {
           },
         ]
       }
+      team_review_answers: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          question_id: string
+          review_month: string
+          reviewed_user_id: string
+          score: number
+          submission_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          review_month: string
+          reviewed_user_id: string
+          score: number
+          submission_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          review_month?: string
+          reviewed_user_id?: string
+          score?: number
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_review_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "team_review_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_review_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "team_review_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_review_drafts: {
+        Row: {
+          payload: Json
+          review_month: string
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          payload?: Json
+          review_month: string
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          payload?: Json
+          review_month?: string
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_review_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          order_index: number
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_review_settings: {
+        Row: {
+          deadline_day: number
+          enabled: boolean
+          id: string
+          open_day: number
+          require_before_clockin: boolean
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          deadline_day?: number
+          enabled?: boolean
+          id?: string
+          open_day?: number
+          require_before_clockin?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          deadline_day?: number
+          enabled?: boolean
+          id?: string
+          open_day?: number
+          require_before_clockin?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_review_submissions: {
+        Row: {
+          id: string
+          review_month: string
+          reviewer_id: string
+          submitted_at: string
+        }
+        Insert: {
+          id?: string
+          review_month: string
+          reviewer_id: string
+          submitted_at?: string
+        }
+        Update: {
+          id?: string
+          review_month?: string
+          reviewer_id?: string
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       user_dynamic_roles: {
         Row: {
           assigned_at: string
@@ -6907,6 +7057,7 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      is_hr_or_admin: { Args: { _user_id: string }; Returns: boolean }
       log_client_activity: {
         Args: {
           p_action: string
