@@ -69,7 +69,7 @@ export function TeamReviewOverlay({ userId }: Props) {
         .eq("review_month", month)
         .maybeSingle();
       if (data?.payload) {
-        const p = data.payload as DraftPayload;
+        const p = data.payload as unknown as DraftPayload;
         setAnswers(p.answers || {});
         setComments(p.comments || {});
         setCursor(p.cursor ?? 0);
