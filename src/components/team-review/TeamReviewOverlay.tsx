@@ -86,7 +86,7 @@ export function TeamReviewOverlay({ userId }: Props) {
       const payload: DraftPayload = { answers, comments, cursor };
       await supabase
         .from("team_review_drafts")
-        .upsert({ reviewer_id: userId, review_month: month, payload }, { onConflict: "reviewer_id,review_month" });
+        .upsert([{ reviewer_id: userId, review_month: month, payload: payload as any }], { onConflict: "reviewer_id,review_month" });
     }, 600);
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
