@@ -146,6 +146,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
       { title: "Location Settings", url: "/setting-location", icon: MapPin, featureKey: "setting_location" },
       { title: "Invoice Templates", url: "/settings/invoice-templates", icon: ReceiptText, featureKey: "invoice_templates" },
+      { title: "Team Review Settings", url: "/system/team-review-settings", icon: HeartHandshake, featureKey: "team_review_admin" },
       { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
     ],
   },
