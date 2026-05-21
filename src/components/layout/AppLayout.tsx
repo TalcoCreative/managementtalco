@@ -51,6 +51,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
+      <TeamReviewGate userId={currentUser?.id} />
     </>
   );
 }
