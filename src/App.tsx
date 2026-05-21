@@ -85,6 +85,8 @@ import SettingLocation from "./pages/SettingLocation";
 import Invoices from "./pages/Invoices";
 import InvoiceTemplates from "./pages/InvoiceTemplates";
 import Chat from "./pages/Chat";
+import TeamReview from "./pages/TeamReview";
+import TeamReviewSettings from "./pages/TeamReviewSettings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
