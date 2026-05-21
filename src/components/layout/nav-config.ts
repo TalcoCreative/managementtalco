@@ -79,6 +79,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
       { title: "Recruitment Board", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
       { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
+      { title: "Team Culture Insight", url: "/team-review", icon: HeartHandshake, featureKey: "team_review_admin" },
     ],
   },
   {
