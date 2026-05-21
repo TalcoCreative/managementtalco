@@ -86,6 +86,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
     label: "Executive",
     features: [
       { key: "ceo_dashboard", label: "CEO Dashboard" },
+      { key: "team_review_admin", label: "Team Review (Culture Insight)" },
     ],
   },
   {
