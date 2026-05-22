@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find client
     const { data: client, error: clientError } = await supabase
       .from("clients")
       .select("id, name")
@@ -41,10 +40,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch KOL campaigns for this client with KOL info
+    // Assigned KOLs (pivot) — clients only see the listing for their client
+    const { data: assigned } = await supabase
+      .from("kol_database_clients")
+      .select("kol:kol_database(id, name, username, category, industry, ig_followers, tiktok_followers, youtube_followers, twitter_followers, linkedin_followers, threads_followers, instagram_url, tiktok_url, youtube_url, twitter_url, linkedin_url, threads_url)")
+      .eq("client_id", client.id);
+
+    // Campaigns for this client
     const { data: campaigns, error: campError } = await supabase
       .from("kol_campaigns")
-      .select("id, campaign_name, platform, status, is_posted, post_link, kol_id, kol:kol_database(name, username)")
+      .select("id, campaign_name, platform, status, is_posted, post_link, fee, kol_id, kol:kol_database(name, username)")
       .eq("client_id", client.id)
       .order("updated_at", { ascending: false });
 
@@ -56,8 +61,36 @@ Deno.serve(async (req) => {
       });
     }
 
+    const kols = (assigned || [])
+      .map((row: any) => row.kol)
+      .filter(Boolean)
+      .map((k: any) => ({
+        id: k.id,
+        name: k.name,
+        username: k.username,
+        category: k.category,
+        industry: k.industry,
+        followers: {
+          instagram: k.ig_followers,
+          tiktok: k.tiktok_followers,
+          youtube: k.youtube_followers,
+          twitter: k.twitter_followers,
+          linkedin: k.linkedin_followers,
+          threads: k.threads_followers,
+        },
+        links: {
+          instagram: k.instagram_url,
+          tiktok: k.tiktok_url,
+          youtube: k.youtube_url,
+          twitter: k.twitter_url,
+          linkedin: k.linkedin_url,
+          threads: k.threads_url,
+        },
+      }));
+
     const result = {
       clientName: client.name,
+      kols,
       campaigns: (campaigns || []).map((c: any) => ({
         id: c.id,
         kol_name: c.kol?.name || "-",
@@ -67,6 +100,7 @@ Deno.serve(async (req) => {
         status: c.status,
         is_posted: c.is_posted,
         post_link: c.post_link,
+        budget: c.fee, // surfaced to client as "budget"
       })),
     };
 
