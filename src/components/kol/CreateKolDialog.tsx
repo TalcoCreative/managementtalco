@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ClientAssignmentPicker, syncKolClientAssignments } from "./ClientAssignmentPicker";
 
 interface CreateKolDialogProps {
   open: boolean;
