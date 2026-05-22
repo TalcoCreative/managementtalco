@@ -189,8 +189,9 @@ Deno.serve(async (req) => {
       hasMeetings: (meetingCount || 0) > 0,
       hasShootings: (shootingCount || 0) > 0,
       hasMarketplace: (marketplaceCount || 0) > 0,
-      hasKolCampaigns: (kolCampaignCount || 0) > 0,
+      hasKolCampaigns: (kolCampaignCount || 0) > 0 || (kolAssignedCount || 0) > 0,
       schedule: scheduleItems,
+
       editorialPlans: editorialPlans || [],
     };
 
