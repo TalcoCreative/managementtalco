@@ -52,14 +52,15 @@ export function AppSidebar() {
   const isCategoryActive = (cat: NavCategory) =>
     cat.items.some((i) => location.pathname === i.url || (i.url !== "/" && location.pathname.startsWith(i.url)));
 
-  // Auto-open the active category on first render
-  if (openKey === null) {
-    const active = categories.find(isCategoryActive);
-    if (active && active.items.length > 1) {
-      // defer to avoid setState during render
-      setTimeout(() => setOpenKey((k) => (k === null ? active.key : k)), 0);
+  // Auto-open the active category on first mount
+  useEffect(() => {
+    if (openKey === null) {
+      const active = categories.find(isCategoryActive);
+      if (active && active.items.length > 1) setOpenKey(active.key);
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <aside className="hidden md:block w-[232px] shrink-0 self-stretch border-r border-sidebar-border/15 bg-sidebar relative z-30">
