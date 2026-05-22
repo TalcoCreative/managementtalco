@@ -398,6 +398,16 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
               </div>
             </div>
 
+            {/* Client assignment (multi) */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Visibility ke Client Hub</h3>
+              <ClientAssignmentPicker
+                selectedIds={assignedClientIds}
+                onChange={setAssignedClientIds}
+              />
+            </div>
+
+
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Batal
