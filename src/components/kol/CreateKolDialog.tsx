@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ClientAssignmentPicker, syncKolClientAssignments } from "./ClientAssignmentPicker";
 
 interface CreateKolDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ interface CreateKolDialogProps {
 
 export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDialogProps) {
   const queryClient = useQueryClient();
+  const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -61,7 +63,7 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
 
       const userId = session.session.user.id;
 
-      const { error } = await supabase.from("kol_database").insert({
+      const { data: inserted, error } = await supabase.from("kol_database").insert({
         name: data.name,
         username: data.username,
         link_account: data.link_account || null,
@@ -86,16 +88,22 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
         notes: data.notes || null,
         created_by: userId,
         updated_by: userId,
-      });
+      }).select("id").single();
 
       if (error) throw error;
+      if (inserted && assignedClientIds.length > 0) {
+        await syncKolClientAssignments(inserted.id, assignedClientIds, userId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+
       toast.success("KOL berhasil ditambahkan");
       onOpenChange(false);
+      setAssignedClientIds([]);
       resetForm();
     },
+
     onError: (error: any) => {
       toast.error("Gagal menambahkan KOL: " + error.message);
     },
@@ -389,6 +397,16 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
                 />
               </div>
             </div>
+
+            {/* Client assignment (multi) */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Visibility ke Client Hub</h3>
+              <ClientAssignmentPicker
+                selectedIds={assignedClientIds}
+                onChange={setAssignedClientIds}
+              />
+            </div>
+
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

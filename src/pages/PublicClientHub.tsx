@@ -164,8 +164,9 @@ export default function PublicClientHub() {
       enabled: hasMarketplace,
     },
     {
-      title: "KOL Campaign",
-      description: "Aktivasi KOL & posting",
+      title: "KOL & Campaign",
+      description: "Daftar KOL & status campaign",
+
       icon: Megaphone,
       gradient: "from-[hsl(28,78%,52%)] to-[hsl(18,72%,48%)]",
       onClick: () => navigate(`/kol-campaign/${client.dashboard_slug}`),

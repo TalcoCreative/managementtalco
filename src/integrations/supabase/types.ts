@@ -3408,6 +3408,45 @@ export type Database = {
         }
         Relationships: []
       }
+      kol_database_clients: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kol_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kol_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kol_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kol_database_clients_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kol_database_clients_kol_id_fkey"
+            columns: ["kol_id"]
+            isOneToOne: false
+            referencedRelation: "kol_database"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null

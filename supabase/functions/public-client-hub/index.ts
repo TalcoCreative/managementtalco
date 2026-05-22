@@ -93,6 +93,13 @@ Deno.serve(async (req) => {
       .select("*", { count: "exact", head: true })
       .eq("client_id", client.id);
 
+    // Check for KOL database assignments (listing visibility)
+    const { count: kolAssignedCount } = await supabase
+      .from("kol_database_clients")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id);
+
+
     // --- Fetch schedule items (upcoming/recent) ---
     const today = new Date().toISOString().split("T")[0];
 
@@ -182,8 +189,9 @@ Deno.serve(async (req) => {
       hasMeetings: (meetingCount || 0) > 0,
       hasShootings: (shootingCount || 0) > 0,
       hasMarketplace: (marketplaceCount || 0) > 0,
-      hasKolCampaigns: (kolCampaignCount || 0) > 0,
+      hasKolCampaigns: (kolCampaignCount || 0) > 0 || (kolAssignedCount || 0) > 0,
       schedule: scheduleItems,
+
       editorialPlans: editorialPlans || [],
     };
 

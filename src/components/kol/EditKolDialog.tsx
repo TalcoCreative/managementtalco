@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientAssignmentPicker, syncKolClientAssignments } from "./ClientAssignmentPicker";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,23 @@ interface EditKolDialogProps {
 
 export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDialogProps) {
   const queryClient = useQueryClient();
+  const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
+
+  // Load existing client assignments when dialog opens or kol changes
+  useQuery({
+    queryKey: ["kol-client-assignments", kol?.id],
+    enabled: !!kol?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kol_database_clients")
+        .select("client_id")
+        .eq("kol_id", kol.id);
+      if (error) throw error;
+      setAssignedClientIds((data || []).map((r: any) => r.client_id));
+      return data;
+    },
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -121,12 +139,15 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
         .eq("id", kol.id);
 
       if (error) throw error;
+      await syncKolClientAssignments(kol.id, assignedClientIds, userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+      queryClient.invalidateQueries({ queryKey: ["kol-client-assignments", kol?.id] });
       toast.success("KOL berhasil diupdate");
       onOpenChange(false);
     },
+
     onError: (error: any) => {
       toast.error("Gagal mengupdate KOL: " + error.message);
     },
@@ -394,7 +415,17 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
               </div>
             </div>
 
+            {/* Client assignment (multi) */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Visibility ke Client Hub</h3>
+              <ClientAssignmentPicker
+                selectedIds={assignedClientIds}
+                onChange={setAssignedClientIds}
+              />
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
+
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Batal
               </Button>
