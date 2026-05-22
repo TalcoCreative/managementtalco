@@ -63,7 +63,7 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
 
       const userId = session.session.user.id;
 
-      const { error } = await supabase.from("kol_database").insert({
+      const { data: inserted, error } = await supabase.from("kol_database").insert({
         name: data.name,
         username: data.username,
         link_account: data.link_account || null,
@@ -88,12 +88,16 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
         notes: data.notes || null,
         created_by: userId,
         updated_by: userId,
-      });
+      }).select("id").single();
 
       if (error) throw error;
+      if (inserted && assignedClientIds.length > 0) {
+        await syncKolClientAssignments(inserted.id, assignedClientIds, userId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+
       toast.success("KOL berhasil ditambahkan");
       onOpenChange(false);
       resetForm();
