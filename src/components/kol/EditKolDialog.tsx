@@ -31,6 +31,23 @@ interface EditKolDialogProps {
 
 export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDialogProps) {
   const queryClient = useQueryClient();
+  const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
+
+  // Load existing client assignments when dialog opens or kol changes
+  useQuery({
+    queryKey: ["kol-client-assignments", kol?.id],
+    enabled: !!kol?.id && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kol_database_clients")
+        .select("client_id")
+        .eq("kol_id", kol.id);
+      if (error) throw error;
+      setAssignedClientIds((data || []).map((r: any) => r.client_id));
+      return data;
+    },
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     username: "",
