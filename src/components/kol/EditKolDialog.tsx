@@ -139,12 +139,15 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
         .eq("id", kol.id);
 
       if (error) throw error;
+      await syncKolClientAssignments(kol.id, assignedClientIds, userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+      queryClient.invalidateQueries({ queryKey: ["kol-client-assignments", kol?.id] });
       toast.success("KOL berhasil diupdate");
       onOpenChange(false);
     },
+
     onError: (error: any) => {
       toast.error("Gagal mengupdate KOL: " + error.message);
     },
