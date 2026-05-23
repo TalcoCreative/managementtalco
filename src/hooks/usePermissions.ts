@@ -60,6 +60,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
       { key: "recruitment", label: "Recruitment" },
       { key: "recruitment_dashboard", label: "Recruitment Dashboard" },
       { key: "recruitment_forms", label: "Recruitment Forms" },
+      { key: "team_review_access", label: "Monthly Team Review" },
     ],
   },
   {
@@ -152,7 +153,7 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/system/roles": "role_management",
   "/system/settings": "system_settings",
   "/setting-location": "setting_location",
-  "/team-review": "team_review_admin",
+  "/team-review": "team_review_access",
   "/system/team-review-settings": "team_review_admin",
 };
 
@@ -233,7 +234,7 @@ export function usePermissions() {
   const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading);
 
   // Features accessible to ALL users without any permission check
-  const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes", "chat"];
+  const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes", "chat", "team_review_access"];
 
   const can = (featureKey: string, action: PermissionAction = "can_view"): boolean => {
     // Always accessible features bypass all checks
