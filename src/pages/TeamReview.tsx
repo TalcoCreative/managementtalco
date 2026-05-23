@@ -34,16 +34,15 @@ export default function TeamReview() {
       </AppLayout>
     );
   }
-  if (!isSuperAdmin && !isHr) return <Navigate to="/" replace />;
 
   return (
     <AppLayout>
-      <Dashboard />
+      <Dashboard canSeeAnalytics={!!isSuperAdmin || !!isHr} />
     </AppLayout>
   );
 }
 
-function Dashboard() {
+function Dashboard({ canSeeAnalytics }: { canSeeAnalytics: boolean }) {
   const { data: settings } = useTeamReviewSettings();
   const cycle = useMemo(() => getTeamReviewCycle(settings), [settings]);
   const month = cycle.reviewMonth;
@@ -78,6 +77,7 @@ function Dashboard() {
         .eq("include_in_team_review", true);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: submissions } = useQuery({
@@ -89,6 +89,7 @@ function Dashboard() {
         .eq("review_month", month);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: answersThisMonth } = useQuery({
@@ -100,6 +101,7 @@ function Dashboard() {
         .eq("review_month", month);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: trendData } = useQuery({
@@ -125,6 +127,7 @@ function Dashboard() {
         .sort((a, b) => (a[0] < b[0] ? -1 : 1))
         .map(([m, v]) => ({ month: m, avg: Number((v.sum / v.n).toFixed(2)) }));
     },
+    enabled: canSeeAnalytics,
   });
 
   const totalEligible = participants?.length ?? 0;
@@ -161,7 +164,7 @@ function Dashboard() {
       .sort((a, b) => b.avg - a.avg);
   }, [participants, answersThisMonth]);
 
-  if (selectedUser) {
+  if (canSeeAnalytics && selectedUser) {
     return (
       <UserDetail userId={selectedUser} onBack={() => setSelectedUser(null)} questions={questions || []} />
     );
@@ -207,6 +210,8 @@ function Dashboard() {
         </CardContent>
       </Card>
 
+      {canSeeAnalytics && (
+        <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPI label="Completion" value={`${completionPct}%`} sub={`${submittedSet.size} / ${totalEligible}`} icon={Users} />
         <KPI label="Avg score" value={overallAvg.toFixed(2)} sub="out of 5.0" icon={TrendingUp} />
@@ -303,6 +308,8 @@ function Dashboard() {
           ))}
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }
