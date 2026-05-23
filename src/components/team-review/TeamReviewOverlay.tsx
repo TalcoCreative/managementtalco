@@ -7,9 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Loader2, Sparkles, ShieldCheck, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
-  currentReviewMonth,
-  isReviewWindowActive,
+  getTeamReviewCycle,
   useMyProfileIncluded,
   useMySubmission,
   useReviewParticipants,
@@ -26,18 +26,20 @@ interface DraftPayload {
 
 interface Props {
   userId: string;
+  mode?: "overlay" | "embedded";
 }
 
-export function TeamReviewOverlay({ userId }: Props) {
+export function TeamReviewOverlay({ userId, mode = "overlay" }: Props) {
   const qc = useQueryClient();
-  const month = currentReviewMonth();
   const { data: settings, isLoading: settingsLoading } = useTeamReviewSettings();
+  const cycle = useMemo(() => getTeamReviewCycle(settings), [settings]);
+  const month = cycle.reviewMonth;
   const { data: included, isLoading: incLoading } = useMyProfileIncluded(userId);
   const { data: submission, isLoading: subLoading } = useMySubmission(userId, month);
   const { data: questions, isLoading: qLoading } = useTeamReviewQuestions(true);
   const { data: participants, isLoading: pLoading } = useReviewParticipants(userId);
 
-  const active = isReviewWindowActive(settings);
+  const active = cycle.isActive;
   const shouldShow =
     !settingsLoading &&
     !incLoading &&
@@ -175,17 +177,18 @@ export function TeamReviewOverlay({ userId }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-      {/* Backdrop with blur */}
-      <div
-        className="absolute inset-0 backdrop-blur-2xl"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 80% at 50% 0%, hsl(var(--primary) / 0.18), transparent 70%), radial-gradient(ellipse 60% 80% at 50% 100%, hsl(var(--accent) / 0.15), transparent 70%), hsl(var(--background) / 0.85)",
-        }}
-      />
+    <div className={mode === "overlay" ? "fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300" : "relative w-full"}>
+      {mode === "overlay" && (
+        <div
+          className="absolute inset-0 backdrop-blur-2xl"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 80% at 50% 0%, hsl(var(--primary) / 0.18), transparent 70%), radial-gradient(ellipse 60% 80% at 50% 100%, hsl(var(--accent) / 0.15), transparent 70%), hsl(var(--background) / 0.85)",
+          }}
+        />
+      )}
 
-      <div className="relative w-full max-w-2xl max-h-[92dvh] overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl">
+      <div className={mode === "overlay" ? "relative w-full max-w-2xl max-h-[92dvh] overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl" : "relative w-full overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-xl backdrop-blur-xl"}>
         {/* Glow ring */}
         <div className="pointer-events-none absolute -inset-px rounded-3xl"
              style={{
@@ -211,6 +214,10 @@ export function TeamReviewOverlay({ userId }: Props) {
               Take a quiet moment to share honest feedback about your teammates. Your
               answers are completely anonymous and visible only to HR & leadership.
             </p>
+            <div className="w-full max-w-md rounded-2xl border border-border/50 bg-muted/30 p-4 text-left mb-6">
+              <p className="text-xs text-muted-foreground mb-1">Active review period</p>
+              <p className="text-sm font-medium">{cycle.startDate} → {cycle.endDate}</p>
+            </div>
             <div className="grid gap-3 w-full max-w-md mb-8">
               <div className="flex items-start gap-3 rounded-2xl border border-border/50 bg-muted/30 p-4 text-left">
                 <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
@@ -229,10 +236,15 @@ export function TeamReviewOverlay({ userId }: Props) {
                 </div>
               </div>
             </div>
-            <Button size="lg" className="w-full max-w-md rounded-2xl h-12 text-base" onClick={() => setStarted(true)}>
-              Begin Review
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
+              <Button size="lg" className="flex-1 rounded-2xl h-12 text-base" onClick={() => setStarted(true)}>
+                Begin Review
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button asChild size="lg" variant="outline" className="flex-1 rounded-2xl h-12 text-base">
+                <Link to="/team-review">Open Page</Link>
+              </Button>
+            </div>
           </div>
         ) : onSummary ? (
           // Summary
@@ -366,7 +378,7 @@ export function TeamReviewOverlay({ userId }: Props) {
           </>
         )}
 
-        {!canRequireOnly && started && (
+        {mode === "overlay" && !canRequireOnly && started && (
           <button
             onClick={() => {
               // optimistic close: re-show on next render only if shouldShow again; for now hide via setStarted false won't suffice.
@@ -386,7 +398,8 @@ export function TeamReviewOverlay({ userId }: Props) {
 
 // Wrapper to honor "skip for now" session opt-out
 export function TeamReviewGate({ userId }: { userId: string | null | undefined }) {
-  const month = currentReviewMonth();
+  const { data: settings } = useTeamReviewSettings();
+  const month = getTeamReviewCycle(settings).reviewMonth;
   if (!userId) return null;
   if (typeof window !== "undefined" && sessionStorage.getItem("team-review-skipped") === month) {
     return null;

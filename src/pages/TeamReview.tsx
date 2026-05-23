@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Sparkles, Users, TrendingUp, MessageSquare, ChevronLeft } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
-import { currentReviewMonth, useTeamReviewQuestions, useTeamReviewSettings } from "@/hooks/useTeamReview";
+import { getTeamReviewCycle, useMyProfileIncluded, useMySubmission, useReviewParticipants, useTeamReviewQuestions, useTeamReviewSettings } from "@/hooks/useTeamReview";
+import { TeamReviewOverlay } from "@/components/team-review/TeamReviewOverlay";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid } from "recharts";
 
 export default function TeamReview() {
@@ -33,20 +33,39 @@ export default function TeamReview() {
       </AppLayout>
     );
   }
-  if (!isSuperAdmin && !isHr) return <Navigate to="/" replace />;
 
   return (
     <AppLayout>
-      <Dashboard />
+      <Dashboard canSeeAnalytics={!!isSuperAdmin || !!isHr} />
     </AppLayout>
   );
 }
 
-function Dashboard() {
-  const month = currentReviewMonth();
+function Dashboard({ canSeeAnalytics }: { canSeeAnalytics: boolean }) {
   const { data: settings } = useTeamReviewSettings();
+  const cycle = useMemo(() => getTeamReviewCycle(settings), [settings]);
+  const month = cycle.reviewMonth;
   const { data: questions } = useTeamReviewQuestions(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const { data: session } = useQuery({
+    queryKey: ["team-review-session"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+  });
+  const currentUserId = session?.user?.id;
+  const { data: included } = useMyProfileIncluded(currentUserId);
+  const { data: mySubmission, isLoading: mySubmissionLoading } = useMySubmission(currentUserId, month);
+  const { data: reviewParticipants } = useReviewParticipants(currentUserId);
+
+  const reviewCanBeFilled =
+    !!currentUserId &&
+    cycle.isActive &&
+    included &&
+    !mySubmission &&
+    (reviewParticipants?.length ?? 0) > 0 &&
+    (questions?.filter((q) => q.is_active).length ?? 0) > 0;
 
   const { data: participants } = useQuery({
     queryKey: ["tr-all-participants"],
@@ -57,6 +76,7 @@ function Dashboard() {
         .eq("include_in_team_review", true);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: submissions } = useQuery({
@@ -68,6 +88,7 @@ function Dashboard() {
         .eq("review_month", month);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: answersThisMonth } = useQuery({
@@ -79,6 +100,7 @@ function Dashboard() {
         .eq("review_month", month);
       return data || [];
     },
+    enabled: canSeeAnalytics,
   });
 
   const { data: trendData } = useQuery({
@@ -104,6 +126,7 @@ function Dashboard() {
         .sort((a, b) => (a[0] < b[0] ? -1 : 1))
         .map(([m, v]) => ({ month: m, avg: Number((v.sum / v.n).toFixed(2)) }));
     },
+    enabled: canSeeAnalytics,
   });
 
   const totalEligible = participants?.length ?? 0;
@@ -140,7 +163,7 @@ function Dashboard() {
       .sort((a, b) => b.avg - a.avg);
   }, [participants, answersThisMonth]);
 
-  if (selectedUser) {
+  if (canSeeAnalytics && selectedUser) {
     return (
       <UserDetail userId={selectedUser} onBack={() => setSelectedUser(null)} questions={questions || []} />
     );
@@ -160,6 +183,34 @@ function Dashboard() {
         </div>
       </div>
 
+      <Card className="rounded-3xl border-border/50">
+        <CardContent className="p-5 space-y-3">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium">Review window</p>
+            <p className="text-xs text-muted-foreground">
+              {cycle.startDate} → {cycle.endDate}
+            </p>
+          </div>
+          {reviewCanBeFilled ? (
+            <TeamReviewOverlay userId={currentUserId!} mode="embedded" />
+          ) : (
+            <div className="rounded-2xl border border-border/50 bg-muted/20 p-4 text-sm text-muted-foreground">
+              {mySubmissionLoading
+                ? "Checking your submission status..."
+                : mySubmission
+                  ? "You have completed this month's confidential team review."
+                  : !cycle.isActive
+                    ? "This page is ready, but the review form will only open during the configured review window."
+                    : !included
+                      ? "Your account is currently excluded from this month's team review participants."
+                      : "The form will appear here once active questions and teammates are available."}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {canSeeAnalytics && (
+        <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPI label="Completion" value={`${completionPct}%`} sub={`${submittedSet.size} / ${totalEligible}`} icon={Users} />
         <KPI label="Avg score" value={overallAvg.toFixed(2)} sub="out of 5.0" icon={TrendingUp} />
@@ -256,6 +307,8 @@ function Dashboard() {
           ))}
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }

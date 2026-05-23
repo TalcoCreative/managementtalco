@@ -9,6 +9,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamReviewGate } from "@/components/team-review/TeamReviewOverlay";
+import { useLocation } from "react-router-dom";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
+  const location = useLocation();
 
   const { data: currentUser } = useQuery({
     queryKey: ["current-user"],
@@ -51,7 +53,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
-      <TeamReviewGate userId={currentUser?.id} />
+      {location.pathname !== "/team-review" && <TeamReviewGate userId={currentUser?.id} />}
     </>
   );
 }

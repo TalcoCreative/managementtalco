@@ -19,6 +19,8 @@ import {
 } from "@/lib/geo-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { MapPin, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { getTeamReviewCycle, useMyProfileIncluded, useMySubmission, useTeamReviewSettings } from "@/hooks/useTeamReview";
 
 export function ClockInOut() {
   const [outsideDialog, setOutsideDialog] = useState<{
@@ -44,6 +46,24 @@ export function ClockInOut() {
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const queryClient = useQueryClient();
+  const { data: authSession } = useQuery({
+    queryKey: ["attendance-auth-session"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+  });
+  const currentUserId = authSession?.user?.id;
+  const { data: teamReviewSettings } = useTeamReviewSettings();
+  const teamReviewCycle = getTeamReviewCycle(teamReviewSettings);
+  const { data: teamReviewIncluded } = useMyProfileIncluded(currentUserId);
+  const { data: teamReviewSubmission, isLoading: teamReviewSubmissionLoading } = useMySubmission(currentUserId, teamReviewCycle.reviewMonth);
+  const mustCompleteTeamReviewBeforeClockIn =
+    !!currentUserId &&
+    !!teamReviewSettings?.require_before_clockin &&
+    teamReviewCycle.isActive &&
+    teamReviewIncluded !== false &&
+    !teamReviewSubmission;
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -360,6 +380,10 @@ export function ClockInOut() {
   };
 
   const handleClockIn = async () => {
+    if (mustCompleteTeamReviewBeforeClockIn) {
+      toast.error("Selesaikan Team Review bulan ini dulu sebelum clock in");
+      return;
+    }
     if (!photoClockIn) {
       toast.error("Silakan ambil foto terlebih dahulu");
       return;
@@ -852,6 +876,19 @@ export function ClockInOut() {
 
         {!todayAttendance?.clock_in ? (
           <div className="space-y-3">
+            {mustCompleteTeamReviewBeforeClockIn && (
+              <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">Clock In dikunci sampai Team Review selesai</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selesaikan Monthly Team Review dulu pada periode {teamReviewCycle.startDate} → {teamReviewCycle.endDate}.
+                  </p>
+                </div>
+                <Button asChild className="w-full gap-2">
+                  <Link to="/team-review">Buka Team Review</Link>
+                </Button>
+              </div>
+            )}
             {photoClockIn ? (
               <>
                 <img 
@@ -863,6 +900,7 @@ export function ClockInOut() {
                   onClick={() => startCamera(true)}
                   variant="outline"
                   className="w-full gap-2 h-12 text-base"
+                  disabled={mustCompleteTeamReviewBeforeClockIn || teamReviewSubmissionLoading}
                 >
                   <Camera className="h-5 w-5" />
                   Ambil Ulang Foto
@@ -873,6 +911,7 @@ export function ClockInOut() {
                 onClick={() => startCamera(true)}
                 variant="outline"
                 className="w-full gap-2 h-12 text-base"
+                disabled={mustCompleteTeamReviewBeforeClockIn || teamReviewSubmissionLoading}
               >
                 <Video className="h-5 w-5" />
                 Buka Kamera untuk Clock In
@@ -886,7 +925,7 @@ export function ClockInOut() {
             )}
             <Button
               onClick={handleClockIn}
-              disabled={loading || !photoClockIn || !selectedMood}
+              disabled={loading || !photoClockIn || !selectedMood || mustCompleteTeamReviewBeforeClockIn || teamReviewSubmissionLoading}
               className="w-full gap-2 h-14 text-lg font-semibold"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogIn className="h-5 w-5" />}
