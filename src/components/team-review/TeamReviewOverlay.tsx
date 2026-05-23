@@ -212,6 +212,10 @@ export function TeamReviewOverlay({ userId }: Props) {
               Take a quiet moment to share honest feedback about your teammates. Your
               answers are completely anonymous and visible only to HR & leadership.
             </p>
+            <div className="w-full max-w-md rounded-2xl border border-border/50 bg-muted/30 p-4 text-left mb-6">
+              <p className="text-xs text-muted-foreground mb-1">Active review period</p>
+              <p className="text-sm font-medium">{cycle.startDate} → {cycle.endDate}</p>
+            </div>
             <div className="grid gap-3 w-full max-w-md mb-8">
               <div className="flex items-start gap-3 rounded-2xl border border-border/50 bg-muted/30 p-4 text-left">
                 <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
@@ -230,10 +234,15 @@ export function TeamReviewOverlay({ userId }: Props) {
                 </div>
               </div>
             </div>
-            <Button size="lg" className="w-full max-w-md rounded-2xl h-12 text-base" onClick={() => setStarted(true)}>
-              Begin Review
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="w-full max-w-md flex flex-col sm:flex-row gap-3">
+              <Button size="lg" className="flex-1 rounded-2xl h-12 text-base" onClick={() => setStarted(true)}>
+                Begin Review
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button asChild size="lg" variant="outline" className="flex-1 rounded-2xl h-12 text-base">
+                <Link to="/team-review">Open Page</Link>
+              </Button>
+            </div>
           </div>
         ) : onSummary ? (
           // Summary
