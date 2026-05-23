@@ -396,7 +396,7 @@ export function TeamReviewOverlay({ userId }: Props) {
 
 // Wrapper to honor "skip for now" session opt-out
 export function TeamReviewGate({ userId }: { userId: string | null | undefined }) {
-  const month = currentReviewMonth();
+  const month = getTeamReviewCycle(null).reviewMonth;
   if (!userId) return null;
   if (typeof window !== "undefined" && sessionStorage.getItem("team-review-skipped") === month) {
     return null;
