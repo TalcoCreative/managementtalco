@@ -24,7 +24,7 @@ export interface NavCategory {
 
 const ALWAYS_VISIBLE = [
   "dashboard", "profile_settings", "personal_notes",
-  "my_prospects", "my_sales_dashboard", "my_commission", "chat",
+  "my_prospects", "my_sales_dashboard", "my_commission", "chat", "team_review_access",
 ];
 
 export const NAV_CATEGORIES: NavCategory[] = [
