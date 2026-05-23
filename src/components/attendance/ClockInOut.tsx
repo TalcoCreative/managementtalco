@@ -380,6 +380,10 @@ export function ClockInOut() {
   };
 
   const handleClockIn = async () => {
+    if (mustCompleteTeamReviewBeforeClockIn) {
+      toast.error("Selesaikan Team Review bulan ini dulu sebelum clock in");
+      return;
+    }
     if (!photoClockIn) {
       toast.error("Silakan ambil foto terlebih dahulu");
       return;
