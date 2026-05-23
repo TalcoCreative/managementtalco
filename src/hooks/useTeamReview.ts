@@ -22,20 +22,112 @@ export interface ReviewParticipant {
   avatar_url: string | null;
 }
 
-// First day of current month in Asia/Jakarta TZ, returned as YYYY-MM-DD string
-export function currentReviewMonth(): string {
-  const now = new Date();
-  // Convert to Jakarta time
-  const jakarta = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-  const y = jakarta.getFullYear();
-  const m = String(jakarta.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}-01`;
+export interface TeamReviewCycle {
+  reviewMonth: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  today: {
+    year: number;
+    month: number;
+    day: number;
+  };
 }
 
-export function currentJakartaDay(): number {
-  const now = new Date();
-  const jakarta = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-  return jakarta.getDate();
+function getJakartaDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value || 0),
+    month: Number(parts.find((part) => part.type === "month")?.value || 1),
+    day: Number(parts.find((part) => part.type === "day")?.value || 1),
+  };
+}
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function pad(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function shiftMonth(year: number, month: number, offset: number) {
+  const cursor = new Date(Date.UTC(year, month - 1 + offset, 1));
+  return {
+    year: cursor.getUTCFullYear(),
+    month: cursor.getUTCMonth() + 1,
+  };
+}
+
+function dateKey(year: number, month: number, day: number) {
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+function dateOnly(year: number, month: number, day: number) {
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+export function currentReviewMonth(date = new Date()): string {
+  const { year, month } = getJakartaDateParts(date);
+  return `${year}-${pad(month)}-01`;
+}
+
+export function currentJakartaDay(date = new Date()): number {
+  return getJakartaDateParts(date).day;
+}
+
+export function getTeamReviewCycle(
+  settings: TeamReviewSettings | null | undefined,
+  date = new Date(),
+): TeamReviewCycle {
+  const today = getJakartaDateParts(date);
+
+  if (!settings) {
+    const monthKey = `${today.year}-${pad(today.month)}-01`;
+    const todayKey = dateKey(today.year, today.month, today.day);
+    return {
+      reviewMonth: monthKey,
+      startDate: todayKey,
+      endDate: todayKey,
+      isActive: false,
+      today,
+    };
+  }
+
+  const openDay = Math.max(1, Math.min(31, settings.open_day));
+  const deadlineDay = Math.max(1, Math.min(31, settings.deadline_day));
+
+  let startMonth = { year: today.year, month: today.month };
+  let endMonth = { year: today.year, month: today.month };
+
+  if (openDay > deadlineDay) {
+    if (today.day >= openDay) {
+      endMonth = shiftMonth(today.year, today.month, 1);
+    } else {
+      startMonth = shiftMonth(today.year, today.month, -1);
+    }
+  }
+
+  const startDay = Math.min(openDay, getDaysInMonth(startMonth.year, startMonth.month));
+  const endDay = Math.min(deadlineDay, getDaysInMonth(endMonth.year, endMonth.month));
+
+  const startDate = dateOnly(startMonth.year, startMonth.month, startDay);
+  const endDate = dateOnly(endMonth.year, endMonth.month, endDay);
+  const todayDate = dateOnly(today.year, today.month, today.day);
+
+  return {
+    reviewMonth: `${startMonth.year}-${pad(startMonth.month)}-01`,
+    startDate: dateKey(startMonth.year, startMonth.month, startDay),
+    endDate: dateKey(endMonth.year, endMonth.month, endDay),
+    isActive: !!settings.enabled && todayDate >= startDate && todayDate <= endDate,
+    today,
+  };
 }
 
 export function useTeamReviewSettings() {
@@ -119,12 +211,5 @@ export function useMyProfileIncluded(userId?: string | null) {
 }
 
 export function isReviewWindowActive(settings: TeamReviewSettings | null | undefined): boolean {
-  if (!settings || !settings.enabled) return false;
-  const day = currentJakartaDay();
-  const { open_day, deadline_day } = settings;
-  if (open_day <= deadline_day) {
-    return day >= open_day && day <= deadline_day;
-  }
-  // wraps month boundary (e.g. open 25, deadline 5)
-  return day >= open_day || day <= deadline_day;
+  return getTeamReviewCycle(settings).isActive;
 }
