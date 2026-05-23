@@ -26,9 +26,10 @@ interface DraftPayload {
 
 interface Props {
   userId: string;
+  mode?: "overlay" | "embedded";
 }
 
-export function TeamReviewOverlay({ userId }: Props) {
+export function TeamReviewOverlay({ userId, mode = "overlay" }: Props) {
   const qc = useQueryClient();
   const { data: settings, isLoading: settingsLoading } = useTeamReviewSettings();
   const cycle = useMemo(() => getTeamReviewCycle(settings), [settings]);
@@ -176,17 +177,18 @@ export function TeamReviewOverlay({ userId }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-      {/* Backdrop with blur */}
-      <div
-        className="absolute inset-0 backdrop-blur-2xl"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 80% at 50% 0%, hsl(var(--primary) / 0.18), transparent 70%), radial-gradient(ellipse 60% 80% at 50% 100%, hsl(var(--accent) / 0.15), transparent 70%), hsl(var(--background) / 0.85)",
-        }}
-      />
+    <div className={mode === "overlay" ? "fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300" : "relative w-full"}>
+      {mode === "overlay" && (
+        <div
+          className="absolute inset-0 backdrop-blur-2xl"
+          style={{
+            background:
+              "radial-gradient(ellipse 60% 80% at 50% 0%, hsl(var(--primary) / 0.18), transparent 70%), radial-gradient(ellipse 60% 80% at 50% 100%, hsl(var(--accent) / 0.15), transparent 70%), hsl(var(--background) / 0.85)",
+          }}
+        />
+      )}
 
-      <div className="relative w-full max-w-2xl max-h-[92dvh] overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl">
+      <div className={mode === "overlay" ? "relative w-full max-w-2xl max-h-[92dvh] overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-2xl backdrop-blur-xl" : "relative w-full overflow-hidden flex flex-col rounded-3xl border border-border/40 bg-card/95 shadow-xl backdrop-blur-xl"}>
         {/* Glow ring */}
         <div className="pointer-events-none absolute -inset-px rounded-3xl"
              style={{
@@ -376,7 +378,7 @@ export function TeamReviewOverlay({ userId }: Props) {
           </>
         )}
 
-        {!canRequireOnly && started && (
+        {mode === "overlay" && !canRequireOnly && started && (
           <button
             onClick={() => {
               // optimistic close: re-show on next render only if shouldShow again; for now hide via setStarted false won't suffice.
