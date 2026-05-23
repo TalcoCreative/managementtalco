@@ -79,7 +79,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
       { title: "Recruitment Board", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
       { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
-      { title: "Team Culture Insight", url: "/team-review", icon: HeartHandshake, featureKey: "team_review_admin" },
     ],
   },
   {
@@ -135,6 +134,16 @@ export const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
+    key: "culture",
+    label: "Culture",
+    icon: HeartHandshake,
+    color: "hsl(152,48%,46%)",
+    items: [
+      { title: "Monthly Team Review", url: "/team-review", icon: HeartHandshake, featureKey: "team_review_access" },
+      { title: "Team Review Settings", url: "/system/team-review-settings", icon: Settings, featureKey: "team_review_admin" },
+    ],
+  },
+  {
     key: "system",
     label: "System",
     icon: Settings,
@@ -146,7 +155,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "Role & Access", url: "/system/roles", icon: Shield, featureKey: "role_management" },
       { title: "Location Settings", url: "/setting-location", icon: MapPin, featureKey: "setting_location" },
       { title: "Invoice Templates", url: "/settings/invoice-templates", icon: ReceiptText, featureKey: "invoice_templates" },
-      { title: "Team Review Settings", url: "/system/team-review-settings", icon: HeartHandshake, featureKey: "team_review_admin" },
       { title: "System Settings", url: "/system/settings", icon: Settings, featureKey: "system_settings" },
     ],
   },
