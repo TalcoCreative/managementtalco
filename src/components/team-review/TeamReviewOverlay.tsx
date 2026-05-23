@@ -7,9 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Loader2, Sparkles, ShieldCheck, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
-  currentReviewMonth,
-  isReviewWindowActive,
+  getTeamReviewCycle,
   useMyProfileIncluded,
   useMySubmission,
   useReviewParticipants,
@@ -30,14 +30,15 @@ interface Props {
 
 export function TeamReviewOverlay({ userId }: Props) {
   const qc = useQueryClient();
-  const month = currentReviewMonth();
   const { data: settings, isLoading: settingsLoading } = useTeamReviewSettings();
+  const cycle = useMemo(() => getTeamReviewCycle(settings), [settings]);
+  const month = cycle.reviewMonth;
   const { data: included, isLoading: incLoading } = useMyProfileIncluded(userId);
   const { data: submission, isLoading: subLoading } = useMySubmission(userId, month);
   const { data: questions, isLoading: qLoading } = useTeamReviewQuestions(true);
   const { data: participants, isLoading: pLoading } = useReviewParticipants(userId);
 
-  const active = isReviewWindowActive(settings);
+  const active = cycle.isActive;
   const shouldShow =
     !settingsLoading &&
     !incLoading &&
