@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trophy, Medal, Eye, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import { parseISO, differenceInMinutes } from "date-fns";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 interface HRProductivityRankingProps {
   profiles: any[];
@@ -15,6 +16,9 @@ interface HRProductivityRankingProps {
   shootings: any[];
   events: any[];
   publishedSlides?: any[];
+  statusLogs?: any[];
+  startDate?: string;
+  endDate?: string;
   onViewEmployee: (id: string) => void;
 }
 
@@ -26,6 +30,9 @@ export function HRProductivityRanking({
   shootings,
   events,
   publishedSlides = [],
+  statusLogs = [],
+  startDate,
+  endDate,
   onViewEmployee 
 }: HRProductivityRankingProps) {
   const rankings = useMemo(() => {
