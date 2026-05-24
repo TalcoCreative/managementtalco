@@ -280,12 +280,15 @@ export default function HRAnalytics() {
     const eventCount = filteredEvents.length;
     const totalActivities = taskCount + meetingCount + shootingCount + eventCount;
 
-    // Overdue tasks (filtered)
-    const overdueTaskCount = filteredTasks.filter(t => {
-      if (!t.deadline) return false;
-      if (t.status === 'done' || t.status === 'completed') return false;
-      return new Date(t.deadline) < new Date();
-    }).length;
+    // Overdue tasks within the selected window:
+    //  - tasks completed late inside the window, OR
+    //  - tasks still ongoing whose deadline fell in the window and is already past now
+    const overdueTaskCount = countOverdueInRange(
+      filteredTasks,
+      taskStatusLogs || [],
+      startDate,
+      endDate,
+    );
 
     // Auto clock-out count (filtered)
     const autoClockoutCount = filteredAttendance.filter(a => 
