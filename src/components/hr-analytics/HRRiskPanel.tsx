@@ -95,7 +95,7 @@ export function HRRiskPanel({ profiles, attendance, tasks, statusLogs = [], star
     results.highOverdue.sort((a, b) => b.count - a.count);
 
     return results;
-  }, [profiles, attendance, tasks]);
+  }, [profiles, attendance, tasks, statusLogs, startDate, endDate]);
 
   const hasInsights = 
     insights.highAutoClockout.length > 0 ||
