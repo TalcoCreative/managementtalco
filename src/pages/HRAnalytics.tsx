@@ -342,7 +342,7 @@ export default function HRAnalytics() {
       lateCount,
       lateChange,
     };
-  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
