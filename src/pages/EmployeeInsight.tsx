@@ -41,6 +41,7 @@ import { EmployeeProjectContribution } from "@/components/hr-analytics/EmployeeP
 import { EmployeeInsightPanel } from "@/components/hr-analytics/EmployeeInsightPanel";
 import { EmployeeDailyLog } from "@/components/hr-analytics/EmployeeDailyLog";
 import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 export default function EmployeeInsight() {
   const { id: employeeId } = useParams();
