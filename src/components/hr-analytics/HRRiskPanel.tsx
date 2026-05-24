@@ -77,11 +77,14 @@ export function HRRiskPanel({ profiles, attendance, tasks, statusLogs = [], star
       }
 
       // Overdue tasks
-      const overdueCount = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        if (t.status === 'done' || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-      }).length;
+      // Overdue tasks within selected window (completed-late + still-past-due)
+      const overdueCount = startDate && endDate
+        ? userTasks.filter(t => isTaskOverdueInRange(t, statusLogs, startDate, endDate)).length
+        : userTasks.filter(t => {
+            if (!t.deadline) return false;
+            if (t.status === 'done' || t.status === 'completed') return false;
+            return new Date(t.deadline) < new Date();
+          }).length;
       if (overdueCount >= 3) {
         results.highOverdue.push({ profile, count: overdueCount });
       }
