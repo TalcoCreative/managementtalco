@@ -73,12 +73,14 @@ export function HRProductivityRanking({
       const userPublished = publishedSlides.filter(s => s.created_by === profile.id).length;
       const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length + userPublished;
 
-      // Overdue count
-      const overdueCount = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        if (t.status === 'done' || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-      }).length;
+      // Overdue count within the selected window (late completions + still past due)
+      const overdueCount = startDate && endDate
+        ? userTasks.filter(t => isTaskOverdueInRange(t, statusLogs, startDate, endDate)).length
+        : userTasks.filter(t => {
+            if (!t.deadline) return false;
+            if (t.status === 'done' || t.status === 'completed') return false;
+            return new Date(t.deadline) < new Date();
+          }).length;
 
       // Attendance consistency (days present)
       const daysPresent = userAttendance.filter(a => a.clock_in).length;
