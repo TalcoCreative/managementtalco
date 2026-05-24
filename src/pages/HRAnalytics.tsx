@@ -667,6 +667,9 @@ export default function HRAnalytics() {
           profiles={filteredProfiles}
           attendance={attendance || []}
           tasks={tasks || []}
+          statusLogs={taskStatusLogs || []}
+          startDate={startDate}
+          endDate={endDate}
           onViewEmployee={handleViewEmployee}
         />
 
@@ -688,6 +691,9 @@ export default function HRAnalytics() {
           shootings={shootings || []}
           events={events || []}
           publishedSlides={publishedSlides || []}
+          statusLogs={taskStatusLogs || []}
+          startDate={startDate}
+          endDate={endDate}
           onViewEmployee={handleViewEmployee}
         />
       </div>
