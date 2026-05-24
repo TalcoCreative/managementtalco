@@ -359,7 +359,7 @@ export default function EmployeeInsight() {
       eventCount,
       totalActivities: tasksCompleted + meetingCount + shootingCount + eventCount,
     };
-  }, [tasks, meetings, shootings, events, employeeId]);
+  }, [tasks, meetings, shootings, events, employeeId, employeeStatusLogs, startDate, endDate]);
 
   if (!profile) {
     return (
