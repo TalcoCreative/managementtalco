@@ -40,6 +40,7 @@ import { HRRiskPanel } from "@/components/hr-analytics/HRRiskPanel";
 import { HRProductivityRanking } from "@/components/hr-analytics/HRProductivityRanking";
 import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
 import { usePositions, getRoleLabel } from "@/hooks/usePositions";
+import { countOverdueInRange } from "@/lib/overdue-utils";
 
 export default function HRAnalytics() {
   const navigate = useNavigate();
