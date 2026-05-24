@@ -569,7 +569,7 @@ export default function HRAnalytics() {
               <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
             </div>
             <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.overdueTaskCount}</div>
-            <p className="text-xs text-muted-foreground">Belum selesai</p>
+            <p className="text-xs text-muted-foreground">Telat selesai + masih lewat deadline</p>
           </div>
 
           <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
