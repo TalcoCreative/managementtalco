@@ -683,6 +683,9 @@ export default function EmployeeInsight() {
               shootings={shootings || []}
               events={events || []}
               employeeId={employeeId || ''}
+              statusLogs={employeeStatusLogs || []}
+              startDate={startDate}
+              endDate={endDate}
             />
           </TabsContent>
 
