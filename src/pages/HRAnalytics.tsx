@@ -40,6 +40,7 @@ import { HRRiskPanel } from "@/components/hr-analytics/HRRiskPanel";
 import { HRProductivityRanking } from "@/components/hr-analytics/HRProductivityRanking";
 import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
 import { usePositions, getRoleLabel } from "@/hooks/usePositions";
+import { countOverdueInRange } from "@/lib/overdue-utils";
 
 export default function HRAnalytics() {
   const navigate = useNavigate();
@@ -279,12 +280,15 @@ export default function HRAnalytics() {
     const eventCount = filteredEvents.length;
     const totalActivities = taskCount + meetingCount + shootingCount + eventCount;
 
-    // Overdue tasks (filtered)
-    const overdueTaskCount = filteredTasks.filter(t => {
-      if (!t.deadline) return false;
-      if (t.status === 'done' || t.status === 'completed') return false;
-      return new Date(t.deadline) < new Date();
-    }).length;
+    // Overdue tasks within the selected window:
+    //  - tasks completed late inside the window, OR
+    //  - tasks still ongoing whose deadline fell in the window and is already past now
+    const overdueTaskCount = countOverdueInRange(
+      filteredTasks,
+      taskStatusLogs || [],
+      startDate,
+      endDate,
+    );
 
     // Auto clock-out count (filtered)
     const autoClockoutCount = filteredAttendance.filter(a => 
@@ -338,7 +342,7 @@ export default function HRAnalytics() {
       lateCount,
       lateChange,
     };
-  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
@@ -565,7 +569,7 @@ export default function HRAnalytics() {
               <div className="kpi-icon w-8 h-8"><AlertTriangle className="h-4 w-4" /></div>
             </div>
             <div className="kpi-value" style={{ color: 'hsl(0 62% 54%)' }}>{kpis.overdueTaskCount}</div>
-            <p className="text-xs text-muted-foreground">Belum selesai</p>
+            <p className="text-xs text-muted-foreground">Telat selesai + masih lewat deadline</p>
           </div>
 
           <div className="kpi-card p-4" style={{ '--kpi-color': 'var(--section-schedule)' } as React.CSSProperties}>
@@ -663,6 +667,9 @@ export default function HRAnalytics() {
           profiles={filteredProfiles}
           attendance={attendance || []}
           tasks={tasks || []}
+          statusLogs={taskStatusLogs || []}
+          startDate={startDate}
+          endDate={endDate}
           onViewEmployee={handleViewEmployee}
         />
 
@@ -684,6 +691,9 @@ export default function HRAnalytics() {
           shootings={shootings || []}
           events={events || []}
           publishedSlides={publishedSlides || []}
+          statusLogs={taskStatusLogs || []}
+          startDate={startDate}
+          endDate={endDate}
           onViewEmployee={handleViewEmployee}
         />
       </div>

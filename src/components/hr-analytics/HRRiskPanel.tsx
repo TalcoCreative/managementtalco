@@ -4,15 +4,19 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Activity, Eye } from "lucide-react";
 import { useMemo } from "react";
 import { parseISO, differenceInMinutes } from "date-fns";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 interface HRRiskPanelProps {
   profiles: any[];
   attendance: any[];
   tasks: any[];
+  statusLogs?: any[];
+  startDate?: string;
+  endDate?: string;
   onViewEmployee: (id: string) => void;
 }
 
-export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRRiskPanelProps) {
+export function HRRiskPanel({ profiles, attendance, tasks, statusLogs = [], startDate, endDate, onViewEmployee }: HRRiskPanelProps) {
   const insights = useMemo(() => {
     const results: {
       highAutoClockout: { profile: any; count: number }[];
@@ -73,11 +77,14 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
       }
 
       // Overdue tasks
-      const overdueCount = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        if (t.status === 'done' || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-      }).length;
+      // Overdue tasks within selected window (completed-late + still-past-due)
+      const overdueCount = startDate && endDate
+        ? userTasks.filter(t => isTaskOverdueInRange(t, statusLogs, startDate, endDate)).length
+        : userTasks.filter(t => {
+            if (!t.deadline) return false;
+            if (t.status === 'done' || t.status === 'completed') return false;
+            return new Date(t.deadline) < new Date();
+          }).length;
       if (overdueCount >= 3) {
         results.highOverdue.push({ profile, count: overdueCount });
       }
@@ -88,7 +95,7 @@ export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRR
     results.highOverdue.sort((a, b) => b.count - a.count);
 
     return results;
-  }, [profiles, attendance, tasks]);
+  }, [profiles, attendance, tasks, statusLogs, startDate, endDate]);
 
   const hasInsights = 
     insights.highAutoClockout.length > 0 ||

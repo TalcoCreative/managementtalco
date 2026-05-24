@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trophy, Medal, Eye, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import { parseISO, differenceInMinutes } from "date-fns";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 interface HRProductivityRankingProps {
   profiles: any[];
@@ -15,6 +16,9 @@ interface HRProductivityRankingProps {
   shootings: any[];
   events: any[];
   publishedSlides?: any[];
+  statusLogs?: any[];
+  startDate?: string;
+  endDate?: string;
   onViewEmployee: (id: string) => void;
 }
 
@@ -26,6 +30,9 @@ export function HRProductivityRanking({
   shootings,
   events,
   publishedSlides = [],
+  statusLogs = [],
+  startDate,
+  endDate,
   onViewEmployee 
 }: HRProductivityRankingProps) {
   const rankings = useMemo(() => {
@@ -66,12 +73,14 @@ export function HRProductivityRanking({
       const userPublished = publishedSlides.filter(s => s.created_by === profile.id).length;
       const totalActivities = tasksCompleted + userMeetings.length + userShootings.length + userEvents.length + userPublished;
 
-      // Overdue count
-      const overdueCount = userTasks.filter(t => {
-        if (!t.deadline) return false;
-        if (t.status === 'done' || t.status === 'completed') return false;
-        return new Date(t.deadline) < new Date();
-      }).length;
+      // Overdue count within the selected window (late completions + still past due)
+      const overdueCount = startDate && endDate
+        ? userTasks.filter(t => isTaskOverdueInRange(t, statusLogs, startDate, endDate)).length
+        : userTasks.filter(t => {
+            if (!t.deadline) return false;
+            if (t.status === 'done' || t.status === 'completed') return false;
+            return new Date(t.deadline) < new Date();
+          }).length;
 
       // Attendance consistency (days present)
       const daysPresent = userAttendance.filter(a => a.clock_in).length;
@@ -104,7 +113,7 @@ export function HRProductivityRanking({
         score: Math.max(0, score),
       };
     }).sort((a, b) => b.score - a.score);
-  }, [profiles, attendance, tasks, meetings, shootings, events, publishedSlides]);
+  }, [profiles, attendance, tasks, meetings, shootings, events, publishedSlides, statusLogs, startDate, endDate]);
 
   const getRankBadge = (index: number) => {
     if (index === 0) return <Trophy className="h-5 w-5 text-yellow-500" />;

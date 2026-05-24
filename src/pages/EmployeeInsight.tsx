@@ -41,6 +41,7 @@ import { EmployeeProjectContribution } from "@/components/hr-analytics/EmployeeP
 import { EmployeeInsightPanel } from "@/components/hr-analytics/EmployeeInsightPanel";
 import { EmployeeDailyLog } from "@/components/hr-analytics/EmployeeDailyLog";
 import { TaskDurationAnalytics } from "@/components/hr-analytics/TaskDurationAnalytics";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 export default function EmployeeInsight() {
   const { id: employeeId } = useParams();
@@ -338,12 +339,12 @@ export default function EmployeeInsight() {
       (t.assigned_to === employeeId || t.task_assignees?.some((a: any) => a.user_id === employeeId)) &&
       (t.status === 'done' || t.status === 'completed')
     ).length || 0;
-    const tasksOverdue = tasks?.filter(t => {
-      if (!t.deadline) return false;
-      if (t.status === 'done' || t.status === 'completed') return false;
-      const isAssigned = t.assigned_to === employeeId || t.task_assignees?.some((a: any) => a.user_id === employeeId);
-      return isAssigned && new Date(t.deadline) < new Date();
-    }).length || 0;
+    const isAssignedTo = (t: any) => t.assigned_to === employeeId || t.task_assignees?.some((a: any) => a.user_id === employeeId);
+    const assignedTasks = (tasks || []).filter(isAssignedTo);
+    const tasksOverdue = assignedTasks.filter(t => {
+      // import lazily to keep diff small
+      return isTaskOverdueInRange(t, employeeStatusLogs || [], startDate, endDate);
+    }).length;
 
     const meetingCount = meetings?.length || 0;
     const shootingCount = shootings?.length || 0;
@@ -358,7 +359,7 @@ export default function EmployeeInsight() {
       eventCount,
       totalActivities: tasksCompleted + meetingCount + shootingCount + eventCount,
     };
-  }, [tasks, meetings, shootings, events, employeeId]);
+  }, [tasks, meetings, shootings, events, employeeId, employeeStatusLogs, startDate, endDate]);
 
   if (!profile) {
     return (
@@ -682,6 +683,9 @@ export default function EmployeeInsight() {
               shootings={shootings || []}
               events={events || []}
               employeeId={employeeId || ''}
+              statusLogs={employeeStatusLogs || []}
+              startDate={startDate}
+              endDate={endDate}
             />
           </TabsContent>
 
