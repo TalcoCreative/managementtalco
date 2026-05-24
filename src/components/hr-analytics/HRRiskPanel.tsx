@@ -4,15 +4,19 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Activity, Eye } from "lucide-react";
 import { useMemo } from "react";
 import { parseISO, differenceInMinutes } from "date-fns";
+import { isTaskOverdueInRange } from "@/lib/overdue-utils";
 
 interface HRRiskPanelProps {
   profiles: any[];
   attendance: any[];
   tasks: any[];
+  statusLogs?: any[];
+  startDate?: string;
+  endDate?: string;
   onViewEmployee: (id: string) => void;
 }
 
-export function HRRiskPanel({ profiles, attendance, tasks, onViewEmployee }: HRRiskPanelProps) {
+export function HRRiskPanel({ profiles, attendance, tasks, statusLogs = [], startDate, endDate, onViewEmployee }: HRRiskPanelProps) {
   const insights = useMemo(() => {
     const results: {
       highAutoClockout: { profile: any; count: number }[];
