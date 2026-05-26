@@ -316,58 +316,10 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
             {/* Ratecard */}
             <div className="space-y-4">
               <h3 className="font-semibold">Ratecard</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_story">IG Story (Rp)</Label>
-                  <Input
-                    id="rate_ig_story"
-                    type="number"
-                    value={formData.rate_ig_story}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_story: e.target.value })}
-                    placeholder="500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_feed">IG Feed (Rp)</Label>
-                  <Input
-                    id="rate_ig_feed"
-                    type="number"
-                    value={formData.rate_ig_feed}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_feed: e.target.value })}
-                    placeholder="1000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_reels">IG Reels (Rp)</Label>
-                  <Input
-                    id="rate_ig_reels"
-                    type="number"
-                    value={formData.rate_ig_reels}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_reels: e.target.value })}
-                    placeholder="1500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_tiktok_video">TikTok Video (Rp)</Label>
-                  <Input
-                    id="rate_tiktok_video"
-                    type="number"
-                    value={formData.rate_tiktok_video}
-                    onChange={(e) => setFormData({ ...formData, rate_tiktok_video: e.target.value })}
-                    placeholder="2000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_youtube_video">YouTube Video (Rp)</Label>
-                  <Input
-                    id="rate_youtube_video"
-                    type="number"
-                    value={formData.rate_youtube_video}
-                    onChange={(e) => setFormData({ ...formData, rate_youtube_video: e.target.value })}
-                    placeholder="5000000"
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Tambahkan rate per platform &amp; jenis konten (mis. Instagram Story, TikTok Collab, YouTube Shorts).
+              </p>
+              <RateCardEditor value={rateCards} onChange={setRateCards} />
             </div>
 
             {/* Industry & Notes */}
