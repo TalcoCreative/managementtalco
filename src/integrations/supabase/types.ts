@@ -3329,6 +3329,7 @@ export type Database = {
           linkedin_url: string | null
           name: string
           notes: string | null
+          rate_cards: Json
           rate_ig_feed: number | null
           rate_ig_reels: number | null
           rate_ig_story: number | null
@@ -3359,6 +3360,7 @@ export type Database = {
           linkedin_url?: string | null
           name: string
           notes?: string | null
+          rate_cards?: Json
           rate_ig_feed?: number | null
           rate_ig_reels?: number | null
           rate_ig_story?: number | null
@@ -3389,6 +3391,7 @@ export type Database = {
           linkedin_url?: string | null
           name?: string
           notes?: string | null
+          rate_cards?: Json
           rate_ig_feed?: number | null
           rate_ig_reels?: number | null
           rate_ig_story?: number | null
