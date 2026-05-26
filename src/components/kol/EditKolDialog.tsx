@@ -66,11 +66,6 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
     linkedin_followers: "",
     youtube_followers: "",
     threads_followers: "",
-    rate_ig_story: "",
-    rate_ig_feed: "",
-    rate_ig_reels: "",
-    rate_tiktok_video: "",
-    rate_youtube_video: "",
     industry: "",
     notes: "",
   });
