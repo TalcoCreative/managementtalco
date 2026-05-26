@@ -91,6 +91,19 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
         industry: kol.industry || "",
         notes: kol.notes || "",
       });
+      // Load rate_cards (or fallback to legacy fixed rate columns)
+      const existing = normalizeRateCards(kol.rate_cards);
+      if (existing.length > 0) {
+        setRateCards(existing);
+      } else {
+        const legacy: RateCardItem[] = [];
+        if (kol.rate_ig_story) legacy.push({ platform: "instagram", content_type: "Story", rate: Number(kol.rate_ig_story) });
+        if (kol.rate_ig_feed) legacy.push({ platform: "instagram", content_type: "Feed", rate: Number(kol.rate_ig_feed) });
+        if (kol.rate_ig_reels) legacy.push({ platform: "instagram", content_type: "Reels", rate: Number(kol.rate_ig_reels) });
+        if (kol.rate_tiktok_video) legacy.push({ platform: "tiktok", content_type: "Video", rate: Number(kol.rate_tiktok_video) });
+        if (kol.rate_youtube_video) legacy.push({ platform: "youtube", content_type: "Video", rate: Number(kol.rate_youtube_video) });
+        setRateCards(legacy);
+      }
     }
   }, [kol]);
 
