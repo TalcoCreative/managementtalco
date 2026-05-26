@@ -88,11 +88,6 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
         linkedin_followers: kol.linkedin_followers?.toString() || "",
         youtube_followers: kol.youtube_followers?.toString() || "",
         threads_followers: kol.threads_followers?.toString() || "",
-        rate_ig_story: kol.rate_ig_story?.toString() || "",
-        rate_ig_feed: kol.rate_ig_feed?.toString() || "",
-        rate_ig_reels: kol.rate_ig_reels?.toString() || "",
-        rate_tiktok_video: kol.rate_tiktok_video?.toString() || "",
-        rate_youtube_video: kol.rate_youtube_video?.toString() || "",
         industry: kol.industry || "",
         notes: kol.notes || "",
       });
