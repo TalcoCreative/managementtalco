@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
+import { normalizeRateCards, rateCardDisplayLabel } from "@/components/kol/RateCardEditor";
 
 const categoryColors: Record<string, string> = {
   nano: "bg-gray-500",
@@ -357,21 +358,24 @@ export default function KolDatabase() {
                       <TableCell>{kol.industry || "-"}</TableCell>
                       <TableCell>
                         <div className="text-sm space-y-1">
-                          {kol.rate_ig_story && (
-                            <p>Story: {formatCurrency(kol.rate_ig_story)}</p>
-                          )}
-                          {kol.rate_ig_feed && (
-                            <p>Feed: {formatCurrency(kol.rate_ig_feed)}</p>
-                          )}
-                          {kol.rate_ig_reels && (
-                            <p>Reels: {formatCurrency(kol.rate_ig_reels)}</p>
-                          )}
-                          {kol.rate_tiktok_video && (
-                            <p>TikTok: {formatCurrency(kol.rate_tiktok_video)}</p>
-                          )}
-                          {kol.rate_youtube_video && (
-                            <p>YouTube: {formatCurrency(kol.rate_youtube_video)}</p>
-                          )}
+                          {(() => {
+                            const items = normalizeRateCards(kol.rate_cards);
+                            const legacy: { label: string; rate: number }[] = [];
+                            if (items.length === 0) {
+                              if (kol.rate_ig_story) legacy.push({ label: "IG Story", rate: Number(kol.rate_ig_story) });
+                              if (kol.rate_ig_feed) legacy.push({ label: "IG Feed", rate: Number(kol.rate_ig_feed) });
+                              if (kol.rate_ig_reels) legacy.push({ label: "IG Reels", rate: Number(kol.rate_ig_reels) });
+                              if (kol.rate_tiktok_video) legacy.push({ label: "TikTok Video", rate: Number(kol.rate_tiktok_video) });
+                              if (kol.rate_youtube_video) legacy.push({ label: "YouTube Video", rate: Number(kol.rate_youtube_video) });
+                            }
+                            const list = items.length > 0
+                              ? items.map((i) => ({ label: rateCardDisplayLabel(i), rate: i.rate ?? 0 }))
+                              : legacy;
+                            if (list.length === 0) return <p className="text-muted-foreground">-</p>;
+                            return list.map((r, idx) => (
+                              <p key={idx}>{r.label}: {formatCurrency(r.rate)}</p>
+                            ));
+                          })()}
                         </div>
                       </TableCell>
                       <TableCell>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAssignmentPicker, syncKolClientAssignments } from "./ClientAssignmentPicker";
+import { RateCardEditor, normalizeRateCards, type RateCardItem } from "./RateCardEditor";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ interface EditKolDialogProps {
 export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDialogProps) {
   const queryClient = useQueryClient();
   const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
+  const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
 
   // Load existing client assignments when dialog opens or kol changes
   useQuery({
@@ -64,11 +66,6 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
     linkedin_followers: "",
     youtube_followers: "",
     threads_followers: "",
-    rate_ig_story: "",
-    rate_ig_feed: "",
-    rate_ig_reels: "",
-    rate_tiktok_video: "",
-    rate_youtube_video: "",
     industry: "",
     notes: "",
   });
@@ -91,14 +88,22 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
         linkedin_followers: kol.linkedin_followers?.toString() || "",
         youtube_followers: kol.youtube_followers?.toString() || "",
         threads_followers: kol.threads_followers?.toString() || "",
-        rate_ig_story: kol.rate_ig_story?.toString() || "",
-        rate_ig_feed: kol.rate_ig_feed?.toString() || "",
-        rate_ig_reels: kol.rate_ig_reels?.toString() || "",
-        rate_tiktok_video: kol.rate_tiktok_video?.toString() || "",
-        rate_youtube_video: kol.rate_youtube_video?.toString() || "",
         industry: kol.industry || "",
         notes: kol.notes || "",
       });
+      // Load rate_cards (or fallback to legacy fixed rate columns)
+      const existing = normalizeRateCards(kol.rate_cards);
+      if (existing.length > 0) {
+        setRateCards(existing);
+      } else {
+        const legacy: RateCardItem[] = [];
+        if (kol.rate_ig_story) legacy.push({ platform: "instagram", content_type: "Story", rate: Number(kol.rate_ig_story) });
+        if (kol.rate_ig_feed) legacy.push({ platform: "instagram", content_type: "Feed", rate: Number(kol.rate_ig_feed) });
+        if (kol.rate_ig_reels) legacy.push({ platform: "instagram", content_type: "Reels", rate: Number(kol.rate_ig_reels) });
+        if (kol.rate_tiktok_video) legacy.push({ platform: "tiktok", content_type: "Video", rate: Number(kol.rate_tiktok_video) });
+        if (kol.rate_youtube_video) legacy.push({ platform: "youtube", content_type: "Video", rate: Number(kol.rate_youtube_video) });
+        setRateCards(legacy);
+      }
     }
   }, [kol]);
 
@@ -127,11 +132,7 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
           linkedin_followers: data.linkedin_followers ? parseInt(data.linkedin_followers) : null,
           youtube_followers: data.youtube_followers ? parseInt(data.youtube_followers) : null,
           threads_followers: data.threads_followers ? parseInt(data.threads_followers) : null,
-          rate_ig_story: data.rate_ig_story ? parseFloat(data.rate_ig_story) : null,
-          rate_ig_feed: data.rate_ig_feed ? parseFloat(data.rate_ig_feed) : null,
-          rate_ig_reels: data.rate_ig_reels ? parseFloat(data.rate_ig_reels) : null,
-          rate_tiktok_video: data.rate_tiktok_video ? parseFloat(data.rate_tiktok_video) : null,
-          rate_youtube_video: data.rate_youtube_video ? parseFloat(data.rate_youtube_video) : null,
+          rate_cards: rateCards.filter((r) => r.rate != null && r.rate > 0) as any,
           industry: data.industry || null,
           notes: data.notes || null,
           updated_by: userId,
@@ -328,58 +329,10 @@ export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDi
             {/* Ratecard */}
             <div className="space-y-4">
               <h3 className="font-semibold">Ratecard</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_story">IG Story (Rp)</Label>
-                  <Input
-                    id="rate_ig_story"
-                    type="number"
-                    value={formData.rate_ig_story}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_story: e.target.value })}
-                    placeholder="500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_feed">IG Feed (Rp)</Label>
-                  <Input
-                    id="rate_ig_feed"
-                    type="number"
-                    value={formData.rate_ig_feed}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_feed: e.target.value })}
-                    placeholder="1000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_reels">IG Reels (Rp)</Label>
-                  <Input
-                    id="rate_ig_reels"
-                    type="number"
-                    value={formData.rate_ig_reels}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_reels: e.target.value })}
-                    placeholder="1500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_tiktok_video">TikTok Video (Rp)</Label>
-                  <Input
-                    id="rate_tiktok_video"
-                    type="number"
-                    value={formData.rate_tiktok_video}
-                    onChange={(e) => setFormData({ ...formData, rate_tiktok_video: e.target.value })}
-                    placeholder="2000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_youtube_video">YouTube Video (Rp)</Label>
-                  <Input
-                    id="rate_youtube_video"
-                    type="number"
-                    value={formData.rate_youtube_video}
-                    onChange={(e) => setFormData({ ...formData, rate_youtube_video: e.target.value })}
-                    placeholder="5000000"
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Tambahkan rate per platform &amp; jenis konten (mis. Instagram Story, TikTok Collab, YouTube Shorts).
+              </p>
+              <RateCardEditor value={rateCards} onChange={setRateCards} />
             </div>
 
             {/* Industry & Notes */}

@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClientAssignmentPicker, syncKolClientAssignments } from "./ClientAssignmentPicker";
+import { RateCardEditor, type RateCardItem } from "./RateCardEditor";
 
 interface CreateKolDialogProps {
   open: boolean;
@@ -31,6 +32,7 @@ interface CreateKolDialogProps {
 export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDialogProps) {
   const queryClient = useQueryClient();
   const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
+  const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -47,11 +49,6 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
     linkedin_followers: "",
     youtube_followers: "",
     threads_followers: "",
-    rate_ig_story: "",
-    rate_ig_feed: "",
-    rate_ig_reels: "",
-    rate_tiktok_video: "",
-    rate_youtube_video: "",
     industry: "",
     notes: "",
   });
@@ -79,11 +76,7 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
         linkedin_followers: data.linkedin_followers ? parseInt(data.linkedin_followers) : null,
         youtube_followers: data.youtube_followers ? parseInt(data.youtube_followers) : null,
         threads_followers: data.threads_followers ? parseInt(data.threads_followers) : null,
-        rate_ig_story: data.rate_ig_story ? parseFloat(data.rate_ig_story) : null,
-        rate_ig_feed: data.rate_ig_feed ? parseFloat(data.rate_ig_feed) : null,
-        rate_ig_reels: data.rate_ig_reels ? parseFloat(data.rate_ig_reels) : null,
-        rate_tiktok_video: data.rate_tiktok_video ? parseFloat(data.rate_tiktok_video) : null,
-        rate_youtube_video: data.rate_youtube_video ? parseFloat(data.rate_youtube_video) : null,
+        rate_cards: rateCards.filter((r) => r.rate != null && r.rate > 0) as any,
         industry: data.industry || null,
         notes: data.notes || null,
         created_by: userId,
@@ -101,6 +94,7 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
       toast.success("KOL berhasil ditambahkan");
       onOpenChange(false);
       setAssignedClientIds([]);
+      setRateCards([]);
       resetForm();
     },
 
@@ -126,11 +120,6 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
       linkedin_followers: "",
       youtube_followers: "",
       threads_followers: "",
-      rate_ig_story: "",
-      rate_ig_feed: "",
-      rate_ig_reels: "",
-      rate_tiktok_video: "",
-      rate_youtube_video: "",
       industry: "",
       notes: "",
     });
@@ -311,58 +300,10 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
             {/* Ratecard */}
             <div className="space-y-4">
               <h3 className="font-semibold">Ratecard</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_story">IG Story (Rp)</Label>
-                  <Input
-                    id="rate_ig_story"
-                    type="number"
-                    value={formData.rate_ig_story}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_story: e.target.value })}
-                    placeholder="500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_feed">IG Feed (Rp)</Label>
-                  <Input
-                    id="rate_ig_feed"
-                    type="number"
-                    value={formData.rate_ig_feed}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_feed: e.target.value })}
-                    placeholder="1000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_ig_reels">IG Reels (Rp)</Label>
-                  <Input
-                    id="rate_ig_reels"
-                    type="number"
-                    value={formData.rate_ig_reels}
-                    onChange={(e) => setFormData({ ...formData, rate_ig_reels: e.target.value })}
-                    placeholder="1500000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_tiktok_video">TikTok Video (Rp)</Label>
-                  <Input
-                    id="rate_tiktok_video"
-                    type="number"
-                    value={formData.rate_tiktok_video}
-                    onChange={(e) => setFormData({ ...formData, rate_tiktok_video: e.target.value })}
-                    placeholder="2000000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rate_youtube_video">YouTube Video (Rp)</Label>
-                  <Input
-                    id="rate_youtube_video"
-                    type="number"
-                    value={formData.rate_youtube_video}
-                    onChange={(e) => setFormData({ ...formData, rate_youtube_video: e.target.value })}
-                    placeholder="5000000"
-                  />
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Tambahkan rate per platform &amp; jenis konten (mis. Instagram Story, TikTok Collab, YouTube Shorts).
+              </p>
+              <RateCardEditor value={rateCards} onChange={setRateCards} />
             </div>
 
             {/* Industry & Notes */}
