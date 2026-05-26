@@ -94,6 +94,7 @@ export function CreateKolDialog({ open, onOpenChange, industries }: CreateKolDia
       toast.success("KOL berhasil ditambahkan");
       onOpenChange(false);
       setAssignedClientIds([]);
+      setRateCards([]);
       resetForm();
     },
 
