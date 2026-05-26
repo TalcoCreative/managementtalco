@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
+import { normalizeRateCards, rateCardDisplayLabel } from "@/components/kol/RateCardEditor";
 
 const categoryColors: Record<string, string> = {
   nano: "bg-gray-500",
