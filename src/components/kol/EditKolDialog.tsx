@@ -33,6 +33,7 @@ interface EditKolDialogProps {
 export function EditKolDialog({ open, onOpenChange, kol, industries }: EditKolDialogProps) {
   const queryClient = useQueryClient();
   const [assignedClientIds, setAssignedClientIds] = useState<string[]>([]);
+  const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
 
   // Load existing client assignments when dialog opens or kol changes
   useQuery({
