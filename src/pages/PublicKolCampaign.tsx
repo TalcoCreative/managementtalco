@@ -2,7 +2,20 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Megaphone, ExternalLink, Clock, CheckCircle2, AlertCircle, Users, Wallet, Instagram, Youtube } from "lucide-react";
+import {
+  Megaphone,
+  ExternalLink,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Users,
+  Wallet,
+  Instagram,
+  Youtube,
+  Calendar,
+  TrendingUp,
+  Tag,
+} from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   contacted: "Baru Dikontak",
@@ -32,6 +45,25 @@ const platformLabels: Record<string, string> = {
   ig_reels: "IG Reels",
   tiktok: "TikTok",
   youtube: "YouTube",
+  instagram: "Instagram",
+  twitter: "Twitter (X)",
+  threads: "Threads",
+  linkedin: "LinkedIn",
+  facebook: "Facebook",
+  other: "Other",
+};
+
+const contentTypeLabels: Record<string, string> = {
+  story: "Story",
+  feed: "Feed",
+  reels: "Reels",
+  video: "Video",
+  short: "Short",
+  live: "Live",
+  collab: "Collab",
+  tweet: "Tweet",
+  thread: "Thread",
+  post: "Post",
 };
 
 const tierLabels: Record<string, string> = {
@@ -41,6 +73,13 @@ const tierLabels: Record<string, string> = {
   mega: "Mega",
 };
 
+interface RateCard {
+  platform: string;
+  content_type: string;
+  label?: string;
+  rate: number | null;
+}
+
 interface KolItem {
   id: string;
   name: string;
@@ -49,6 +88,7 @@ interface KolItem {
   industry: string | null;
   followers: Record<string, number | null>;
   links: Record<string, string | null>;
+  rate_cards: RateCard[];
 }
 
 interface KolCampaignItem {
@@ -61,6 +101,11 @@ interface KolCampaignItem {
   is_posted: boolean;
   post_link: string | null;
   budget: number | null;
+  is_paid: boolean;
+  paid_at: string | null;
+  created_at: string;
+  updated_at: string;
+  posted_at: string | null;
 }
 
 const formatFollowers = (n: number | null | undefined) => {
@@ -73,6 +118,22 @@ const formatFollowers = (n: number | null | undefined) => {
 const formatRupiah = (n: number | null | undefined) => {
   if (n == null) return "—";
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
+};
+
+const formatDate = (d: string | null | undefined) => {
+  if (!d) return null;
+  try {
+    return new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return null;
+  }
+};
+
+const rateLabel = (r: RateCard) => {
+  if (r.label) return r.label;
+  const p = platformLabels[r.platform] || r.platform;
+  const c = contentTypeLabels[r.content_type] || r.content_type;
+  return `${p} ${c}`;
 };
 
 export default function PublicKolCampaign() {
@@ -115,7 +176,13 @@ export default function PublicKolCampaign() {
   const kols: KolItem[] = data.kols || [];
   const campaigns: KolCampaignItem[] = data.campaigns || [];
 
-  // Map kol_id (by name+username) → list of campaigns for quick lookup
+  // Summary stats
+  const totalSpend = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
+  const paidSpend = campaigns.filter((c) => c.is_paid).reduce((sum, c) => sum + (c.budget || 0), 0);
+  const postedCount = campaigns.filter((c) => c.is_posted).length;
+  const ongoingCount = campaigns.filter((c) => !["posted", "completed"].includes(c.status)).length;
+
+  // Map kol by name+username for campaigns linkage
   const campaignsByKol = new Map<string, KolCampaignItem[]>();
   campaigns.forEach((c) => {
     const key = `${c.kol_name}::${c.kol_username}`;
@@ -141,6 +208,47 @@ export default function PublicKolCampaign() {
       </header>
 
       <main className="container mx-auto px-4 pb-10 space-y-8">
+        {/* ===== Summary KPIs ===== */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="hub-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" /> Total KOL
+              </div>
+              <p className="text-2xl font-bold mt-1">{kols.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="hub-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Megaphone className="h-3.5 w-3.5" /> Campaign
+              </div>
+              <p className="text-2xl font-bold mt-1">{campaigns.length}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {postedCount} posted · {ongoingCount} ongoing
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="hub-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Wallet className="h-3.5 w-3.5" /> Total Budget
+              </div>
+              <p className="text-xl font-bold mt-1 truncate">{formatRupiah(totalSpend)}</p>
+            </CardContent>
+          </Card>
+          <Card className="hub-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <TrendingUp className="h-3.5 w-3.5" /> Sudah Dibayar
+              </div>
+              <p className="text-xl font-bold mt-1 truncate text-green-600 dark:text-green-400">
+                {formatRupiah(paidSpend)}
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* ===== KOL Listing ===== */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
@@ -163,6 +271,7 @@ export default function PublicKolCampaign() {
                 const tt = formatFollowers(k.followers.tiktok);
                 const yt = formatFollowers(k.followers.youtube);
                 const kolCamps = campaignsByKol.get(`${k.name}::${k.username}`) || [];
+                const rates = (k.rate_cards || []).filter((r) => r && (r.rate || r.rate === 0));
                 return (
                   <Card key={k.id} className="hub-card overflow-hidden">
                     <CardContent className="p-4 space-y-3">
@@ -199,8 +308,27 @@ export default function PublicKolCampaign() {
                         )}
                       </div>
 
+                      {rates.length > 0 && (
+                        <div className="pt-2 border-t border-border/40 space-y-1">
+                          <div className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                            <Tag className="h-3 w-3" /> Rate Card
+                          </div>
+                          <div className="space-y-0.5">
+                            {rates.map((r, i) => (
+                              <div key={i} className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted-foreground truncate pr-2">{rateLabel(r)}</span>
+                                <span className="font-medium tabular-nums">{formatRupiah(r.rate)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {kolCamps.length > 0 && (
                         <div className="pt-2 border-t border-border/40 space-y-1.5">
+                          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Campaign
+                          </div>
                           {kolCamps.map((c) => (
                             <div key={c.id} className="flex items-center justify-between gap-2 text-[11px]">
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -233,12 +361,12 @@ export default function PublicKolCampaign() {
           )}
         </section>
 
-        {/* ===== Active Campaigns with budget ===== */}
+        {/* ===== Campaigns Detail ===== */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <Megaphone className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-              Campaign Berjalan ({campaigns.length})
+              Campaign Detail ({campaigns.length})
             </h2>
           </div>
 
@@ -252,7 +380,7 @@ export default function PublicKolCampaign() {
             <div className="space-y-3">
               {campaigns.map((c) => (
                 <Card key={c.id} className="hub-card overflow-hidden">
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{c.kol_name}</p>
@@ -264,7 +392,7 @@ export default function PublicKolCampaign() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge className={`${statusColors[c.status] || "bg-gray-500"} text-white text-[10px]`}>
                         {statusLabels[c.status] || c.status}
                       </Badge>
@@ -281,22 +409,51 @@ export default function PublicKolCampaign() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-1 text-xs text-foreground/80 ml-auto">
-                        <Wallet className="h-3.5 w-3.5" />
-                        <span className="font-medium">{formatRupiah(c.budget)}</span>
-                      </div>
+                      {c.is_paid && (
+                        <Badge variant="outline" className="text-[10px] border-green-500/50 text-green-700 dark:text-green-400">
+                          Paid
+                        </Badge>
+                      )}
 
                       {c.post_link && (
                         <a
                           href={c.post_link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary text-xs hover:underline"
+                          className="flex items-center gap-1 text-primary text-xs hover:underline ml-auto"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
                           Lihat Post
                         </a>
                       )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border/40 text-xs">
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Spend</p>
+                        <p className="font-semibold tabular-nums">{formatRupiah(c.budget)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Dibuat</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {formatDate(c.created_at) || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Tanggal Post</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {formatDate(c.posted_at) || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase text-muted-foreground">Tanggal Bayar</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <Calendar className="h-3 w-3 text-muted-foreground" />
+                          {formatDate(c.paid_at) || "—"}
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
