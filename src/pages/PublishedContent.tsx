@@ -200,6 +200,48 @@ export default function PublishedContent() {
               ))}
             </SelectContent>
           </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal min-w-[240px]",
+                  !dateRange?.from && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd MMM yyyy", { locale: localeId })} —{" "}
+                      {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd MMM yyyy", { locale: localeId })
+                  )
+                ) : (
+                  "Rentang Tanggal Publish"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {dateRange?.from && (
+            <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
+              <X className="h-4 w-4 mr-1" /> Reset
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
