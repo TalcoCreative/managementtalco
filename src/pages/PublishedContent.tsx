@@ -48,6 +48,7 @@ const CHANNEL_CONFIG: Record<string, { label: string; icon: any; color: string }
 export default function PublishedContent() {
   const [selectedClientId, setSelectedClientId] = useState<string>("all");
   const [selectedChannel, setSelectedChannel] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch clients
   const { data: clients } = useQuery({
