@@ -223,13 +223,59 @@ export default function PublicKolCampaign() {
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4" />
         <div className="relative container mx-auto px-4 pt-8 pb-4 sm:pt-12 sm:pb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)] flex items-center justify-center shadow-lg">
-              <Megaphone className="h-6 w-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)] flex items-center justify-center shadow-lg">
+                <Megaphone className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold">KOL & Campaign</h1>
+                <p className="text-sm text-muted-foreground">{data.clientName}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">KOL & Campaign</h1>
-              <p className="text-sm text-muted-foreground">{data.clientName}</p>
+
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd MMM", { locale: localeId })} —{" "}
+                          {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd MMM yyyy", { locale: localeId })
+                      )
+                    ) : (
+                      "Filter Tanggal"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 pointer-events-auto" align="end">
+                  <CalendarUI
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={1}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {dateRange?.from && (
+                <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
