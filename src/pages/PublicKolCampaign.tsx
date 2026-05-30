@@ -148,6 +148,7 @@ const rateLabel = (r: RateCard) => {
 
 export default function PublicKolCampaign() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-kol-campaigns", clientSlug],
@@ -163,6 +164,24 @@ export default function PublicKolCampaign() {
     },
     enabled: !!clientSlug,
   });
+
+  const allCampaigns: KolCampaignItem[] = data?.campaigns || [];
+
+  // Filter campaigns by date range (uses posted_at, paid_at, or created_at)
+  const campaigns = useMemo(() => {
+    if (!dateRange?.from) return allCampaigns;
+    const fromTs = new Date(new Date(dateRange.from).setHours(0, 0, 0, 0)).getTime();
+    const toTs = dateRange.to
+      ? new Date(new Date(dateRange.to).setHours(23, 59, 59, 999)).getTime()
+      : new Date(new Date(dateRange.from).setHours(23, 59, 59, 999)).getTime();
+    return allCampaigns.filter((c) => {
+      const candidates = [c.posted_at, c.paid_at, c.created_at].filter(Boolean) as string[];
+      return candidates.some((d) => {
+        const ts = new Date(d).getTime();
+        return ts >= fromTs && ts <= toTs;
+      });
+    });
+  }, [allCampaigns, dateRange]);
 
   if (isLoading) {
     return (
@@ -184,7 +203,6 @@ export default function PublicKolCampaign() {
   }
 
   const kols: KolItem[] = data.kols || [];
-  const campaigns: KolCampaignItem[] = data.campaigns || [];
 
   // Summary stats
   const totalSpend = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
