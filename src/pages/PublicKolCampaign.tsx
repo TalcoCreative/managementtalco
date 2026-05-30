@@ -1,7 +1,15 @@
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import {
   Megaphone,
   ExternalLink,
@@ -13,8 +21,10 @@ import {
   Instagram,
   Youtube,
   Calendar,
+  CalendarIcon,
   TrendingUp,
   Tag,
+  X,
 } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
@@ -138,6 +148,7 @@ const rateLabel = (r: RateCard) => {
 
 export default function PublicKolCampaign() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["public-kol-campaigns", clientSlug],
@@ -153,6 +164,24 @@ export default function PublicKolCampaign() {
     },
     enabled: !!clientSlug,
   });
+
+  const allCampaigns: KolCampaignItem[] = data?.campaigns || [];
+
+  // Filter campaigns by date range (uses posted_at, paid_at, or created_at)
+  const campaigns = useMemo(() => {
+    if (!dateRange?.from) return allCampaigns;
+    const fromTs = new Date(new Date(dateRange.from).setHours(0, 0, 0, 0)).getTime();
+    const toTs = dateRange.to
+      ? new Date(new Date(dateRange.to).setHours(23, 59, 59, 999)).getTime()
+      : new Date(new Date(dateRange.from).setHours(23, 59, 59, 999)).getTime();
+    return allCampaigns.filter((c) => {
+      const candidates = [c.posted_at, c.paid_at, c.created_at].filter(Boolean) as string[];
+      return candidates.some((d) => {
+        const ts = new Date(d).getTime();
+        return ts >= fromTs && ts <= toTs;
+      });
+    });
+  }, [allCampaigns, dateRange]);
 
   if (isLoading) {
     return (
@@ -174,7 +203,6 @@ export default function PublicKolCampaign() {
   }
 
   const kols: KolItem[] = data.kols || [];
-  const campaigns: KolCampaignItem[] = data.campaigns || [];
 
   // Summary stats
   const totalSpend = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
@@ -195,13 +223,59 @@ export default function PublicKolCampaign() {
       <header className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4" />
         <div className="relative container mx-auto px-4 pt-8 pb-4 sm:pt-12 sm:pb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)] flex items-center justify-center shadow-lg">
-              <Megaphone className="h-6 w-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(28,78%,52%)] to-[hsl(38,82%,52%)] flex items-center justify-center shadow-lg">
+                <Megaphone className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold">KOL & Campaign</h1>
+                <p className="text-sm text-muted-foreground">{data.clientName}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold">KOL & Campaign</h1>
-              <p className="text-sm text-muted-foreground">{data.clientName}</p>
+
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !dateRange?.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd MMM", { locale: localeId })} —{" "}
+                          {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd MMM yyyy", { locale: localeId })
+                      )
+                    ) : (
+                      "Filter Tanggal"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 pointer-events-auto" align="end">
+                  <CalendarUI
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={1}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {dateRange?.from && (
+                <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

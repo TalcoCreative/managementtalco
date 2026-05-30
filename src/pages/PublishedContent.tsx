@@ -24,9 +24,15 @@ import {
   BarChart3,
   Building2,
   Filter,
+  CalendarIcon,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const CHANNEL_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
   instagram: { label: "Instagram", icon: Instagram, color: "bg-pink-100 text-pink-700 border-pink-200" },
@@ -42,6 +48,7 @@ const CHANNEL_CONFIG: Record<string, { label: string; icon: any; color: string }
 export default function PublishedContent() {
   const [selectedClientId, setSelectedClientId] = useState<string>("all");
   const [selectedChannel, setSelectedChannel] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch clients
   const { data: clients } = useQuery({
@@ -110,6 +117,8 @@ export default function PublishedContent() {
   // Filter slides
   const filteredSlides = useMemo(() => {
     if (!publishedSlides) return [];
+    const fromTs = dateRange?.from ? new Date(dateRange.from.setHours(0, 0, 0, 0)).getTime() : null;
+    const toTs = dateRange?.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)).getTime() : (fromTs ? new Date(new Date(dateRange!.from!).setHours(23, 59, 59, 999)).getTime() : null);
     return publishedSlides.filter((slide: any) => {
       const clientId = slide.editorial_plans?.client_id;
       if (selectedClientId !== "all" && clientId !== selectedClientId) return false;
@@ -117,9 +126,16 @@ export default function PublishedContent() {
         const links = slide.publish_links as any[];
         if (!links?.some((l: any) => l.platform === selectedChannel)) return false;
       }
+      if (fromTs) {
+        const pAt = slide.published_at || slide.publish_date;
+        if (!pAt) return false;
+        const ts = new Date(pAt).getTime();
+        if (ts < fromTs) return false;
+        if (toTs && ts > toTs) return false;
+      }
       return true;
     });
-  }, [publishedSlides, selectedClientId, selectedChannel]);
+  }, [publishedSlides, selectedClientId, selectedChannel, dateRange]);
 
   // Group by channel for stats
   const channelStats = useMemo(() => {
@@ -184,6 +200,48 @@ export default function PublishedContent() {
               ))}
             </SelectContent>
           </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal min-w-[240px]",
+                  !dateRange?.from && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd MMM yyyy", { locale: localeId })} —{" "}
+                      {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd MMM yyyy", { locale: localeId })
+                  )
+                ) : (
+                  "Rentang Tanggal Publish"
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {dateRange?.from && (
+            <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
+              <X className="h-4 w-4 mr-1" /> Reset
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
