@@ -1,7 +1,15 @@
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
+import type { DateRange } from "react-day-picker";
 import {
   Megaphone,
   ExternalLink,
@@ -13,8 +21,10 @@ import {
   Instagram,
   Youtube,
   Calendar,
+  CalendarIcon,
   TrendingUp,
   Tag,
+  X,
 } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
