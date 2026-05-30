@@ -24,9 +24,15 @@ import {
   BarChart3,
   Building2,
   Filter,
+  CalendarIcon,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
 
 const CHANNEL_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
   instagram: { label: "Instagram", icon: Instagram, color: "bg-pink-100 text-pink-700 border-pink-200" },
