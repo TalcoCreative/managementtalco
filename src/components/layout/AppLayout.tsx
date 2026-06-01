@@ -55,6 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
       {location.pathname !== "/team-review" && <TeamReviewGate userId={currentUser?.id} />}
+      <AvatarGate userId={currentUser?.id} />
     </>
   );
 }
