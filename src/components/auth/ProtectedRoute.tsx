@@ -18,17 +18,45 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const hasCheckedRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const checkActiveStatus = async (sess: Session | null) => {
+      if (!sess) return true;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("status")
+        .eq("id", sess.user.id)
+        .maybeSingle();
+      if (prof?.status === "non_active") {
+        await supabase.auth.signOut();
+        toast.error(
+          "Akun Anda sudah dinonaktifkan. Silakan menghubungi management untuk informasi lebih lanjut."
+        );
+        navigate("/auth");
+        return false;
+      }
+      return true;
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setLoading(false);
         if (!session) {
           navigate("/auth");
+        } else if (event === "SIGNED_IN") {
+          checkActiveStatus(session);
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        const ok = await checkActiveStatus(session);
+        if (!ok) {
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+      }
       setSession(session);
       setLoading(false);
       if (!session) {
