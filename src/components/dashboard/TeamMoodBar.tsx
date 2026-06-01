@@ -20,7 +20,7 @@ export function TeamMoodBar() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendance")
-        .select("user_id, mood, clock_in, profiles:profiles!fk_attendance_user_profiles(full_name)")
+        .select("user_id, mood, clock_in, profiles:profiles!fk_attendance_user_profiles(full_name, avatar_url)")
         .eq("date", today)
         .not("clock_in", "is", null)
         .order("clock_in", { ascending: true });
@@ -29,12 +29,14 @@ export function TeamMoodBar() {
         console.error("Team mood error:", error);
         return [];
       }
-      return (data || []).map((d: any) => ({
-        user_id: d.user_id,
-        mood: d.mood,
-        clock_in: d.clock_in,
-        profile: d.profiles,
-      })) as TeamMember[];
+      return (data || [])
+        .map((d: any) => ({
+          user_id: d.user_id,
+          mood: d.mood,
+          clock_in: d.clock_in,
+          profile: d.profiles,
+        }))
+        .filter((m: TeamMember) => !!m.profile?.avatar_url) as TeamMember[];
     },
     refetchInterval: 60000,
   });
