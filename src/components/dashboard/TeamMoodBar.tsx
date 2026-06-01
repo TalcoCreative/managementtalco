@@ -64,16 +64,24 @@ export function TeamMoodBar() {
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full",
+                      "relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden",
                       "bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-background",
                       "cursor-pointer hover:scale-110 hover:z-10 transition-transform duration-200",
                       "ring-1 ring-border/30"
                     )}
                     style={{ zIndex: teamMoods.length - i }}
                   >
-                    <span className="text-[10px] sm:text-xs font-bold text-foreground/70">
-                      {initials}
-                    </span>
+                    {member.profile?.avatar_url ? (
+                      <img
+                        src={member.profile.avatar_url}
+                        alt={member.profile.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] sm:text-xs font-bold text-foreground/70">
+                        {initials}
+                      </span>
+                    )}
                     {/* Mood emoji badge */}
                     <span className="absolute -bottom-0.5 -right-0.5 text-xs sm:text-sm leading-none drop-shadow-sm">
                       {emoji}
