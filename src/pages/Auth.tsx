@@ -43,11 +43,28 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        // Check if account is deactivated
+        if (signInData.user) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("status")
+            .eq("id", signInData.user.id)
+            .maybeSingle();
+          if (prof?.status === "non_active") {
+            await supabase.auth.signOut();
+            toast.error(
+              "Akun Anda sudah dinonaktifkan. Silakan menghubungi management untuk informasi lebih lanjut."
+            );
+            setLoading(false);
+            return;
+          }
+        }
         toast.success("Logged in successfully!");
       } else {
         const { error } = await supabase.auth.signUp({

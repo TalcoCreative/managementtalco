@@ -9,6 +9,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TeamReviewGate } from "@/components/team-review/TeamReviewOverlay";
+import { AvatarGate } from "@/components/profile/AvatarGate";
 import { useLocation } from "react-router-dom";
 
 interface AppLayoutProps {
@@ -54,6 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
       {location.pathname !== "/team-review" && <TeamReviewGate userId={currentUser?.id} />}
+      <AvatarGate userId={currentUser?.id} />
     </>
   );
 }
