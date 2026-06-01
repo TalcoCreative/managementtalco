@@ -79,10 +79,9 @@ export function AvatarGate({ userId }: AvatarGateProps) {
   return (
     <Dialog open={needsAvatar}>
       <DialogContent
-        className="max-w-md"
+        className="max-w-md [&>button.absolute]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        hideClose
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
