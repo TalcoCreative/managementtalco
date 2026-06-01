@@ -9,7 +9,7 @@ interface TeamMember {
   user_id: string;
   mood: string | null;
   clock_in: string | null;
-  profile: { full_name: string } | null;
+  profile: { full_name: string; avatar_url: string | null } | null;
 }
 
 export function TeamMoodBar() {
