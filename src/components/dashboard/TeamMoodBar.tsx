@@ -29,14 +29,13 @@ export function TeamMoodBar() {
         console.error("Team mood error:", error);
         return [];
       }
-      return (data || [])
-        .map((d: any) => ({
-          user_id: d.user_id,
-          mood: d.mood,
-          clock_in: d.clock_in,
-          profile: d.profiles,
-        }))
-        .filter((m: TeamMember) => !!m.profile?.avatar_url) as TeamMember[];
+      return (data || []).map((d: any) => ({
+        user_id: d.user_id,
+        mood: d.mood,
+        clock_in: d.clock_in,
+        profile: d.profiles,
+      })) as TeamMember[];
+
     },
     refetchInterval: 60000,
   });
