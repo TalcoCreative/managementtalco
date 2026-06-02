@@ -98,6 +98,7 @@ export default function EditorialPlanEditor() {
         .from("editorial_slides")
         .select("*")
         .eq("ep_id", ep.id)
+        .order("publish_date", { ascending: true, nullsFirst: false })
         .order("slide_order", { ascending: true });
 
       if (error) throw error;
