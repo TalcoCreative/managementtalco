@@ -3,8 +3,8 @@ import {
   Users, ClipboardCheck, BarChart2, CalendarOff, Receipt, Package, TrendingUp,
   CalendarHeart, UserSearch, BarChart3, FileText, Share2, Sparkles, Star, Megaphone,
   UserPlus, Wallet, CircleDollarSign, PieChart, Scale, ReceiptText, Crown, User,
-  Mail, MessageSquare, Shield, MapPin, Settings, StickyNote, LayoutGrid, Briefcase as Work,
-  HeartHandshake,
+  Mail, MessageSquare, Shield, MapPin, Settings, StickyNote, Briefcase as Work,
+  HeartHandshake, FolderKanban,
 } from "lucide-react";
 
 export interface NavItemDef {
@@ -18,7 +18,7 @@ export interface NavCategory {
   key: string;
   label: string;
   icon: any;
-  color: string; // hsl tuple value
+  color: string; // hsl tuple value used for accents
   items: NavItemDef[];
 }
 
@@ -63,33 +63,65 @@ export const NAV_CATEGORIES: NavCategory[] = [
     ],
   },
   {
-    key: "people",
-    label: "People",
+    key: "team",
+    label: "Team",
     icon: Users,
     color: "hsl(205,72%,52%)",
     items: [
       { title: "Employee", url: "/users", icon: Users, featureKey: "team" },
       { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
       { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
+      { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
+    ],
+  },
+  {
+    key: "timeoff",
+    label: "Time Off",
+    icon: CalendarOff,
+    color: "hsl(38,82%,52%)",
+    items: [
       { title: "Leave", url: "/leave", icon: CalendarOff, featureKey: "leave" },
+      { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
       { title: "Reimburse", url: "/my-reimbursement", icon: Receipt, featureKey: "reimburse" },
       { title: "Asset", url: "/asset", icon: Package, featureKey: "asset" },
-      { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
-      { title: "Holiday Calendar", url: "/hr/holiday", icon: CalendarHeart, featureKey: "holiday_calendar" },
+    ],
+  },
+  {
+    key: "recruitment",
+    label: "Recruitment",
+    icon: UserSearch,
+    color: "hsl(195,75%,48%)",
+    items: [
       { title: "Recruitment", url: "/recruitment", icon: UserSearch, featureKey: "recruitment" },
       { title: "Recruitment Board", url: "/recruitment/dashboard", icon: BarChart3, featureKey: "recruitment_dashboard" },
       { title: "Recruitment Forms", url: "/recruitment/forms", icon: FileText, featureKey: "recruitment_forms" },
     ],
   },
   {
-    key: "marketing",
-    label: "Marketing",
-    icon: Sparkles,
+    key: "social",
+    label: "Social Media",
+    icon: Share2,
     color: "hsl(330,60%,55%)",
     items: [
       { title: "Social Media", url: "/social-media", icon: Share2, featureKey: "social_media" },
       { title: "Editorial Plan", url: "/editorial-plan", icon: FileText, featureKey: "editorial_plan" },
+    ],
+  },
+  {
+    key: "content",
+    label: "Content",
+    icon: Sparkles,
+    color: "hsl(285,65%,58%)",
+    items: [
       { title: "Content Builder", url: "/content-builder", icon: Sparkles, featureKey: "content_builder" },
+    ],
+  },
+  {
+    key: "kol",
+    label: "KOL",
+    icon: Star,
+    color: "hsl(45,90%,52%)",
+    items: [
       { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
       { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
     ],
@@ -128,9 +160,17 @@ export const NAV_CATEGORIES: NavCategory[] = [
     color: "hsl(205,72%,52%)",
     items: [
       { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-      { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
-      { title: "Form Builder", url: "/forms", icon: FileText, featureKey: "form_builder" },
       { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
+      { title: "Form Builder", url: "/forms", icon: FolderKanban, featureKey: "form_builder" },
+    ],
+  },
+  {
+    key: "documents",
+    label: "Documents",
+    icon: FileText,
+    color: "hsl(20,72%,52%)",
+    items: [
+      { title: "Letters", url: "/letters", icon: FileText, featureKey: "letters" },
     ],
   },
   {
@@ -165,4 +205,25 @@ export function filterCategoriesByPermission(canView: (k: string) => boolean) {
     ...cat,
     items: cat.items.filter((i) => ALWAYS_VISIBLE.includes(i.featureKey) || canView(i.featureKey)),
   })).filter((c) => c.items.length > 0);
+}
+
+/**
+ * Find the category that owns a given pathname.
+ * Used by PageSubNav to render sibling-route tabs automatically.
+ */
+export function findCategoryByPath(pathname: string): NavCategory | null {
+  // exact match first
+  for (const cat of NAV_CATEGORIES) {
+    if (cat.items.some((i) => i.url === pathname)) return cat;
+  }
+  // prefix match (deepest wins)
+  let best: { cat: NavCategory; len: number } | null = null;
+  for (const cat of NAV_CATEGORIES) {
+    for (const i of cat.items) {
+      if (i.url !== "/" && pathname.startsWith(i.url) && (!best || i.url.length > best.len)) {
+        best = { cat, len: i.url.length };
+      }
+    }
+  }
+  return best?.cat ?? null;
 }
