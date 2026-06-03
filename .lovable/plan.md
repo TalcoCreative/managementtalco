@@ -1,92 +1,98 @@
-# Monthly Team Review System
+# Reorganisasi Navigasi & Header Page Immersive
 
-A confidential, anonymous monthly peer review system for HR and Super Admin to understand team collaboration and culture. Hidden from regular users — appears as immersive fullscreen experience only during the active review window.
+Tiga perubahan besar yang saling terkait:
 
-## Scope
+## 1. Hilangkan tombol "+" Floating (FAB)
 
-### 1. Database (migration)
+- Hapus pemanggilan `<FloatingActionButton />` dari `src/components/layout/AppLayout.tsx` di semua page.
+- File `FloatingActionButton.tsx` dibiarkan ada tapi tidak dipakai (agar event listener `fab-action` di page lain tetap aman).
 
-New tables:
-- `team_review_settings` (singleton row) — `enabled` (bool), `open_day` (int 1–31), `deadline_day` (int 1–31), `require_before_clockin` (bool), `updated_at`
-- `team_review_questions` — `id`, `question_text`, `order_index`, `is_active`, `created_at`
-- `team_review_submissions` — `id`, `reviewer_id`, `review_month` (date, first of month), `submitted_at`, unique(`reviewer_id`, `review_month`)
-- `team_review_answers` — `id`, `submission_id`, `reviewed_user_id`, `question_id`, `score` (1–5), `comment` (text, optional). **Does NOT store reviewer_id** to preserve anonymity at query level.
-- `team_review_drafts` — `reviewer_id`, `review_month`, `payload` (jsonb), `updated_at`, PK(reviewer_id, review_month) — for autosave
-- Add `include_in_team_review` (bool, default true) to `profiles`
+## 2. Restrukturisasi Sidebar Navigation (`src/components/layout/nav-config.ts`)
 
-RLS:
-- Settings/questions: read for authenticated; write only HR/super_admin
-- Submissions/answers: insert allowed when reviewer_id = auth.uid(); SELECT restricted to HR/super_admin only (anonymity)
-- Drafts: only the owner can read/write their own draft
-- Profiles `include_in_team_review` editable by HR/super_admin
+Kategorisasi baru — setiap kategori utama buka subpage dengan tab di dalamnya, bukan sekadar list flat.
 
-Seed 5 default questions.
+```text
+Home
+ ├─ Dashboard
+ ├─ Schedule
+ └─ Personal Notes
 
-### 2. Settings page — `/system/team-review-settings`
+Chat
 
-Toggles for enable, open day, deadline day, require-before-clockin, plus questions CRUD (add/edit/delete/reorder via drag handle). Nav entry under Settings, gated by HR/super_admin.
+Work
+ ├─ Clients
+ ├─ Projects
+ ├─ Tasks
+ ├─ Shooting
+ ├─ Meeting
+ └─ Event
 
-### 3. Users/Teams page
+People                              ← di-breakdown jadi sub-grup
+ ├─ Team           (Employee, HR Dashboard, HR Analytics)
+ ├─ Time Off       (Leave, Holiday Calendar)
+ ├─ Performance    (Performance, Asset, Reimburse)
+ └─ Recruitment    (Recruitment, Recruitment Board, Recruitment Forms)
 
-Add "Include in Team Review" checkbox column / inline toggle for HR/super_admin.
+Marketing                           ← dipisah jadi 3 kategori top-level
+Social Media        (Social Media, Editorial Plan)
+Content             (Content Builder)
+KOL                 (KOL Database, KOL Campaign)
 
-### 4. Immersive review experience
+Sales
+ ├─ Prospects, My Prospects
+ ├─ My Sales Dashboard, Sales Analytics
+ ├─ My Commission, Sales Admin
+ └─ Ads Budget
 
-New component `TeamReviewOverlay` mounted in `AppLayout`. Logic:
-- Query settings + today's date — is review period active (open_day ≤ today ≤ deadline_day, enabled = true)?
-- Query if current user has submitted for current month
-- Query if current user is `include_in_team_review`
-- If active + not submitted + included → render fullscreen overlay (fixed inset-0, backdrop-blur, z-[100])
+Finance
+ ├─ Finance, Income Statement, Balance Sheet, Invoices
 
-Flow:
-- Welcome screen → for each participant (excluding self, only included users) → question cards with 1–5 rating buttons → optional comment → next person → final summary → submit
-- Smooth framer-motion transitions, rounded cards, glassmorphism, mobile-friendly
-- Autosave to `team_review_drafts` on every answer change (debounced)
-- Resume from draft on reload
-- Cannot close (no X) if `require_before_clockin` is true; otherwise has "Skip for now" button
-- ClockIn component checks settings — blocks if review pending and required
+Reports                             ← khusus laporan klien
+ ├─ Reports
+ ├─ CEO Dashboard
+ └─ Form Builder
 
-### 5. Admin dashboard — `/team-review`
+Documents                           ← Letters dipisah dari Reports
+ └─ Letters
 
-Gated by HR/super_admin only (ProtectedRoute + role check; not in sidebar for others).
+Culture                             ← jadi subpage
+ ├─ Monthly Team Review
+ └─ Team Review Settings
 
-Tabs/sections:
-- **Overview**: completion rate (X of Y submitted), pending users list, average overall score, monthly trend chart (last 6 months)
-- **Per question**: average score per question, trend
-- **Per user**: list of reviewed users → click → detail with monthly score trend, per-question averages, anonymous comments. Never shows reviewer identity.
+System                              ← jadi subpage
+ ├─ Profile Settings
+ ├─ Email Settings
+ ├─ WA Notification Log
+ ├─ Role & Access
+ ├─ Location Settings
+ ├─ Invoice Templates
+ └─ System Settings
+```
 
-### 6. Navigation
+## 3. Immersive Page Headers + Sub-Tab Navigation
 
-- Add `/team-review` and `/system/team-review-settings` to `nav-config.ts` under a "Culture" / Settings group, but only render via PermissionGate for HR/super_admin
-- Routes in `App.tsx` wrapped in ProtectedRoute + internal role guard that redirects regular users to `/`
+Buat komponen baru `src/components/layout/PageHeader.tsx`:
 
-## Technical notes
+- Hero-style header: gradient atmospheric (semantic tokens), icon tile berwarna sesuai kategori, judul besar, deskripsi, optional action slot di kanan.
+- Tab sub-navigasi inline di bawah judul (pakai `NavLink` ke sibling routes dalam kategori yang sama).
+- Mobile-friendly: scroll horizontal untuk tab, tetap pakai 100dvh / safe-area.
 
-- Anonymity enforced by schema: `team_review_answers` has no FK back to reviewer. Only `team_review_submissions` knows reviewer, and it's never joined to answers in any client query — admin dashboard only aggregates per `reviewed_user_id`.
-- "Review month" = `date_trunc('month', now() AT TIME ZONE 'Asia/Jakarta')` to align with project TZ rule.
-- Clockin block: extend `ClockInOut.tsx` to check pending review when `require_before_clockin` is on.
-- Reuse design tokens (HSL semantic), Plus Jakarta Sans, glassmorphism per existing style memory.
-- Use framer-motion (already present) for transitions.
-- Drag-reorder questions via `@dnd-kit` if already installed, else simple up/down buttons.
+Tab dihitung otomatis dari `nav-config.ts`: header membaca kategori aktif berdasarkan `location.pathname` lalu render `cat.items` sebagai chip-tab.
+
+Rollout: ganti header lama (heading + subtitle text manual) di page-page utama dengan `<PageHeader title="..." description="..." icon={...} />`. Page yang sudah punya header custom rumit (Dashboard, Reports lama) tetap dipertahankan; sisanya migrasi.
+
+Page yang akan dimigrasi ke `PageHeader` (batch awal):
+Schedule, Clients, Projects, Tasks, Shooting, Meeting, Event, Users, HRDashboard, HRAnalytics, Leave, MyReimbursement, Asset, Performance, Holiday, Recruitment, RecruitmentDashboard, RecruitmentForms, SocialMedia, EditorialPlan, ContentBuilder, KolDatabase, KolCampaign, Prospects, MyProspects, MySalesDashboard, SalesDashboard, MyCommission, SalesAdmin, AdsBudget, Finance, IncomeStatement, BalanceSheet, Invoices, Letters, Forms, CEODashboard, TeamReview, TeamReviewSettings, ProfileSettings, EmailSettings, NotificationLog, RoleManagement, SettingLocation, InvoiceTemplates, SystemSettings.
+
+## Catatan Teknis
+
+- Semua warna lewat semantic tokens (`hsl(var(--primary))`, dst).
+- Kategori warna di `nav-config.ts` dipakai PageHeader untuk accent icon tile + underline tab aktif.
+- Tidak ada perubahan logic bisnis — murni presentasi & routing tab.
+- Permission filter (`filterCategoriesByPermission`) tetap dipakai; tab yang user tidak boleh view otomatis hilang.
 
 ## Files
 
-**New**
-- `supabase/migrations/...` (tables, RLS, seed)
-- `src/pages/TeamReview.tsx` (admin dashboard)
-- `src/pages/TeamReviewSettings.tsx`
-- `src/components/team-review/TeamReviewOverlay.tsx`
-- `src/components/team-review/ReviewQuestionCard.tsx`
-- `src/components/team-review/QuestionsManager.tsx`
-- `src/components/team-review/AdminOverview.tsx`
-- `src/components/team-review/UserAnalytics.tsx`
-- `src/hooks/useTeamReview.ts`
-
-**Edited**
-- `src/App.tsx` (routes)
-- `src/components/layout/AppLayout.tsx` (mount overlay)
-- `src/components/layout/nav-config.ts` (gated nav)
-- `src/components/attendance/ClockInOut.tsx` (block when required)
-- `src/pages/Users.tsx` (include toggle)
-
-After plan approval I'll run the migration and build the UI.
+- Edit: `src/components/layout/nav-config.ts`, `src/components/layout/AppLayout.tsx`
+- Create: `src/components/layout/PageHeader.tsx`
+- Edit (batch migrasi header): ±45 page di `src/pages/*.tsx`
