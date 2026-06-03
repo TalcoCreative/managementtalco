@@ -1,7 +1,7 @@
 import { AppSidebar } from "./AppSidebar";
 import { Header } from "./Header";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { FloatingActionButton } from "./FloatingActionButton";
+import { PageSubNav } from "./PageSubNav";
 import { GlobalSearch } from "./GlobalSearch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PushPermissionPrompt, IOSInstallPrompt } from "@/components/pwa/PushPermissionPrompt";
@@ -45,12 +45,12 @@ export function AppLayout({ children }: AppLayoutProps) {
           />
           <Header />
           <main className="flex-1 px-4 sm:px-6 md:px-8 lg:px-10 py-5 md:py-7 overflow-x-hidden pb-bottom-nav max-w-[1600px] w-full mx-auto">
+            <PageSubNav />
             {children}
           </main>
         </div>
       </div>
       {isMobile && <MobileBottomNav />}
-      <FloatingActionButton />
       <GlobalSearch />
       {shouldShowPrompt && <PushPermissionPrompt onEnable={enableNotifications} />}
       <IOSInstallPrompt />
