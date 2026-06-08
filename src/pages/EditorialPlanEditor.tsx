@@ -14,12 +14,15 @@ import {
   ArrowLeft,
   MessageSquare,
   Calendar,
+  FolderInput,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
 import { SlideStatusBadge } from "@/components/editorial-plan/SlideStatusBadge";
 import { EPCommentsPanel } from "@/components/editorial-plan/EPCommentsPanel";
 import { EPCalendarView } from "@/components/editorial-plan/EPCalendarView";
+import { MoveSlideDialog } from "@/components/editorial-plan/MoveSlideDialog";
+
 
 interface Slide {
   id: string;
@@ -60,6 +63,7 @@ export default function EditorialPlanEditor() {
   const [showComments, setShowComments] = useState(false);
   const [initialSlideResolved, setInitialSlideResolved] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const slideTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch EP data
@@ -421,20 +425,32 @@ export default function EditorialPlanEditor() {
                 </Button>
               </div>
 
-              {currentSlide && slides.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (confirm("Hapus slide ini?")) {
-                      deleteSlideMutation.mutate(currentSlide.id);
-                    }
-                  }}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Hapus Slide
-                </Button>
+              {currentSlide && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMoveDialogOpen(true)}
+                  >
+                    <FolderInput className="h-4 w-4 mr-2" />
+                    Pindahkan
+                  </Button>
+                  {slides.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm("Hapus slide ini?")) {
+                          deleteSlideMutation.mutate(currentSlide.id);
+                        }
+                      }}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Hapus Slide
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -459,6 +475,21 @@ export default function EditorialPlanEditor() {
           </>
         )}
       </div>
+
+      {currentSlide && (
+        <MoveSlideDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          slideId={currentSlide.id}
+          currentEpId={ep.id}
+          onMoved={() => {
+            // Slide moved away — refetch source EP and shift current index back
+            refetchSlides();
+            queryClient.invalidateQueries({ queryKey: ["editorial-plans"] });
+            setCurrentSlideIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }
