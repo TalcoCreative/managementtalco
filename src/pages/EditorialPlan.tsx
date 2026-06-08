@@ -243,6 +243,13 @@ export default function EditorialPlan() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={(e) => {
                           e.stopPropagation();
+                          setRenamePlan(plan);
+                        }}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit Judul
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
                           handleCopyLink(plan);
                         }}>
                           <Copy className="h-4 w-4 mr-2" />
