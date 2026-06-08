@@ -15,7 +15,8 @@ import {
   ExternalLink,
   MoreVertical,
   Trash2,
-  Copy
+  Copy,
+  Pencil
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CreateEditorialPlanDialog } from "@/components/editorial-plan/CreateEditorialPlanDialog";
+import { RenameEditorialPlanDialog } from "@/components/editorial-plan/RenameEditorialPlanDialog";
 
 interface EditorialPlan {
   id: string;
@@ -59,6 +61,7 @@ export default function EditorialPlan() {
   const [searchQuery, setSearchQuery] = useState("");
   const [clientFilter, setClientFilter] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [renamePlan, setRenamePlan] = useState<EditorialPlan | null>(null);
 
   // Fetch clients
   const { data: clients } = useQuery({
