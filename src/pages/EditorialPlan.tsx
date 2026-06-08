@@ -306,6 +306,16 @@ export default function EditorialPlan() {
           setCreateDialogOpen(false);
         }}
       />
+
+      <RenameEditorialPlanDialog
+        open={!!renamePlan}
+        onOpenChange={(o) => !o && setRenamePlan(null)}
+        plan={renamePlan ? { id: renamePlan.id, title: renamePlan.title, period: renamePlan.period } : null}
+        onSuccess={() => {
+          setRenamePlan(null);
+          refetch();
+        }}
+      />
     </AppLayout>
   );
 }
