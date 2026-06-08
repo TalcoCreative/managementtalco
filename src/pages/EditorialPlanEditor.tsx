@@ -475,6 +475,21 @@ export default function EditorialPlanEditor() {
           </>
         )}
       </div>
+
+      {currentSlide && (
+        <MoveSlideDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          slideId={currentSlide.id}
+          currentEpId={ep.id}
+          onMoved={() => {
+            // Slide moved away — refetch source EP and shift current index back
+            refetchSlides();
+            queryClient.invalidateQueries({ queryKey: ["editorial-plans"] });
+            setCurrentSlideIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }
