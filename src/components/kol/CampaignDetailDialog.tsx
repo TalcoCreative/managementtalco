@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { PublishedContentSubmission } from "./PublishedContentSubmission";
 
 interface CampaignDetailDialogProps {
   open: boolean;
@@ -273,10 +274,19 @@ export function CampaignDetailDialog({ open, onOpenChange, campaign }: CampaignD
           </DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="details" className="w-full flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
             <TabsTrigger value="details">Detail & Update</TabsTrigger>
+            <TabsTrigger value="published">Published Content</TabsTrigger>
             <TabsTrigger value="history">Activity History</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="published" className="flex-1 overflow-hidden mt-2">
+            <ScrollArea className="h-[calc(90vh-180px)] pr-4">
+              <div className="py-2">
+                <PublishedContentSubmission campaign={campaign} />
+              </div>
+            </ScrollArea>
+          </TabsContent>
 
           <TabsContent value="details" className="flex-1 overflow-hidden mt-2">
             <ScrollArea className="h-[calc(90vh-180px)] pr-4">
