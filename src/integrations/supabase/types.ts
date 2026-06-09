@@ -5071,6 +5071,214 @@ export type Database = {
           },
         ]
       }
+      published_content_settings: {
+        Row: {
+          average_er: number
+          excellent_er: number
+          good_er: number
+          id: string
+          refresh_frequency_hours: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          average_er?: number
+          excellent_er?: number
+          good_er?: number
+          id?: string
+          refresh_frequency_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          average_er?: number
+          excellent_er?: number
+          good_er?: number
+          id?: string
+          refresh_frequency_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      published_content_snapshots: {
+        Row: {
+          comment_rate: number | null
+          comments: number | null
+          content_id: string
+          engagement: number | null
+          engagement_rate: number | null
+          id: string
+          likes: number | null
+          raw_data: Json | null
+          shares: number | null
+          snapshot_at: string
+          source: string
+          view_engagement_rate: number | null
+          views: number | null
+        }
+        Insert: {
+          comment_rate?: number | null
+          comments?: number | null
+          content_id: string
+          engagement?: number | null
+          engagement_rate?: number | null
+          id?: string
+          likes?: number | null
+          raw_data?: Json | null
+          shares?: number | null
+          snapshot_at?: string
+          source?: string
+          view_engagement_rate?: number | null
+          views?: number | null
+        }
+        Update: {
+          comment_rate?: number | null
+          comments?: number | null
+          content_id?: string
+          engagement?: number | null
+          engagement_rate?: number | null
+          id?: string
+          likes?: number | null
+          raw_data?: Json | null
+          shares?: number | null
+          snapshot_at?: string
+          source?: string
+          view_engagement_rate?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_content_snapshots_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "published_contents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      published_contents: {
+        Row: {
+          campaign_id: string | null
+          caption_notes: string | null
+          caption_preview: string | null
+          client_id: string | null
+          content_external_id: string | null
+          content_type: string | null
+          content_url: string
+          created_at: string
+          created_by: string | null
+          creator_user_id: string | null
+          id: string
+          ig_username: string | null
+          kol_id: string | null
+          last_scraped_at: string | null
+          latest_comments: number | null
+          latest_engagement_rate: number | null
+          latest_likes: number | null
+          latest_shares: number | null
+          latest_views: number | null
+          performance_score: string | null
+          platform: string
+          project_id: string | null
+          publish_date: string | null
+          scrape_error: string | null
+          scrape_status: string
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          caption_notes?: string | null
+          caption_preview?: string | null
+          client_id?: string | null
+          content_external_id?: string | null
+          content_type?: string | null
+          content_url: string
+          created_at?: string
+          created_by?: string | null
+          creator_user_id?: string | null
+          id?: string
+          ig_username?: string | null
+          kol_id?: string | null
+          last_scraped_at?: string | null
+          latest_comments?: number | null
+          latest_engagement_rate?: number | null
+          latest_likes?: number | null
+          latest_shares?: number | null
+          latest_views?: number | null
+          performance_score?: string | null
+          platform: string
+          project_id?: string | null
+          publish_date?: string | null
+          scrape_error?: string | null
+          scrape_status?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          caption_notes?: string | null
+          caption_preview?: string | null
+          client_id?: string | null
+          content_external_id?: string | null
+          content_type?: string | null
+          content_url?: string
+          created_at?: string
+          created_by?: string | null
+          creator_user_id?: string | null
+          id?: string
+          ig_username?: string | null
+          kol_id?: string | null
+          last_scraped_at?: string | null
+          latest_comments?: number | null
+          latest_engagement_rate?: number | null
+          latest_likes?: number | null
+          latest_shares?: number | null
+          latest_views?: number | null
+          performance_score?: string | null
+          platform?: string
+          project_id?: string | null
+          publish_date?: string | null
+          scrape_error?: string | null
+          scrape_status?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_contents_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "kol_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_contents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_contents_kol_id_fkey"
+            columns: ["kol_id"]
+            isOneToOne: false
+            referencedRelation: "kol_database"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "published_contents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_notification_logs: {
         Row: {
           body: string | null

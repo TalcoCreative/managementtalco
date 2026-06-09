@@ -1,344 +1,300 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import {
-  ExternalLink,
-  FileText,
-  Instagram,
-  Youtube,
-  Facebook,
-  Linkedin,
-  Music2,
-  BarChart3,
-  Building2,
-  Filter,
-  CalendarIcon,
-  X,
-} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BarChart3, Plus, RefreshCw, Settings, ExternalLink, Search, Eye, Heart, MessageCircle, TrendingUp, Loader2, Trophy } from "lucide-react";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import type { DateRange } from "react-day-picker";
+import { toast } from "sonner";
+import { AddContentDialog } from "@/components/published-content/AddContentDialog";
+import { ContentDetailDialog } from "@/components/published-content/ContentDetailDialog";
+import { SettingsDialog } from "@/components/published-content/SettingsDialog";
 
-const CHANNEL_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  instagram: { label: "Instagram", icon: Instagram, color: "bg-pink-100 text-pink-700 border-pink-200" },
-  tiktok: { label: "TikTok", icon: Music2, color: "bg-slate-100 text-slate-700 border-slate-200" },
-  youtube: { label: "YouTube", icon: Youtube, color: "bg-red-100 text-red-700 border-red-200" },
-  twitter: { label: "X (Twitter)", icon: FileText, color: "bg-sky-100 text-sky-700 border-sky-200" },
-  facebook: { label: "Facebook", icon: Facebook, color: "bg-blue-100 text-blue-700 border-blue-200" },
-  linkedin: { label: "LinkedIn", icon: Linkedin, color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-  threads: { label: "Threads", icon: FileText, color: "bg-gray-100 text-gray-700 border-gray-200" },
-  other: { label: "Other", icon: FileText, color: "bg-muted text-muted-foreground border-border" },
+const PLATFORM_LABEL: Record<string, string> = {
+  instagram: "Instagram", tiktok: "TikTok", youtube: "YouTube", facebook: "Facebook",
+  linkedin: "LinkedIn", twitter: "X", threads: "Threads", website: "Website", other: "Other",
 };
 
+const SCORE_COLOR: Record<string, string> = {
+  Excellent: "bg-emerald-500", Good: "bg-blue-500", Average: "bg-amber-500", Poor: "bg-red-500",
+};
+
+const fmt = (n: number | null | undefined) => n == null ? "-" : n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toLocaleString();
+
 export default function PublishedContent() {
-  const [selectedClientId, setSelectedClientId] = useState<string>("all");
-  const [selectedChannel, setSelectedChannel] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [search, setSearch] = useState("");
+  const [platform, setPlatform] = useState("all");
+  const [score, setScore] = useState("all");
+  const [addOpen, setAddOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [detail, setDetail] = useState<any>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
 
-  // Fetch clients
-  const { data: clients } = useQuery({
-    queryKey: ["clients-published-content"],
+  const { data: items, isLoading, refetch } = useQuery({
+    queryKey: ["all-published-contents"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("clients")
-        .select("id, name")
-        .eq("status", "active")
-        .order("name");
+        .from("published_contents")
+        .select("*, campaign:kol_campaigns(id,campaign_name), client:clients(id,name), kol:kol_database(id,name,username)")
+        .order("publish_date", { ascending: false, nullsFirst: false });
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  // Fetch all published slides with EP + client data
-  const { data: publishedSlides, isLoading } = useQuery({
-    queryKey: ["published-slides-all"],
+  // Also keep legacy EP slides (existing feature)
+  const { data: epSlides } = useQuery({
+    queryKey: ["published-slides-summary"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("editorial_slides")
-        .select(`
-          id, slide_order, status, published_at, publish_date, channels, publish_links, slug,
-          editorial_plans(id, title, slug, client_id, clients(id, name))
-        `)
+        .select("id, published_at, publish_date, publish_links, editorial_plans(title, clients(name))")
         .eq("status", "published")
-        .order("published_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
+        .order("published_at", { ascending: false })
+        .limit(500);
+      return data || [];
     },
   });
 
-  // Fetch content titles from slide_blocks
-  const slideIds = publishedSlides?.map(s => s.id) || [];
-  const { data: contentBlocks } = useQuery({
-    queryKey: ["published-content-blocks", slideIds.join(",")],
-    queryFn: async () => {
-      if (slideIds.length === 0) return [];
-      // Batch in chunks of 50
-      const results: any[] = [];
-      for (let i = 0; i < slideIds.length; i += 50) {
-        const chunk = slideIds.slice(i, i + 50);
-        const { data } = await supabase
-          .from("slide_blocks")
-          .select("slide_id, content")
-          .in("slide_id", chunk)
-          .eq("block_type", "content_meta");
-        if (data) results.push(...data);
-      }
-      return results;
-    },
-    enabled: slideIds.length > 0,
-  });
+  const filtered = useMemo(() => {
+    let arr = items || [];
+    if (platform !== "all") arr = arr.filter(c => c.platform === platform);
+    if (score !== "all") arr = arr.filter(c => c.performance_score === score);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      arr = arr.filter(c =>
+        (c.title || "").toLowerCase().includes(q) ||
+        (c.content_url || "").toLowerCase().includes(q) ||
+        (c.client?.name || "").toLowerCase().includes(q) ||
+        (c.kol?.name || "").toLowerCase().includes(q)
+      );
+    }
+    return arr;
+  }, [items, platform, score, search]);
 
-  const contentTitleMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    contentBlocks?.forEach((b: any) => {
-      if (b.content?.title) {
-        map[b.slide_id] = b.content.title;
-      }
-    });
-    return map;
-  }, [contentBlocks]);
+  const summary = useMemo(() => {
+    const total = filtered.length;
+    const sum = (k: string) => filtered.reduce((s, c: any) => s + (c[k] || 0), 0);
+    const views = sum("latest_views");
+    const likes = sum("latest_likes");
+    const comments = sum("latest_comments");
+    const ers = filtered.map((c: any) => c.latest_engagement_rate).filter((v: any) => v != null);
+    const avgER = ers.length ? (ers.reduce((a: number, b: number) => a + b, 0) / ers.length) : 0;
+    const best = [...filtered].sort((a: any, b: any) => (b.latest_engagement_rate || 0) - (a.latest_engagement_rate || 0))[0];
+    const platformCounts: Record<string, number> = {};
+    filtered.forEach((c: any) => { platformCounts[c.platform] = (platformCounts[c.platform] || 0) + 1; });
+    const bestPlatform = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    return { total, views, likes, comments, avgER: +avgER.toFixed(2), best, bestPlatform };
+  }, [filtered]);
 
-  // Filter slides
-  const filteredSlides = useMemo(() => {
-    if (!publishedSlides) return [];
-    const fromTs = dateRange?.from ? new Date(dateRange.from.setHours(0, 0, 0, 0)).getTime() : null;
-    const toTs = dateRange?.to ? new Date(dateRange.to.setHours(23, 59, 59, 999)).getTime() : (fromTs ? new Date(new Date(dateRange!.from!).setHours(23, 59, 59, 999)).getTime() : null);
-    return publishedSlides.filter((slide: any) => {
-      const clientId = slide.editorial_plans?.client_id;
-      if (selectedClientId !== "all" && clientId !== selectedClientId) return false;
-      if (selectedChannel !== "all") {
-        const links = slide.publish_links as any[];
-        if (!links?.some((l: any) => l.platform === selectedChannel)) return false;
-      }
-      if (fromTs) {
-        const pAt = slide.published_at || slide.publish_date;
-        if (!pAt) return false;
-        const ts = new Date(pAt).getTime();
-        if (ts < fromTs) return false;
-        if (toTs && ts > toTs) return false;
-      }
-      return true;
-    });
-  }, [publishedSlides, selectedClientId, selectedChannel, dateRange]);
+  const topByViews = useMemo(() => [...filtered].sort((a: any, b: any) => (b.latest_views || 0) - (a.latest_views || 0)).slice(0, 10), [filtered]);
+  const topByER = useMemo(() => [...filtered].sort((a: any, b: any) => (b.latest_engagement_rate || 0) - (a.latest_engagement_rate || 0)).slice(0, 10), [filtered]);
 
-  // Group by channel for stats
-  const channelStats = useMemo(() => {
-    const stats: Record<string, number> = {};
-    filteredSlides.forEach((slide: any) => {
-      const links = slide.publish_links as any[];
-      if (links && Array.isArray(links)) {
-        links.forEach((l: any) => {
-          stats[l.platform] = (stats[l.platform] || 0) + 1;
-        });
-      }
-      // Also count channels without links
-      const channels = slide.channels as string[];
-      if (channels && Array.isArray(channels)) {
-        channels.forEach((ch: string) => {
-          if (!stats[ch]) stats[ch] = (stats[ch] || 0);
-        });
-      }
-    });
-    return stats;
-  }, [filteredSlides]);
+  const refreshAll = async () => {
+    if (!filtered.length) return;
+    setRefreshingAll(true);
+    let ok = 0, fail = 0;
+    for (const c of filtered) {
+      try {
+        const { data } = await supabase.functions.invoke("scrape-content", { body: { content_id: c.id } });
+        if (data?.ok !== false) ok++; else fail++;
+      } catch { fail++; }
+    }
+    setRefreshingAll(false);
+    toast.success(`Refresh selesai: ${ok} ok, ${fail} gagal`);
+    refetch();
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Published Content</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Daftar konten yang sudah dipublish dari Editorial Plan
-            </p>
+      <div className="space-y-5">
+        <div className="section-header" style={{ "--section-color": "var(--section-social)" } as React.CSSProperties}>
+          <div className="section-icon"><BarChart3 className="h-5 w-5" /></div>
+          <div className="flex-1">
+            <h1 className="section-title">Published Content Analytics</h1>
+            <p className="section-subtitle">Monitor performa publik seluruh konten yang sudah dipublikasikan</p>
           </div>
-          <Button variant="outline" onClick={() => window.history.back()}>
-            ← Back to Reports
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}><Settings className="h-4 w-4 mr-1" /> Thresholds</Button>
+            <Button variant="outline" size="sm" onClick={refreshAll} disabled={refreshingAll}>
+              {refreshingAll ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />} Refresh All
+            </Button>
+            <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4 mr-1" /> Add Content</Button>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          {[
+            { label: "Total Content", v: summary.total, icon: BarChart3 },
+            { label: "Total Views", v: fmt(summary.views), icon: Eye },
+            { label: "Total Likes", v: fmt(summary.likes), icon: Heart },
+            { label: "Total Comments", v: fmt(summary.comments), icon: MessageCircle },
+            { label: "Avg ER", v: `${summary.avgER}%`, icon: TrendingUp },
+            { label: "Top Platform", v: summary.bestPlatform ? PLATFORM_LABEL[summary.bestPlatform] || summary.bestPlatform : "-", icon: Trophy },
+            { label: "Best Content", v: summary.best?.title?.slice(0, 16) || summary.best?.platform || "-", icon: Trophy },
+          ].map(({ label, v, icon: Icon }) => (
+            <Card key={label}><CardContent className="p-3">
+              <Icon className="h-4 w-4 mb-1 text-muted-foreground" />
+              <p className="text-lg font-bold truncate">{v}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+            </CardContent></Card>
+          ))}
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
-          <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-            <SelectTrigger className="w-[200px]">
-              <Building2 className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All Clients" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Client</SelectItem>
-              {clients?.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Card>
+          <CardContent className="pt-4 flex flex-wrap gap-3">
+            <div className="flex-1 min-w-[200px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search title, URL, client, KOL..." className="pl-9" />
+            </div>
+            <Select value={platform} onValueChange={setPlatform}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Platform" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Platforms</SelectItem>
+                {Object.entries(PLATFORM_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={score} onValueChange={setScore}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="Score" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Scores</SelectItem>
+                <SelectItem value="Excellent">Excellent</SelectItem>
+                <SelectItem value="Good">Good</SelectItem>
+                <SelectItem value="Average">Average</SelectItem>
+                <SelectItem value="Poor">Poor</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
-          <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="All Channels" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Platform</SelectItem>
-              {Object.entries(CHANNEL_CONFIG).map(([key, cfg]) => (
-                <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <Tabs defaultValue="table">
+          <TabsList>
+            <TabsTrigger value="table">Performance Table</TabsTrigger>
+            <TabsTrigger value="top">Top Content</TabsTrigger>
+            <TabsTrigger value="ep">From Editorial Plan ({epSlides?.length || 0})</TabsTrigger>
+          </TabsList>
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal min-w-[240px]",
-                  !dateRange?.from && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "dd MMM yyyy", { locale: localeId })} —{" "}
-                      {format(dateRange.to, "dd MMM yyyy", { locale: localeId })}
-                    </>
-                  ) : (
-                    format(dateRange.from, "dd MMM yyyy", { locale: localeId })
-                  )
-                ) : (
-                  "Rentang Tanggal Publish"
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                numberOfMonths={2}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <TabsContent value="table">
+            <Card>
+              <CardContent className="p-0 overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Content</TableHead>
+                      <TableHead>Platform</TableHead>
+                      <TableHead>Creator / KOL</TableHead>
+                      <TableHead>Campaign</TableHead>
+                      <TableHead>Publish</TableHead>
+                      <TableHead className="text-right">Views</TableHead>
+                      <TableHead className="text-right">Likes</TableHead>
+                      <TableHead className="text-right">Comments</TableHead>
+                      <TableHead className="text-right">ER%</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Updated</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow><TableCell colSpan={11} className="text-center py-8">Loading...</TableCell></TableRow>
+                    ) : filtered.length === 0 ? (
+                      <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Belum ada konten. Klik "Add Content" untuk mulai.</TableCell></TableRow>
+                    ) : filtered.map((c: any) => (
+                      <TableRow key={c.id} className="cursor-pointer" onClick={() => setDetail(c)}>
+                        <TableCell className="max-w-[240px]">
+                          <div className="flex items-center gap-2">
+                            {c.thumbnail_url && <img src={c.thumbnail_url} className="w-8 h-8 rounded object-cover flex-shrink-0" alt="" />}
+                            <div className="min-w-0">
+                              <p className="font-medium truncate text-sm">{c.title || c.content_url}</p>
+                              <a href={c.content_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
+                                {c.content_type} <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell><Badge variant="outline">{PLATFORM_LABEL[c.platform] || c.platform}</Badge></TableCell>
+                        <TableCell className="text-sm">{c.kol?.name || "-"}</TableCell>
+                        <TableCell className="text-sm">{c.campaign?.campaign_name || c.client?.name || "-"}</TableCell>
+                        <TableCell className="text-xs">{c.publish_date ? format(new Date(c.publish_date), "dd MMM yyyy") : "-"}</TableCell>
+                        <TableCell className="text-right">{fmt(c.latest_views)}</TableCell>
+                        <TableCell className="text-right">{fmt(c.latest_likes)}</TableCell>
+                        <TableCell className="text-right">{fmt(c.latest_comments)}</TableCell>
+                        <TableCell className="text-right">{c.latest_engagement_rate != null ? `${c.latest_engagement_rate}%` : "-"}</TableCell>
+                        <TableCell>{c.performance_score ? <Badge className={`${SCORE_COLOR[c.performance_score]} text-white`}>{c.performance_score}</Badge> : "-"}</TableCell>
+                        <TableCell className="text-xs">{c.last_scraped_at ? format(new Date(c.last_scraped_at), "dd MMM HH:mm") : "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {dateRange?.from && (
-            <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>
-              <X className="h-4 w-4 mr-1" /> Reset
-            </Button>
-          )}
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{filteredSlides.length}</p>
-              <p className="text-xs text-muted-foreground">Total Published</p>
-            </CardContent>
-          </Card>
-          {Object.entries(channelStats)
-            .sort(([, a], [, b]) => b - a)
-            .map(([channel, count]) => {
-              const cfg = CHANNEL_CONFIG[channel] || CHANNEL_CONFIG.other;
-              const Icon = cfg.icon;
-              return (
-                <Card key={channel}>
-                  <CardContent className="p-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 mb-1">
-                      <Icon className="h-4 w-4" />
+          <TabsContent value="top">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card><CardContent className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2"><Eye className="h-4 w-4" /> Top 10 by Views</h3>
+                <div className="space-y-2">
+                  {topByViews.map((c: any, i: number) => (
+                    <div key={c.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/40 cursor-pointer" onClick={() => setDetail(c)}>
+                      <span className="text-xs font-bold w-5 text-muted-foreground">#{i + 1}</span>
+                      <span className="flex-1 text-sm truncate">{c.title || c.content_url}</span>
+                      <span className="text-sm font-medium">{fmt(c.latest_views)}</span>
                     </div>
-                    <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-xs text-muted-foreground">{cfg.label}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-        </div>
-
-        <Separator />
-
-        {/* Content List */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Memuat data...</div>
-        ) : filteredSlides.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">Belum ada konten yang dipublish</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {filteredSlides.map((slide: any) => {
-              const ep = slide.editorial_plans;
-              const clientName = ep?.clients?.name || "Unknown";
-              const title = contentTitleMap[slide.id] || `Slide ${slide.slide_order + 1}`;
-              const links = (slide.publish_links as any[]) || [];
-              const publishedAt = slide.published_at 
-                ? format(new Date(slide.published_at), "dd MMM yyyy", { locale: localeId })
-                : "-";
-
-              return (
-                <Card key={slide.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            {clientName}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">{ep?.title}</span>
-                        </div>
-                        <h3 className="font-medium truncate">{title}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Published: {publishedAt}
-                        </p>
-                      </div>
-
-                      {/* Links */}
-                      <div className="flex flex-wrap gap-2 shrink-0">
-                        {links.map((link: any, idx: number) => {
-                          const cfg = CHANNEL_CONFIG[link.platform] || CHANNEL_CONFIG.other;
-                          const Icon = cfg.icon;
-                          return (
-                            <a
-                              key={idx}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs border transition-colors hover:opacity-80 ${cfg.color}`}
-                            >
-                              <Icon className="h-3.5 w-3.5" />
-                              {cfg.label}
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          );
-                        })}
-                      </div>
+                  ))}
+                </div>
+              </CardContent></Card>
+              <Card><CardContent className="p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Top 10 by Engagement Rate</h3>
+                <div className="space-y-2">
+                  {topByER.map((c: any, i: number) => (
+                    <div key={c.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/40 cursor-pointer" onClick={() => setDetail(c)}>
+                      <span className="text-xs font-bold w-5 text-muted-foreground">#{i + 1}</span>
+                      <span className="flex-1 text-sm truncate">{c.title || c.content_url}</span>
+                      <span className="text-sm font-medium">{c.latest_engagement_rate != null ? `${c.latest_engagement_rate}%` : "-"}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  ))}
+                </div>
+              </CardContent></Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ep">
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs text-muted-foreground">Konten yang ditandai "published" dari Editorial Plan.</p>
+                {epSlides?.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Belum ada slide yang dipublish.</p>}
+                {epSlides?.map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between gap-2 p-2 rounded border">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{s.editorial_plans?.title || "EP"} — {s.editorial_plans?.clients?.name}</p>
+                      <p className="text-xs text-muted-foreground">{s.published_at ? format(new Date(s.published_at), "dd MMM yyyy") : "-"}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      {(s.publish_links as any[])?.slice(0, 4).map((l, i) => (
+                        <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" className="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/70 inline-flex items-center gap-1">
+                          {l.platform} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <AddContentDialog open={addOpen} onOpenChange={setAddOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      {detail && <ContentDetailDialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)} content={detail} />}
     </AppLayout>
   );
 }
