@@ -72,6 +72,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
       { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
       { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
+      { title: "Breakdown Resource & Cost", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
     ],
   },
   {
@@ -160,7 +161,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
     color: "hsl(205,72%,52%)",
     items: [
       { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-      { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
       { title: "Form Builder", url: "/forms", icon: FolderKanban, featureKey: "form_builder" },
     ],
   },

@@ -39,11 +39,12 @@ interface ClientResourceData {
   workloadPercentage: number;
   estimatedCost: number;
   adsSpend: number;
-  totalCost: number; // estimatedCost + adsSpend
+  totalCost: number;
   taskCount: number;
   meetingCount: number;
   shootingCount: number;
   eventCount: number;
+  epCount: number;
   employeeBreakdown: EmployeeBreakdown[];
 }
 
@@ -55,6 +56,18 @@ interface EmployeeBreakdown {
   percentageForClient: number;
   monthlySalary: number;
   estimatedCostForClient: number;
+}
+
+interface EmployeeActivityRow {
+  employeeId: string;
+  employeeName: string;
+  taskAssigned: number;
+  taskCreated: number;
+  meeting: number;
+  shooting: number;
+  event: number;
+  ep: number;
+  total: number;
 }
 
 export default function CEODashboard() {
@@ -148,19 +161,22 @@ export default function CEODashboard() {
     };
   }, [dateRange]);
 
-  // Fetch tasks within date range — include multi-assignees + creator to mirror HR Analytics
+  // Fetch tasks — include items whose created_at OR deadline overlaps the range
   const { data: tasks } = useQuery({
     queryKey: ["ceo-tasks", formattedDateRange],
     queryFn: async () => {
+      const startISO = formattedDateRange.start;
+      const endISO = formattedDateRange.end + "T23:59:59";
       const { data, error } = await supabase
         .from("tasks")
         .select(`
-          id, assigned_to, created_by, project_id, created_at,
+          id, assigned_to, created_by, project_id, created_at, deadline,
           task_assignees(user_id),
           project:projects(client_id)
         `)
-        .gte("created_at", formattedDateRange.start)
-        .lte("created_at", formattedDateRange.end + "T23:59:59");
+        .or(
+          `and(created_at.gte.${startISO},created_at.lte.${endISO}),and(deadline.gte.${startISO},deadline.lte.${endISO})`
+        );
       if (error) throw error;
       return data || [];
     },
@@ -215,6 +231,27 @@ export default function CEODashboard() {
         `)
         .gte("start_date", formattedDateRange.start)
         .lte("start_date", formattedDateRange.end);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isSuperAdmin,
+  });
+
+  // Fetch editorial plan slides — credit creator + assignee whose publish_date OR created_at falls in range
+  const { data: epSlides } = useQuery({
+    queryKey: ["ceo-ep-slides", formattedDateRange],
+    queryFn: async () => {
+      const startISO = formattedDateRange.start;
+      const endISO = formattedDateRange.end + "T23:59:59";
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select(`
+          id, created_by, assigned_to, publish_date, created_at, ep_id,
+          editorial_plans:ep_id(client_id, project_id)
+        `)
+        .or(
+          `and(publish_date.gte.${formattedDateRange.start},publish_date.lte.${formattedDateRange.end}),and(created_at.gte.${startISO},created_at.lte.${endISO})`
+        );
       if (error) throw error;
       return data || [];
     },
@@ -287,8 +324,8 @@ export default function CEODashboard() {
 
     // Create a map for employee activities
     const employeeActivities: Map<string, {
-      total: number; 
-      byClient: Map<string, { count: number; taskCount: number; meetingCount: number; shootingCount: number; eventCount: number }> 
+      total: number;
+      byClient: Map<string, { count: number; taskCount: number; meetingCount: number; shootingCount: number; eventCount: number; epCount: number }>
     }> = new Map();
 
     // Initialize employee activities
@@ -301,7 +338,7 @@ export default function CEODashboard() {
       const emp = employeeActivities.get(employeeId);
       if (!emp) return null;
       if (!emp.byClient.has(clientId)) {
-        emp.byClient.set(clientId, { count: 0, taskCount: 0, meetingCount: 0, shootingCount: 0, eventCount: 0 });
+        emp.byClient.set(clientId, { count: 0, taskCount: 0, meetingCount: 0, shootingCount: 0, eventCount: 0, epCount: 0 });
       }
       return emp.byClient.get(clientId)!;
     };
@@ -392,6 +429,25 @@ export default function CEODashboard() {
       });
     });
 
+    // Process editorial plan slides — credit creator + assignee
+    (epSlides || []).forEach((slide: any) => {
+      const clientId = slide.editorial_plans?.client_id;
+      if (!clientId) return;
+      const userIds = new Set<string>();
+      if (slide.created_by) userIds.add(slide.created_by);
+      if (slide.assigned_to) userIds.add(slide.assigned_to);
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
+        emp.total++;
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
+        if (clientEntry) {
+          clientEntry.count++;
+          clientEntry.epCount++;
+        }
+      });
+    });
+
     // Calculate total activities across all employees
     let totalCompanyActivities = 0;
     employeeActivities.forEach((emp) => {
@@ -416,6 +472,7 @@ export default function CEODashboard() {
         meetingCount: 0,
         shootingCount: 0,
         eventCount: 0,
+        epCount: 0,
         employeeBreakdown: [],
       };
 
@@ -440,6 +497,7 @@ export default function CEODashboard() {
         data.meetingCount += clientStats.meetingCount;
         data.shootingCount += clientStats.shootingCount;
         data.eventCount += clientStats.eventCount;
+        data.epCount += clientStats.epCount;
         data.estimatedCost += costForClient;
 
         data.employeeBreakdown.push({
@@ -472,7 +530,57 @@ export default function CEODashboard() {
     );
 
     return sortedData;
-  }, [profiles, clients, tasks, meetings, shootings, events, clientAdsSpendMap]);
+  }, [profiles, clients, tasks, meetings, shootings, events, epSlides, clientAdsSpendMap]);
+
+  // Build per-employee activity breakdown (independent of selected client)
+  const employeeActivityBreakdown = useMemo<EmployeeActivityRow[]>(() => {
+    if (!profiles) return [];
+    const map = new Map<string, EmployeeActivityRow>();
+    const ensure = (id: string, name: string) => {
+      if (!map.has(id)) {
+        map.set(id, { employeeId: id, employeeName: name, taskAssigned: 0, taskCreated: 0, meeting: 0, shooting: 0, event: 0, ep: 0, total: 0 });
+      }
+      return map.get(id)!;
+    };
+    const nameOf = (id: string) => profiles.find((p: any) => p.id === id)?.full_name || "Unknown";
+
+    (tasks || []).forEach((t: any) => {
+      const assignees = new Set<string>();
+      if (t.assigned_to) assignees.add(t.assigned_to);
+      (t.task_assignees || []).forEach((ta: any) => ta.user_id && assignees.add(ta.user_id));
+      assignees.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.taskAssigned++; r.total++; });
+      if (t.created_by && !assignees.has(t.created_by)) {
+        const r = ensure(t.created_by, nameOf(t.created_by)); r.taskCreated++; r.total++;
+      }
+    });
+    (meetings || []).forEach((m: any) => {
+      const uids = new Set<string>();
+      if (m.created_by) uids.add(m.created_by);
+      (m.meeting_participants || []).forEach((p: any) => p.user_id && uids.add(p.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.meeting++; r.total++; });
+    });
+    (shootings || []).forEach((s: any) => {
+      const uids = new Set<string>();
+      if (s.requested_by) uids.add(s.requested_by);
+      (s.shooting_crew || []).forEach((c: any) => c.user_id && !c.is_freelance && uids.add(c.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.shooting++; r.total++; });
+    });
+    (events || []).forEach((ev: any) => {
+      const uids = new Set<string>();
+      if (ev.pic_id) uids.add(ev.pic_id);
+      if (ev.created_by) uids.add(ev.created_by);
+      (ev.event_crew || []).forEach((c: any) => c.user_id && c.crew_type !== "freelancer" && uids.add(c.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.event++; r.total++; });
+    });
+    (epSlides || []).forEach((sl: any) => {
+      const uids = new Set<string>();
+      if (sl.created_by) uids.add(sl.created_by);
+      if (sl.assigned_to) uids.add(sl.assigned_to);
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.ep++; r.total++; });
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [profiles, tasks, meetings, shootings, events, epSlides]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -539,12 +647,12 @@ export default function CEODashboard() {
             )}
             <div>
               <h1 className="text-2xl font-bold">
-                {selectedClient ? `Detail: ${selectedClient.clientName}` : "CEO Dashboard"}
+                {selectedClient ? `Detail: ${selectedClient.clientName}` : "Breakdown Resource & Cost"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {selectedClient
                   ? "Breakdown resource & cost untuk klien ini"
-                  : "Client Resource & Cost Intelligence"}
+                  : "Breakdown per klien & per karyawan berdasarkan keterlibatan aktivitas"}
               </p>
             </div>
           </div>
@@ -826,7 +934,7 @@ export default function CEODashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Client Resource Overview
+                Breakdown Resource & Cost per Klien
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -911,6 +1019,62 @@ export default function CEODashboard() {
                         </TableRow>
                       );
                     })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Employee Activity Breakdown (global) */}
+        {!selectedClient && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Breakdown Aktivitas per Karyawan
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Total keterlibatan setiap karyawan pada rentang tanggal terpilih — mencakup Task (diterima maupun yang di-assign), Meeting, Shooting, Event, dan Editorial Plan.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {employeeActivityBreakdown.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada aktivitas pada periode ini</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Karyawan</TableHead>
+                      <TableHead className="text-center">Task (Assigned)</TableHead>
+                      <TableHead className="text-center">Task (Created)</TableHead>
+                      <TableHead className="text-center">Meeting</TableHead>
+                      <TableHead className="text-center">Shooting</TableHead>
+                      <TableHead className="text-center">Event</TableHead>
+                      <TableHead className="text-center">EP</TableHead>
+                      <TableHead className="text-center font-bold">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeActivityBreakdown.map((row, idx) => (
+                      <TableRow key={row.employeeId}>
+                        <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="font-medium">{row.employeeName}</TableCell>
+                        <TableCell className="text-center">{row.taskAssigned}</TableCell>
+                        <TableCell className="text-center">{row.taskCreated}</TableCell>
+                        <TableCell className="text-center">{row.meeting}</TableCell>
+                        <TableCell className="text-center">{row.shooting}</TableCell>
+                        <TableCell className="text-center">{row.event}</TableCell>
+                        <TableCell className="text-center">{row.ep}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className="font-bold">{row.total}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               )}
