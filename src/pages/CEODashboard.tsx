@@ -161,19 +161,22 @@ export default function CEODashboard() {
     };
   }, [dateRange]);
 
-  // Fetch tasks within date range — include multi-assignees + creator to mirror HR Analytics
+  // Fetch tasks — include items whose created_at OR deadline overlaps the range
   const { data: tasks } = useQuery({
     queryKey: ["ceo-tasks", formattedDateRange],
     queryFn: async () => {
+      const startISO = formattedDateRange.start;
+      const endISO = formattedDateRange.end + "T23:59:59";
       const { data, error } = await supabase
         .from("tasks")
         .select(`
-          id, assigned_to, created_by, project_id, created_at,
+          id, assigned_to, created_by, project_id, created_at, deadline,
           task_assignees(user_id),
           project:projects(client_id)
         `)
-        .gte("created_at", formattedDateRange.start)
-        .lte("created_at", formattedDateRange.end + "T23:59:59");
+        .or(
+          `and(created_at.gte.${startISO},created_at.lte.${endISO}),and(deadline.gte.${startISO},deadline.lte.${endISO})`
+        );
       if (error) throw error;
       return data || [];
     },
