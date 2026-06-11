@@ -294,10 +294,18 @@ export default function HRAnalytics() {
       return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(s.requested_by);
     }) || [];
 
-    // Filter events by crew
+    // Filter events by crew, creator, or PIC
     const filteredEvents = events?.filter(e => {
       const crewIds = e.event_crew?.map((c: any) => c.user_id) || [];
-      return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(e.created_by);
+      return crewIds.some((id: string) => filteredUserIds.has(id))
+        || filteredUserIds.has(e.created_by)
+        || (e.pic_id && filteredUserIds.has(e.pic_id));
+    }) || [];
+
+    // Filter editorial slides by creator (assigner) or assignee
+    const filteredSlides = epSlides?.filter(s => {
+      return (s.created_by && filteredUserIds.has(s.created_by))
+        || (s.assigned_to && filteredUserIds.has(s.assigned_to));
     }) || [];
 
     // Activities count (filtered)
@@ -305,7 +313,8 @@ export default function HRAnalytics() {
     const meetingCount = filteredMeetings.length;
     const shootingCount = filteredShootings.length;
     const eventCount = filteredEvents.length;
-    const totalActivities = taskCount + meetingCount + shootingCount + eventCount;
+    const slideCount = filteredSlides.length;
+    const totalActivities = taskCount + meetingCount + shootingCount + eventCount + slideCount;
 
     // Overdue tasks within the selected window:
     //  - tasks completed late inside the window, OR
