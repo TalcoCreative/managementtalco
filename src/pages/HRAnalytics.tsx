@@ -370,6 +370,7 @@ export default function HRAnalytics() {
       meetingCount,
       shootingCount,
       eventCount,
+      slideCount,
       overdueTaskCount,
       autoClockoutCount,
       avgProductivity,
@@ -378,7 +379,7 @@ export default function HRAnalytics() {
       lateCount,
       lateChange,
     };
-  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, epSlides, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
