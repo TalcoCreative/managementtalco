@@ -647,12 +647,12 @@ export default function CEODashboard() {
             )}
             <div>
               <h1 className="text-2xl font-bold">
-                {selectedClient ? `Detail: ${selectedClient.clientName}` : "CEO Dashboard"}
+                {selectedClient ? `Detail: ${selectedClient.clientName}` : "Breakdown Resource & Cost"}
               </h1>
               <p className="text-muted-foreground text-sm">
                 {selectedClient
                   ? "Breakdown resource & cost untuk klien ini"
-                  : "Client Resource & Cost Intelligence"}
+                  : "Breakdown per klien & per karyawan berdasarkan keterlibatan aktivitas"}
               </p>
             </div>
           </div>
