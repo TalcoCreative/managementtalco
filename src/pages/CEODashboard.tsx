@@ -429,6 +429,25 @@ export default function CEODashboard() {
       });
     });
 
+    // Process editorial plan slides — credit creator + assignee
+    (epSlides || []).forEach((slide: any) => {
+      const clientId = slide.editorial_plans?.client_id;
+      if (!clientId) return;
+      const userIds = new Set<string>();
+      if (slide.created_by) userIds.add(slide.created_by);
+      if (slide.assigned_to) userIds.add(slide.assigned_to);
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
+        emp.total++;
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
+        if (clientEntry) {
+          clientEntry.count++;
+          clientEntry.epCount++;
+        }
+      });
+    });
+
     // Calculate total activities across all employees
     let totalCompanyActivities = 0;
     employeeActivities.forEach((emp) => {
