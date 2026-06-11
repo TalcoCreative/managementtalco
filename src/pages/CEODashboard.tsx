@@ -1026,6 +1026,62 @@ export default function CEODashboard() {
           </Card>
         )}
 
+        {/* Employee Activity Breakdown (global) */}
+        {!selectedClient && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Breakdown Aktivitas per Karyawan
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Total keterlibatan setiap karyawan pada rentang tanggal terpilih — mencakup Task (diterima maupun yang di-assign), Meeting, Shooting, Event, dan Editorial Plan.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {employeeActivityBreakdown.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada aktivitas pada periode ini</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Karyawan</TableHead>
+                      <TableHead className="text-center">Task (Assigned)</TableHead>
+                      <TableHead className="text-center">Task (Created)</TableHead>
+                      <TableHead className="text-center">Meeting</TableHead>
+                      <TableHead className="text-center">Shooting</TableHead>
+                      <TableHead className="text-center">Event</TableHead>
+                      <TableHead className="text-center">EP</TableHead>
+                      <TableHead className="text-center font-bold">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeActivityBreakdown.map((row, idx) => (
+                      <TableRow key={row.employeeId}>
+                        <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="font-medium">{row.employeeName}</TableCell>
+                        <TableCell className="text-center">{row.taskAssigned}</TableCell>
+                        <TableCell className="text-center">{row.taskCreated}</TableCell>
+                        <TableCell className="text-center">{row.meeting}</TableCell>
+                        <TableCell className="text-center">{row.shooting}</TableCell>
+                        <TableCell className="text-center">{row.event}</TableCell>
+                        <TableCell className="text-center">{row.ep}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className="font-bold">{row.total}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Footer Info */}
         <div className="text-xs text-muted-foreground text-center">
           <p>
