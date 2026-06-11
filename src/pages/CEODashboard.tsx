@@ -530,7 +530,57 @@ export default function CEODashboard() {
     );
 
     return sortedData;
-  }, [profiles, clients, tasks, meetings, shootings, events, clientAdsSpendMap]);
+  }, [profiles, clients, tasks, meetings, shootings, events, epSlides, clientAdsSpendMap]);
+
+  // Build per-employee activity breakdown (independent of selected client)
+  const employeeActivityBreakdown = useMemo<EmployeeActivityRow[]>(() => {
+    if (!profiles) return [];
+    const map = new Map<string, EmployeeActivityRow>();
+    const ensure = (id: string, name: string) => {
+      if (!map.has(id)) {
+        map.set(id, { employeeId: id, employeeName: name, taskAssigned: 0, taskCreated: 0, meeting: 0, shooting: 0, event: 0, ep: 0, total: 0 });
+      }
+      return map.get(id)!;
+    };
+    const nameOf = (id: string) => profiles.find((p: any) => p.id === id)?.full_name || "Unknown";
+
+    (tasks || []).forEach((t: any) => {
+      const assignees = new Set<string>();
+      if (t.assigned_to) assignees.add(t.assigned_to);
+      (t.task_assignees || []).forEach((ta: any) => ta.user_id && assignees.add(ta.user_id));
+      assignees.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.taskAssigned++; r.total++; });
+      if (t.created_by && !assignees.has(t.created_by)) {
+        const r = ensure(t.created_by, nameOf(t.created_by)); r.taskCreated++; r.total++;
+      }
+    });
+    (meetings || []).forEach((m: any) => {
+      const uids = new Set<string>();
+      if (m.created_by) uids.add(m.created_by);
+      (m.meeting_participants || []).forEach((p: any) => p.user_id && uids.add(p.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.meeting++; r.total++; });
+    });
+    (shootings || []).forEach((s: any) => {
+      const uids = new Set<string>();
+      if (s.requested_by) uids.add(s.requested_by);
+      (s.shooting_crew || []).forEach((c: any) => c.user_id && !c.is_freelance && uids.add(c.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.shooting++; r.total++; });
+    });
+    (events || []).forEach((ev: any) => {
+      const uids = new Set<string>();
+      if (ev.pic_id) uids.add(ev.pic_id);
+      if (ev.created_by) uids.add(ev.created_by);
+      (ev.event_crew || []).forEach((c: any) => c.user_id && c.crew_type !== "freelancer" && uids.add(c.user_id));
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.event++; r.total++; });
+    });
+    (epSlides || []).forEach((sl: any) => {
+      const uids = new Set<string>();
+      if (sl.created_by) uids.add(sl.created_by);
+      if (sl.assigned_to) uids.add(sl.assigned_to);
+      uids.forEach((uid) => { const r = ensure(uid, nameOf(uid)); r.ep++; r.total++; });
+    });
+
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [profiles, tasks, meetings, shootings, events, epSlides]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
