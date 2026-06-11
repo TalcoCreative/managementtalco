@@ -39,11 +39,12 @@ interface ClientResourceData {
   workloadPercentage: number;
   estimatedCost: number;
   adsSpend: number;
-  totalCost: number; // estimatedCost + adsSpend
+  totalCost: number;
   taskCount: number;
   meetingCount: number;
   shootingCount: number;
   eventCount: number;
+  epCount: number;
   employeeBreakdown: EmployeeBreakdown[];
 }
 
@@ -55,6 +56,18 @@ interface EmployeeBreakdown {
   percentageForClient: number;
   monthlySalary: number;
   estimatedCostForClient: number;
+}
+
+interface EmployeeActivityRow {
+  employeeId: string;
+  employeeName: string;
+  taskAssigned: number;
+  taskCreated: number;
+  meeting: number;
+  shooting: number;
+  event: number;
+  ep: number;
+  total: number;
 }
 
 export default function CEODashboard() {
