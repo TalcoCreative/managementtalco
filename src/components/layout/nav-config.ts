@@ -72,6 +72,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
       { title: "HR Dashboard", url: "/hr-dashboard", icon: ClipboardCheck, featureKey: "hr_dashboard" },
       { title: "HR Analytics", url: "/hr/analytics", icon: BarChart2, featureKey: "hr_analytics" },
       { title: "Performance", url: "/performance", icon: TrendingUp, featureKey: "performance" },
+      { title: "Breakdown Resource & Cost", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
     ],
   },
   {
