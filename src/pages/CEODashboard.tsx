@@ -497,6 +497,7 @@ export default function CEODashboard() {
         data.meetingCount += clientStats.meetingCount;
         data.shootingCount += clientStats.shootingCount;
         data.eventCount += clientStats.eventCount;
+        data.epCount += clientStats.epCount;
         data.estimatedCost += costForClient;
 
         data.employeeBreakdown.push({
