@@ -148,14 +148,15 @@ export default function CEODashboard() {
     };
   }, [dateRange]);
 
-  // Fetch tasks within date range
+  // Fetch tasks within date range — include multi-assignees + creator to mirror HR Analytics
   const { data: tasks } = useQuery({
     queryKey: ["ceo-tasks", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tasks")
         .select(`
-          id, assigned_to, project_id, created_at,
+          id, assigned_to, created_by, project_id, created_at,
+          task_assignees(user_id),
           project:projects(client_id)
         `)
         .gte("created_at", formattedDateRange.start)
@@ -166,14 +167,14 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
-  // Fetch meetings with participants within date range
+  // Fetch meetings with participants + creator
   const { data: meetings } = useQuery({
     queryKey: ["ceo-meetings", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meetings")
         .select(`
-          id, client_id, project_id, meeting_date,
+          id, client_id, project_id, meeting_date, created_by,
           meeting_participants(user_id)
         `)
         .gte("meeting_date", formattedDateRange.start)
@@ -184,14 +185,14 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
-  // Fetch shootings with crew within date range
+  // Fetch shootings with crew + requester
   const { data: shootings } = useQuery({
     queryKey: ["ceo-shootings", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shooting_schedules")
         .select(`
-          id, client_id, project_id, scheduled_date,
+          id, client_id, project_id, scheduled_date, requested_by,
           shooting_crew(user_id, is_freelance)
         `)
         .gte("scheduled_date", formattedDateRange.start)
@@ -202,14 +203,14 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
-  // Fetch events with crew within date range
+  // Fetch events with crew + PIC + creator
   const { data: events } = useQuery({
     queryKey: ["ceo-events", formattedDateRange],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
         .select(`
-          id, client_id, project_id, pic_id, start_date,
+          id, client_id, project_id, pic_id, created_by, start_date,
           event_crew(user_id, crew_type)
         `)
         .gte("start_date", formattedDateRange.start)
