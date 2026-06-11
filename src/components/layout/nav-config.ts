@@ -161,7 +161,6 @@ export const NAV_CATEGORIES: NavCategory[] = [
     color: "hsl(205,72%,52%)",
     items: [
       { title: "Reports", url: "/reports", icon: BarChart3, featureKey: "reports" },
-      { title: "CEO Dashboard", url: "/ceo-dashboard", icon: Crown, featureKey: "ceo_dashboard" },
       { title: "Form Builder", url: "/forms", icon: FolderKanban, featureKey: "form_builder" },
     ],
   },
