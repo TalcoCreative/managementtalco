@@ -306,93 +306,88 @@ export default function CEODashboard() {
       return emp.byClient.get(clientId)!;
     };
 
-    // Process tasks
-    (tasks || []).forEach((task) => {
-      if (!task.assigned_to) return;
+    // Process tasks — credit all assignees + the creator (deduped per task)
+    (tasks || []).forEach((task: any) => {
       const clientId = (task.project as any)?.client_id;
       if (!clientId) return;
-      
-      const emp = employeeActivities.get(task.assigned_to);
-      if (emp) {
+      const userIds = new Set<string>();
+      if (task.assigned_to) userIds.add(task.assigned_to);
+      if (task.created_by) userIds.add(task.created_by);
+      (task.task_assignees || []).forEach((ta: any) => {
+        if (ta.user_id) userIds.add(ta.user_id);
+      });
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
         emp.total++;
-        const clientEntry = getOrCreateClientEntry(task.assigned_to, clientId);
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
         if (clientEntry) {
           clientEntry.count++;
           clientEntry.taskCount++;
         }
-      }
+      });
     });
 
-    // Process meetings
-    (meetings || []).forEach((meeting) => {
+    // Process meetings — participants + creator
+    (meetings || []).forEach((meeting: any) => {
       const clientId = meeting.client_id;
       if (!clientId) return;
-      
-      const participants = (meeting as any).meeting_participants || [];
-      participants.forEach((p: any) => {
-        if (!p.user_id) return;
-        const emp = employeeActivities.get(p.user_id);
-        if (emp) {
-          emp.total++;
-          const clientEntry = getOrCreateClientEntry(p.user_id, clientId);
-          if (clientEntry) {
-            clientEntry.count++;
-            clientEntry.meetingCount++;
-          }
+      const userIds = new Set<string>();
+      if (meeting.created_by) userIds.add(meeting.created_by);
+      (meeting.meeting_participants || []).forEach((p: any) => {
+        if (p.user_id) userIds.add(p.user_id);
+      });
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
+        emp.total++;
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
+        if (clientEntry) {
+          clientEntry.count++;
+          clientEntry.meetingCount++;
         }
       });
     });
 
-    // Process shootings
-    (shootings || []).forEach((shooting) => {
+    // Process shootings — internal crew + requester
+    (shootings || []).forEach((shooting: any) => {
       const clientId = shooting.client_id;
       if (!clientId) return;
-      
-      const crew = (shooting as any).shooting_crew || [];
-      crew.forEach((c: any) => {
-        if (!c.user_id || c.is_freelance) return;
-        const emp = employeeActivities.get(c.user_id);
-        if (emp) {
-          emp.total++;
-          const clientEntry = getOrCreateClientEntry(c.user_id, clientId);
-          if (clientEntry) {
-            clientEntry.count++;
-            clientEntry.shootingCount++;
-          }
+      const userIds = new Set<string>();
+      if (shooting.requested_by) userIds.add(shooting.requested_by);
+      (shooting.shooting_crew || []).forEach((c: any) => {
+        if (c.user_id && !c.is_freelance) userIds.add(c.user_id);
+      });
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
+        emp.total++;
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
+        if (clientEntry) {
+          clientEntry.count++;
+          clientEntry.shootingCount++;
         }
       });
     });
 
-    // Process events
-    (events || []).forEach((event) => {
+    // Process events — PIC + internal crew + creator
+    (events || []).forEach((event: any) => {
       const clientId = event.client_id;
       if (!clientId) return;
-      
-      // Add PIC
-      if (event.pic_id) {
-        const emp = employeeActivities.get(event.pic_id);
-        if (emp) {
-          emp.total++;
-          const clientEntry = getOrCreateClientEntry(event.pic_id, clientId);
-          if (clientEntry) {
-            clientEntry.count++;
-            clientEntry.eventCount++;
-          }
-        }
-      }
-      
-      // Add crew (internal only)
-      const crew = (event as any).event_crew || [];
-      crew.forEach((c: any) => {
-        if (!c.user_id || c.crew_type === "freelancer") return;
-        const emp = employeeActivities.get(c.user_id);
-        if (emp) {
-          emp.total++;
-          const clientEntry = getOrCreateClientEntry(c.user_id, clientId);
-          if (clientEntry) {
-            clientEntry.count++;
-            clientEntry.eventCount++;
-          }
+      const userIds = new Set<string>();
+      if (event.pic_id) userIds.add(event.pic_id);
+      if (event.created_by) userIds.add(event.created_by);
+      (event.event_crew || []).forEach((c: any) => {
+        if (c.user_id && c.crew_type !== "freelancer") userIds.add(c.user_id);
+      });
+      userIds.forEach((uid) => {
+        const emp = employeeActivities.get(uid);
+        if (!emp) return;
+        emp.total++;
+        const clientEntry = getOrCreateClientEntry(uid, clientId);
+        if (clientEntry) {
+          clientEntry.count++;
+          clientEntry.eventCount++;
         }
       });
     });
