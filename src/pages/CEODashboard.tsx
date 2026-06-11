@@ -472,6 +472,7 @@ export default function CEODashboard() {
         meetingCount: 0,
         shootingCount: 0,
         eventCount: 0,
+        epCount: 0,
         employeeBreakdown: [],
       };
 
