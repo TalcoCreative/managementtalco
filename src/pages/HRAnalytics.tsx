@@ -168,7 +168,7 @@ export default function HRAnalytics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id, title, start_date, end_date, created_by, pic_id, event_crew(user_id)")
+        .select("id, name, start_date, end_date, created_by, pic_id, event_crew(user_id)")
         .gte("start_date", startDate)
         .lte("end_date", endDate);
       if (error) throw error;
