@@ -112,15 +112,23 @@ export default function HRAnalytics() {
     enabled: !!compareMonth,
   });
 
-  // Fetch tasks
+  // Fetch tasks — only those touching this window:
+  //  - created (the act of assigning) inside window, OR
+  //  - have deadline inside window, OR
+  //  - had a status change inside window (covers completions/overdue events)
+  // We additionally fetch task_assignees for multi-assignee + created_by attribution.
   const { data: tasks } = useQuery({
     queryKey: ["hr-analytics-tasks", startDate, endDate],
     queryFn: async () => {
+      const startTs = `${startDate}T00:00:00`;
+      const endTs = `${endDate}T23:59:59`;
       const { data, error } = await supabase
         .from("tasks")
-        .select("*, task_assignees(user_id)")
-        .or(`created_at.gte.${startDate}T00:00:00,deadline.gte.${startDate}`)
-        .or(`created_at.lte.${endDate}T23:59:59,deadline.lte.${endDate}`);
+        .select("id, title, status, deadline, created_at, created_by, assigned_to, project_id, task_assignees(user_id)")
+        .or(
+          `and(created_at.gte.${startTs},created_at.lte.${endTs}),` +
+          `and(deadline.gte.${startDate},deadline.lte.${endDate})`
+        );
       if (error) throw error;
       return data || [];
     },
@@ -132,7 +140,7 @@ export default function HRAnalytics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("meetings")
-        .select("*, meeting_participants(user_id)")
+        .select("id, title, meeting_date, created_by, meeting_participants(user_id)")
         .gte("meeting_date", startDate)
         .lte("meeting_date", endDate);
       if (error) throw error;
@@ -146,7 +154,7 @@ export default function HRAnalytics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shooting_schedules")
-        .select("*, shooting_crew(user_id)")
+        .select("id, title, scheduled_date, requested_by, shooting_crew(user_id)")
         .gte("scheduled_date", startDate)
         .lte("scheduled_date", endDate);
       if (error) throw error;
@@ -160,9 +168,28 @@ export default function HRAnalytics() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("*, event_crew(user_id)")
+        .select("id, name, start_date, end_date, created_by, pic_id, event_crew(user_id)")
         .gte("start_date", startDate)
         .lte("end_date", endDate);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch editorial plan slides created or assigned within window — counts as activity
+  // for both creator (the one who assigned) and the assignee.
+  const { data: epSlides } = useQuery({
+    queryKey: ["hr-analytics-ep-slides", startDate, endDate],
+    queryFn: async () => {
+      const startTs = `${startDate}T00:00:00`;
+      const endTs = `${endDate}T23:59:59`;
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select("id, created_by, assigned_to, created_at, published_at, status")
+        .or(
+          `and(created_at.gte.${startTs},created_at.lte.${endTs}),` +
+          `and(published_at.gte.${startTs},published_at.lte.${endTs})`
+        );
       if (error) throw error;
       return data || [];
     },
@@ -267,10 +294,18 @@ export default function HRAnalytics() {
       return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(s.requested_by);
     }) || [];
 
-    // Filter events by crew
+    // Filter events by crew, creator, or PIC
     const filteredEvents = events?.filter(e => {
       const crewIds = e.event_crew?.map((c: any) => c.user_id) || [];
-      return crewIds.some((id: string) => filteredUserIds.has(id)) || filteredUserIds.has(e.created_by);
+      return crewIds.some((id: string) => filteredUserIds.has(id))
+        || filteredUserIds.has(e.created_by)
+        || (e.pic_id && filteredUserIds.has(e.pic_id));
+    }) || [];
+
+    // Filter editorial slides by creator (assigner) or assignee
+    const filteredSlides = epSlides?.filter(s => {
+      return (s.created_by && filteredUserIds.has(s.created_by))
+        || (s.assigned_to && filteredUserIds.has(s.assigned_to));
     }) || [];
 
     // Activities count (filtered)
@@ -278,7 +313,8 @@ export default function HRAnalytics() {
     const meetingCount = filteredMeetings.length;
     const shootingCount = filteredShootings.length;
     const eventCount = filteredEvents.length;
-    const totalActivities = taskCount + meetingCount + shootingCount + eventCount;
+    const slideCount = filteredSlides.length;
+    const totalActivities = taskCount + meetingCount + shootingCount + eventCount + slideCount;
 
     // Overdue tasks within the selected window:
     //  - tasks completed late inside the window, OR
@@ -334,6 +370,7 @@ export default function HRAnalytics() {
       meetingCount,
       shootingCount,
       eventCount,
+      slideCount,
       overdueTaskCount,
       autoClockoutCount,
       avgProductivity,
@@ -342,7 +379,7 @@ export default function HRAnalytics() {
       lateCount,
       lateChange,
     };
-  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
+  }, [filteredProfiles, filteredUserIds, attendance, tasks, meetings, shootings, events, epSlides, compareAttendance, compareMonth, taskStatusLogs, startDate, endDate]);
 
   // Get unique roles for filter
   const uniqueRoles = useMemo(() => {
@@ -559,7 +596,8 @@ export default function HRAnalytics() {
               <span>{kpis.taskCount} task</span>•
               <span>{kpis.meetingCount} meet</span>•
               <span>{kpis.shootingCount} shoot</span>•
-              <span>{kpis.eventCount} event</span>
+              <span>{kpis.eventCount} event</span>•
+              <span>{kpis.slideCount} EP</span>
             </div>
           </div>
 
