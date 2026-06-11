@@ -324,8 +324,8 @@ export default function CEODashboard() {
 
     // Create a map for employee activities
     const employeeActivities: Map<string, {
-      total: number; 
-      byClient: Map<string, { count: number; taskCount: number; meetingCount: number; shootingCount: number; eventCount: number }> 
+      total: number;
+      byClient: Map<string, { count: number; taskCount: number; meetingCount: number; shootingCount: number; eventCount: number; epCount: number }>
     }> = new Map();
 
     // Initialize employee activities
@@ -338,7 +338,7 @@ export default function CEODashboard() {
       const emp = employeeActivities.get(employeeId);
       if (!emp) return null;
       if (!emp.byClient.has(clientId)) {
-        emp.byClient.set(clientId, { count: 0, taskCount: 0, meetingCount: 0, shootingCount: 0, eventCount: 0 });
+        emp.byClient.set(clientId, { count: 0, taskCount: 0, meetingCount: 0, shootingCount: 0, eventCount: 0, epCount: 0 });
       }
       return emp.byClient.get(clientId)!;
     };
