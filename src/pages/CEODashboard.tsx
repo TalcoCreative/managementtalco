@@ -237,6 +237,27 @@ export default function CEODashboard() {
     enabled: isSuperAdmin,
   });
 
+  // Fetch editorial plan slides — credit creator + assignee whose publish_date OR created_at falls in range
+  const { data: epSlides } = useQuery({
+    queryKey: ["ceo-ep-slides", formattedDateRange],
+    queryFn: async () => {
+      const startISO = formattedDateRange.start;
+      const endISO = formattedDateRange.end + "T23:59:59";
+      const { data, error } = await supabase
+        .from("editorial_slides")
+        .select(`
+          id, created_by, assigned_to, publish_date, created_at, ep_id,
+          editorial_plans:ep_id(client_id, project_id)
+        `)
+        .or(
+          `and(publish_date.gte.${formattedDateRange.start},publish_date.lte.${formattedDateRange.end}),and(created_at.gte.${startISO},created_at.lte.${endISO})`
+        );
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isSuperAdmin,
+  });
+
   // Fetch ads reports for date range (using year/month)
   const { data: adsReports } = useQuery({
     queryKey: ["ceo-ads-reports", formattedDateRange],
