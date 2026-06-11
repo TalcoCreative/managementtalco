@@ -934,7 +934,7 @@ export default function CEODashboard() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Client Resource Overview
+                Breakdown Resource & Cost per Klien
               </CardTitle>
             </CardHeader>
             <CardContent>
