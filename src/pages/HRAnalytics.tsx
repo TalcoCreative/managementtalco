@@ -596,7 +596,8 @@ export default function HRAnalytics() {
               <span>{kpis.taskCount} task</span>•
               <span>{kpis.meetingCount} meet</span>•
               <span>{kpis.shootingCount} shoot</span>•
-              <span>{kpis.eventCount} event</span>
+              <span>{kpis.eventCount} event</span>•
+              <span>{kpis.slideCount} EP</span>
             </div>
           </div>
 
