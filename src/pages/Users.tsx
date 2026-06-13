@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, User, Edit, Clock, CheckCircle, XCircle, Trash2, Cake } from "lucide-react";
+import { Plus, User, Edit, Clock, CheckCircle, XCircle, Trash2, Cake, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
@@ -25,7 +25,7 @@ export default function Users() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+  const [showInactive, setShowInactive] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -220,6 +220,9 @@ export default function Users() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowInactive(v => !v)}>
+              {showInactive ? <><EyeOff className="mr-2 h-4 w-4" />Hide Non-Active</> : <><Eye className="mr-2 h-4 w-4" />Show Non-Active</>}
+            </Button>
             {isSuperAdmin && (
               <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -239,7 +242,7 @@ export default function Users() {
           </div>
         ) : users && users.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {users.map((user) => {
+            {users.filter(u => showInactive || u.status !== 'non_active').map((user) => {
               const attendanceInfo = getAttendanceStatus(user.id);
               const AttendanceIcon = attendanceInfo.icon;
 
