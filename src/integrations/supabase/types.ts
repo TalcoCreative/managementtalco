@@ -2555,36 +2555,48 @@ export type Database = {
       form_questions: {
         Row: {
           created_at: string | null
+          description: string | null
           field_order: number | null
           field_type: string
           form_id: string
           id: string
           is_required: boolean | null
+          is_section_break: boolean | null
           label: string
           options: Json | null
           placeholder: string | null
+          section_description: string | null
+          section_title: string | null
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           field_order?: number | null
           field_type: string
           form_id: string
           id?: string
           is_required?: boolean | null
+          is_section_break?: boolean | null
           label: string
           options?: Json | null
           placeholder?: string | null
+          section_description?: string | null
+          section_title?: string | null
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           field_order?: number | null
           field_type?: string
           form_id?: string
           id?: string
           is_required?: boolean | null
+          is_section_break?: boolean | null
           label?: string
           options?: Json | null
           placeholder?: string | null
+          section_description?: string | null
+          section_title?: string | null
         }
         Relationships: [
           {
@@ -2630,41 +2642,80 @@ export type Database = {
       }
       forms: {
         Row: {
+          background_color: string | null
+          background_image: string | null
+          button_label: string | null
           created_at: string | null
           created_by: string
           description: string | null
+          font_family: string | null
           form_template: string | null
           id: string
           is_public: boolean | null
+          layout_size: string | null
           name: string
+          one_question_per_page: boolean | null
+          primary_color: string | null
+          show_progress: boolean | null
           slug: string
           status: string | null
+          submit_label: string | null
+          text_color: string | null
+          thank_you_image: string | null
+          thank_you_message: string | null
+          thank_you_title: string | null
           theme: string
           updated_at: string | null
         }
         Insert: {
+          background_color?: string | null
+          background_image?: string | null
+          button_label?: string | null
           created_at?: string | null
           created_by: string
           description?: string | null
+          font_family?: string | null
           form_template?: string | null
           id?: string
           is_public?: boolean | null
+          layout_size?: string | null
           name: string
+          one_question_per_page?: boolean | null
+          primary_color?: string | null
+          show_progress?: boolean | null
           slug: string
           status?: string | null
+          submit_label?: string | null
+          text_color?: string | null
+          thank_you_image?: string | null
+          thank_you_message?: string | null
+          thank_you_title?: string | null
           theme?: string
           updated_at?: string | null
         }
         Update: {
+          background_color?: string | null
+          background_image?: string | null
+          button_label?: string | null
           created_at?: string | null
           created_by?: string
           description?: string | null
+          font_family?: string | null
           form_template?: string | null
           id?: string
           is_public?: boolean | null
+          layout_size?: string | null
           name?: string
+          one_question_per_page?: boolean | null
+          primary_color?: string | null
+          show_progress?: boolean | null
           slug?: string
           status?: string | null
+          submit_label?: string | null
+          text_color?: string | null
+          thank_you_image?: string | null
+          thank_you_message?: string | null
+          thank_you_title?: string | null
           theme?: string
           updated_at?: string | null
         }
