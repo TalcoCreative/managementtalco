@@ -18,11 +18,28 @@ export default function Auth() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const guardAndRedirect = async (sess: Session | null) => {
+      if (!sess) return;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("status")
+        .eq("id", sess.user.id)
+        .maybeSingle();
+      if (prof?.status === "non_active") {
+        await supabase.auth.signOut();
+        toast.error(
+          "Akun Anda sudah dinonaktifkan. Silakan menghubungi management untuk informasi lebih lanjut."
+        );
+        return;
+      }
+      navigate("/clients");
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         if (session) {
-          navigate("/clients");
+          guardAndRedirect(session);
         }
       }
     );
@@ -30,7 +47,7 @@ export default function Auth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        navigate("/clients");
+        guardAndRedirect(session);
       }
     });
 
