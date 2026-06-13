@@ -242,7 +242,7 @@ export default function Users() {
           </div>
         ) : users && users.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {users.map((user) => {
+            {users.filter(u => showInactive || u.status !== 'non_active').map((user) => {
               const attendanceInfo = getAttendanceStatus(user.id);
               const AttendanceIcon = attendanceInfo.icon;
 
