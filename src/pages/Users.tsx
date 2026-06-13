@@ -220,6 +220,9 @@ export default function Users() {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowInactive(v => !v)}>
+              {showInactive ? <><EyeOff className="mr-2 h-4 w-4" />Hide Non-Active</> : <><Eye className="mr-2 h-4 w-4" />Show Non-Active</>}
+            </Button>
             {isSuperAdmin && (
               <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
