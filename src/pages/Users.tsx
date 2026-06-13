@@ -25,7 +25,7 @@ export default function Users() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+  const [showInactive, setShowInactive] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
