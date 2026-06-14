@@ -509,27 +509,8 @@ export function FormFieldRenderer(props: Props) {
         which={q.field_type === "qr_scanner" ? "qr" : "barcode"} />;
 
     // ---- Calc ----
-    case "formula": {
-      const expr = (q.config?.formula || "") as string;
-      const computed = evalFormula(expr, answers);
-      // Sync into answers so submission stores it
-      useEffect(() => {
-        setAnswers(p => p[q.id] === computed ? p : ({ ...p, [q.id]: computed }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [computed]);
-      const prefix = cfg.prefix || ""; const suffix = cfg.suffix || "";
-      return (
-        <div className="mt-2 px-4 py-4 rounded-xl border-2"
-          style={{ borderColor: theme.border, background: theme.surface }}>
-          <div className="text-3xl font-bold tabular-nums" style={{ color: theme.primary }}>
-            {prefix}{computed || "—"}{suffix}
-          </div>
-          {!expr && (
-            <p className="text-xs mt-2" style={{ color: theme.muted }}>Formula belum di-set oleh admin.</p>
-          )}
-        </div>
-      );
-    }
+    case "formula":
+      return <FormulaField q={q} theme={theme} answers={answers} setAnswers={setAnswers} />;
 
     default:
       return (
