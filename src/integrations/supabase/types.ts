@@ -2554,6 +2554,7 @@ export type Database = {
       }
       form_questions: {
         Row: {
+          config: Json | null
           created_at: string | null
           description: string | null
           field_order: number | null
@@ -2563,12 +2564,14 @@ export type Database = {
           is_required: boolean | null
           is_section_break: boolean | null
           label: string
+          logic_rules: Json | null
           options: Json | null
           placeholder: string | null
           section_description: string | null
           section_title: string | null
         }
         Insert: {
+          config?: Json | null
           created_at?: string | null
           description?: string | null
           field_order?: number | null
@@ -2578,12 +2581,14 @@ export type Database = {
           is_required?: boolean | null
           is_section_break?: boolean | null
           label: string
+          logic_rules?: Json | null
           options?: Json | null
           placeholder?: string | null
           section_description?: string | null
           section_title?: string | null
         }
         Update: {
+          config?: Json | null
           created_at?: string | null
           description?: string | null
           field_order?: number | null
@@ -2593,6 +2598,7 @@ export type Database = {
           is_required?: boolean | null
           is_section_break?: boolean | null
           label?: string
+          logic_rules?: Json | null
           options?: Json | null
           placeholder?: string | null
           section_description?: string | null
@@ -2663,6 +2669,8 @@ export type Database = {
           text_color: string | null
           thank_you_image: string | null
           thank_you_message: string | null
+          thank_you_redirect_delay: number | null
+          thank_you_redirect_url: string | null
           thank_you_title: string | null
           theme: string
           updated_at: string | null
@@ -2689,6 +2697,8 @@ export type Database = {
           text_color?: string | null
           thank_you_image?: string | null
           thank_you_message?: string | null
+          thank_you_redirect_delay?: number | null
+          thank_you_redirect_url?: string | null
           thank_you_title?: string | null
           theme?: string
           updated_at?: string | null
@@ -2715,6 +2725,8 @@ export type Database = {
           text_color?: string | null
           thank_you_image?: string | null
           thank_you_message?: string | null
+          thank_you_redirect_delay?: number | null
+          thank_you_redirect_url?: string | null
           thank_you_title?: string | null
           theme?: string
           updated_at?: string | null
