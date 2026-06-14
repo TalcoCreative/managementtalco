@@ -254,44 +254,8 @@ export function FormFieldRenderer(props: Props) {
         </div>
       );
     }
-    case "ranking": {
-      const raw = answers[q.id];
-      const initial = raw ? raw.split("|") : (q.options || []);
-      const [list, setList] = useState<string[]>(initial);
-      useEffect(() => {
-        setAnswers(p => ({ ...p, [q.id]: list.join("|") }));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [list.join("|")]);
-      const move = (idx: number, dir: -1 | 1) => {
-        const j = idx + dir;
-        if (j < 0 || j >= list.length) return;
-        const next = [...list];
-        [next[idx], next[j]] = [next[j], next[idx]];
-        setList(next);
-      };
-      return (
-        <div className="flex flex-col gap-2 mt-2">
-          {list.map((opt, i) => (
-            <div key={opt}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
-              style={{ borderColor: theme.border, background: theme.surface, color: theme.text }}
-            >
-              <span className="h-7 w-7 shrink-0 grid place-items-center rounded-md text-xs font-bold"
-                style={{ background: theme.primary, color: theme.primaryText }}>
-                {i + 1}
-              </span>
-              <span className="flex-1">{opt}</span>
-              <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
-                className="px-2 py-1 rounded border disabled:opacity-30"
-                style={{ borderColor: theme.border }}>↑</button>
-              <button type="button" onClick={() => move(i, 1)} disabled={i === list.length - 1}
-                className="px-2 py-1 rounded border disabled:opacity-30"
-                style={{ borderColor: theme.border }}>↓</button>
-            </div>
-          ))}
-        </div>
-      );
-    }
+    case "ranking":
+      return <RankingField q={q} theme={theme} answers={answers} setAnswers={setAnswers} />;
     case "image_choice": {
       const opts = parseImageOptions(q.options);
       const v = answers[q.id] || "";
