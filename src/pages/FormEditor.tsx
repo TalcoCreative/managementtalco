@@ -142,8 +142,8 @@ export default function FormEditor() {
           section_title: q.section_title,
           section_description: q.section_description,
           config: q.config || {},
-          logic_rules: q.logic_rules || [],
-        }).eq("id", q.id);
+          logic_rules: (q.logic_rules || []) as any,
+        } as any).eq("id", q.id);
       }
 
       if (toCreate.length > 0) {
