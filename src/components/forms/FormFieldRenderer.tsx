@@ -550,6 +550,67 @@ function DisplayBlock({ q, theme, answers }: { q: RendererQuestion; theme: Rende
   }
 }
 
+function RankingField({ q, theme, answers, setAnswers }: {
+  q: RendererQuestion; theme: RendererTheme;
+  answers: Record<string, string>; setAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
+  const raw = answers[q.id];
+  const initial = raw ? raw.split("|") : (q.options || []);
+  const [list, setList] = useState<string[]>(initial);
+  useEffect(() => {
+    setAnswers(p => ({ ...p, [q.id]: list.join("|") }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.join("|")]);
+  const move = (idx: number, dir: -1 | 1) => {
+    const j = idx + dir;
+    if (j < 0 || j >= list.length) return;
+    const next = [...list];
+    [next[idx], next[j]] = [next[j], next[idx]];
+    setList(next);
+  };
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      {list.map((opt, i) => (
+        <div key={opt + i} className="flex items-center gap-3 px-4 py-3 rounded-xl border-2"
+          style={{ borderColor: theme.border, background: theme.surface, color: theme.text }}>
+          <span className="h-7 w-7 shrink-0 grid place-items-center rounded-md text-xs font-bold"
+            style={{ background: theme.primary, color: theme.primaryText }}>{i + 1}</span>
+          <span className="flex-1">{opt}</span>
+          <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
+            className="px-2 py-1 rounded border disabled:opacity-30"
+            style={{ borderColor: theme.border }}>↑</button>
+          <button type="button" onClick={() => move(i, 1)} disabled={i === list.length - 1}
+            className="px-2 py-1 rounded border disabled:opacity-30"
+            style={{ borderColor: theme.border }}>↓</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FormulaField({ q, theme, answers, setAnswers }: {
+  q: RendererQuestion; theme: RendererTheme;
+  answers: Record<string, string>; setAnswers: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}) {
+  const cfg = q.config || {};
+  const expr = (cfg.formula || "") as string;
+  const computed = evalFormula(expr, answers);
+  useEffect(() => {
+    setAnswers(p => p[q.id] === computed ? p : ({ ...p, [q.id]: computed }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computed]);
+  const prefix = cfg.prefix || ""; const suffix = cfg.suffix || "";
+  return (
+    <div className="mt-2 px-4 py-4 rounded-xl border-2"
+      style={{ borderColor: theme.border, background: theme.surface }}>
+      <div className="text-3xl font-bold tabular-nums" style={{ color: theme.primary }}>
+        {prefix}{computed || "—"}{suffix}
+      </div>
+      {!expr && <p className="text-xs mt-2" style={{ color: theme.muted }}>Formula belum di-set oleh admin.</p>}
+    </div>
+  );
+}
+
 function toEmbedUrl(url: string): string {
   if (!url) return "";
   // YouTube
