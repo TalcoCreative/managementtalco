@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle, Loader2, ArrowRight, ArrowLeft, ArrowDown, Upload, Check } from "lucide-react";
+import { CheckCircle, Loader2, ArrowRight, ArrowLeft, ArrowDown, Check } from "lucide-react";
 import { toast } from "sonner";
+import { FormFieldRenderer } from "@/components/forms/FormFieldRenderer";
+import {
+  isDisplayBlock, isQuestionVisible, type LogicRule,
+} from "@/lib/form-fields";
 
 interface FormData {
   id: string;
@@ -24,6 +24,8 @@ interface FormData {
   thank_you_title?: string | null;
   thank_you_message?: string | null;
   thank_you_image?: string | null;
+  thank_you_redirect_url?: string | null;
+  thank_you_redirect_delay?: number | null;
   layout_size?: string | null;
   show_progress?: boolean | null;
   one_question_per_page?: boolean | null;
@@ -42,15 +44,12 @@ interface Question {
   is_section_break?: boolean | null;
   section_title?: string | null;
   section_description?: string | null;
+  config?: any;
+  logic_rules?: LogicRule[] | null;
 }
 
-// Step is either "welcome", a question/section, or "submit"
 type StepKind = "welcome" | "question" | "section" | "submit";
-interface Step {
-  kind: StepKind;
-  q?: Question;
-  index: number; // index among non-section questions (for progress)
-}
+interface Step { kind: StepKind; q?: Question; index: number; }
 
 const FONT_MAP: Record<string, string> = {
   inter: "'Inter', system-ui, sans-serif",
@@ -59,14 +58,12 @@ const FONT_MAP: Record<string, string> = {
   display: "'Sora', 'Inter', sans-serif",
   grotesk: "'Space Grotesk', 'Inter', sans-serif",
 };
-
 const SIZE_MAP: Record<string, { wrap: string; title: string; sub: string; input: string }> = {
   small: { wrap: "max-w-xl", title: "text-2xl sm:text-3xl", sub: "text-sm sm:text-base", input: "text-base" },
   medium: { wrap: "max-w-2xl", title: "text-3xl sm:text-4xl", sub: "text-base sm:text-lg", input: "text-lg" },
   large: { wrap: "max-w-3xl", title: "text-4xl sm:text-5xl", sub: "text-lg sm:text-xl", input: "text-xl" },
 };
 
-// Auto-derive a readable text color and translucent surface from primary/bg
 function hexToRgb(hex: string) {
   const m = hex.replace("#", "");
   const n = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
@@ -75,10 +72,7 @@ function hexToRgb(hex: string) {
   return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
 }
 function luminance({ r, g, b }: { r: number; g: number; b: number }) {
-  const a = [r, g, b].map(v => {
-    v /= 255;
-    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  });
+  const a = [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
   return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
 }
 
@@ -97,59 +91,63 @@ export default function PublicForm() {
   const [dir, setDir] = useState<"down" | "up">("down");
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
-  useEffect(() => { loadForm(); }, [slug]);
+  useEffect(() => { loadForm(); /* eslint-disable-next-line */ }, [slug]);
 
   const loadForm = async () => {
     try {
       const { data: f, error: fErr } = await supabase
-        .from("forms")
-        .select("*")
-        .eq("slug", slug!)
-        .eq("is_public", true)
-        .eq("status", "active")
-        .single();
+        .from("forms").select("*").eq("slug", slug!).eq("is_public", true).eq("status", "active").single();
       if (fErr || !f) { setError("Form tidak ditemukan atau tidak aktif"); setLoading(false); return; }
       setForm(f as any);
-
       const { data: qs } = await supabase
-        .from("form_questions")
-        .select("*")
-        .eq("form_id", f.id)
-        .order("field_order");
-      setQuestions((qs || []).map((q: any) => ({ ...q, options: q.options as string[] | null })));
+        .from("form_questions").select("*").eq("form_id", f.id).order("field_order");
+      setQuestions((qs || []).map((q: any) => ({
+        ...q,
+        options: q.options as string[] | null,
+        config: q.config || {},
+        logic_rules: (q.logic_rules as LogicRule[] | null) || [],
+      })));
     } catch {
       setError("Gagal memuat form");
     }
     setLoading(false);
   };
 
-  // Build linear steps: welcome -> [section|question ...] -> submit
+  // Filter questions by logic rules (live)
+  const visibleQuestions = useMemo(() => {
+    const look = { answers, checkboxAnswers, files };
+    return questions.filter(q => isQuestionVisible(q.logic_rules, look));
+  }, [questions, answers, checkboxAnswers, files]);
+
   const steps: Step[] = useMemo(() => {
     const out: Step[] = [];
     out.push({ kind: "welcome", index: 0 });
     let qIdx = 0;
-    for (const q of questions) {
-      if (q.is_section_break) {
+    for (const q of visibleQuestions) {
+      if (q.is_section_break || q.field_type === "section") {
         out.push({ kind: "section", q, index: qIdx });
       } else {
         out.push({ kind: "question", q, index: qIdx });
-        qIdx += 1;
+        if (!isDisplayBlock(q.field_type)) qIdx += 1;
       }
     }
     out.push({ kind: "submit", index: qIdx });
     return out;
-  }, [questions]);
+  }, [visibleQuestions]);
 
-  const totalQuestions = questions.filter(q => !q.is_section_break).length;
-  const currentStep = steps[stepIdx];
+  const totalQuestions = visibleQuestions.filter(q => !q.is_section_break && !isDisplayBlock(q.field_type)).length;
+  // Clamp stepIdx when steps shrink (logic changes)
+  useEffect(() => { if (stepIdx >= steps.length) setStepIdx(steps.length - 1); }, [steps.length, stepIdx]);
+  const currentStep = steps[Math.min(stepIdx, steps.length - 1)];
   const progress = totalQuestions > 0 ? Math.min(100, Math.round((currentStep.index / totalQuestions) * 100)) : 0;
 
-  // Validate single question
   const isFilled = (q?: Question) => {
     if (!q) return true;
+    if (isDisplayBlock(q.field_type)) return true;
     if (q.field_type === "checkbox") return (checkboxAnswers[q.id]?.length || 0) > 0;
-    if (q.field_type === "file") return !!files[q.id];
-    return !!answers[q.id]?.trim();
+    if (["file", "image_upload", "video_upload", "document_upload"].includes(q.field_type)) return !!files[q.id];
+    if (q.field_type === "signature") return !!(answers[q.id] && answers[q.id].startsWith("data:image"));
+    return !!answers[q.id]?.toString().trim();
   };
 
   const canAdvance = () => {
@@ -163,32 +161,18 @@ export default function PublicForm() {
       toast.error("Pertanyaan ini wajib diisi");
       return;
     }
-    if (stepIdx < steps.length - 1) {
-      setDir("down");
-      setStepIdx(i => i + 1);
-    }
+    if (stepIdx < steps.length - 1) { setDir("down"); setStepIdx(i => i + 1); }
   };
-  const prev = () => {
-    if (stepIdx > 0) {
-      setDir("up");
-      setStepIdx(i => i - 1);
-    }
-  };
+  const prev = () => { if (stepIdx > 0) { setDir("up"); setStepIdx(i => i - 1); } };
 
-  // Keyboard: Enter advances (Shift+Enter for textarea newlines)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (submitted) return;
       if (e.key === "Enter" && !e.shiftKey) {
-        const target = e.target as HTMLElement;
-        const tag = target?.tagName;
+        const tag = (e.target as HTMLElement)?.tagName;
         if (tag === "TEXTAREA") return;
         e.preventDefault();
-        if (currentStep.kind === "submit") {
-          handleSubmit();
-        } else {
-          next();
-        }
+        if (currentStep.kind === "submit") handleSubmit(); else next();
       }
     };
     window.addEventListener("keydown", handler);
@@ -196,17 +180,25 @@ export default function PublicForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIdx, answers, files, checkboxAnswers, submitted]);
 
-  // Focus input on step change
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus?.(), 250);
     return () => clearTimeout(t);
   }, [stepIdx]);
 
+  // Redirect timer after submit
+  useEffect(() => {
+    if (!submitted || !form?.thank_you_redirect_url) return;
+    const delay = Math.max(0, (form.thank_you_redirect_delay ?? 3)) * 1000;
+    const t = setTimeout(() => {
+      try { window.location.href = form.thank_you_redirect_url!; } catch {}
+    }, delay);
+    return () => clearTimeout(t);
+  }, [submitted, form]);
+
   const handleSubmit = async () => {
     setSubmitting(true);
-    // Final validation
-    for (const q of questions) {
-      if (q.is_section_break || !q.is_required) continue;
+    for (const q of visibleQuestions) {
+      if (q.is_section_break || isDisplayBlock(q.field_type) || !q.is_required) continue;
       if (!isFilled(q)) {
         toast.error(`"${q.label}" wajib diisi`);
         const targetIdx = steps.findIndex(s => s.q?.id === q.id);
@@ -218,20 +210,16 @@ export default function PublicForm() {
     try {
       let respondentName: string | null = null;
       let respondentEmail: string | null = null;
-      for (const q of questions) {
-        const val = answers[q.id];
-        if (!val) continue;
+      for (const q of visibleQuestions) {
+        const val = answers[q.id]; if (!val) continue;
         const label = q.label.toLowerCase();
         if (!respondentName && (label.includes("nama") || label.includes("name"))) respondentName = val;
         if (!respondentEmail && (q.field_type === "email" || label.includes("email"))) respondentEmail = val;
       }
-
       const responseId = crypto.randomUUID();
       const { error: rErr } = await supabase.from("form_responses").insert({
-        id: responseId,
-        form_id: form!.id,
-        respondent_name: respondentName,
-        respondent_email: respondentEmail,
+        id: responseId, form_id: form!.id,
+        respondent_name: respondentName, respondent_email: respondentEmail,
       });
       if (rErr) throw rErr;
 
@@ -245,11 +233,27 @@ export default function PublicForm() {
         fileUrls[qId] = urlData.publicUrl;
       }
 
-      const answerRows = questions
-        .filter(q => !q.is_section_break)
+      // Upload signature data URLs to storage too, so admin sees an image
+      const signatureFields = visibleQuestions.filter(q => q.field_type === "signature" && answers[q.id]?.startsWith("data:image"));
+      for (const sq of signatureFields) {
+        try {
+          const blob = await (await fetch(answers[sq.id])).blob();
+          const path = `${form!.id}/${responseId}/sig-${sq.id}.png`;
+          const { error: upErr } = await supabase.storage.from("form-uploads").upload(path, blob, { contentType: "image/png", upsert: true });
+          if (!upErr) {
+            const { data: urlData } = supabase.storage.from("form-uploads").getPublicUrl(path);
+            fileUrls[sq.id] = urlData.publicUrl;
+          }
+        } catch {}
+      }
+
+      const answerRows = visibleQuestions
+        .filter(q => !q.is_section_break && !isDisplayBlock(q.field_type))
         .map(q => {
-          let text = answers[q.id] || null;
+          let text: string | null = answers[q.id] || null;
           if (q.field_type === "checkbox") text = (checkboxAnswers[q.id] || []).join(", ");
+          // Don't store huge data URLs in answer_text — file URL replaces it
+          if (q.field_type === "signature" && fileUrls[q.id]) text = "[signature]";
           return {
             response_id: responseId,
             question_id: q.id,
@@ -266,14 +270,11 @@ export default function PublicForm() {
 
       if (form!.form_template === "kol") {
         try {
-          await supabase.functions.invoke("kol-form-submit", {
-            body: { form_id: form!.id, answers, questions },
-          });
+          await supabase.functions.invoke("kol-form-submit", { body: { form_id: form!.id, answers, questions: visibleQuestions } });
         } catch (kolErr) {
           console.error("KOL auto-insert error:", kolErr);
         }
       }
-
       setSubmitted(true);
     } catch (err: any) {
       toast.error("Gagal mengirim: " + err.message);
@@ -281,7 +282,6 @@ export default function PublicForm() {
     setSubmitting(false);
   };
 
-  // Theme & adaptive colors
   const theme = useMemo(() => {
     const primary = form?.primary_color || "#6366f1";
     const bg = form?.background_color || "#ffffff";
@@ -300,42 +300,27 @@ export default function PublicForm() {
   }, [form]);
 
   if (loading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="min-h-[100dvh] flex items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
-
   if (error || !form) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-background px-6">
-        <div className="text-center text-muted-foreground">{error || "Form tidak ditemukan"}</div>
-      </div>
-    );
+    return <div className="min-h-[100dvh] flex items-center justify-center bg-background px-6"><div className="text-center text-muted-foreground">{error || "Form tidak ditemukan"}</div></div>;
   }
 
-  // Submitted thank-you
   if (submitted) {
     return (
-      <div
-        className="min-h-[100dvh] flex items-center justify-center px-6 py-12"
+      <div className="min-h-[100dvh] flex items-center justify-center px-6 py-12"
         style={{
-          fontFamily: theme.font,
-          color: theme.text,
+          fontFamily: theme.font, color: theme.text,
           background: form.background_image
             ? `linear-gradient(135deg, ${theme.bg}cc, ${theme.bg}99), url(${form.background_image}) center/cover no-repeat fixed`
             : `radial-gradient(1200px 600px at 20% 0%, ${theme.primary}22, transparent 60%), ${theme.bg}`,
-        }}
-      >
+        }}>
         <div className={`${theme.size.wrap} w-full mx-auto text-center animate-in fade-in slide-in-from-bottom-4 duration-500`}>
           {form.thank_you_image ? (
             <img src={form.thank_you_image} alt="" className="mx-auto mb-8 max-h-48 rounded-2xl" />
           ) : (
-            <div
-              className="mx-auto mb-8 h-20 w-20 rounded-full flex items-center justify-center"
-              style={{ background: theme.primary, color: theme.primaryText }}
-            >
+            <div className="mx-auto mb-8 h-20 w-20 rounded-full flex items-center justify-center"
+              style={{ background: theme.primary, color: theme.primaryText }}>
               <CheckCircle className="h-10 w-10" />
             </div>
           )}
@@ -343,191 +328,42 @@ export default function PublicForm() {
           <p className={`${theme.size.sub} mb-8`} style={{ color: theme.muted, whiteSpace: "pre-wrap" }}>
             {form.thank_you_message || "Respons Anda berhasil dikirim."}
           </p>
-          <button
-            onClick={() => {
-              setSubmitted(false);
-              setAnswers({});
-              setFiles({});
-              setCheckboxAnswers({});
-              setStepIdx(0);
-            }}
-            className="px-6 py-2.5 rounded-xl font-medium transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{ background: theme.primary, color: theme.primaryText }}
-          >
-            Kirim lagi
-          </button>
+          {form.thank_you_redirect_url ? (
+            <p className="text-sm" style={{ color: theme.muted }}>
+              Mengarahkan ke{" "}
+              <a href={form.thank_you_redirect_url} className="underline font-medium" style={{ color: theme.text }}>
+                {form.thank_you_redirect_url}
+              </a>{" "}dalam {form.thank_you_redirect_delay ?? 3} detik...
+            </p>
+          ) : (
+            <button onClick={() => { setSubmitted(false); setAnswers({}); setFiles({}); setCheckboxAnswers({}); setStepIdx(0); }}
+              className="px-6 py-2.5 rounded-xl font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{ background: theme.primary, color: theme.primaryText }}>
+              Kirim lagi
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
-  const renderInput = (q: Question) => {
-    const baseInputStyle: React.CSSProperties = {
-      background: "transparent",
-      color: theme.text,
-      borderColor: theme.border,
-      caretColor: theme.primary,
-    };
-    const inputCls =
-      `w-full bg-transparent border-0 border-b-2 rounded-none px-0 py-3 focus-visible:ring-0 focus-visible:border-current placeholder:opacity-40 ${theme.size.input}`;
-    switch (q.field_type) {
-      case "long_text":
-        return (
-          <Textarea
-            ref={inputRef as any}
-            value={answers[q.id] || ""}
-            onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
-            placeholder={q.placeholder || "Ketik jawaban Anda..."}
-            rows={4}
-            className={inputCls + " resize-none"}
-            style={{ ...baseInputStyle, borderBottomColor: theme.border }}
-          />
-        );
-      case "email":
-      case "phone":
-      case "number":
-      case "date":
-      case "short_text":
-        return (
-          <Input
-            ref={inputRef as any}
-            type={
-              q.field_type === "email" ? "email" :
-              q.field_type === "phone" ? "tel" :
-              q.field_type === "number" ? "number" :
-              q.field_type === "date" ? "date" : "text"
-            }
-            value={answers[q.id] || ""}
-            onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
-            placeholder={q.placeholder || "Ketik jawaban Anda..."}
-            className={inputCls}
-            style={{ ...baseInputStyle, borderBottomColor: theme.border, height: "auto" }}
-          />
-        );
-      case "dropdown":
-      case "multiple_choice":
-        return (
-          <div className="flex flex-col gap-2.5 mt-2">
-            {(q.options || []).map((opt, i) => {
-              const selected = answers[q.id] === opt;
-              const letter = String.fromCharCode(65 + i);
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => {
-                    setAnswers(p => ({ ...p, [q.id]: opt }));
-                    setTimeout(() => next(), 250);
-                  }}
-                  className="group text-left px-4 py-3 rounded-xl border-2 transition-all hover:-translate-y-0.5 active:scale-[0.99] flex items-center gap-3"
-                  style={{
-                    borderColor: selected ? theme.primary : theme.border,
-                    background: selected ? `${theme.primary}1a` : theme.surface,
-                    color: theme.text,
-                  }}
-                >
-                  <span
-                    className="h-7 w-7 shrink-0 rounded-md grid place-items-center text-xs font-semibold border"
-                    style={{
-                      borderColor: selected ? theme.primary : theme.border,
-                      background: selected ? theme.primary : "transparent",
-                      color: selected ? theme.primaryText : theme.text,
-                    }}
-                  >
-                    {selected ? <Check className="h-3.5 w-3.5" /> : letter}
-                  </span>
-                  <span className="flex-1">{opt}</span>
-                </button>
-              );
-            })}
-          </div>
-        );
-      case "checkbox":
-        return (
-          <div className="flex flex-col gap-2.5 mt-2">
-            {(q.options || []).map((opt, i) => {
-              const curr = checkboxAnswers[q.id] || [];
-              const selected = curr.includes(opt);
-              const letter = String.fromCharCode(65 + i);
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => {
-                    setCheckboxAnswers(p => {
-                      const c = p[q.id] || [];
-                      return { ...p, [q.id]: selected ? c.filter(x => x !== opt) : [...c, opt] };
-                    });
-                  }}
-                  className="text-left px-4 py-3 rounded-xl border-2 transition-all hover:-translate-y-0.5 active:scale-[0.99] flex items-center gap-3"
-                  style={{
-                    borderColor: selected ? theme.primary : theme.border,
-                    background: selected ? `${theme.primary}1a` : theme.surface,
-                    color: theme.text,
-                  }}
-                >
-                  <span
-                    className="h-7 w-7 shrink-0 rounded-md grid place-items-center text-xs font-semibold border"
-                    style={{
-                      borderColor: selected ? theme.primary : theme.border,
-                      background: selected ? theme.primary : "transparent",
-                      color: selected ? theme.primaryText : theme.text,
-                    }}
-                  >
-                    {selected ? <Check className="h-3.5 w-3.5" /> : letter}
-                  </span>
-                  <span className="flex-1">{opt}</span>
-                </button>
-              );
-            })}
-            <p className="text-xs mt-1" style={{ color: theme.muted }}>Pilih satu atau lebih</p>
-          </div>
-        );
-      case "file":
-        return (
-          <label
-            className="mt-2 flex items-center gap-3 px-4 py-4 rounded-xl border-2 border-dashed cursor-pointer hover:opacity-90 transition-all"
-            style={{ borderColor: theme.border, background: theme.surface, color: theme.text }}
-          >
-            <Upload className="h-5 w-5" style={{ color: theme.primary }} />
-            <span className="flex-1 truncate">{files[q.id]?.name || "Klik untuk upload file"}</span>
-            <input
-              type="file"
-              className="hidden"
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (file) setFiles(p => ({ ...p, [q.id]: file }));
-              }}
-            />
-          </label>
-        );
-      default:
-        return null;
-    }
-  };
-
   const stepKey = `${stepIdx}-${dir}`;
+  const showProgress = form.show_progress !== false;
 
   return (
-    <div
-      className="min-h-[100dvh] flex flex-col"
+    <div className="min-h-[100dvh] flex flex-col"
       style={{
-        fontFamily: theme.font,
-        color: theme.text,
+        fontFamily: theme.font, color: theme.text,
         background: form.background_image
           ? `linear-gradient(135deg, ${theme.bg}cc, ${theme.bg}99), url(${form.background_image}) center/cover no-repeat fixed`
           : `radial-gradient(900px 500px at 100% 0%, ${theme.primary}1a, transparent 55%), radial-gradient(800px 400px at 0% 100%, ${theme.primary}14, transparent 60%), ${theme.bg}`,
-      }}
-    >
-      {/* Top progress bar */}
-      {form.show_progress !== false && (
+      }}>
+      {showProgress && (
         <div className="sticky top-0 z-20 px-4 pt-3 pb-2 backdrop-blur-md" style={{ background: `${theme.bg}99` }}>
           <div className={`${theme.size.wrap} mx-auto flex items-center gap-3`}>
             <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: theme.subtle }}>
-              <div
-                className="h-full transition-all duration-500 ease-out rounded-full"
-                style={{ width: `${progress}%`, background: theme.primary }}
-              />
+              <div className="h-full transition-all duration-500 ease-out rounded-full"
+                style={{ width: `${progress}%`, background: theme.primary }} />
             </div>
             <span className="text-xs tabular-nums" style={{ color: theme.muted }}>
               {currentStep.kind === "welcome" ? 0 : Math.min(currentStep.index + (currentStep.kind === "question" ? 1 : 0), totalQuestions)}/{totalQuestions}
@@ -536,27 +372,19 @@ export default function PublicForm() {
         </div>
       )}
 
-      {/* Step body */}
       <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-10">
-        <div
-          key={stepKey}
-          className={`${theme.size.wrap} w-full mx-auto ${dir === "down" ? "animate-in slide-in-from-bottom-6 fade-in" : "animate-in slide-in-from-top-6 fade-in"} duration-300`}
-        >
+        <div key={stepKey}
+          className={`${theme.size.wrap} w-full mx-auto ${dir === "down" ? "animate-in slide-in-from-bottom-6 fade-in" : "animate-in slide-in-from-top-6 fade-in"} duration-300`}>
           {currentStep.kind === "welcome" && (
             <div className="text-center sm:text-left">
               <h1 className={`${theme.size.title} font-bold tracking-tight`}>{form.name}</h1>
               {form.description && (
-                <p className={`${theme.size.sub} mt-4`} style={{ color: theme.muted, whiteSpace: "pre-wrap" }}>
-                  {form.description}
-                </p>
+                <p className={`${theme.size.sub} mt-4`} style={{ color: theme.muted, whiteSpace: "pre-wrap" }}>{form.description}</p>
               )}
               <div className="mt-10 flex flex-col sm:flex-row items-center gap-3 sm:justify-start justify-center">
-                <button
-                  type="button"
-                  onClick={next}
+                <button type="button" onClick={next}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-[0.98] shadow-lg"
-                  style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}
-                >
+                  style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}>
                   Mulai <ArrowRight className="h-4 w-4" />
                 </button>
                 <span className="text-xs" style={{ color: theme.muted }}>tekan <kbd className="px-1.5 py-0.5 rounded border" style={{ borderColor: theme.border }}>Enter</kbd></span>
@@ -578,12 +406,9 @@ export default function PublicForm() {
                   {currentStep.q.section_description}
                 </p>
               )}
-              <button
-                type="button"
-                onClick={next}
+              <button type="button" onClick={next}
                 className="mt-10 inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-[0.98]"
-                style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}
-              >
+                style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}>
                 Lanjut <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -591,38 +416,52 @@ export default function PublicForm() {
 
           {currentStep.kind === "question" && currentStep.q && (
             <div>
-              <div className="flex items-start gap-3">
-                <span className="mt-2 text-sm tabular-nums opacity-60 shrink-0" style={{ color: theme.muted }}>
-                  {currentStep.index + 1} <ArrowRight className="inline h-3 w-3 -mt-0.5" />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <h2 className={`${theme.size.title} font-semibold tracking-tight leading-tight`}>
-                    {currentStep.q.label}
-                    {currentStep.q.is_required && <span className="ml-1" style={{ color: theme.primary }}>*</span>}
-                  </h2>
-                  {currentStep.q.description && (
-                    <p className="mt-3 text-sm sm:text-base" style={{ color: theme.muted, whiteSpace: "pre-wrap" }}>
-                      {currentStep.q.description}
-                    </p>
-                  )}
-                  <div className="mt-6">{renderInput(currentStep.q)}</div>
-
-                  <div className="mt-8 flex items-center gap-3 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={next}
-                      disabled={!canAdvance()}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 10px 24px -10px ${theme.primary}80` }}
-                    >
-                      {form.button_label || "OK"} <Check className="h-4 w-4" />
-                    </button>
-                    <span className="text-xs" style={{ color: theme.muted }}>
-                      tekan <kbd className="px-1.5 py-0.5 rounded border" style={{ borderColor: theme.border }}>Enter</kbd>
-                    </span>
+              {isDisplayBlock(currentStep.q.field_type) ? (
+                <div className="space-y-4">
+                  <FormFieldRenderer q={currentStep.q as any} theme={theme} answers={answers} setAnswers={setAnswers}
+                    checkboxAnswers={checkboxAnswers} setCheckboxAnswers={setCheckboxAnswers}
+                    files={files} setFiles={setFiles} inputSize={theme.size.input}
+                    registerFocus={el => (inputRef.current = el)} onAutoAdvance={next} />
+                  <button type="button" onClick={next}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium"
+                    style={{ background: theme.primary, color: theme.primaryText }}>
+                    Lanjut <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <span className="mt-2 text-sm tabular-nums opacity-60 shrink-0" style={{ color: theme.muted }}>
+                    {currentStep.index + 1} <ArrowRight className="inline h-3 w-3 -mt-0.5" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h2 className={`${theme.size.title} font-semibold tracking-tight leading-tight`}>
+                      {currentStep.q.label}
+                      {currentStep.q.is_required && <span className="ml-1" style={{ color: theme.primary }}>*</span>}
+                    </h2>
+                    {currentStep.q.description && (
+                      <p className="mt-3 text-sm sm:text-base" style={{ color: theme.muted, whiteSpace: "pre-wrap" }}>
+                        {currentStep.q.description}
+                      </p>
+                    )}
+                    <div className="mt-6">
+                      <FormFieldRenderer q={currentStep.q as any} theme={theme} answers={answers} setAnswers={setAnswers}
+                        checkboxAnswers={checkboxAnswers} setCheckboxAnswers={setCheckboxAnswers}
+                        files={files} setFiles={setFiles} inputSize={theme.size.input}
+                        registerFocus={el => (inputRef.current = el)} onAutoAdvance={next} />
+                    </div>
+                    <div className="mt-8 flex items-center gap-3 flex-wrap">
+                      <button type="button" onClick={next} disabled={!canAdvance()}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 10px 24px -10px ${theme.primary}80` }}>
+                        {form.button_label || "OK"} <Check className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs" style={{ color: theme.muted }}>
+                        tekan <kbd className="px-1.5 py-0.5 rounded border" style={{ borderColor: theme.border }}>Enter</kbd>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -633,13 +472,9 @@ export default function PublicForm() {
                 Periksa kembali jawaban Anda. Anda bisa kembali ke pertanyaan sebelumnya jika perlu.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center gap-3 sm:justify-start justify-center">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting}
+                <button type="button" onClick={handleSubmit} disabled={submitting}
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-60"
-                  style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}
-                >
+                  style={{ background: theme.primary, color: theme.primaryText, boxShadow: `0 12px 30px -10px ${theme.primary}80` }}>
                   {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> Mengirim...</>) : (<>{form.submit_label || "Kirim"} <ArrowRight className="h-4 w-4" /></>)}
                 </button>
               </div>
@@ -648,31 +483,21 @@ export default function PublicForm() {
         </div>
       </div>
 
-      {/* Bottom nav */}
-      <div className="sticky bottom-0 z-20 px-4 py-3 backdrop-blur-md" style={{ background: `${theme.bg}99`, borderTop: `1px solid ${theme.border}` }}>
+      <div className="sticky bottom-0 z-20 px-4 py-3 backdrop-blur-md"
+        style={{ background: `${theme.bg}99`, borderTop: `1px solid ${theme.border}` }}>
         <div className={`${theme.size.wrap} mx-auto flex items-center justify-between`}>
           <div className="text-xs" style={{ color: theme.muted }}>
             Powered by <span className="font-semibold" style={{ color: theme.text }}>Talco</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={prev}
-              disabled={stepIdx === 0}
-              aria-label="Sebelumnya"
+            <button type="button" onClick={prev} disabled={stepIdx === 0} aria-label="Sebelumnya"
               className="h-9 w-9 grid place-items-center rounded-lg border transition-all hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ borderColor: theme.border, color: theme.text, background: theme.surface }}
-            >
+              style={{ borderColor: theme.border, color: theme.text, background: theme.surface }}>
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              onClick={next}
-              disabled={stepIdx === steps.length - 1}
-              aria-label="Berikutnya"
+            <button type="button" onClick={next} disabled={stepIdx === steps.length - 1} aria-label="Berikutnya"
               className="h-9 w-9 grid place-items-center rounded-lg transition-all hover:-translate-y-0.5 disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: theme.primary, color: theme.primaryText }}
-            >
+              style={{ background: theme.primary, color: theme.primaryText }}>
               <ArrowDown className="h-4 w-4" />
             </button>
           </div>
