@@ -161,10 +161,11 @@ export default function FormEditor() {
             section_title: q.section_title,
             section_description: q.section_description,
             config: q.config || {},
-            logic_rules: q.logic_rules || [],
-          }))
+            logic_rules: (q.logic_rules || []) as any,
+          })) as any
         );
       }
+
     },
     onSuccess: () => {
       setLoaded(false);
