@@ -164,9 +164,8 @@ export default function FormEditor() {
             logic_rules: (q.logic_rules || []) as any,
           })) as any
         );
-
-        );
       }
+
     },
     onSuccess: () => {
       setLoaded(false);
