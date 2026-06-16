@@ -7371,6 +7371,10 @@ export type Database = {
         Returns: boolean
       }
       is_hr_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_public_form_response: {
+        Args: { _response_id: string }
+        Returns: boolean
+      }
       log_client_activity: {
         Args: {
           p_action: string
