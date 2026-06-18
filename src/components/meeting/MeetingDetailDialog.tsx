@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
