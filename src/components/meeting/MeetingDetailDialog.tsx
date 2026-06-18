@@ -226,15 +226,21 @@ const MeetingDetailDialog = ({
     setIsUpdating(true);
     try {
       const updateData: any = { status: newStatus };
-      
-      // If marking as completed, set end_time to current time
+
+      // Sync completion_status so PendingCompletionPopup no longer flags it
       if (newStatus === "completed") {
+        updateData.completion_status = "completed";
+        updateData.completion_confirmed_at = new Date().toISOString();
+        // If marking as completed, set end_time to current time
         const now = new Date();
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
         updateData.end_time = `${hours}:${minutes}:00`;
+      } else if (newStatus === "cancelled") {
+        updateData.completion_status = "cancelled";
+        updateData.completion_confirmed_at = new Date().toISOString();
       }
-      
+
       const { error } = await supabase
         .from("meetings")
         .update(updateData)
@@ -1362,7 +1368,7 @@ const MeetingDetailDialog = ({
               <>
                 <Separator />
                 <div className="flex flex-wrap gap-2">
-                  {meeting.status === "scheduled" && (
+                  {meeting.status !== "completed" && meeting.status !== "cancelled" && (
                     <>
                       {!showReschedule && (
                         <Button 
