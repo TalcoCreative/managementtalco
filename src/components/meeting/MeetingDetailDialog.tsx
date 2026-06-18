@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sendWebPush } from "@/lib/push-utils";
@@ -142,7 +143,8 @@ const MeetingDetailDialog = ({
   });
 
   const isCreator = currentUser?.id === meeting.created_by;
-  const canEdit = isCreator || isHRorAdmin;
+  const { canEdit: canEditFeature } = usePermissions();
+  const canEdit = isCreator || isHRorAdmin || canEditFeature("meeting");
   const meetingDate = parseISO(meeting.meeting_date);
   const isMeetingUpcoming = isFuture(meetingDate) || isToday(meetingDate);
   const userParticipation = participants?.find(p => p.user_id === currentUser?.id);
