@@ -1368,7 +1368,7 @@ const MeetingDetailDialog = ({
               <>
                 <Separator />
                 <div className="flex flex-wrap gap-2">
-                  {meeting.status === "scheduled" && (
+                  {meeting.status !== "completed" && meeting.status !== "cancelled" && (
                     <>
                       {!showReschedule && (
                         <Button 
