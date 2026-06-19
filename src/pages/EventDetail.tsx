@@ -36,6 +36,7 @@ import { EventTasksTab } from "@/components/event/tabs/EventTasksTab";
 import { EventChecklistTab } from "@/components/event/tabs/EventChecklistTab";
 import { EventDocumentsTab } from "@/components/event/tabs/EventDocumentsTab";
 import { EventHistoryTab } from "@/components/event/tabs/EventHistoryTab";
+import { SubEventsTab } from "@/components/event/tabs/SubEventsTab";
 import { EditEventDialog } from "@/components/event/EditEventDialog";
 
 const statusColors: Record<string, string> = {
@@ -354,8 +355,9 @@ export default function EventDetail() {
         )}
 
         {/* Tabs */}
-        <Tabs defaultValue="tasks" className="w-full">
+        <Tabs defaultValue="sub_events" className="w-full">
           <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="sub_events">Sub Events</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="crew">Crew</TabsTrigger>
             <TabsTrigger value="vendors">Vendor</TabsTrigger>
@@ -363,10 +365,15 @@ export default function EventDetail() {
             <TabsTrigger value="documents">Dokumen</TabsTrigger>
             <TabsTrigger value="history">Riwayat</TabsTrigger>
           </TabsList>
-          
+
+          <TabsContent value="sub_events" className="mt-4">
+            <SubEventsTab eventId={eventId!} canManage={canManageEvents || false} />
+          </TabsContent>
+
           <TabsContent value="tasks" className="mt-4">
             <EventTasksTab eventId={eventId!} projectId={event.project_id} canManage={canManageEvents || false} />
           </TabsContent>
+          
           
           <TabsContent value="crew" className="mt-4">
             <EventCrewTab eventId={eventId!} canManage={canManageEvents || false} />

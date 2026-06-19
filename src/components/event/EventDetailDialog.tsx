@@ -39,6 +39,7 @@ import { EventTasksTab } from "./tabs/EventTasksTab";
 import { EventChecklistTab } from "./tabs/EventChecklistTab";
 import { EventDocumentsTab } from "./tabs/EventDocumentsTab";
 import { EventHistoryTab } from "./tabs/EventHistoryTab";
+import { SubEventsTab } from "./tabs/SubEventsTab";
 import { EditEventDialog } from "./EditEventDialog";
 
 interface EventDetailDialogProps {
@@ -339,8 +340,9 @@ export function EventDetailDialog({ eventId, open, onOpenChange, onUpdate }: Eve
             )}
 
             {/* Tabs */}
-            <Tabs defaultValue="tasks" className="w-full">
+            <Tabs defaultValue="sub_events" className="w-full">
               <TabsList className="w-full justify-start overflow-x-auto">
+                <TabsTrigger value="sub_events">Sub Events</TabsTrigger>
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
                 <TabsTrigger value="crew">Crew</TabsTrigger>
                 <TabsTrigger value="vendors">Vendor</TabsTrigger>
@@ -348,7 +350,11 @@ export function EventDetailDialog({ eventId, open, onOpenChange, onUpdate }: Eve
                 <TabsTrigger value="documents">Dokumen</TabsTrigger>
                 <TabsTrigger value="history">Riwayat</TabsTrigger>
               </TabsList>
-              
+
+              <TabsContent value="sub_events" className="mt-4">
+                <SubEventsTab eventId={eventId} canManage={!!canManageEvents} />
+              </TabsContent>
+
               <TabsContent value="tasks" className="mt-4">
                 <EventTasksTab eventId={eventId} projectId={event.project_id} canManage={canManageEvents} />
               </TabsContent>
