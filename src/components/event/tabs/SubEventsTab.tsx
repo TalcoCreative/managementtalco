@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -302,8 +302,8 @@ function SubEventDialog({
   });
 
   // reset on open without editing
-  useState(() => {
-    if (!editingId) {
+  useEffect(() => {
+    if (open && !editingId) {
       setForm({
         name: "",
         description: "",
@@ -315,7 +315,7 @@ function SubEventDialog({
         client_id: "",
       });
     }
-  });
+  }, [open, editingId]);
 
   const handleSave = async () => {
     if (!form.name.trim()) {
