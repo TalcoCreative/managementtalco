@@ -6572,6 +6572,233 @@ export type Database = {
         }
         Relationships: []
       }
+      sub_event_checklists: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          item: string
+          sort_order: number
+          sub_event_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item: string
+          sort_order?: number
+          sub_event_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item?: string
+          sort_order?: number
+          sub_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_event_checklists_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_event_checklists_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_event_crew: {
+        Row: {
+          created_at: string
+          freelancer_name: string | null
+          id: string
+          notes: string | null
+          role: string
+          sub_event_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          freelancer_name?: string | null
+          id?: string
+          notes?: string | null
+          role: string
+          sub_event_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          freelancer_name?: string | null
+          id?: string
+          notes?: string | null
+          role?: string
+          sub_event_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_event_crew_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_event_crew_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_event_rundown: {
+        Row: {
+          activity: string
+          created_at: string
+          end_time: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          pic_id: string | null
+          sort_order: number
+          start_time: string | null
+          sub_event_id: string
+        }
+        Insert: {
+          activity: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          pic_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+          sub_event_id: string
+        }
+        Update: {
+          activity?: string
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          pic_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+          sub_event_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_event_rundown_pic_id_fkey"
+            columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_event_rundown_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_events: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          end_time: string | null
+          event_id: string
+          id: string
+          location: string | null
+          name: string
+          pic_id: string | null
+          sort_order: number
+          start_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_id: string
+          id?: string
+          location?: string | null
+          name: string
+          pic_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          end_time?: string | null
+          event_id?: string
+          id?: string
+          location?: string | null
+          name?: string
+          pic_id?: string | null
+          sort_order?: number
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sub_events_pic_id_fkey"
+            columns: ["pic_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sub_tasks: {
         Row: {
           created_at: string
@@ -6725,6 +6952,54 @@ export type Database = {
           },
           {
             foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_checklists: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          item: string
+          sort_order: number
+          task_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item: string
+          sort_order?: number
+          task_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          item?: string
+          sort_order?: number
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_checklists_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_checklists_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
@@ -6929,6 +7204,7 @@ export type Database = {
           requested_at: string | null
           share_token: string | null
           status: string | null
+          sub_event_id: string | null
           table_data: Json | null
           title: string
           title_edited_at: string | null
@@ -6951,6 +7227,7 @@ export type Database = {
           requested_at?: string | null
           share_token?: string | null
           status?: string | null
+          sub_event_id?: string | null
           table_data?: Json | null
           title: string
           title_edited_at?: string | null
@@ -6973,6 +7250,7 @@ export type Database = {
           requested_at?: string | null
           share_token?: string | null
           status?: string | null
+          sub_event_id?: string | null
           table_data?: Json | null
           title?: string
           title_edited_at?: string | null
@@ -7025,6 +7303,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sub_event_id_fkey"
+            columns: ["sub_event_id"]
+            isOneToOne: false
+            referencedRelation: "sub_events"
             referencedColumns: ["id"]
           },
         ]
