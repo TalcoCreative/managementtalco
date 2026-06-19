@@ -23,6 +23,7 @@ import { getTaskInvolvedUsers } from "@/lib/push-helpers";
 import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSection";
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 import { SubTasksSection } from "@/components/tasks/SubTasksSection";
+import { TaskChecklistSection } from "@/components/tasks/TaskChecklistSection";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -982,6 +983,11 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
               {/* Sub-Tasks Section */}
               {taskId && (
                 <SubTasksSection taskId={taskId} />
+              )}
+
+              {/* Checklist Section */}
+              {taskId && (
+                <TaskChecklistSection taskId={taskId} />
               )}
 
               {/* Related Shooting Section */}
