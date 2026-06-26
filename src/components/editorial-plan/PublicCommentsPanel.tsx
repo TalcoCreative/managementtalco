@@ -30,6 +30,11 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
 
+  useEffect(() => {
+    const saved = getActorName(epId);
+    if (saved) setName(saved);
+  }, [epId]);
+
   // Fetch comments filtered by current slide (only non-hidden)
   const { data: comments, refetch } = useQuery({
     queryKey: ["public-ep-comments", epId, currentSlideId],
@@ -57,15 +62,28 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
       if (!name.trim() || !comment.trim()) {
         throw new Error("Name and comment are required");
       }
+      setActorName(epId, name.trim());
 
-      const { error } = await supabase.from("ep_comments").insert({
-        ep_id: epId,
-        slide_id: currentSlideId || null,
-        name: name.trim(),
-        comment: comment.trim(),
-      });
+      const { data, error } = await supabase
+        .from("ep_comments")
+        .insert({
+          ep_id: epId,
+          slide_id: currentSlideId || null,
+          name: name.trim(),
+          comment: comment.trim(),
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      await supabase.from("ep_activity_logs").insert({
+        ep_id: epId,
+        slide_id: currentSlideId || null,
+        action: "comment_added",
+        actor_name: name.trim(),
+        details: { comment_id: data.id, comment: comment.trim() },
+      });
     },
     onSuccess: () => {
       setComment("");
@@ -75,6 +93,41 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
     onError: (error: any) => {
       toast.error(error.message || "Failed to add comment");
     },
+  });
+
+  // Delete comment mutation (public). Captures snapshot for undo and logs the actor.
+  const deleteCommentMutation = useMutation({
+    mutationFn: async (c: Comment) => {
+      const actor = ensureActorName(epId, "Masukkan nama Anda untuk menghapus komentar:");
+      if (!actor) throw new Error("Nama wajib diisi");
+
+      const { error } = await supabase.from("ep_comments").delete().eq("id", c.id);
+      if (error) throw error;
+
+      await supabase.from("ep_activity_logs").insert({
+        ep_id: epId,
+        slide_id: c.slide_id,
+        action: "comment_deleted",
+        actor_name: actor,
+        details: {
+          comment_id: c.id,
+          snapshot: {
+            id: c.id,
+            ep_id: c.ep_id,
+            slide_id: c.slide_id,
+            name: c.name,
+            comment: c.comment,
+            is_hidden: c.is_hidden,
+            created_at: c.created_at,
+          },
+        },
+      });
+    },
+    onSuccess: () => {
+      refetch();
+      toast.success("Komentar dihapus");
+    },
+    onError: (e: any) => toast.error(e.message || "Gagal menghapus komentar"),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
