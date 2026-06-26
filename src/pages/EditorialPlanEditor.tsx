@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Calendar,
   FolderInput,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
@@ -22,6 +23,7 @@ import { SlideStatusBadge } from "@/components/editorial-plan/SlideStatusBadge";
 import { EPCommentsPanel } from "@/components/editorial-plan/EPCommentsPanel";
 import { EPCalendarView } from "@/components/editorial-plan/EPCalendarView";
 import { MoveSlideDialog } from "@/components/editorial-plan/MoveSlideDialog";
+import { EPActivityLogDialog } from "@/components/editorial-plan/EPActivityLogDialog";
 
 
 interface Slide {
@@ -64,6 +66,7 @@ export default function EditorialPlanEditor() {
   const [initialSlideResolved, setInitialSlideResolved] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const slideTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch EP data
@@ -283,12 +286,19 @@ export default function EditorialPlanEditor() {
             <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4" />
             </Button>
+            <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4" />
+            </Button>
             <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Comments
+            </Button>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4 mr-2" />
+              History
             </Button>
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4 mr-2" />
@@ -490,6 +500,13 @@ export default function EditorialPlanEditor() {
           }}
         />
       )}
+
+      <EPActivityLogDialog
+        epId={ep.id}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onChanged={() => refetchSlides()}
+      />
     </div>
   );
 }
