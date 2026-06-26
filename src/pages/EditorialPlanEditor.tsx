@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Calendar,
   FolderInput,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SlideEditor } from "@/components/editorial-plan/SlideEditor";
@@ -22,6 +23,7 @@ import { SlideStatusBadge } from "@/components/editorial-plan/SlideStatusBadge";
 import { EPCommentsPanel } from "@/components/editorial-plan/EPCommentsPanel";
 import { EPCalendarView } from "@/components/editorial-plan/EPCalendarView";
 import { MoveSlideDialog } from "@/components/editorial-plan/MoveSlideDialog";
+import { EPActivityLogDialog } from "@/components/editorial-plan/EPActivityLogDialog";
 
 
 interface Slide {
