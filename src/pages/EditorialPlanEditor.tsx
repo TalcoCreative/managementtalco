@@ -500,6 +500,13 @@ export default function EditorialPlanEditor() {
           }}
         />
       )}
+
+      <EPActivityLogDialog
+        epId={ep.id}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        onChanged={() => refetchSlides()}
+      />
     </div>
   );
 }
