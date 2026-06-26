@@ -188,14 +188,29 @@ export function PublicCommentsPanel({ epId, currentSlideId, onClose }: PublicCom
             </p>
           ) : (
             comments?.map((c) => (
-              <div key={c.id} className="p-3 rounded-lg bg-muted">
-                <div className="flex items-start justify-between mb-2">
+              <div key={c.id} className="p-3 rounded-lg bg-muted group">
+                <div className="flex items-start justify-between mb-2 gap-2">
                   <span className="font-medium text-sm">{c.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(c.created_at), "dd MMM, HH:mm")}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(c.created_at), "dd MMM, HH:mm")}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive opacity-60 hover:opacity-100"
+                      onClick={() => {
+                        if (confirm(`Hapus komentar dari "${c.name}"?`)) {
+                          deleteCommentMutation.mutate(c);
+                        }
+                      }}
+                      title="Hapus komentar"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-sm">{c.comment}</p>
+                <p className="text-sm whitespace-pre-wrap">{c.comment}</p>
               </div>
             ))
           )}
