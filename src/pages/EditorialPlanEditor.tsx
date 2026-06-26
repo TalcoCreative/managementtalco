@@ -286,12 +286,19 @@ export default function EditorialPlanEditor() {
             <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4" />
             </Button>
+            <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4" />
+            </Button>
             <Button variant="outline" size="icon" className="sm:hidden h-9 w-9" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setShowComments(!showComments)}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Comments
+            </Button>
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4 mr-2" />
+              History
             </Button>
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => window.open(`https://ms.talco.id/ep/${getClientSlug()}/${ep.slug}`, "_blank")}>
               <Eye className="h-4 w-4 mr-2" />
