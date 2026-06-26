@@ -66,6 +66,7 @@ export default function EditorialPlanEditor() {
   const [initialSlideResolved, setInitialSlideResolved] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const slideTabsRef = useRef<HTMLDivElement>(null);
 
   // Fetch EP data
