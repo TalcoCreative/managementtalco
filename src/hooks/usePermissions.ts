@@ -231,7 +231,21 @@ export function usePermissions() {
     enabled: !!roleId,
   });
 
-  const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading);
+  // Check if user is HR PIC for at least one candidate — grants implicit recruitment access
+  const { data: isRecruitmentPIC, isLoading: picLoading } = useQuery({
+    queryKey: ["is-recruitment-pic", userId],
+    queryFn: async () => {
+      if (!userId) return false;
+      const { count } = await supabase
+        .from("candidates")
+        .select("id", { count: "exact", head: true })
+        .eq("hr_pic_id", userId);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!userId,
+  });
+
+  const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading) || picLoading;
 
   // Features accessible to ALL users without any permission check
   const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes", "chat", "team_review_access"];
@@ -241,12 +255,15 @@ export function usePermissions() {
     if (ALWAYS_ACCESSIBLE.includes(featureKey)) return true;
     // Super admin always has full access
     if (isSuperAdmin) return true;
+    // HR PIC has implicit access to recruitment (view + edit their own candidates via RLS)
+    if (featureKey === "recruitment" && isRecruitmentPIC && (action === "can_view" || action === "can_edit" || action === "can_create")) return true;
     // If no dynamic role assigned, deny
     if (!permissions) return false;
     const fp = permissions[featureKey];
     if (!fp) return false;
     return fp[action] ?? false;
   };
+
 
   const canView = (featureKey: string) => can(featureKey, "can_view");
   const canCreate = (featureKey: string) => can(featureKey, "can_create");
