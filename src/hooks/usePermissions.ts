@@ -232,20 +232,33 @@ export function usePermissions() {
   });
 
   // Check if user is HR PIC for at least one candidate — grants implicit recruitment access
-  const { data: isRecruitmentPIC, isLoading: picLoading } = useQuery({
-    queryKey: ["is-recruitment-pic", userId],
-    queryFn: async () => {
-      if (!userId) return false;
-      const { count } = await supabase
-        .from("candidates")
-        .select("id", { count: "exact", head: true })
-        .eq("hr_pic_id", userId);
-      return (count ?? 0) > 0;
-    },
-    enabled: !!userId,
-  });
+  // NOTE: use plain useEffect (not useQuery) to avoid React hook-queue errors in this global hook
+  const [isRecruitmentPIC, setIsRecruitmentPIC] = useState(false);
+  const [picLoading, setPicLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) {
+      setIsRecruitmentPIC(false);
+      setPicLoading(false);
+      return;
+    }
+    setPicLoading(true);
+    supabase
+      .from("candidates")
+      .select("id", { count: "exact", head: true })
+      .eq("hr_pic_id", userId)
+      .then(({ count }) => {
+        if (cancelled) return;
+        setIsRecruitmentPIC((count ?? 0) > 0);
+        setPicLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const isLoading = !userId || oldRolesLoading || dynamicRoleLoading || (!!roleId && permsLoading) || picLoading;
+
 
   // Features accessible to ALL users without any permission check
   const ALWAYS_ACCESSIBLE = ["profile_settings", "personal_notes", "chat", "team_review_access"];
