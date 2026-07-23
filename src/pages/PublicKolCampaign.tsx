@@ -526,13 +526,27 @@ export default function PublicKolCampaign() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {campaigns.map((c) => (
+              {campaigns.map((c) => {
+                const matchedKol = kols.find((k) => k.username === c.kol_username);
+                const profileUrl = matchedKol
+                  ? matchedKol.links.instagram || matchedKol.links.tiktok || matchedKol.links.youtube || matchedKol.links.twitter || matchedKol.links.linkedin || matchedKol.links.threads || null
+                  : null;
+                return (
                 <Card key={c.id} className="hub-card overflow-hidden">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{c.kol_name}</p>
-                        <p className="text-xs text-muted-foreground">@{c.kol_username}</p>
+                        {profileUrl ? (
+                          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="group">
+                            <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{c.kol_name}</p>
+                            <p className="text-xs text-muted-foreground group-hover:underline">@{c.kol_username}</p>
+                          </a>
+                        ) : (
+                          <>
+                            <p className="font-semibold text-sm truncate">{c.kol_name}</p>
+                            <p className="text-xs text-muted-foreground">@{c.kol_username}</p>
+                          </>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">{c.campaign_name}</p>
                       </div>
                       <Badge variant="outline" className="shrink-0 text-[10px]">
