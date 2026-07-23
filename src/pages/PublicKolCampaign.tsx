@@ -619,7 +619,8 @@ export default function PublicKolCampaign() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
