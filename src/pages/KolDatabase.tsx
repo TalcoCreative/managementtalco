@@ -309,6 +309,21 @@ export default function KolDatabase() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        (kols?.length ?? 0) > 0 && selectedIds.length === kols!.length
+                          ? true
+                          : selectedIds.length > 0
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedIds((kols || []).map((k: any) => k.id));
+                        else setSelectedIds([]);
+                      }}
+                    />
+                  </TableHead>
                   <TableHead>Nama / Username</TableHead>
                   <TableHead>Social Media</TableHead>
                   <TableHead>Followers</TableHead>
