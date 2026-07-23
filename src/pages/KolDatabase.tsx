@@ -229,6 +229,17 @@ export default function KolDatabase() {
             </div>
           </div>
           <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+              <>
+                <Button variant="secondary" onClick={() => setBulkAssignOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Assign ke Client ({selectedIds.length})
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedIds([])} title="Clear selection">
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Tambah KOL
