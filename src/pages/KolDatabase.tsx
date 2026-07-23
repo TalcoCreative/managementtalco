@@ -455,6 +455,16 @@ export default function KolDatabase() {
           industries={industries}
         />
       )}
+
+      <BulkAssignClientsDialog
+        open={bulkAssignOpen}
+        onOpenChange={setBulkAssignOpen}
+        kolIds={selectedIds}
+        onDone={() => {
+          setSelectedIds([]);
+          queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+        }}
+      />
     </AppLayout>
   );
 }
