@@ -21,11 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Instagram, ExternalLink, Users } from "lucide-react";
+import { Plus, Search, Edit, Instagram, ExternalLink, Users, UserPlus, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
+import { BulkAssignClientsDialog } from "@/components/kol/BulkAssignClientsDialog";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 import { normalizeRateCards, rateCardDisplayLabel } from "@/components/kol/RateCardEditor";
 
@@ -60,6 +62,8 @@ export default function KolDatabase() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedKol, setSelectedKol] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
   const { data: kols, isLoading } = useQuery({
     queryKey: ["kol-database", searchQuery, categoryFilter, industryFilter, followersFilter],
@@ -225,6 +229,17 @@ export default function KolDatabase() {
             </div>
           </div>
           <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+              <>
+                <Button variant="secondary" onClick={() => setBulkAssignOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Assign ke Client ({selectedIds.length})
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedIds([])} title="Clear selection">
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Button onClick={() => setCreateDialogOpen(true)} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Tambah KOL
@@ -294,6 +309,21 @@ export default function KolDatabase() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        (kols?.length ?? 0) > 0 && selectedIds.length === kols!.length
+                          ? true
+                          : selectedIds.length > 0
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        if (checked) setSelectedIds((kols || []).map((k: any) => k.id));
+                        else setSelectedIds([]);
+                      }}
+                    />
+                  </TableHead>
                   <TableHead>Nama / Username</TableHead>
                   <TableHead>Social Media</TableHead>
                   <TableHead>Followers</TableHead>
@@ -307,19 +337,29 @@ export default function KolDatabase() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : kols?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       No KOL found
                     </TableCell>
                   </TableRow>
                 ) : (
                   kols?.map((kol: any) => (
-                    <TableRow key={kol.id}>
+                    <TableRow key={kol.id} data-state={selectedIds.includes(kol.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(kol.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedIds((prev) =>
+                              checked ? [...prev, kol.id] : prev.filter((id) => id !== kol.id)
+                            );
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{kol.name}</p>
@@ -415,6 +455,16 @@ export default function KolDatabase() {
           industries={industries}
         />
       )}
+
+      <BulkAssignClientsDialog
+        open={bulkAssignOpen}
+        onOpenChange={setBulkAssignOpen}
+        kolIds={selectedIds}
+        onDone={() => {
+          setSelectedIds([]);
+          queryClient.invalidateQueries({ queryKey: ["kol-database"] });
+        }}
+      />
     </AppLayout>
   );
 }

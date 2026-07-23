@@ -350,10 +350,21 @@ export default function PublicKolCampaign() {
                   <Card key={k.id} className="hub-card overflow-hidden">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-semibold truncate">{k.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">@{k.username}</p>
-                        </div>
+                        <a
+                          href={k.links.instagram || k.links.tiktok || k.links.youtube || k.links.twitter || k.links.linkedin || k.links.threads || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-w-0 group"
+                          onClick={(e) => {
+                            const href = (e.currentTarget as HTMLAnchorElement).getAttribute("href");
+                            if (!href || href === "#") e.preventDefault();
+                          }}
+                        >
+                          <p className="font-semibold truncate group-hover:text-primary transition-colors">
+                            {k.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate group-hover:underline">@{k.username}</p>
+                        </a>
                         <Badge variant="outline" className="shrink-0 text-[10px]">
                           {tierLabels[k.category] || k.category}
                         </Badge>
@@ -361,19 +372,82 @@ export default function PublicKolCampaign() {
 
                       <div className="flex flex-wrap gap-2 text-[11px]">
                         {ig && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300">
-                            <Instagram className="h-3 w-3" /> {ig}
-                          </span>
+                          k.links.instagram ? (
+                            <a
+                              href={k.links.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500/20 transition-colors"
+                            >
+                              <Instagram className="h-3 w-3" /> {ig}
+                            </a>
+                          ) : (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300">
+                              <Instagram className="h-3 w-3" /> {ig}
+                            </span>
+                          )
                         )}
                         {tt && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10">
-                            TT {tt}
-                          </span>
+                          k.links.tiktok ? (
+                            <a
+                              href={k.links.tiktok}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors"
+                            >
+                              TT {tt}
+                            </a>
+                          ) : (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10">
+                              TT {tt}
+                            </span>
+                          )
                         )}
                         {yt && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-300">
-                            <Youtube className="h-3 w-3" /> {yt}
-                          </span>
+                          k.links.youtube ? (
+                            <a
+                              href={k.links.youtube}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-500/20 transition-colors"
+                            >
+                              <Youtube className="h-3 w-3" /> {yt}
+                            </a>
+                          ) : (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-300">
+                              <Youtube className="h-3 w-3" /> {yt}
+                            </span>
+                          )
+                        )}
+                        {k.links.twitter && (
+                          <a
+                            href={k.links.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" /> Twitter
+                          </a>
+                        )}
+                        {k.links.linkedin && (
+                          <a
+                            href={k.links.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" /> LinkedIn
+                          </a>
+                        )}
+                        {k.links.threads && (
+                          <a
+                            href={k.links.threads}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors"
+                          >
+                            <ExternalLink className="h-3 w-3" /> Threads
+                          </a>
                         )}
                         {k.industry && (
                           <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
@@ -452,13 +526,27 @@ export default function PublicKolCampaign() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {campaigns.map((c) => (
+              {campaigns.map((c) => {
+                const matchedKol = kols.find((k) => k.username === c.kol_username);
+                const profileUrl = matchedKol
+                  ? matchedKol.links.instagram || matchedKol.links.tiktok || matchedKol.links.youtube || matchedKol.links.twitter || matchedKol.links.linkedin || matchedKol.links.threads || null
+                  : null;
+                return (
                 <Card key={c.id} className="hub-card overflow-hidden">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{c.kol_name}</p>
-                        <p className="text-xs text-muted-foreground">@{c.kol_username}</p>
+                        {profileUrl ? (
+                          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="group">
+                            <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">{c.kol_name}</p>
+                            <p className="text-xs text-muted-foreground group-hover:underline">@{c.kol_username}</p>
+                          </a>
+                        ) : (
+                          <>
+                            <p className="font-semibold text-sm truncate">{c.kol_name}</p>
+                            <p className="text-xs text-muted-foreground">@{c.kol_username}</p>
+                          </>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">{c.campaign_name}</p>
                       </div>
                       <Badge variant="outline" className="shrink-0 text-[10px]">
@@ -531,7 +619,8 @@ export default function PublicKolCampaign() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
