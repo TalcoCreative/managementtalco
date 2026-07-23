@@ -337,19 +337,29 @@ export default function KolDatabase() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading...
                     </TableCell>
                   </TableRow>
                 ) : kols?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       No KOL found
                     </TableCell>
                   </TableRow>
                 ) : (
                   kols?.map((kol: any) => (
-                    <TableRow key={kol.id}>
+                    <TableRow key={kol.id} data-state={selectedIds.includes(kol.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(kol.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedIds((prev) =>
+                              checked ? [...prev, kol.id] : prev.filter((id) => id !== kol.id)
+                            );
+                          }}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{kol.name}</p>
