@@ -21,11 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Instagram, ExternalLink, Users } from "lucide-react";
+import { Plus, Search, Edit, Instagram, ExternalLink, Users, UserPlus, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CreateKolDialog } from "@/components/kol/CreateKolDialog";
 import { EditKolDialog } from "@/components/kol/EditKolDialog";
+import { BulkAssignClientsDialog } from "@/components/kol/BulkAssignClientsDialog";
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 import { normalizeRateCards, rateCardDisplayLabel } from "@/components/kol/RateCardEditor";
 
