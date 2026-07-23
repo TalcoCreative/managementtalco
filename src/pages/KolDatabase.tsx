@@ -62,6 +62,8 @@ export default function KolDatabase() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedKol, setSelectedKol] = useState<any>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
 
   const { data: kols, isLoading } = useQuery({
     queryKey: ["kol-database", searchQuery, categoryFilter, industryFilter, followersFilter],
