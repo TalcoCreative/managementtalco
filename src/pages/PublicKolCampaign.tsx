@@ -169,11 +169,11 @@ const normalizeProfileUrl = (
   if (val) {
     if (/^https?:\/\//i.test(val)) return val;
     if (val.startsWith("//")) return `https:${val}`;
-    // Strip leading @, slashes, and any accidental host prefix
-    const cleaned = val
-      .replace(/^https?:\/\//i, "")
-      .replace(/^\/+/, "")
-      .replace(/^@+/, "");
+    const withoutLeadingSlashes = val.replace(/^\/+/, "");
+    if (/^(www\.)?(instagram|tiktok|youtube|youtu|twitter|x|linkedin|threads|facebook)\.com\//i.test(withoutLeadingSlashes)) {
+      return `https://${withoutLeadingSlashes}`;
+    }
+    const cleaned = withoutLeadingSlashes.replace(/^@+/, "");
     if (base) return `${base}${cleaned}`;
     return `https://${cleaned}`;
   }
@@ -181,6 +181,14 @@ const normalizeProfileUrl = (
     return `${base}${fallbackUsername.replace(/^@+/, "")}`;
   }
   return null;
+};
+
+const normalizeExternalUrl = (raw: string | null | undefined): string | null => {
+  const val = (raw || "").trim();
+  if (!val) return null;
+  if (/^https?:\/\//i.test(val)) return val;
+  if (val.startsWith("//")) return `https:${val}`;
+  return `https://${val.replace(/^\/+/, "")}`;
 };
 
 const firstProfileUrl = (k: { username?: string | null; links: Record<string, string | null> }): string | null => {
@@ -538,26 +546,31 @@ export default function PublicKolCampaign() {
                             Campaign
                           </div>
                           {kolCamps.map((c) => (
-                            <div key={c.id} className="flex items-center justify-between gap-2 text-[11px]">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <Badge className={`${statusColors[c.status] || "bg-gray-500"} text-white text-[9px] px-1.5 py-0`}>
-                                  {statusLabels[c.status] || c.status}
-                                </Badge>
-                                <span className="text-muted-foreground truncate">
-                                  {platformLabels[c.platform] || c.platform}
-                                </span>
-                              </div>
-                              {c.post_link && (
-                                <a
-                                  href={c.post_link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:underline shrink-0"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
-                              )}
-                            </div>
+                            (() => {
+                              const postUrl = normalizeExternalUrl(c.post_link);
+                              return (
+                                <div key={c.id} className="flex items-center justify-between gap-2 text-[11px]">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <Badge className={`${statusColors[c.status] || "bg-gray-500"} text-white text-[9px] px-1.5 py-0`}>
+                                      {statusLabels[c.status] || c.status}
+                                    </Badge>
+                                    <span className="text-muted-foreground truncate">
+                                      {platformLabels[c.platform] || c.platform}
+                                    </span>
+                                  </div>
+                                  {postUrl && (
+                                    <a
+                                      href={postUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:underline shrink-0"
+                                    >
+                                      <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  )}
+                                </div>
+                              );
+                            })()
                           ))}
                         </div>
                       )}
@@ -589,6 +602,7 @@ export default function PublicKolCampaign() {
               {campaigns.map((c) => {
                 const matchedKol = kols.find((k) => k.username === c.kol_username);
                 const profileUrl = matchedKol ? firstProfileUrl(matchedKol) : null;
+                const postUrl = normalizeExternalUrl(c.post_link);
                 return (
                 <Card key={c.id} className="hub-card overflow-hidden">
                   <CardContent className="p-4 space-y-3">
@@ -635,9 +649,9 @@ export default function PublicKolCampaign() {
                         </Badge>
                       )}
 
-                      {c.post_link && (
+                      {postUrl && (
                         <a
-                          href={c.post_link}
+                          href={postUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 text-primary text-xs hover:underline ml-auto"
