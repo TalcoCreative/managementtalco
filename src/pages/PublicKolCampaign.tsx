@@ -146,6 +146,60 @@ const rateLabel = (r: RateCard) => {
   return `${p} ${c}`;
 };
 
+const PLATFORM_BASE: Record<string, string> = {
+  instagram: "https://instagram.com/",
+  tiktok: "https://tiktok.com/@",
+  youtube: "https://youtube.com/@",
+  twitter: "https://twitter.com/",
+  linkedin: "https://linkedin.com/in/",
+  threads: "https://threads.net/@",
+  facebook: "https://facebook.com/",
+};
+
+// Normalize DB-stored profile values (may be full URL, @handle, or bare username)
+// into an absolute https URL for the correct platform. Prevents relative
+// resolution against the current origin (e.g. ms.talco.id/@username).
+const normalizeProfileUrl = (
+  platform: keyof typeof PLATFORM_BASE | string,
+  raw: string | null | undefined,
+  fallbackUsername?: string | null
+): string | null => {
+  const base = PLATFORM_BASE[platform];
+  const val = (raw || "").trim();
+  if (val) {
+    if (/^https?:\/\//i.test(val)) return val;
+    if (val.startsWith("//")) return `https:${val}`;
+    // Strip leading @, slashes, and any accidental host prefix
+    const cleaned = val
+      .replace(/^https?:\/\//i, "")
+      .replace(/^\/+/, "")
+      .replace(/^@+/, "");
+    if (base) return `${base}${cleaned}`;
+    return `https://${cleaned}`;
+  }
+  if (fallbackUsername && base) {
+    return `${base}${fallbackUsername.replace(/^@+/, "")}`;
+  }
+  return null;
+};
+
+const firstProfileUrl = (k: { username?: string | null; links: Record<string, string | null> }): string | null => {
+  const order: (keyof typeof PLATFORM_BASE)[] = [
+    "instagram",
+    "tiktok",
+    "youtube",
+    "twitter",
+    "linkedin",
+    "threads",
+    "facebook",
+  ];
+  for (const p of order) {
+    const url = normalizeProfileUrl(p, k.links?.[p], k.username);
+    if (url) return url;
+  }
+  return null;
+};
+
 export default function PublicKolCampaign() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -346,18 +400,24 @@ export default function PublicKolCampaign() {
                 const yt = formatFollowers(k.followers.youtube);
                 const kolCamps = campaignsByKol.get(`${k.name}::${k.username}`) || [];
                 const rates = (k.rate_cards || []).filter((r) => r && (r.rate || r.rate === 0));
+                const igUrl = normalizeProfileUrl("instagram", k.links.instagram, k.username);
+                const ttUrl = normalizeProfileUrl("tiktok", k.links.tiktok, k.username);
+                const ytUrl = normalizeProfileUrl("youtube", k.links.youtube, k.username);
+                const twUrl = normalizeProfileUrl("twitter", k.links.twitter, k.username);
+                const liUrl = normalizeProfileUrl("linkedin", k.links.linkedin);
+                const thUrl = normalizeProfileUrl("threads", k.links.threads, k.username);
+                const primaryUrl = firstProfileUrl(k);
                 return (
                   <Card key={k.id} className="hub-card overflow-hidden">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-3">
                         <a
-                          href={k.links.instagram || k.links.tiktok || k.links.youtube || k.links.twitter || k.links.linkedin || k.links.threads || "#"}
+                          href={primaryUrl || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="min-w-0 group"
                           onClick={(e) => {
-                            const href = (e.currentTarget as HTMLAnchorElement).getAttribute("href");
-                            if (!href || href === "#") e.preventDefault();
+                            if (!primaryUrl) e.preventDefault();
                           }}
                         >
                           <p className="font-semibold truncate group-hover:text-primary transition-colors">
@@ -372,9 +432,9 @@ export default function PublicKolCampaign() {
 
                       <div className="flex flex-wrap gap-2 text-[11px]">
                         {ig && (
-                          k.links.instagram ? (
+                          igUrl ? (
                             <a
-                              href={k.links.instagram}
+                              href={igUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-700 dark:text-pink-300 hover:bg-pink-500/20 transition-colors"
@@ -388,9 +448,9 @@ export default function PublicKolCampaign() {
                           )
                         )}
                         {tt && (
-                          k.links.tiktok ? (
+                          ttUrl ? (
                             <a
-                              href={k.links.tiktok}
+                              href={ttUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors"
@@ -404,9 +464,9 @@ export default function PublicKolCampaign() {
                           )
                         )}
                         {yt && (
-                          k.links.youtube ? (
+                          ytUrl ? (
                             <a
-                              href={k.links.youtube}
+                              href={ytUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-500/20 transition-colors"
@@ -419,9 +479,9 @@ export default function PublicKolCampaign() {
                             </span>
                           )
                         )}
-                        {k.links.twitter && (
+                        {twUrl && (
                           <a
-                            href={k.links.twitter}
+                            href={twUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
@@ -429,9 +489,9 @@ export default function PublicKolCampaign() {
                             <ExternalLink className="h-3 w-3" /> Twitter
                           </a>
                         )}
-                        {k.links.linkedin && (
+                        {liUrl && (
                           <a
-                            href={k.links.linkedin}
+                            href={liUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 transition-colors"
@@ -439,9 +499,9 @@ export default function PublicKolCampaign() {
                             <ExternalLink className="h-3 w-3" /> LinkedIn
                           </a>
                         )}
-                        {k.links.threads && (
+                        {thUrl && (
                           <a
-                            href={k.links.threads}
+                            href={thUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10 hover:bg-foreground/20 transition-colors"
@@ -528,9 +588,7 @@ export default function PublicKolCampaign() {
             <div className="space-y-3">
               {campaigns.map((c) => {
                 const matchedKol = kols.find((k) => k.username === c.kol_username);
-                const profileUrl = matchedKol
-                  ? matchedKol.links.instagram || matchedKol.links.tiktok || matchedKol.links.youtube || matchedKol.links.twitter || matchedKol.links.linkedin || matchedKol.links.threads || null
-                  : null;
+                const profileUrl = matchedKol ? firstProfileUrl(matchedKol) : null;
                 return (
                 <Card key={c.id} className="hub-card overflow-hidden">
                   <CardContent className="p-4 space-y-3">
