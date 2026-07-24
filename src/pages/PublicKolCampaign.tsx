@@ -588,9 +588,7 @@ export default function PublicKolCampaign() {
             <div className="space-y-3">
               {campaigns.map((c) => {
                 const matchedKol = kols.find((k) => k.username === c.kol_username);
-                const profileUrl = matchedKol
-                  ? matchedKol.links.instagram || matchedKol.links.tiktok || matchedKol.links.youtube || matchedKol.links.twitter || matchedKol.links.linkedin || matchedKol.links.threads || null
-                  : null;
+                const profileUrl = matchedKol ? firstProfileUrl(matchedKol) : null;
                 return (
                 <Card key={c.id} className="hub-card overflow-hidden">
                   <CardContent className="p-4 space-y-3">
