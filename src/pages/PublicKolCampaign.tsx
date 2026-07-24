@@ -146,6 +146,60 @@ const rateLabel = (r: RateCard) => {
   return `${p} ${c}`;
 };
 
+const PLATFORM_BASE: Record<string, string> = {
+  instagram: "https://instagram.com/",
+  tiktok: "https://tiktok.com/@",
+  youtube: "https://youtube.com/@",
+  twitter: "https://twitter.com/",
+  linkedin: "https://linkedin.com/in/",
+  threads: "https://threads.net/@",
+  facebook: "https://facebook.com/",
+};
+
+// Normalize DB-stored profile values (may be full URL, @handle, or bare username)
+// into an absolute https URL for the correct platform. Prevents relative
+// resolution against the current origin (e.g. ms.talco.id/@username).
+const normalizeProfileUrl = (
+  platform: keyof typeof PLATFORM_BASE | string,
+  raw: string | null | undefined,
+  fallbackUsername?: string | null
+): string | null => {
+  const base = PLATFORM_BASE[platform];
+  const val = (raw || "").trim();
+  if (val) {
+    if (/^https?:\/\//i.test(val)) return val;
+    if (val.startsWith("//")) return `https:${val}`;
+    // Strip leading @, slashes, and any accidental host prefix
+    const cleaned = val
+      .replace(/^https?:\/\//i, "")
+      .replace(/^\/+/, "")
+      .replace(/^@+/, "");
+    if (base) return `${base}${cleaned}`;
+    return `https://${cleaned}`;
+  }
+  if (fallbackUsername && base) {
+    return `${base}${fallbackUsername.replace(/^@+/, "")}`;
+  }
+  return null;
+};
+
+const firstProfileUrl = (k: { username?: string | null; links: Record<string, string | null> }): string | null => {
+  const order: (keyof typeof PLATFORM_BASE)[] = [
+    "instagram",
+    "tiktok",
+    "youtube",
+    "twitter",
+    "linkedin",
+    "threads",
+    "facebook",
+  ];
+  for (const p of order) {
+    const url = normalizeProfileUrl(p, k.links?.[p], k.username);
+    if (url) return url;
+  }
+  return null;
+};
+
 export default function PublicKolCampaign() {
   const { clientSlug } = useParams<{ clientSlug: string }>();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
