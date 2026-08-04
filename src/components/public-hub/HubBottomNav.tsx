@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Home, LayoutDashboard, BarChart3, Camera, FileText,
-  Users, Video, Menu, ShoppingBag, Megaphone,
+  Users, Video, Menu, ShoppingBag, Megaphone, FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -30,6 +30,7 @@ interface HubBottomNavProps {
     hasShootings: boolean;
     hasMarketplace?: boolean;
     hasKolCampaigns?: boolean;
+    hasFiles?: boolean;
   };
 }
 
@@ -108,6 +109,14 @@ export function HubBottomNav({
       pathPrefix: "/kol-campaign/",
       getPath: () => `/kol-campaign/${dashboardSlug}`,
       enabled: !!availableFeatures.hasKolCampaigns && !!dashboardSlug,
+    },
+    {
+      title: "File/Sheets",
+      icon: FolderOpen,
+      gradient: "from-[hsl(200,70%,48%)] to-[hsl(190,65%,58%)]",
+      pathPrefix: "/files/",
+      getPath: () => `/files/${dashboardSlug}`,
+      enabled: !!availableFeatures.hasFiles && !!dashboardSlug,
     },
   ];
 

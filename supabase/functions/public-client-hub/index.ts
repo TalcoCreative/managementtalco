@@ -100,6 +100,13 @@ Deno.serve(async (req) => {
       .eq("client_id", client.id);
 
 
+    // Check for public file/sheet embeds
+    const { count: embedCount } = await supabase
+      .from("client_embeds")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", client.id)
+      .eq("is_active", true);
+
     // --- Fetch schedule items (upcoming/recent) ---
     const today = new Date().toISOString().split("T")[0];
 
@@ -190,6 +197,7 @@ Deno.serve(async (req) => {
       hasShootings: (shootingCount || 0) > 0,
       hasMarketplace: (marketplaceCount || 0) > 0,
       hasKolCampaigns: (kolCampaignCount || 0) > 0 || (kolAssignedCount || 0) > 0,
+      hasFiles: (embedCount || 0) > 0,
       schedule: scheduleItems,
 
       editorialPlans: editorialPlans || [],
