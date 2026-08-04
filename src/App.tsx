@@ -210,6 +210,9 @@ const App = () => (
           <Route path="/kol-campaign/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicKolCampaign />} />
           </Route>
+          <Route path="/files/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicClientFiles />} />
+          </Route>
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/data-deletion" element={<DataDeletion />} />
