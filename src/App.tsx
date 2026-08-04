@@ -74,6 +74,7 @@ import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
 import PublicMarketplace from "./pages/PublicMarketplace";
 import PublicKolCampaign from "./pages/PublicKolCampaign";
+import PublicClientFiles from "./pages/PublicClientFiles";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
