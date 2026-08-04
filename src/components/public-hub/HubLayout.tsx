@@ -74,6 +74,7 @@ export default function HubLayout() {
             hasShootings: !!hubData?.hasShootings,
             hasMarketplace: !!hubData?.hasMarketplace,
             hasKolCampaigns: !!hubData?.hasKolCampaigns,
+            hasFiles: !!hubData?.hasFiles,
           }}
         />
       )}

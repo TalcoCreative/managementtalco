@@ -20,6 +20,7 @@ import { ClientAccountSection } from "@/components/clients/sections/ClientAccoun
 import { ClientDocumentSection } from "@/components/clients/sections/ClientDocumentSection";
 import { ClientProjectTaskSection } from "@/components/clients/sections/ClientProjectTaskSection";
 import { ClientActivitySection } from "@/components/clients/sections/ClientActivitySection";
+import { ClientEmbedSection } from "@/components/clients/sections/ClientEmbedSection";
 
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -112,6 +113,7 @@ export default function ClientDetail() {
     { id: "accounts", title: "Data Akun Client", icon: Lock, component: ClientAccountSection, sensitive: true, superAdminOnly: true },
     { id: "documents", title: "Dokumen", icon: FolderOpen, component: ClientDocumentSection, superAdminOnly: true },
     { id: "projects", title: "Project & Task", icon: CheckCircle2, component: ClientProjectTaskSection, superAdminOnly: false },
+    { id: "embeds", title: "File / Sheets", icon: FolderOpen, component: ClientEmbedSection, superAdminOnly: false },
     { id: "activity", title: "Activity Log", icon: Activity, component: ClientActivitySection },
   ];
 

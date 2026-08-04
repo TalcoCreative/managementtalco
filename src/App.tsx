@@ -74,6 +74,7 @@ import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
 import PublicMarketplace from "./pages/PublicMarketplace";
 import PublicKolCampaign from "./pages/PublicKolCampaign";
+import PublicClientFiles from "./pages/PublicClientFiles";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
 import ProfileSettings from "./pages/ProfileSettings";
@@ -208,6 +209,9 @@ const App = () => (
           </Route>
           <Route path="/kol-campaign/:clientSlug" element={<HubLayout />}>
             <Route index element={<PublicKolCampaign />} />
+          </Route>
+          <Route path="/files/:clientSlug" element={<HubLayout />}>
+            <Route index element={<PublicClientFiles />} />
           </Route>
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
