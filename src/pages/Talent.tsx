@@ -9,11 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Sparkles, Link2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Sparkles, Link2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { TalentFormDialog, TALENT_CATEGORIES, type TalentRecord } from "@/components/talent/TalentFormDialog";
 import { TalentDetailDialog, formatRupiah } from "@/components/talent/TalentDetailDialog";
 import { TalentShareLinkPanel } from "@/components/talent/ShootingTalentSection";
+import { TalentRegistrationPanel } from "@/components/talent/TalentRegistrationPanel";
+
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 export default function Talent() {
@@ -74,8 +76,10 @@ export default function Talent() {
         <Tabs defaultValue="database">
           <TabsList>
             <TabsTrigger value="database">Database</TabsTrigger>
+            <TabsTrigger value="register"><ClipboardList className="mr-1 h-4 w-4" /> Form Pendaftaran</TabsTrigger>
             <TabsTrigger value="share"><Link2 className="mr-1 h-4 w-4" /> Link Publik</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="database" className="space-y-4">
             <Card>
@@ -172,7 +176,15 @@ export default function Talent() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="register">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Form Pendaftaran Talent (Publik)</CardTitle></CardHeader>
+              <CardContent><TalentRegistrationPanel /></CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="share">
+
             <Card>
               <CardHeader><CardTitle className="text-base">Katalog Talent Publik</CardTitle></CardHeader>
               <CardContent><TalentShareLinkPanel /></CardContent>
