@@ -9,6 +9,7 @@ import { MapPin, Users, DollarSign, Building2, Check, X, Pencil, Share2 } from "
 import { toast } from "sonner";
 import { EditShootingDialog } from "./EditShootingDialog";
 import { RelatedTasksSection } from "./RelatedTasksSection";
+import { ShootingTalentSection } from "@/components/talent/ShootingTalentSection";
 import { TaskDetailDialog } from "@/components/tasks/TaskDetailDialog";
 import { pushToShootingInvolved } from "@/lib/push-helpers";
 
