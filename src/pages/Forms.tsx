@@ -165,6 +165,20 @@ export default function Forms() {
         }));
         await supabase.from("form_questions").insert(templateQs);
       }
+
+      // Auto-create Talent template questions
+      if (newForm.form_template === "talent" && newFormData) {
+        const templateQs = TALENT_TEMPLATE_QUESTIONS.map((q, idx) => ({
+          form_id: newFormData.id,
+          label: q.label,
+          field_type: q.field_type,
+          is_required: q.is_required,
+          field_order: idx,
+          options: q.options,
+          placeholder: q.placeholder,
+        }));
+        await supabase.from("form_questions").insert(templateQs as any);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["general-forms"] });
