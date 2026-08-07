@@ -37,6 +37,7 @@ export const FEATURE_GROUPS: { label: string; features: { key: string; label: st
       { key: "form_builder", label: "Form Builder" },
       { key: "kol_database", label: "KOL Database" },
       { key: "kol_campaign", label: "KOL Campaign" },
+      { key: "talent", label: "Talent" },
       { key: "letters", label: "Surat" },
       { key: "invoices", label: "Invoices" },
     ],
