@@ -174,7 +174,15 @@ export default function Talent() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="register">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Form Pendaftaran Talent (Publik)</CardTitle></CardHeader>
+              <CardContent><TalentRegistrationPanel /></CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="share">
+
             <Card>
               <CardHeader><CardTitle className="text-base">Katalog Talent Publik</CardTitle></CardHeader>
               <CardContent><TalentShareLinkPanel /></CardContent>
