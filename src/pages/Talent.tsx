@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { TalentFormDialog, TALENT_CATEGORIES, type TalentRecord } from "@/components/talent/TalentFormDialog";
 import { TalentDetailDialog, formatRupiah } from "@/components/talent/TalentDetailDialog";
 import { TalentShareLinkPanel } from "@/components/talent/ShootingTalentSection";
+import { TalentRegistrationPanel } from "@/components/talent/TalentRegistrationPanel";
+
 import { DesktopRecommendBanner } from "@/components/shared/DesktopRecommendBanner";
 
 export default function Talent() {
