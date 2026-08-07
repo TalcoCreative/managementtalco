@@ -275,6 +275,18 @@ export default function PublicForm() {
           console.error("KOL auto-insert error:", kolErr);
         }
       }
+
+      if (form!.form_template === "talent") {
+        try {
+          const payloadAnswers: Record<string, any> = { ...answers };
+          Object.entries(fileUrls || {}).forEach(([qid, url]) => {
+            if (url) payloadAnswers[qid] = url;
+          });
+          await supabase.functions.invoke("talent-form-submit", { body: { form_id: form!.id, answers: payloadAnswers, questions: visibleQuestions } });
+        } catch (talentErr) {
+          console.error("Talent auto-insert error:", talentErr);
+        }
+      }
       setSubmitted(true);
     } catch (err: any) {
       toast.error("Gagal mengirim: " + err.message);
