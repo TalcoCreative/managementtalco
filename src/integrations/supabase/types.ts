@@ -6101,6 +6101,57 @@ export type Database = {
           },
         ]
       }
+      shooting_talents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fee: number | null
+          id: string
+          notes: string | null
+          role: string | null
+          shooting_id: string
+          talent_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fee?: number | null
+          id?: string
+          notes?: string | null
+          role?: string | null
+          shooting_id: string
+          talent_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fee?: number | null
+          id?: string
+          notes?: string | null
+          role?: string | null
+          shooting_id?: string
+          talent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shooting_talents_shooting_id_fkey"
+            columns: ["shooting_id"]
+            isOneToOne: false
+            referencedRelation: "shooting_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shooting_talents_talent_id_fkey"
+            columns: ["talent_id"]
+            isOneToOne: false
+            referencedRelation: "talents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shooting_tasks: {
         Row: {
           created_at: string
@@ -6889,6 +6940,135 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      talent_share_links: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          show_contact: boolean
+          show_rate: boolean
+          title: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          show_contact?: boolean
+          show_rate?: boolean
+          title?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          show_contact?: boolean
+          show_rate?: boolean
+          title?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      talents: {
+        Row: {
+          birth_date: string | null
+          category: string | null
+          chest_cm: number | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          gender: string | null
+          height_cm: number | null
+          id: string
+          instagram: string | null
+          name: string
+          notes: string | null
+          pants_size: string | null
+          phone: string | null
+          photo_url: string | null
+          photos: Json
+          portfolio_url: string | null
+          rate: number | null
+          shirt_size: string | null
+          shoe_size: string | null
+          source: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          birth_date?: string | null
+          category?: string | null
+          chest_cm?: number | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          gender?: string | null
+          height_cm?: number | null
+          id?: string
+          instagram?: string | null
+          name: string
+          notes?: string | null
+          pants_size?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          photos?: Json
+          portfolio_url?: string | null
+          rate?: number | null
+          shirt_size?: string | null
+          shoe_size?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          birth_date?: string | null
+          category?: string | null
+          chest_cm?: number | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          gender?: string | null
+          height_cm?: number | null
+          id?: string
+          instagram?: string | null
+          name?: string
+          notes?: string | null
+          pants_size?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          photos?: Json
+          portfolio_url?: string | null
+          rate?: number | null
+          shirt_size?: string | null
+          shoe_size?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
       }
       task_activities: {
         Row: {
