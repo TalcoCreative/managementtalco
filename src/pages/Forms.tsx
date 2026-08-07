@@ -414,15 +414,19 @@ export default function Forms() {
             </div>
             <div>
               <Label>Template</Label>
-              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: v === "kol" && !p.name ? "KOL Registration Form" : p.name }))}>
+              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: !p.name ? (v === "kol" ? "KOL Registration Form" : v === "talent" ? "Talent Registration Form" : p.name) : p.name }))}>
                 <SelectTrigger><SelectValue placeholder="Kosong (form kosong)" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Kosong (form kosong)</SelectItem>
                   <SelectItem value="kol">📊 KOL Database</SelectItem>
+                  <SelectItem value="talent">✨ Talent Database</SelectItem>
                 </SelectContent>
               </Select>
               {newForm.form_template === "kol" && (
                 <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke KOL Database</p>
+              )}
+              {newForm.form_template === "talent" && (
+                <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke Talent Database</p>
               )}
             </div>
             <div>
