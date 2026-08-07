@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Sparkles, Link2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Sparkles, Link2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { TalentFormDialog, TALENT_CATEGORIES, type TalentRecord } from "@/components/talent/TalentFormDialog";
 import { TalentDetailDialog, formatRupiah } from "@/components/talent/TalentDetailDialog";
