@@ -125,6 +125,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
     items: [
       { title: "KOL Database", url: "/kol-database", icon: Star, featureKey: "kol_database" },
       { title: "KOL Campaign", url: "/kol-campaign", icon: Megaphone, featureKey: "kol_campaign" },
+      { title: "Talent", url: "/talent", icon: Sparkles, featureKey: "talent" },
     ],
   },
   {
