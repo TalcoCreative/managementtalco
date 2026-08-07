@@ -335,6 +335,9 @@ export default function Forms() {
                           {(form as any).form_template === "kol" && (
                             <Badge variant="outline" className="text-xs border-primary text-primary">KOL</Badge>
                           )}
+                          {(form as any).form_template === "talent" && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">Talent</Badge>
+                          )}
                         </div>
                         {form.description && <p className="text-xs text-muted-foreground line-clamp-1">{form.description}</p>}
                       </div>
