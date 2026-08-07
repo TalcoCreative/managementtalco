@@ -124,6 +124,7 @@ export const ROUTE_FEATURE_MAP: Record<string, string> = {
   "/forms": "form_builder",
   "/kol-database": "kol_database",
   "/kol-campaign": "kol_campaign",
+  "/talent": "talent",
   "/letters": "letters",
   "/invoices": "invoices",
   "/settings/invoice-templates": "invoice_templates",
