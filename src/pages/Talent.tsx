@@ -74,8 +74,10 @@ export default function Talent() {
         <Tabs defaultValue="database">
           <TabsList>
             <TabsTrigger value="database">Database</TabsTrigger>
+            <TabsTrigger value="register"><ClipboardList className="mr-1 h-4 w-4" /> Form Pendaftaran</TabsTrigger>
             <TabsTrigger value="share"><Link2 className="mr-1 h-4 w-4" /> Link Publik</TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="database" className="space-y-4">
             <Card>
