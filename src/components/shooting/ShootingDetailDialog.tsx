@@ -352,6 +352,11 @@ export function ShootingDetailDialog({ shootingId, open, onOpenChange }: Shootin
             </div>
           )}
 
+          {/* Talent */}
+          <div className="pt-4 border-t">
+            <ShootingTalentSection shootingId={shootingId!} />
+          </div>
+
           {/* Related Tasks */}
           <div className="pt-4 border-t">
             <RelatedTasksSection
