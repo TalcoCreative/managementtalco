@@ -114,6 +114,28 @@ export default function Forms() {
     { label: "Catatan", field_type: "long_text", is_required: false, placeholder: "Info tambahan..." },
   ];
 
+  const TALENT_TEMPLATE_QUESTIONS = [
+    { label: "Nama Lengkap", field_type: "short_text", is_required: true, placeholder: "Nama lengkap talent", options: null },
+    { label: "Nomor HP / WhatsApp", field_type: "short_text", is_required: false, placeholder: "08xxxxxxxxxx", options: null },
+    { label: "Email", field_type: "email", is_required: false, placeholder: "email@domain.com", options: null },
+    { label: "Kota / Domisili", field_type: "short_text", is_required: false, placeholder: "Jakarta", options: null },
+    { label: "Gender", field_type: "dropdown", is_required: false, placeholder: null, options: ["Pria", "Wanita", "Lainnya"] },
+    { label: "Tanggal Lahir", field_type: "date", is_required: false, placeholder: null, options: null },
+    { label: "Instagram", field_type: "short_text", is_required: false, placeholder: "@username", options: null },
+    { label: "Link Portfolio", field_type: "short_text", is_required: false, placeholder: "https://", options: null },
+    { label: "Foto Talent", field_type: "file", is_required: false, placeholder: null, options: null },
+    { label: "Kategori Talent", field_type: "dropdown", is_required: false, placeholder: null, options: ["Model", "Talent Iklan", "Host / MC", "Dancer", "Musician", "Voice Over", "Extras", "Other"] },
+    { label: "Tinggi Badan (cm)", field_type: "number", is_required: false, placeholder: "170", options: null },
+    { label: "Berat Badan (kg)", field_type: "number", is_required: false, placeholder: "60", options: null },
+    { label: "Ukuran Baju", field_type: "dropdown", is_required: false, placeholder: null, options: ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] },
+    { label: "Ukuran Celana", field_type: "short_text", is_required: false, placeholder: "30", options: null },
+    { label: "Ukuran Sepatu", field_type: "short_text", is_required: false, placeholder: "42", options: null },
+    { label: "Lingkar Dada (cm)", field_type: "number", is_required: false, placeholder: "90", options: null },
+    { label: "Lingkar Pinggang (cm)", field_type: "number", is_required: false, placeholder: "70", options: null },
+    { label: "Rate / Harga (Rp)", field_type: "number", is_required: false, placeholder: "Rp per job", options: null },
+    { label: "Catatan", field_type: "long_text", is_required: false, placeholder: "Pengalaman, ketersediaan, dll...", options: null },
+  ];
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const { data: session } = await supabase.auth.getSession();
@@ -142,6 +164,20 @@ export default function Forms() {
           placeholder: q.placeholder,
         }));
         await supabase.from("form_questions").insert(templateQs);
+      }
+
+      // Auto-create Talent template questions
+      if (newForm.form_template === "talent" && newFormData) {
+        const templateQs = TALENT_TEMPLATE_QUESTIONS.map((q, idx) => ({
+          form_id: newFormData.id,
+          label: q.label,
+          field_type: q.field_type,
+          is_required: q.is_required,
+          field_order: idx,
+          options: q.options,
+          placeholder: q.placeholder,
+        }));
+        await supabase.from("form_questions").insert(templateQs as any);
       }
     },
     onSuccess: () => {
@@ -299,6 +335,9 @@ export default function Forms() {
                           {(form as any).form_template === "kol" && (
                             <Badge variant="outline" className="text-xs border-primary text-primary">KOL</Badge>
                           )}
+                          {(form as any).form_template === "talent" && (
+                            <Badge variant="outline" className="text-xs border-primary text-primary">Talent</Badge>
+                          )}
                         </div>
                         {form.description && <p className="text-xs text-muted-foreground line-clamp-1">{form.description}</p>}
                       </div>
@@ -378,15 +417,19 @@ export default function Forms() {
             </div>
             <div>
               <Label>Template</Label>
-              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: v === "kol" && !p.name ? "KOL Registration Form" : p.name }))}>
+              <Select value={newForm.form_template} onValueChange={v => setNewForm(p => ({ ...p, form_template: v, name: !p.name ? (v === "kol" ? "KOL Registration Form" : v === "talent" ? "Talent Registration Form" : p.name) : p.name }))}>
                 <SelectTrigger><SelectValue placeholder="Kosong (form kosong)" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Kosong (form kosong)</SelectItem>
                   <SelectItem value="kol">📊 KOL Database</SelectItem>
+                  <SelectItem value="talent">✨ Talent Database</SelectItem>
                 </SelectContent>
               </Select>
               {newForm.form_template === "kol" && (
                 <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke KOL Database</p>
+              )}
+              {newForm.form_template === "talent" && (
+                <p className="text-xs text-muted-foreground mt-1">Respons otomatis masuk ke Talent Database</p>
               )}
             </div>
             <div>

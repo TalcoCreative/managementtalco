@@ -74,6 +74,8 @@ import PublicMeetingList from "./pages/PublicMeetingList";
 import PublicShootingList from "./pages/PublicShootingList";
 import PublicMarketplace from "./pages/PublicMarketplace";
 import PublicKolCampaign from "./pages/PublicKolCampaign";
+import Talent from "./pages/Talent";
+import PublicTalentList from "./pages/PublicTalentList";
 import PublicClientFiles from "./pages/PublicClientFiles";
 import RoleManagement from "./pages/RoleManagement";
 import SystemSettings from "./pages/SystemSettings";
@@ -155,6 +157,8 @@ const App = () => (
           <Route path="/settings/invoice-templates" element={<ProtectedRoute><InvoiceTemplates /></ProtectedRoute>} />
           <Route path="/kol-database" element={<ProtectedRoute><KolDatabase /></ProtectedRoute>} />
           <Route path="/kol-campaign" element={<ProtectedRoute><KolCampaign /></ProtectedRoute>} />
+          <Route path="/talent" element={<ProtectedRoute><Talent /></ProtectedRoute>} />
+          <Route path="/talent-list/:token" element={<PublicTalentList />} />
           <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />
           <Route path="/event/:eventId" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
           <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
