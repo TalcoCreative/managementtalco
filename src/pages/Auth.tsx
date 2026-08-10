@@ -9,10 +9,8 @@ import { toast } from "sonner";
 import { Session } from "@supabase/supabase-js";
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
@@ -25,10 +23,10 @@ export default function Auth() {
         .select("status")
         .eq("id", sess.user.id)
         .maybeSingle();
-      if (prof?.status === "non_active") {
+      if (!prof || prof.status === "non_active") {
         await supabase.auth.signOut();
         toast.error(
-          "Akun Anda sudah dinonaktifkan. Silakan menghubungi management untuk informasi lebih lanjut."
+          "Akun Anda tidak terdaftar atau sudah dinonaktifkan. Silakan menghubungi management."
         );
         return;
       }
@@ -59,44 +57,28 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
 
-        // Check if account is deactivated
-        if (signInData.user) {
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("status")
-            .eq("id", signInData.user.id)
-            .maybeSingle();
-          if (prof?.status === "non_active") {
-            await supabase.auth.signOut();
-            toast.error(
-              "Akun Anda sudah dinonaktifkan. Silakan menghubungi management untuk informasi lebih lanjut."
-            );
-            setLoading(false);
-            return;
-          }
+      if (signInData.user) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("status")
+          .eq("id", signInData.user.id)
+          .maybeSingle();
+        if (!prof || prof.status === "non_active") {
+          await supabase.auth.signOut();
+          toast.error(
+            "Akun Anda tidak terdaftar atau sudah dinonaktifkan. Silakan menghubungi management."
+          );
+          setLoading(false);
+          return;
         }
-        toast.success("Logged in successfully!");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
-            emailRedirectTo: `${window.location.origin}/clients`,
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created successfully!");
       }
+      toast.success("Logged in successfully!");
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
     } finally {
@@ -115,23 +97,11 @@ export default function Auth() {
             Management System
           </CardDescription>
           <p className="text-sm text-muted-foreground mt-2">
-            {isLogin ? "Sign in to your account" : "Create a new account"}
+            Sign in to your account
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -154,18 +124,12 @@ export default function Auth() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
+              {loading ? "Loading..." : "Sign In"}
             </Button>
           </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-primary"
-            >
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-            </button>
-          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Akun hanya dibuat oleh admin. Hubungi management jika belum punya akses.
+          </p>
         </CardContent>
       </Card>
     </div>
