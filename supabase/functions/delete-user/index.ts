@@ -244,15 +244,27 @@ serve(async (req) => {
       console.error("Error deleting profile:", profileError);
     }
 
-    // Finally, delete user from auth
+    // Finally, delete user from auth (idempotent: ignore already-deleted users)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
-    if (deleteError) {
+    if (deleteError && (deleteError as any).code !== "user_not_found" && (deleteError as any).status !== 404) {
       console.error("Error deleting user from auth:", deleteError);
       throw deleteError;
     }
 
+    // Ensure the profile row is gone even if auth user was already removed
+    const { error: profileCleanupError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+
+    if (profileCleanupError) {
+      console.error("Error cleaning up profile:", profileCleanupError);
+      throw profileCleanupError;
+    }
+
     console.log("User deleted successfully:", userId);
+
 
     return new Response(
       JSON.stringify({ success: true, message: "User deleted successfully" }),
