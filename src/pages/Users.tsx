@@ -20,6 +20,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Users() {
   const { data: positions } = usePositions();
+  const { canView, isSuperAdmin: permSuperAdmin, isLoading: permLoading } = usePermissions();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
