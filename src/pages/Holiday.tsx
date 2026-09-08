@@ -105,7 +105,7 @@ const Holiday = () => {
 
   const canAccess = userRoles?.some((r) => 
     r === "super_admin" || r === "hr"
-  );
+  ) || permSuperAdmin || canView("holiday_calendar");
 
   // Fetch holidays
   const { data: holidays, isLoading } = useQuery({

@@ -118,7 +118,8 @@ export default function SalesDashboard() {
     },
   });
 
-  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing')
+    || permSuperAdmin || canView('sales_analytics');
 
   // Fetch all prospects
   const { data: prospects, isLoading: prospectsLoading } = useQuery({

@@ -70,10 +70,11 @@ export default function Prospects() {
     },
   });
 
-  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing') || userRoles?.includes('sales');
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing') || userRoles?.includes('sales')
+    || permSuperAdmin || canView('prospects');
 
   // Redirect if no access
-  if (!rolesLoading && !canAccessSales) {
+  if (!rolesLoading && !permLoading && !canAccessSales) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-[60vh]">

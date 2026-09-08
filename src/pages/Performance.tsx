@@ -12,8 +12,10 @@ import { IndividualPerformance } from "@/components/performance/IndividualPerfor
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Performance() {
+  const { canView, isSuperAdmin: permSuperAdmin, isLoading: permLoading } = usePermissions();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -41,7 +43,8 @@ export default function Performance() {
 
   const canAccess = userRoles?.includes('super_admin') || 
                     userRoles?.includes('hr') || 
-                    userRoles?.includes('finance');
+                    userRoles?.includes('finance') ||
+                    permSuperAdmin || canView('performance');
 
   // Fetch all data
   const { data: profiles = [] } = useQuery({
