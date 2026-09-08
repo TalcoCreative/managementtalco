@@ -16,6 +16,7 @@ import { DeleteUserDialog } from "@/components/users/DeleteUserDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { usePositions, getPositionColor, getRoleLabel } from "@/hooks/usePositions";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Users() {
   const { data: positions } = usePositions();
@@ -98,16 +99,15 @@ export default function Users() {
     },
   });
 
-  const isSuperAdmin = userRoles?.includes("super_admin");
+  const isSuperAdmin = userRoles?.includes("super_admin") || permSuperAdmin;
   const isHR = userRoles?.includes("hr");
-  const canManageUsers = isSuperAdmin || isHR;
+  const canManageUsers = isSuperAdmin || isHR || canView("team");
 
-  // Redirect non-HR/super_admin users
+  // Redirect users without access (respect Role & Access permissions)
   useEffect(() => {
-    if (userRoles && userRoles.length > 0 && !canManageUsers) {
-      navigate("/");
-    }
-  }, [userRoles, canManageUsers, navigate]);
+    if (permLoading || !userRoles) return;
+    if (!canManageUsers) navigate("/");
+  }, [userRoles, canManageUsers, permLoading, navigate]);
 
   const getRoleColor = (role: string) => {
     if (role === "super_admin") return "bg-primary";
