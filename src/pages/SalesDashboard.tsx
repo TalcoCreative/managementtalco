@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ type DateRangePreset = "this_month" | "last_month" | "last_3_months" | "last_6_m
 type CompareOption = "previous_period" | "custom" | "none";
 
 export default function SalesDashboard() {
+  const { canView, isSuperAdmin: permSuperAdmin, isLoading: permLoading } = usePermissions();
   const navigate = useNavigate();
   const [datePreset, setDatePreset] = useState<DateRangePreset>("this_month");
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -118,7 +120,8 @@ export default function SalesDashboard() {
     },
   });
 
-  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing');
+  const canAccessSales = userRoles?.includes('super_admin') || userRoles?.includes('marketing')
+    || permSuperAdmin || canView('sales_analytics');
 
   // Fetch all prospects
   const { data: prospects, isLoading: prospectsLoading } = useQuery({

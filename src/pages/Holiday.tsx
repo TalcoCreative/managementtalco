@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +74,7 @@ const holidayTypeIcons: Record<string, typeof Calendar> = {
 };
 
 const Holiday = () => {
+  const { canView, isSuperAdmin: permSuperAdmin } = usePermissions();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,7 +107,7 @@ const Holiday = () => {
 
   const canAccess = userRoles?.some((r) => 
     r === "super_admin" || r === "hr"
-  );
+  ) || permSuperAdmin || canView("holiday_calendar");
 
   // Fetch holidays
   const { data: holidays, isLoading } = useQuery({
