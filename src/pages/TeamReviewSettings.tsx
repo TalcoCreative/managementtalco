@@ -16,7 +16,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useTeamReviewSettings, useTeamReviewQuestions } from "@/hooks/useTeamReview";
 
 export default function TeamReviewSettings() {
-  const { isSuperAdmin, isLoading: permsLoading } = usePermissions();
+  const { isSuperAdmin, canView, isLoading: permsLoading } = usePermissions();
   const qc = useQueryClient();
   const { data: settings, isLoading: setLoading } = useTeamReviewSettings();
   const { data: questions, isLoading: qLoading } = useTeamReviewQuestions(false);
@@ -46,7 +46,7 @@ export default function TeamReviewSettings() {
       </AppLayout>
     );
   }
-  if (!isSuperAdmin && !isHr) return <Navigate to="/" replace />;
+  if (!isSuperAdmin && !isHr && !canView("team_review_admin")) return <Navigate to="/" replace />;
 
   const saveSettings = async (patch: Partial<{ enabled: boolean; open_day: number; deadline_day: number; require_before_clockin: boolean }>) => {
     if (!settings) return;
