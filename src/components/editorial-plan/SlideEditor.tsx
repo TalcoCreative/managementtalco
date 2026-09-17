@@ -43,6 +43,7 @@ import { SlideStatusBadge } from "./SlideStatusBadge";
 import { cn } from "@/lib/utils";
 import { ImageLightbox } from "./ImageLightbox";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { compressUpload } from "@/lib/file-compression";
 
 interface Slide {
   id: string;
@@ -398,7 +399,8 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
     try {
       const uploadedUrls: string[] = [];
 
-      for (const file of Array.from(files)) {
+      for (const rawFile of Array.from(files)) {
+        const file = await compressUpload(rawFile);
         const fileExt = file.name.split(".").pop();
         const fileName = `${epId}/${slide.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 

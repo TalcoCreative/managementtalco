@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { compressUpload } from "@/lib/file-compression";
 
 interface ClientContractSectionProps {
   clientId: string;
@@ -70,12 +71,13 @@ export function ClientContractSection({ clientId, client, canEdit }: ClientContr
       let fileName = null;
 
       if (file) {
-        const fileExt = file.name.split(".").pop();
+        const compressed = await compressUpload(file);
+        const fileExt = compressed.name.split(".").pop();
         const filePath = `${clientId}/${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from("client-files")
-          .upload(filePath, file);
+          .upload(filePath, compressed);
 
         if (uploadError) throw uploadError;
 

@@ -7,6 +7,7 @@ import { FormFieldRenderer } from "@/components/forms/FormFieldRenderer";
 import {
   isDisplayBlock, isQuestionVisible, type LogicRule,
 } from "@/lib/form-fields";
+import { compressUpload } from "@/lib/file-compression";
 
 interface FormData {
   id: string;
@@ -224,7 +225,8 @@ export default function PublicForm() {
       if (rErr) throw rErr;
 
       const fileUrls: Record<string, string> = {};
-      for (const [qId, file] of Object.entries(files)) {
+      for (const [qId, rawFile] of Object.entries(files)) {
+        const file = await compressUpload(rawFile);
         const ext = file.name.split(".").pop();
         const path = `${form!.id}/${responseId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage.from("form-uploads").upload(path, file);

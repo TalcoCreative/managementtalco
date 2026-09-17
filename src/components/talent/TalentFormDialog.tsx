@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { compressUpload } from "@/lib/file-compression";
 
 export const TALENT_CATEGORIES = [
   "Model",
@@ -120,7 +121,8 @@ export function TalentFormDialog({ open, onOpenChange, talent }: Props) {
     setUploading(true);
     try {
       const urls: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const rawFile of Array.from(files)) {
+        const file = await compressUpload(rawFile);
         const ext = file.name.split(".").pop() || "jpg";
         const path = `talents/${crypto.randomUUID()}.${ext}`;
         const { error } = await supabase.storage.from("form-uploads").upload(path, file, { upsert: true });

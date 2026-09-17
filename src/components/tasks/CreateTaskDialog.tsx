@@ -18,6 +18,7 @@ import { MultiUserSelect } from "@/components/tasks/MultiUserSelect";
 import { sendTaskAssignmentEmail, getUserEmailById } from "@/lib/email-notifications";
 import { sendWebPush } from "@/lib/push-utils";
 import { sendWhatsApp } from "@/lib/whatsapp-utils";
+import { compressUpload } from "@/lib/file-compression";
 
 
 interface LinkAttachment {
@@ -107,7 +108,8 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
   };
 
   const uploadFiles = async (taskId: string, userId: string) => {
-    const uploadPromises = files.map(async (file) => {
+    const uploadPromises = files.map(async (rawFile) => {
+      const file = await compressUpload(rawFile);
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${taskId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       

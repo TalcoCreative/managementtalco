@@ -16,6 +16,7 @@ import {
   Upload, Trash2, Building2, PenTool, FileText, Palette, 
   Type, Layout, Save, Eye, Settings2 
 } from "lucide-react";
+import { compressUpload } from "@/lib/file-compression";
 
 interface PayrollPdfSettingsDialogProps {
   open: boolean;
@@ -144,9 +145,10 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
     }
   }, [dbSettings]);
 
-  const uploadFile = async (file: File, type: "logo" | "signature" | "stamp") => {
+  const uploadFile = async (rawFile: File, type: "logo" | "signature" | "stamp") => {
     try {
       setUploading(true);
+      const file = await compressUpload(rawFile);
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");

@@ -13,7 +13,7 @@ import { TeamReviewOverlay } from "@/components/team-review/TeamReviewOverlay";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, BarChart, Bar, CartesianGrid } from "recharts";
 
 export default function TeamReview() {
-  const { isSuperAdmin, isLoading } = usePermissions();
+  const { isSuperAdmin, canView, isLoading } = usePermissions();
   const { data: isHr, isLoading: hrLoading } = useQuery({
     queryKey: ["check-hr-role"],
     queryFn: async () => {
@@ -36,7 +36,7 @@ export default function TeamReview() {
 
   return (
     <AppLayout>
-      <Dashboard canSeeAnalytics={!!isSuperAdmin || !!isHr} />
+      <Dashboard canSeeAnalytics={!!isSuperAdmin || !!isHr || canView("team_review_admin") || canView("hr_analytics")} />
     </AppLayout>
   );
 }
