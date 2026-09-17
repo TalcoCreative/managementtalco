@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Upload, X } from "lucide-react";
+import { compressUpload } from "@/lib/file-compression";
 
 interface CreateClientDialogProps {
   open: boolean;
@@ -56,9 +57,10 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
 
   const uploadLogo = async (clientId: string): Promise<string | null> => {
     if (!logoFile) return null;
-    const ext = logoFile.name.split(".").pop() || "png";
+    const compressed = await compressUpload(logoFile);
+    const ext = compressed.name.split(".").pop() || "png";
     const path = `${clientId}/logo.${ext}`;
-    const { error } = await supabase.storage.from("client-logos").upload(path, logoFile, { upsert: true });
+    const { error } = await supabase.storage.from("client-logos").upload(path, compressed, { upsert: true });
     if (error) throw error;
     const { data: urlData } = supabase.storage.from("client-logos").getPublicUrl(path);
     return urlData.publicUrl;

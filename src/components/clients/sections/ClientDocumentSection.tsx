@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { compressUpload } from "@/lib/file-compression";
 
 interface ClientDocumentSectionProps {
   clientId: string;
@@ -79,12 +80,13 @@ export function ClientDocumentSection({ clientId, client, canEdit }: ClientDocum
       let fileName = null;
 
       if (file) {
-        const fileExt = file.name.split(".").pop();
+        const compressed = await compressUpload(file);
+        const fileExt = compressed.name.split(".").pop();
         const filePath = `${clientId}/documents/${Date.now()}.${fileExt}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from("client-files")
-          .upload(filePath, file);
+          .upload(filePath, compressed);
 
         if (uploadError) throw uploadError;
 
@@ -93,7 +95,7 @@ export function ClientDocumentSection({ clientId, client, canEdit }: ClientDocum
           .getPublicUrl(filePath);
 
         fileUrl = urlData.publicUrl;
-        fileName = file.name;
+        fileName = compressed.name;
       }
 
       // Check for existing documents with same type and title for versioning

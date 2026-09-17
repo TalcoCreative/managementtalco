@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Upload, Instagram, Facebook, Send, Clock, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
+import { compressUploads } from "@/lib/file-compression";
 
 const platforms = [
   { value: "instagram", label: "Instagram", icon: Instagram },
@@ -134,7 +135,7 @@ export function SocialMediaPostForm() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setMediaFiles(Array.from(e.target.files));
+      compressUploads(Array.from(e.target.files)).then(setMediaFiles);
     }
   };
 

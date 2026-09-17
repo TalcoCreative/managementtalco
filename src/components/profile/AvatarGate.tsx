@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload, UserCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { compressUpload } from "@/lib/file-compression";
 
 interface AvatarGateProps {
   userId: string | undefined;
@@ -46,11 +47,12 @@ export function AvatarGate({ userId }: AvatarGateProps) {
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const compressed = await compressUpload(file, { maxDimension: 720, minSize: 40 * 1024 });
+      const ext = compressed.name.split(".").pop() || "jpg";
       const path = `avatars/${userId}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("company-assets")
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, compressed, { upsert: true, contentType: compressed.type });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("company-assets").getPublicUrl(path);
       const { error: updErr } = await supabase

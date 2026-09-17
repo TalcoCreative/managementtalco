@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Upload, CheckCircle, Star, Briefcase } from "lucide-react";
+import { compressUpload } from "@/lib/file-compression";
 
 interface FormField {
   id: string;
@@ -85,8 +86,9 @@ export default function PublicApplyForm() {
 
       // Upload files first
       const uploadedFiles: Record<string, string> = {};
-      for (const [fieldId, file] of Object.entries(fileUploads)) {
-        if (file) {
+      for (const [fieldId, rawFile] of Object.entries(fileUploads)) {
+        if (rawFile) {
+          const file = await compressUpload(rawFile);
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `recruitment/${form.id}/${fileName}`;

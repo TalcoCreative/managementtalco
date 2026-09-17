@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Upload, Trash2, Building2, PenTool } from "lucide-react";
+import { compressUpload } from "@/lib/file-compression";
 
 interface CompanySettingsDialogProps {
   open: boolean;
@@ -41,9 +42,10 @@ export function CompanySettingsDialog({ open, onOpenChange }: CompanySettingsDia
     }
   }, [settings]);
 
-  const uploadFile = async (file: File, type: "logo" | "signature") => {
+  const uploadFile = async (rawFile: File, type: "logo" | "signature") => {
     try {
       setUploading(true);
+      const file = await compressUpload(rawFile);
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");

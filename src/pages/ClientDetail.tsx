@@ -21,6 +21,7 @@ import { ClientDocumentSection } from "@/components/clients/sections/ClientDocum
 import { ClientProjectTaskSection } from "@/components/clients/sections/ClientProjectTaskSection";
 import { ClientActivitySection } from "@/components/clients/sections/ClientActivitySection";
 import { ClientEmbedSection } from "@/components/clients/sections/ClientEmbedSection";
+import { compressUpload } from "@/lib/file-compression";
 
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -150,10 +151,11 @@ export default function ClientDetail() {
                     className="hidden"
                     disabled={uploadingLogo}
                     onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
+                      const rawFile = e.target.files?.[0];
+                      if (!rawFile) return;
                       setUploadingLogo(true);
                       try {
+                        const file = await compressUpload(rawFile);
                         const ext = file.name.split(".").pop();
                         const path = `${clientId}/${Date.now()}.${ext}`;
                         const { error: uploadError } = await supabase.storage

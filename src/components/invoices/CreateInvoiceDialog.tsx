@@ -21,6 +21,7 @@ import { useInvoiceTemplates } from "@/hooks/useInvoiceTemplates";
 import { InvoiceTemplate, InvoiceItem, formatIDR, PaymentMethod } from "@/lib/invoice-types";
 import { Plus, Trash2, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { compressUpload } from "@/lib/file-compression";
 
 interface Props {
   open: boolean;
@@ -121,9 +122,10 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
     });
   };
 
-  const handleLogoUpload = async (file: File) => {
+  const handleLogoUpload = async (rawFile: File) => {
     setUploadingLogo(true);
     try {
+      const file = await compressUpload(rawFile);
       const path = `invoice-logos/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
       if (error) throw error;
