@@ -151,11 +151,17 @@ export function ClockInOut() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
+    // Cap the capture resolution so attendance photos stay lightweight
+    const MAX_DIM = 900;
+    const srcW = videoElement.videoWidth;
+    const srcH = videoElement.videoHeight;
+    const scale = Math.min(1, MAX_DIM / Math.max(srcW || 1, srcH || 1));
+    canvas.width = Math.max(1, Math.round(srcW * scale));
+    canvas.height = Math.max(1, Math.round(srcH * scale));
 
-    // Draw the video frame
-    ctx.drawImage(videoElement, 0, 0);
+    // Draw the video frame (scaled)
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
     // Create timestamp text
     const now = new Date();
@@ -212,7 +218,7 @@ export function ClockInOut() {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(labelText, labelX, labelY);
 
-    return canvas.toDataURL('image/jpeg', 0.85);
+    return canvas.toDataURL('image/jpeg', 0.6);
   }, []);
 
   const startCamera = async (forClockIn: boolean) => {

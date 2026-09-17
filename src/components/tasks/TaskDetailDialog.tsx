@@ -24,6 +24,7 @@ import { RelatedShootingSection } from "@/components/tasks/RelatedShootingSectio
 import { ShootingDetailDialog } from "@/components/shooting/ShootingDetailDialog";
 import { SubTasksSection } from "@/components/tasks/SubTasksSection";
 import { TaskChecklistSection } from "@/components/tasks/TaskChecklistSection";
+import { compressUpload } from "@/lib/file-compression";
 
 interface TaskDetailDialogProps {
   taskId: string | null;
@@ -515,8 +516,9 @@ export function TaskDetailDialog({ taskId, open, onOpenChange }: TaskDetailDialo
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !taskId) return;
+    const rawFile = event.target.files?.[0];
+    if (!rawFile || !taskId) return;
+    const file = await compressUpload(rawFile);
 
     if (file.size > 20 * 1024 * 1024) {
       toast.error("File size must be less than 20MB");
