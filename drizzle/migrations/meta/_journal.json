@@ -8,6 +8,20 @@
       "when": 1794883138123,
       "tag": "0000_storage_drive_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794883903062,
+      "tag": "0001_drive_backup_log_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794883915919,
+      "tag": "0002_drive_backup_status",
+      "breakpoints": true
     }
   ]
 }

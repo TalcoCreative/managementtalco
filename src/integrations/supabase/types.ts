@@ -6675,7 +6675,9 @@ export type Database = {
       }
       storage_drive_map: {
         Row: {
+          applied: boolean
           bucket: string
+          cloud_deleted: boolean
           created_at: string
           drive_id: string | null
           drive_url: string | null
@@ -6683,7 +6685,9 @@ export type Database = {
           path: string
         }
         Insert: {
+          applied?: boolean
           bucket: string
+          cloud_deleted?: boolean
           created_at?: string
           drive_id?: string | null
           drive_url?: string | null
@@ -6691,7 +6695,9 @@ export type Database = {
           path: string
         }
         Update: {
+          applied?: boolean
           bucket?: string
+          cloud_deleted?: boolean
           created_at?: string
           drive_id?: string | null
           drive_url?: string | null
@@ -7935,6 +7941,7 @@ export type Database = {
         Args: { _product_id: string; _user_id: string }
         Returns: number
       }
+      storage_drive_status: { Args: never; Returns: Json }
       storage_objects_pending: {
         Args: { _limit: number }
         Returns: {

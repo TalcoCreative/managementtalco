@@ -19,23 +19,28 @@ Deno.serve(async (req) => {
   const limit = Math.min(Math.max(Number(body.limit) || 10, 1), 40);
 
   if (action === "status") {
-    const { data: pending } = await admin.rpc("storage_objects_pending", { _limit: 10000 });
-    const { count: done } = await admin.from("storage_drive_map").select("*", { count: "exact", head: true }).not("drive_url", "is", null);
-    const { count: failed } = await admin.from("storage_drive_map").select("*", { count: "exact", head: true }).not("error", "is", null);
-    return json({ pending: pending?.length ?? 0, done, failed });
+    const { data, error } = await admin.rpc("storage_drive_status");
+    return error ? json({ error: error.message }, 500) : json(data);
+  }
+  if (action === "retry_failed") {
+    await admin.from("storage_drive_map").delete().is("drive_url", null).not("error", "is", null);
+    return json({ ok: true });
   }
   if (action === "apply") {
     const { data, error } = await admin.rpc("apply_storage_drive_map");
     return error ? json({ error: error.message }, 500) : json({ updated: data });
   }
   if (action === "cleanup") {
-    const { data: rows } = await admin.from("storage_drive_map").select("bucket,path").not("drive_url", "is", null).limit(limit * 25);
+    const { data: rows } = await admin.from("storage_drive_map").select("bucket,path")
+      .not("drive_url", "is", null).eq("applied", true).eq("cloud_deleted", false).limit(100);
+    let removed = 0;
     const byBucket: Record<string, string[]> = {};
     for (const r of rows ?? []) (byBucket[r.bucket] ??= []).push(r.path);
-    let removed = 0;
     for (const [b, paths] of Object.entries(byBucket)) {
-      const { data } = await admin.storage.from(b).remove(paths);
-      removed += data?.length ?? 0;
+      const { error } = await admin.storage.from(b).remove(paths);
+      if (error) return json({ error: error.message }, 500);
+      for (const p of paths) await admin.from("storage_drive_map").update({ cloud_deleted: true }).eq("bucket", b).eq("path", p);
+      removed += paths.length;
     }
     return json({ removed });
   }

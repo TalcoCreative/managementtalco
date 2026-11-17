@@ -1,3 +1,4 @@
+import { DriveBackupCard } from "@/components/system/DriveBackupCard";
 import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -459,6 +460,7 @@ export default function SystemSettings() {
         <HRSettingsCard />
         <PushNotificationTestCard />
         <PushNotificationLogsCard />
+        <DriveBackupCard />
       </div>
     </AppLayout>
   );
