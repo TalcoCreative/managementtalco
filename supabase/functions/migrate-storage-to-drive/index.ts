@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
   const { data: u } = await admin.auth.getUser(token);
   if (!u?.user) return json({ error: "unauthorized" }, 401);
-  const { data: ok } = await admin.rpc("has_role", { _user_id: u.user.id, _role: "super_admin" });
-  if (!ok) return json({ error: "forbidden" }, 403);
+  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: u.user.id, _role: "super_admin" });
+  if (!isAdmin) return json({ error: "forbidden" }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = body.action ?? "migrate";
@@ -40,20 +40,26 @@ Deno.serve(async (req) => {
     return json({ removed });
   }
 
-  const { data: items, error } = await admin.rpc("storage_objects_pending", { _limit: limit });
+  const workers = Math.max(1, Number(body.workers) || 1), worker = Number(body.worker) || 0;
+  const { data: all, error } = await admin.rpc("storage_objects_pending", { _limit: 400 });
   if (error) return json({ error: error.message }, 500);
-  const results = await Promise.all((items ?? []).map(async (it: any) => {
+  const h = (s: string) => { let x = 0; for (const c of s) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; };
+  const items = (all ?? []).filter((it: any) => h(it.bucket + "/" + it.path) % workers === worker).slice(0, limit);
+  let ok = 0, processed = 0, rateLimited = false;
+  for (const it of items as any[]) {
     try {
       const { data: blob, error: dErr } = await admin.storage.from(it.bucket).download(it.path);
       if (dErr || !blob) throw new Error(dErr?.message ?? "download failed");
       const name = it.path.split("/").pop() || "file";
       const r = await uploadToDrive(it.bucket, name, new Uint8Array(await blob.arrayBuffer()), it.mimetype || blob.type || "application/octet-stream");
       await admin.from("storage_drive_map").upsert({ bucket: it.bucket, path: it.path, drive_id: r.id, drive_url: r.url, error: null });
-      return true;
+      ok++; processed++;
     } catch (e) {
-      await admin.from("storage_drive_map").upsert({ bucket: it.bucket, path: it.path, error: String((e as Error).message ?? e).slice(0, 500) });
-      return false;
+      const msg = String((e as Error).message ?? e);
+      if (msg.startsWith("[429]")) { rateLimited = true; break; }
+      await admin.from("storage_drive_map").upsert({ bucket: it.bucket, path: it.path, error: msg.slice(0, 500) });
+      processed++;
     }
-  }));
-  return json({ processed: results.length, ok: results.filter(Boolean).length });
+  }
+  return json({ processed, ok, rateLimited });
 });
