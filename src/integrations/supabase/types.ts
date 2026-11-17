@@ -6673,6 +6673,33 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_drive_map: {
+        Row: {
+          bucket: string
+          created_at: string
+          drive_id: string | null
+          drive_url: string | null
+          error: string | null
+          path: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          drive_id?: string | null
+          drive_url?: string | null
+          error?: string | null
+          path: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          drive_id?: string | null
+          drive_url?: string | null
+          error?: string | null
+          path?: string
+        }
+        Relationships: []
+      }
       sub_event_checklists: {
         Row: {
           completed_at: string | null
@@ -7857,6 +7884,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_storage_drive_map: { Args: never; Returns: number }
       get_next_letter_number: {
         Args: {
           p_category_code: string
@@ -7906,6 +7934,15 @@ export type Database = {
       resolve_commission_percentage: {
         Args: { _product_id: string; _user_id: string }
         Returns: number
+      }
+      storage_objects_pending: {
+        Args: { _limit: number }
+        Returns: {
+          bucket: string
+          mimetype: string
+          path: string
+          size: number
+        }[]
       }
     }
     Enums: {
