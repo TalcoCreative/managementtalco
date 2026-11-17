@@ -1,0 +1,1 @@
+- File uploads go through src/lib/drive-upload.ts (drive-upload edge function → Google Drive, Cloud storage only as fallback); why: keep Cloud storage usage low.
