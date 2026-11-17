@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -157,15 +158,12 @@ export function PayrollPdfSettingsDialog({ open, onOpenChange }: PayrollPdfSetti
       const fileName = `${type}_${Date.now()}.${fileExt}`;
       const filePath = `${type}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("company-assets")
-        .upload(filePath, file, { upsert: true });
+      const __driveUrl7 = await uploadFileToDrive("company-assets", filePath, file, { upsert: true });
+      const uploadError: any = null;
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("company-assets")
-        .getPublicUrl(filePath);
+      const publicUrl = __driveUrl7;
 
       const settingKey = type === "logo" ? "company_logo" : type === "stamp" ? "company_stamp" : "hr_signature";
       await saveSetting(settingKey, publicUrl);

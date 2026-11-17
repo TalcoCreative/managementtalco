@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -223,14 +224,11 @@ export function SocialMediaPostForm() {
         setUploadProgress("Saving backup...");
         for (const file of mediaFiles) {
           const fileName = `${Date.now()}-${file.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("company-assets")
-            .upload(`social-media/${fileName}`, file);
+          const __driveUrl11 = await uploadFileToDrive("company-assets", `social-media/${fileName}`, file);
+      const uploadError: any = null;
 
           if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-              .from("company-assets")
-              .getPublicUrl(`social-media/${fileName}`);
+            const publicUrl = __driveUrl11;
             mediaUrls.push(publicUrl);
           }
         }

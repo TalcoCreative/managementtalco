@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -404,15 +405,12 @@ export function SlideEditor({ slide, epId, isEditable, onStatusChange, onLightbo
         const fileExt = file.name.split(".").pop();
         const fileName = `${epId}/${slide.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("ep-assets")
-          .upload(fileName, file);
+        const __driveUrl13 = await uploadFileToDrive("ep-assets", fileName, file);
+      const uploadError: any = null;
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
-          .from("ep-assets")
-          .getPublicUrl(fileName);
+        const publicUrl = __driveUrl13;
 
         uploadedUrls.push(publicUrl);
       }

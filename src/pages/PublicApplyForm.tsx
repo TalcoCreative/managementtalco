@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -93,15 +94,12 @@ export default function PublicApplyForm() {
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `recruitment/${form.id}/${fileName}`;
           
-          const { error: uploadError } = await supabase.storage
-            .from("company-assets")
-            .upload(filePath, file);
+          const __driveUrl2 = await uploadFileToDrive("company-assets", filePath, file);
+      const uploadError: any = null;
           
           if (uploadError) throw uploadError;
           
-          const { data: urlData } = supabase.storage
-            .from("company-assets")
-            .getPublicUrl(filePath);
+          const urlData = { publicUrl: __driveUrl2 };
           
           uploadedFiles[fieldId] = urlData.publicUrl;
         }

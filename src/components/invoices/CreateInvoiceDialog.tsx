@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,9 +128,10 @@ export function CreateInvoiceDialog({ open, onOpenChange, onSuccess }: Props) {
     try {
       const file = await compressUpload(rawFile);
       const path = `invoice-logos/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      const __driveUrl4 = await uploadFileToDrive("invoice-assets", path, file, { upsert: true });
+      const error: any = null;
       if (error) throw error;
-      const { data } = supabase.storage.from("invoice-assets").getPublicUrl(path);
+      const data = { publicUrl: __driveUrl4 };
       setCustomLogo(data.publicUrl);
     } catch (e: any) {
       toast.error(e.message || "Upload failed");

@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -113,18 +114,15 @@ export function CreateTaskDialog({ projects, users, open: controlledOpen, onOpen
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${taskId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from('task-attachments')
-        .upload(fileName, file);
+      const __driveUrl8 = await uploadFileToDrive('task-attachments', fileName, file);
+      const uploadError: any = null;
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
         return null;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('task-attachments')
-        .getPublicUrl(fileName);
+      const urlData = { publicUrl: __driveUrl8 };
 
       return {
         task_id: taskId,

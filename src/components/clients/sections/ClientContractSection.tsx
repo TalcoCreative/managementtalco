@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,15 +76,12 @@ export function ClientContractSection({ clientId, client, canEdit }: ClientContr
         const fileExt = compressed.name.split(".").pop();
         const filePath = `${clientId}/${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from("client-files")
-          .upload(filePath, compressed);
+        const __driveUrl10 = await uploadFileToDrive("client-files", filePath, compressed);
+      const uploadError: any = null;
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("client-files")
-          .getPublicUrl(filePath);
+        const urlData = { publicUrl: __driveUrl10 };
 
         fileUrl = urlData.publicUrl;
         fileName = file.name;

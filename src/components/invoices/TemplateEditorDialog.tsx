@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,9 +113,10 @@ export function TemplateEditorDialog({ open, onOpenChange, template }: Props) {
     try {
       const file = await compressUpload(rawFile);
       const path = `template-logos/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
+      const __driveUrl3 = await uploadFileToDrive("invoice-assets", path, file, { upsert: true });
+      const error: any = null;
       if (error) throw error;
-      const { data } = supabase.storage.from("invoice-assets").getPublicUrl(path);
+      const data = { publicUrl: __driveUrl3 };
       setLogoUrl(data.publicUrl);
     } catch (e: any) {
       toast.error(e.message || "Upload failed");

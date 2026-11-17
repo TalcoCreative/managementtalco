@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -50,11 +51,10 @@ export function AvatarGate({ userId }: AvatarGateProps) {
       const compressed = await compressUpload(file, { maxDimension: 720, minSize: 40 * 1024 });
       const ext = compressed.name.split(".").pop() || "jpg";
       const path = `avatars/${userId}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("company-assets")
-        .upload(path, compressed, { upsert: true, contentType: compressed.type });
+      const __driveUrl5 = await uploadFileToDrive("company-assets", path, compressed, { upsert: true, contentType: compressed.type });
+      const upErr: any = null;
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("company-assets").getPublicUrl(path);
+      const pub = { publicUrl: __driveUrl5 };
       const { error: updErr } = await supabase
         .from("profiles")
         .update({ avatar_url: pub.publicUrl })

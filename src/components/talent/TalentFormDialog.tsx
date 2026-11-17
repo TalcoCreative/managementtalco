@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -125,9 +126,10 @@ export function TalentFormDialog({ open, onOpenChange, talent }: Props) {
         const file = await compressUpload(rawFile);
         const ext = file.name.split(".").pop() || "jpg";
         const path = `talents/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("form-uploads").upload(path, file, { upsert: true });
+        const __driveUrl1 = await uploadFileToDrive("form-uploads", path, file, { upsert: true });
+      const error: any = null;
         if (error) throw error;
-        const { data } = supabase.storage.from("form-uploads").getPublicUrl(path);
+        const data = { publicUrl: __driveUrl1 };
         urls.push(data.publicUrl);
       }
       setPhotos((prev) => [...prev, ...urls]);

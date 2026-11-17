@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -229,9 +230,10 @@ export default function PublicForm() {
         const file = await compressUpload(rawFile);
         const ext = file.name.split(".").pop();
         const path = `${form!.id}/${responseId}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("form-uploads").upload(path, file);
+        const __driveUrl3 = await uploadFileToDrive("form-uploads", path, file);
+      const upErr: any = null;
         if (upErr) throw upErr;
-        const { data: urlData } = supabase.storage.from("form-uploads").getPublicUrl(path);
+        const urlData = { publicUrl: __driveUrl3 };
         fileUrls[qId] = urlData.publicUrl;
       }
 
@@ -241,9 +243,10 @@ export default function PublicForm() {
         try {
           const blob = await (await fetch(answers[sq.id])).blob();
           const path = `${form!.id}/${responseId}/sig-${sq.id}.png`;
-          const { error: upErr } = await supabase.storage.from("form-uploads").upload(path, blob, { contentType: "image/png", upsert: true });
+          const __driveUrl4 = await uploadFileToDrive("form-uploads", path, blob, { contentType: "image/png", upsert: true });
+      const upErr: any = null;
           if (!upErr) {
-            const { data: urlData } = supabase.storage.from("form-uploads").getPublicUrl(path);
+            const urlData = { publicUrl: __driveUrl4 };
             fileUrls[sq.id] = urlData.publicUrl;
           }
         } catch {}

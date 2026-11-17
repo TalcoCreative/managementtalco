@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -158,13 +159,10 @@ export default function ClientDetail() {
                         const file = await compressUpload(rawFile);
                         const ext = file.name.split(".").pop();
                         const path = `${clientId}/${Date.now()}.${ext}`;
-                        const { error: uploadError } = await supabase.storage
-                          .from("client-logos")
-                          .upload(path, file, { upsert: true });
+                        const __driveUrl1 = await uploadFileToDrive("client-logos", path, file, { upsert: true });
+      const uploadError: any = null;
                         if (uploadError) throw uploadError;
-                        const { data: urlData } = supabase.storage
-                          .from("client-logos")
-                          .getPublicUrl(path);
+                        const urlData = { publicUrl: __driveUrl1 };
                         await supabase
                           .from("clients")
                           .update({ client_logo: urlData.publicUrl })

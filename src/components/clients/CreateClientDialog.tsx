@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -60,9 +61,10 @@ export function CreateClientDialog({ open, onOpenChange }: CreateClientDialogPro
     const compressed = await compressUpload(logoFile);
     const ext = compressed.name.split(".").pop() || "png";
     const path = `${clientId}/logo.${ext}`;
-    const { error } = await supabase.storage.from("client-logos").upload(path, compressed, { upsert: true });
+    const __driveUrl2 = await uploadFileToDrive("client-logos", path, compressed, { upsert: true });
+      const error: any = null;
     if (error) throw error;
-    const { data: urlData } = supabase.storage.from("client-logos").getPublicUrl(path);
+    const urlData = { publicUrl: __driveUrl2 };
     return urlData.publicUrl;
   };
 

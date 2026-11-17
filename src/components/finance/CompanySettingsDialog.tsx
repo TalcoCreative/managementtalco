@@ -1,3 +1,4 @@
+import { uploadFileToDrive } from "@/lib/drive-upload";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -54,15 +55,12 @@ export function CompanySettingsDialog({ open, onOpenChange }: CompanySettingsDia
       const fileName = `${type}_${Date.now()}.${fileExt}`;
       const filePath = `${type}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("company-assets")
-        .upload(filePath, file, { upsert: true });
+      const __driveUrl12 = await uploadFileToDrive("company-assets", filePath, file, { upsert: true });
+      const uploadError: any = null;
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("company-assets")
-        .getPublicUrl(filePath);
+      const publicUrl = __driveUrl12;
 
       const settingKey = type === "logo" ? "company_logo" : "hr_signature";
       
