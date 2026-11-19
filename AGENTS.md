@@ -1,1 +1,2 @@
 - File uploads go through src/lib/drive-upload.ts (drive-upload edge function → Google Drive, Cloud storage only as fallback); why: keep Cloud storage usage low.
+- Client delivery targets use recurring defaults plus date-period overrides and a security-invoker aggregation RPC; why: preserve historical targets and source-table permissions without loading full datasets.

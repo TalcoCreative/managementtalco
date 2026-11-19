@@ -1248,6 +1248,41 @@ export type Database = {
           },
         ]
       }
+      client_quota_periods: {
+        Row: {
+          client_id: string
+          id: string
+          period_end: string
+          period_start: string
+          targets: Json
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          id?: string
+          period_end: string
+          period_start: string
+          targets?: Json
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          targets?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_quota_periods_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_quotas: {
         Row: {
           client_id: string
@@ -1301,6 +1336,8 @@ export type Database = {
           phone: string | null
           pic_contact: string | null
           pic_name: string | null
+          quota_cycle_day: number
+          quota_default_targets: Json
           social_media_slug: string | null
           start_date: string | null
           status: string | null
@@ -1319,6 +1356,8 @@ export type Database = {
           phone?: string | null
           pic_contact?: string | null
           pic_name?: string | null
+          quota_cycle_day?: number
+          quota_default_targets?: Json
           social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
@@ -1337,6 +1376,8 @@ export type Database = {
           phone?: string | null
           pic_contact?: string | null
           pic_name?: string | null
+          quota_cycle_day?: number
+          quota_default_targets?: Json
           social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
@@ -7891,6 +7932,10 @@ export type Database = {
     }
     Functions: {
       apply_storage_drive_map: { Args: never; Returns: number }
+      client_delivery_actuals: {
+        Args: { p_client_id: string; p_end: string; p_start: string }
+        Returns: Json
+      }
       get_next_letter_number: {
         Args: {
           p_category_code: string

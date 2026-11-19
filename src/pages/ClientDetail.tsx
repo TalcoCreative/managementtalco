@@ -23,6 +23,7 @@ import { ClientProjectTaskSection } from "@/components/clients/sections/ClientPr
 import { ClientActivitySection } from "@/components/clients/sections/ClientActivitySection";
 import { ClientEmbedSection } from "@/components/clients/sections/ClientEmbedSection";
 import { compressUpload } from "@/lib/file-compression";
+import { ClientDeliveryDashboard } from "@/components/clients/ClientDeliveryDashboard";
 
 export default function ClientDetail() {
   const { clientId } = useParams<{ clientId: string }>();
@@ -94,7 +95,7 @@ export default function ClientDetail() {
     );
   }
 
-  if (!client) {
+  if (!client || !clientId) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center py-12">
@@ -195,6 +196,7 @@ export default function ClientDetail() {
           </div>
         </div>
 
+        <ClientDeliveryDashboard client={client} />
         {/* Sections */}
         <div className="space-y-4">
           {sections.map(({ id, title, icon: Icon, component: Component, sensitive, superAdminOnly }) => {
@@ -232,7 +234,7 @@ export default function ClientDetail() {
                   <CollapsibleContent>
                     <CardContent>
                       <Component 
-                        clientId={clientId!} 
+                        clientId={clientId} 
                         client={client}
                         canEdit={sensitive ? canEditSensitive : true}
                       />
