@@ -36,3 +36,17 @@ export function resolvedTargets(defaults: Targets, override?: Targets | null) { 
 export function achievement(target: number, actual: number) {
   return { remaining: Math.max(0,target-actual), percentage: target > 0 ? Math.min(100,actual/target*100) : 0 };
 }
+
+export function trackedPeriod(period: { start: string; end: string }, trackingStart: string | null) {
+  return { start: trackingStart && trackingStart > period.start ? trackingStart : period.start,
+    end: period.end, skipped: !!trackingStart && period.end < trackingStart };
+}
+
+// Positive balance is outstanding delivery; negative balance is a delivery credit.
+// Keep the signed balance even when the displayed effective target is clamped to zero.
+export function deliveryBalance(baseTarget: number, actual: number, priorTargets = 0, priorActual = 0) {
+  const carry = priorTargets - priorActual;
+  const signedTarget = baseTarget + carry;
+  return { carry, target: Math.max(0, signedTarget), nextBalance: signedTarget - actual,
+    ...achievement(Math.max(0, signedTarget), actual) };
+}

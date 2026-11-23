@@ -29,6 +29,13 @@
       "when": 1795069045256,
       "tag": "0003_client_delivery_cycles",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795417602664,
+      "tag": "0004_client_delivery_carryover",
+      "breakpoints": true
     }
   ]
 }

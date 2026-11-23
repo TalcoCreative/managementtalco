@@ -1338,6 +1338,7 @@ export type Database = {
           pic_name: string | null
           quota_cycle_day: number
           quota_default_targets: Json
+          quota_tracking_start: string | null
           social_media_slug: string | null
           start_date: string | null
           status: string | null
@@ -1358,6 +1359,7 @@ export type Database = {
           pic_name?: string | null
           quota_cycle_day?: number
           quota_default_targets?: Json
+          quota_tracking_start?: string | null
           social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
@@ -1378,6 +1380,7 @@ export type Database = {
           pic_name?: string | null
           quota_cycle_day?: number
           quota_default_targets?: Json
+          quota_tracking_start?: string | null
           social_media_slug?: string | null
           start_date?: string | null
           status?: string | null
@@ -7933,6 +7936,10 @@ export type Database = {
     Functions: {
       apply_storage_drive_map: { Args: never; Returns: number }
       client_delivery_actuals: {
+        Args: { p_client_id: string; p_end: string; p_start: string }
+        Returns: Json
+      }
+      client_delivery_summary: {
         Args: { p_client_id: string; p_end: string; p_start: string }
         Returns: Json
       }
