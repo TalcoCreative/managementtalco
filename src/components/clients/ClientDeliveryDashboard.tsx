@@ -86,9 +86,9 @@ export function ClientDeliveryDashboard({ client }: { client: Tables<'clients'> 
       {DELIVERY_METRICS.map(metric=>{
         const target = targets[metric.key] ?? 0, actual = data?.actual[metric.key] ?? 0;
         const {remaining,percentage} = achievement(target,actual);
-        const currency = 'currency' in metric && metric.currency;
+        const currency = 'currency' in metric && metric.currency === true;
         return <div key={metric.key} className="min-w-0 rounded-2xl border bg-card p-4 text-card-foreground">
-          <div className="flex items-center justify-between gap-2"><h3 className="font-medium">{metric.label}</h3><Info className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={metric.source} title={metric.source}/></div>
+          <div className="flex items-center justify-between gap-2"><h3 className="font-medium">{metric.label}</h3><span title={metric.source}><Info className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={metric.source}/></span></div>
           <p className="my-3 break-words text-2xl font-semibold">{number(actual,currency)}</p>
           <Progress value={percentage} className="h-1.5"/>
           <div className="mt-3 space-y-1 text-sm"><p className="text-muted-foreground">Target: {target > 0 ? number(target,currency) : 'Not set'}</p>
@@ -103,7 +103,7 @@ export function ClientDeliveryDashboard({ client }: { client: Tables<'clients'> 
     </div>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
       <DialogHeader><DialogTitle>Delivery targets</DialogTitle></DialogHeader>
-      <Label>Apply to</Label><Select value={scope} onValueChange={v=>{setScope(v);setDraft({...v==='default' ? defaults : targets});}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="period">This period only</SelectItem><SelectItem value="default">Recurring defaults</SelectItem></SelectContent></Select>
+      <Label>Apply to</Label><Select value={scope} onValueChange={v=>{setScope(v);setDraft({... (v==='default' ? defaults : targets)});}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="period">This period only</SelectItem><SelectItem value="default">Recurring defaults</SelectItem></SelectContent></Select>
       {scope==='default' ? <div className="space-y-2"><Label htmlFor="cycle-day">Cycle start day (1–31)</Label><Input id="cycle-day" type="number" min={1} max={31} value={day} onChange={e=>setDay(Number(e.target.value))}/></div> : <p className="text-sm text-muted-foreground">{period.start} — {period.end}</p>}
       <div className="grid grid-cols-2 gap-4">{DELIVERY_METRICS.map(metric=><div key={metric.key} className="space-y-2"><Label htmlFor={`target-${metric.key}`}>{metric.label}{'currency' in metric ? ' (IDR)' : ''}</Label><Input id={`target-${metric.key}`} type="number" min={0} step={1} value={draft[metric.key] ?? 0} onChange={e=>setDraft(v=>({...v,[metric.key]:Number(e.target.value)}))}/></div>)}</div>
       <div className="flex flex-wrap justify-end gap-2">{scope==='period' && data?.override && <Button variant="ghost" disabled={saving} onClick={reset}>Use recurring defaults</Button>}<Button disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save targets'}</Button></div>
